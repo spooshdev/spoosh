@@ -17,15 +17,23 @@ export async function executeNextFetch<TData, TError>(
   defaultOptions: NextEnlaceOptions,
   requestOptions?: RequestOptions<unknown> & NextRequestOptionsBase
 ): Promise<EnlaceResponse<TData, TError>> {
+  const {
+    autoGenerateTags = true,
+    autoRevalidateTags = true,
+    revalidate,
+    headers: defaultHeaders,
+    ...restOptions
+  } = defaultOptions;
+
   const url = buildUrl(baseUrl, path, requestOptions?.query);
+  let headers = mergeHeaders(defaultHeaders, requestOptions?.headers);
 
-  let headers = mergeHeaders(defaultOptions.headers, requestOptions?.headers);
-
+  const isGet = method === "GET";
+  const autoTags = generateTags(path);
   const nextOptions = requestOptions?.next;
-  const tags = nextOptions?.tags ?? generateTags(path);
 
   const fetchOptions: RequestInit & { next?: NextFetchOptions } = {
-    ...defaultOptions,
+    ...restOptions,
     method,
   };
 
@@ -33,11 +41,17 @@ export async function executeNextFetch<TData, TError>(
     fetchOptions.cache = requestOptions.cache;
   }
 
-  const nextFetchOptions: NextFetchOptions = { tags };
-  if (nextOptions?.revalidate !== undefined) {
-    nextFetchOptions.revalidate = nextOptions.revalidate;
+  if (isGet) {
+    const tags = nextOptions?.tags ?? (autoGenerateTags ? autoTags : undefined);
+    const nextFetchOptions: NextFetchOptions = {};
+    if (tags) {
+      nextFetchOptions.tags = tags;
+    }
+    if (nextOptions?.revalidate !== undefined) {
+      nextFetchOptions.revalidate = nextOptions.revalidate;
+    }
+    fetchOptions.next = nextFetchOptions;
   }
-  fetchOptions.next = nextFetchOptions;
 
   if (headers) {
     fetchOptions.headers = headers;
@@ -61,9 +75,12 @@ export async function executeNextFetch<TData, TError>(
   const isJson = contentType?.includes("application/json");
 
   if (response.ok) {
-    const { revalidateTags = [], revalidatePaths = [] } = requestOptions ?? {};
-    if (revalidateTags.length || revalidatePaths.length) {
-      defaultOptions.revalidate?.(revalidateTags, revalidatePaths);
+    if (!isGet) {
+      const revalidateTags = requestOptions?.revalidateTags ?? (autoRevalidateTags ? autoTags : []);
+      const revalidatePaths = requestOptions?.revalidatePaths ?? [];
+      if (revalidateTags.length || revalidatePaths.length) {
+        revalidate?.(revalidateTags, revalidatePaths);
+      }
     }
 
     return {

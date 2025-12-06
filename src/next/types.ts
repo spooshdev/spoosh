@@ -11,6 +11,8 @@ export type RevalidateHandler = (
 ) => void | Promise<void>;
 
 export type NextEnlaceOptions = EnlaceOptions & {
+  autoGenerateTags?: boolean;
+  autoRevalidateTags?: boolean;
   revalidate?: RevalidateHandler;
 };
 
