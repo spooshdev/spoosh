@@ -1,6 +1,6 @@
 {
   "name": "enlace",
-  "version": "0.0.0-alpha.1",
+  "version": "0.0.0-alpha.3",
   "files": [
     "dist"
   ],
@@ -9,6 +9,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
+    },
+    "./next": {
+      "types": "./dist/next/index.d.ts",
+      "import": "./dist/next/index.mjs",
+      "require": "./dist/next/index.js"
     }
   },
   "license": "MIT",
@@ -16,7 +21,8 @@
     "dev": "tsup --watch",
     "build": "tsup",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src --max-warnings 0"
+    "lint": "eslint src --max-warnings 0",
+    "prepublishOnly": "npm run build && npm run typecheck && npm run lint"
   },
   "peerDependencies": {
     "react": "^19"
@@ -28,6 +34,7 @@
     "eslint-plugin-react": "^7.37.5",
     "globals": "^16.5.0",
     "jiti": "^2.6.1",
+    "prettier": "^3.7.4",
     "tsup": "^8.5.1",
     "tsx": "^4.21.0",
     "typescript": "5.9.2",

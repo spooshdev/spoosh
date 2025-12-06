@@ -2,17 +2,24 @@ import { defineConfig } from "tsup";
 
 const external = ["react", "react-dom"];
 
-export default defineConfig((options) => {
-  return {
-    entry: ["src/index.ts"],
+const common = {
+  external,
+  format: ["cjs", "esm"] as const,
+  dts: true,
+  splitting: false,
+  platform: "browser" as const,
+};
+
+export default defineConfig((options) => [
+  {
+    ...common,
+    entry: { index: "src/index.ts" },
     outDir: "dist",
-    external,
-    format: ["cjs", "esm"],
-    dts: {
-      entry: "src/index.ts",
-      output: "dist/index.d.ts",
-    },
     clean: !options.watch,
-    platform: "browser",
-  };
-});
+  },
+  {
+    ...common,
+    entry: { index: "src/next/index.ts" },
+    outDir: "dist/next",
+  },
+]);

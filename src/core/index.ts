@@ -25,9 +25,13 @@ export type {
   EnlaceOptions,
   EnlaceResponse,
   Endpoint,
+  FetchExecutor,
   HttpMethod,
   MethodDefinition,
   RequestOptions,
   SchemaMethod,
   WildcardClient,
 } from './types';
+
+export { createProxyHandler } from './proxy';
+export { executeFetch } from './fetch';

@@ -1,12 +1,2 @@
-export { createEnlace } from './core';
-export type {
-  EnlaceClient,
-  EnlaceOptions,
-  EnlaceResponse,
-  Endpoint,
-  HttpMethod,
-  MethodDefinition,
-  RequestOptions,
-  SchemaMethod,
-  WildcardClient,
-} from './core';
+export { createEnlace } from "./core";
+export * from "./core";
