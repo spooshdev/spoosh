@@ -5,8 +5,17 @@ export type NextFetchOptions = {
   tags?: string[];
 };
 
-export type NextEnlaceOptions = EnlaceOptions;
+export type RevalidateHandler = (
+  tags: string[],
+  paths: string[]
+) => void | Promise<void>;
+
+export type NextEnlaceOptions = EnlaceOptions & {
+  revalidate?: RevalidateHandler;
+};
 
 export type NextRequestOptionsBase = {
   next?: NextFetchOptions;
+  revalidateTags?: string[];
+  revalidatePaths?: string[];
 };

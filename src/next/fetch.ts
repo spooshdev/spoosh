@@ -61,6 +61,11 @@ export async function executeNextFetch<TData, TError>(
   const isJson = contentType?.includes("application/json");
 
   if (response.ok) {
+    const { revalidateTags = [], revalidatePaths = [] } = requestOptions ?? {};
+    if (revalidateTags.length || revalidatePaths.length) {
+      defaultOptions.revalidate?.(revalidateTags, revalidatePaths);
+    }
+
     return {
       ok: true,
       status: response.status,
