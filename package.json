@@ -5,7 +5,11 @@
     "build": "pnpm -r build",
     "dev": "pnpm -r --parallel dev",
     "typecheck": "pnpm -r typecheck",
-    "lint": "pnpm -r lint"
+    "lint": "pnpm -r lint",
+    "publish:dry": "pnpm -r publish --dry-run --access public --no-git-checks",
+    "publish:alpha": "pnpm -r publish --access public --tag alpha",
+    "publish:beta": "pnpm -r publish --access public --tag beta",
+    "publish:latest": "pnpm -r publish --access public"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
