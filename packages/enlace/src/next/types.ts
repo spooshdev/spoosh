@@ -41,7 +41,11 @@ export type NextEnlaceOptions = EnlaceOptions & {
 
 /** Per-request options for Next.js fetch */
 export type NextRequestOptionsBase = {
-  /** Cache tags for Next.js fetch caching */
+  /** 
+   * Cache tags for caching (GET requests only)  
+   * This will auto generate tags from the URL path if not provided and autoGenerateTags is enabled.
+   * But can be manually specified to override auto-generation.
+   * */
   tags?: string[];
 
   /** Time in seconds to revalidate, or false to disable */

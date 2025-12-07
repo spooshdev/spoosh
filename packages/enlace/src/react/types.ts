@@ -1,12 +1,25 @@
 import type { EnlaceClient, EnlaceResponse, WildcardClient } from "enlace-core";
 
 // ============================================================================
+// Request Options
+// ============================================================================
+
+/** Per-request options for React hooks */
+export type ReactRequestOptionsBase = {
+  /** Cache tags for this query (auto-generated from path if not provided) */
+  tags?: string[];
+
+  /** Tags to invalidate after mutation (triggers refetch in matching queries) */
+  revalidateTags?: string[];
+};
+
+// ============================================================================
 // Internal Types
 // ============================================================================
 
 export type ApiClient<TSchema> = unknown extends TSchema
-  ? WildcardClient<object>
-  : EnlaceClient<TSchema, object>;
+  ? WildcardClient<ReactRequestOptionsBase>
+  : EnlaceClient<TSchema, ReactRequestOptionsBase>;
 
 export type QueryFn<TSchema, TData, TError> = (
   api: ApiClient<TSchema>
@@ -15,10 +28,10 @@ export type QueryFn<TSchema, TData, TError> = (
 export type SelectorFn<TSchema, TMethod> = (api: ApiClient<TSchema>) => TMethod;
 
 export type WildcardQueryFn<TData, TError> = (
-  api: WildcardClient<object>
+  api: WildcardClient<ReactRequestOptionsBase>
 ) => Promise<EnlaceResponse<TData, TError>>;
 
-export type WildcardSelectorFn<TMethod> = (api: WildcardClient<object>) => TMethod;
+export type WildcardSelectorFn<TMethod> = (api: WildcardClient<ReactRequestOptionsBase>) => TMethod;
 
 export type HookState = {
   loading: boolean;
@@ -59,7 +72,7 @@ export type UseEnlaceManualResult<TSchema, TData = unknown, TError = unknown> = 
 
 /** Result when hook is called without selector (manual mode) - wildcard version */
 export type UseWildcardManualResult<TData = unknown, TError = unknown> = {
-  client: WildcardClient<object>;
+  client: WildcardClient<ReactRequestOptionsBase>;
   loading: boolean;
 } & HookResponseState<TData, TError>;
 

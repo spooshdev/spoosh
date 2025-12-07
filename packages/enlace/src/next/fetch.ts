@@ -7,12 +7,9 @@ import {
   type RequestOptions,
 } from "enlace-core";
 import type { NextEnlaceOptions, NextRequestOptionsBase } from "./types";
+import { generateTags } from "../utils/generateTags";
 
 type NextFetchOptions = Pick<NextRequestOptionsBase, "tags" | "revalidate">;
-
-function generateTags(path: string[]): string[] {
-  return path.map((_, i) => path.slice(0, i + 1).join("/"));
-}
 
 export async function executeNextFetch<TData, TError>(
   baseUrl: string,
