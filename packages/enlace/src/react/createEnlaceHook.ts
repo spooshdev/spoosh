@@ -1,18 +1,10 @@
-import {
-  createEnlace,
-  type EnlaceOptions,
-  type EnlaceResponse,
-  type WildcardClient,
-} from "enlace-core";
+import { createEnlace, type EnlaceOptions, type EnlaceResponse } from "enlace-core";
 import type {
   ApiClient,
   QueryFn,
-  ReactRequestOptionsBase,
   SelectorFn,
   UseEnlaceQueryResult,
   UseEnlaceSelectorResult,
-  WildcardQueryFn,
-  WildcardSelectorFn,
 } from "./types";
 import { useQueryMode } from "./useQueryMode";
 import { createTrackingProxy, type TrackingResult } from "./trackingProxy";
@@ -29,19 +21,12 @@ export type EnlaceHookOptions = {
   staleTime?: number;
 };
 
-type WildcardHook = {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Required for method type inference
-  <TMethod extends (...args: any[]) => Promise<EnlaceResponse<unknown, unknown>>>(
-    selector: WildcardSelectorFn<TMethod>
-  ): UseEnlaceSelectorResult<TMethod>;
-  <TData, TError>(queryFn: WildcardQueryFn<TData, TError>): UseEnlaceQueryResult<TData, TError>;
-};
-
-type TypedHook<TSchema> = {
+type EnlaceHook<TSchema> = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Required for method type inference
   <TMethod extends (...args: any[]) => Promise<EnlaceResponse<unknown, unknown>>>(
     selector: SelectorFn<TSchema, TMethod>
   ): UseEnlaceSelectorResult<TMethod>;
+
   <TData, TError>(queryFn: QueryFn<TSchema, TData, TError>): UseEnlaceQueryResult<TData, TError>;
 };
 
@@ -59,33 +44,18 @@ type TypedHook<TSchema> = {
  * const { trigger, loading, data, error } = useAPI((api) => api.posts.delete);
  * onClick={() => trigger({ body: { id: 1 } })}
  */
-export function createEnlaceHook(
-  baseUrl: string,
-  defaultOptions?: EnlaceOptions,
-  hookOptions?: EnlaceHookOptions
-): WildcardHook;
-export function createEnlaceHook<TSchema>(
-  baseUrl: string,
-  defaultOptions?: EnlaceOptions,
-  hookOptions?: EnlaceHookOptions
-): TypedHook<TSchema>;
 export function createEnlaceHook<TSchema = unknown>(
   baseUrl: string,
   defaultOptions: EnlaceOptions = {},
   hookOptions: EnlaceHookOptions = {}
-): WildcardHook | TypedHook<TSchema> {
+): EnlaceHook<TSchema> {
   const api = createEnlace<TSchema>(baseUrl, defaultOptions);
   const { autoGenerateTags = true, autoRevalidateTags = true, staleTime = 0 } = hookOptions;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Required for method type inference
   function useEnlaceHook<TData, TError, TMethod extends (...args: any[]) => Promise<EnlaceResponse<unknown, unknown>>>(
-    selectorOrQuery:
-      | SelectorFn<TSchema, TMethod>
-      | QueryFn<TSchema, TData, TError>
-      | WildcardSelectorFn<TMethod>
-      | WildcardQueryFn<TData, TError>
+    selectorOrQuery: SelectorFn<TSchema, TMethod> | QueryFn<TSchema, TData, TError>
   ): UseEnlaceSelectorResult<TMethod> | UseEnlaceQueryResult<TData, TError> {
-    // Use tracking proxy to capture path/method/options without executing
     let trackingResult: TrackingResult = {
       trackedCall: null,
       selectorPath: null,
@@ -95,15 +65,13 @@ export function createEnlaceHook<TSchema = unknown>(
       trackingResult = result;
     });
 
-    // Execute selector/query with tracking proxy to determine mode
-    const result = (selectorOrQuery as (api: WildcardClient<ReactRequestOptionsBase>) => unknown)(
-      trackingProxy as WildcardClient<ReactRequestOptionsBase>
+    const result = (selectorOrQuery as (api: ApiClient<TSchema>) => unknown)(
+      trackingProxy as ApiClient<TSchema>
     );
 
-    // Selector mode - result is a function (method was accessed but not called)
     if (typeof result === "function") {
-      const actualResult = (selectorOrQuery as (api: WildcardClient<ReactRequestOptionsBase>) => unknown)(
-        api as WildcardClient<ReactRequestOptionsBase>
+      const actualResult = (selectorOrQuery as (api: ApiClient<TSchema>) => unknown)(
+        api as ApiClient<TSchema>
       );
       return useSelectorMode<TMethod>(
         actualResult as (...args: unknown[]) => Promise<EnlaceResponse<unknown, unknown>>,
@@ -112,7 +80,6 @@ export function createEnlaceHook<TSchema = unknown>(
       );
     }
 
-    // Query mode - method was called, trackedCall has the info
     return useQueryMode<TSchema, TData, TError>(
       api as ApiClient<TSchema>,
       trackingResult.trackedCall!,
@@ -120,5 +87,5 @@ export function createEnlaceHook<TSchema = unknown>(
     );
   }
 
-  return useEnlaceHook as WildcardHook | TypedHook<TSchema>;
+  return useEnlaceHook as EnlaceHook<TSchema>;
 }

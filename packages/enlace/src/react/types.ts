@@ -27,12 +27,6 @@ export type QueryFn<TSchema, TData, TError> = (
 
 export type SelectorFn<TSchema, TMethod> = (api: ApiClient<TSchema>) => TMethod;
 
-export type WildcardQueryFn<TData, TError> = (
-  api: WildcardClient<ReactRequestOptionsBase>
-) => Promise<EnlaceResponse<TData, TError>>;
-
-export type WildcardSelectorFn<TMethod> = (api: WildcardClient<ReactRequestOptionsBase>) => TMethod;
-
 export type HookState = {
   loading: boolean;
   fetching: boolean;
