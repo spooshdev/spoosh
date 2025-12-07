@@ -1,12 +1,12 @@
-import { buildUrl, isJsonBody, mergeHeaders } from '../utils';
-import type { EnlaceOptions, EnlaceResponse, HttpMethod, RequestOptions } from './types';
+import { buildUrl, isJsonBody, mergeHeaders } from "./utils";
+import type { EnlaceOptions, EnlaceResponse, HttpMethod, RequestOptions } from "./types";
 
 export async function executeFetch<TData, TError>(
   baseUrl: string,
   path: string[],
   method: HttpMethod,
   defaultOptions: EnlaceOptions,
-  requestOptions?: RequestOptions<unknown>,
+  requestOptions?: RequestOptions<unknown>
 ): Promise<EnlaceResponse<TData, TError>> {
   const url = buildUrl(baseUrl, path, requestOptions?.query);
 
@@ -24,7 +24,7 @@ export async function executeFetch<TData, TError>(
   if (requestOptions?.body !== undefined) {
     if (isJsonBody(requestOptions.body)) {
       fetchOptions.body = JSON.stringify(requestOptions.body);
-      headers = mergeHeaders(headers, { 'Content-Type': 'application/json' });
+      headers = mergeHeaders(headers, { "Content-Type": "application/json" });
       if (headers) {
         fetchOptions.headers = headers;
       }
@@ -35,8 +35,8 @@ export async function executeFetch<TData, TError>(
 
   const response = await fetch(url, fetchOptions);
 
-  const contentType = response.headers.get('content-type');
-  const isJson = contentType?.includes('application/json');
+  const contentType = response.headers.get("content-type");
+  const isJson = contentType?.includes("application/json");
 
   if (response.ok) {
     return {

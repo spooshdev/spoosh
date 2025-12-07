@@ -1,4 +1,4 @@
-import type { EnlaceOptions } from "../core/types";
+import type { EnlaceOptions } from "enlace-core";
 
 export type NextFetchOptions = {
   revalidate?: number | false;

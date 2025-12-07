@@ -1,5 +1,11 @@
-import { buildUrl, isJsonBody, mergeHeaders } from "../utils";
-import type { EnlaceResponse, HttpMethod, RequestOptions } from "../core/types";
+import {
+  buildUrl,
+  isJsonBody,
+  mergeHeaders,
+  type EnlaceResponse,
+  type HttpMethod,
+  type RequestOptions,
+} from "enlace-core";
 import type {
   NextEnlaceOptions,
   NextFetchOptions,

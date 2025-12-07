@@ -32,25 +32,6 @@ export type MethodDefinition = {
   body?: unknown;
 };
 
-// ============================================
-// Schema Definition Helpers
-// ============================================
-
-/**
- * Helper to define an endpoint with proper typing.
- * Provides cleaner syntax than writing { data, error, body } manually.
- *
- * @example
- * type MyApi = {
- *   posts: {
- *     $get: Endpoint<Post[], ApiError>;
- *     $post: Endpoint<Post, ApiError, CreatePost>;  // with body
- *     _: {
- *       $get: Endpoint<Post, NotFoundError>;
- *     };
- *   };
- * };
- */
 export type Endpoint<TData, TError, TBody = never> = [TBody] extends [never]
   ? { data: TData; error: TError }
   : { data: TData; error: TError; body: TBody };
@@ -159,18 +140,10 @@ export type EnlaceClient<TSchema, TRequestOptionsBase = object> = HttpMethods<
       : K]: EnlaceClient<TSchema[K], TRequestOptionsBase>;
   };
 
-// ============================================
-// Wildcard (Untyped) Mode
-// ============================================
-
 type WildcardMethodFn<TRequestOptionsBase = object> = (
   options?: RequestOptions<unknown> & TRequestOptionsBase
 ) => Promise<EnlaceResponse<unknown, unknown>>;
 
-/**
- * Wildcard client type - allows any path access when no schema is provided.
- * All methods are available at every level and return unknown types.
- */
 export type WildcardClient<TRequestOptionsBase = object> = {
   get: WildcardMethodFn<TRequestOptionsBase>;
   post: WildcardMethodFn<TRequestOptionsBase>;
