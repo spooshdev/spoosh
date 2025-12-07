@@ -2,20 +2,23 @@ import {
   buildUrl,
   isJsonBody,
   mergeHeaders,
+  type EnlaceOptions,
   type EnlaceResponse,
   type HttpMethod,
   type RequestOptions,
 } from "enlace-core";
-import type { NextEnlaceOptions, NextRequestOptionsBase } from "./types";
+import type { NextOptions, NextRequestOptionsBase } from "./types";
 import { generateTags } from "../utils/generateTags";
 
 type NextFetchOptions = Pick<NextRequestOptionsBase, "tags" | "revalidate">;
+
+type CombinedOptions = EnlaceOptions & NextOptions;
 
 export async function executeNextFetch<TData, TError>(
   baseUrl: string,
   path: string[],
   method: HttpMethod,
-  defaultOptions: NextEnlaceOptions,
+  combinedOptions: CombinedOptions,
   requestOptions?: RequestOptions<unknown> & NextRequestOptionsBase
 ): Promise<EnlaceResponse<TData, TError>> {
   const {
@@ -24,7 +27,7 @@ export async function executeNextFetch<TData, TError>(
     revalidator,
     headers: defaultHeaders,
     ...restOptions
-  } = defaultOptions;
+  } = combinedOptions;
 
   const url = buildUrl(baseUrl, path, requestOptions?.query);
   let headers = mergeHeaders(defaultHeaders, requestOptions?.headers);

@@ -20,4 +20,10 @@ export default defineConfig((options) => [
     entry: { index: "src/next/index.ts" },
     outDir: "dist/next",
   },
+  {
+    ...common,
+    entry: { index: "src/next/createEnlaceHook.ts" },
+    outDir: "dist/next/hook",
+    banner: { js: '"use client";' },
+  },
 ]);

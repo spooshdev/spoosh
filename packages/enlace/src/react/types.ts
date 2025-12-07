@@ -6,7 +6,11 @@ import type { EnlaceClient, EnlaceResponse, WildcardClient } from "enlace-core";
 
 /** Per-request options for React hooks */
 export type ReactRequestOptionsBase = {
-  /** Cache tags for this query (auto-generated from path if not provided) */
+  /**
+   * Cache tags for caching (GET requests only)
+   * This will auto generate tags from the URL path if not provided and autoGenerateTags is enabled.
+   * But can be manually specified to override auto-generation.
+   * */
   tags?: string[];
 
   /** Tags to invalidate after mutation (triggers refetch in matching queries) */
@@ -17,15 +21,25 @@ export type ReactRequestOptionsBase = {
 // Internal Types
 // ============================================================================
 
-export type ApiClient<TSchema> = unknown extends TSchema
-  ? WildcardClient<ReactRequestOptionsBase>
-  : EnlaceClient<TSchema, ReactRequestOptionsBase>;
+export type ApiClient<
+  TSchema,
+  TOptions = ReactRequestOptionsBase,
+> = unknown extends TSchema
+  ? WildcardClient<TOptions>
+  : EnlaceClient<TSchema, TOptions>;
 
-export type QueryFn<TSchema, TData, TError> = (
-  api: ApiClient<TSchema>
+export type QueryFn<
+  TSchema,
+  TData,
+  TError,
+  TOptions = ReactRequestOptionsBase,
+> = (
+  api: ApiClient<TSchema, TOptions>
 ) => Promise<EnlaceResponse<TData, TError>>;
 
-export type SelectorFn<TSchema, TMethod> = (api: ApiClient<TSchema>) => TMethod;
+export type SelectorFn<TSchema, TMethod, TOptions = ReactRequestOptionsBase> = (
+  api: ApiClient<TSchema, TOptions>
+) => TMethod;
 
 export type HookState = {
   loading: boolean;
@@ -47,11 +61,19 @@ export const HTTP_METHODS = ["get", "post", "put", "patch", "delete"] as const;
 // Public Result Types
 // ============================================================================
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Required for conditional type inference
-type ExtractData<T> = T extends (...args: any[]) => Promise<EnlaceResponse<infer D, unknown>> ? D : never;
+type ExtractData<T> = T extends (
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Required for conditional type inference
+  ...args: any[]
+) => Promise<EnlaceResponse<infer D, unknown>>
+  ? D
+  : never;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Required for conditional type inference
-type ExtractError<T> = T extends (...args: any[]) => Promise<EnlaceResponse<unknown, infer E>> ? E : never;
+type ExtractError<T> = T extends (
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Required for conditional type inference
+  ...args: any[]
+) => Promise<EnlaceResponse<unknown, infer E>>
+  ? E
+  : never;
 
 /** Discriminated union for hook response state - enables type narrowing on ok check */
 type HookResponseState<TData, TError> =

@@ -13,6 +13,11 @@
       "types": "./dist/next/index.d.ts",
       "import": "./dist/next/index.mjs",
       "require": "./dist/next/index.js"
+    },
+    "./next/hook": {
+      "types": "./dist/next/hook/index.d.ts",
+      "import": "./dist/next/hook/index.mjs",
+      "require": "./dist/next/hook/index.js"
     }
   },
   "scripts": {

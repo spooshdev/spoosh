@@ -1,4 +1,8 @@
-import { createEnlace, type EnlaceOptions, type EnlaceResponse } from "enlace-core";
+import {
+  createEnlace,
+  type EnlaceOptions,
+  type EnlaceResponse,
+} from "enlace-core";
 import type {
   ApiClient,
   QueryFn,
@@ -11,7 +15,11 @@ import { createTrackingProxy, type TrackingResult } from "./trackingProxy";
 import { useSelectorMode } from "./useSelectorMode";
 
 export type EnlaceHookOptions = {
-  /** Auto-generate cache tags from URL path for queries. @default true */
+  /**
+   * Auto-generate cache tags from URL path for GET requests.
+   * e.g., `/posts/1` generates tags `['posts', 'posts/1']`
+   * @default true
+   */
   autoGenerateTags?: boolean;
 
   /** Auto-revalidate generated tags after successful mutations. @default true */
@@ -22,12 +30,18 @@ export type EnlaceHookOptions = {
 };
 
 type EnlaceHook<TSchema> = {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Required for method type inference
-  <TMethod extends (...args: any[]) => Promise<EnlaceResponse<unknown, unknown>>>(
+  <
+    TMethod extends (
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Required for method type inference
+      ...args: any[]
+    ) => Promise<EnlaceResponse<unknown, unknown>>,
+  >(
     selector: SelectorFn<TSchema, TMethod>
   ): UseEnlaceSelectorResult<TMethod>;
 
-  <TData, TError>(queryFn: QueryFn<TSchema, TData, TError>): UseEnlaceQueryResult<TData, TError>;
+  <TData, TError>(
+    queryFn: QueryFn<TSchema, TData, TError>
+  ): UseEnlaceQueryResult<TData, TError>;
 };
 
 /**
@@ -50,11 +64,23 @@ export function createEnlaceHook<TSchema = unknown>(
   hookOptions: EnlaceHookOptions = {}
 ): EnlaceHook<TSchema> {
   const api = createEnlace<TSchema>(baseUrl, defaultOptions);
-  const { autoGenerateTags = true, autoRevalidateTags = true, staleTime = 0 } = hookOptions;
+  const {
+    autoGenerateTags = true,
+    autoRevalidateTags = true,
+    staleTime = 0,
+  } = hookOptions;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Required for method type inference
-  function useEnlaceHook<TData, TError, TMethod extends (...args: any[]) => Promise<EnlaceResponse<unknown, unknown>>>(
-    selectorOrQuery: SelectorFn<TSchema, TMethod> | QueryFn<TSchema, TData, TError>
+  function useEnlaceHook<
+    TData,
+    TError,
+    TMethod extends (
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Required for method type inference
+      ...args: any[]
+    ) => Promise<EnlaceResponse<unknown, unknown>>,
+  >(
+    selectorOrQuery:
+      | SelectorFn<TSchema, TMethod>
+      | QueryFn<TSchema, TData, TError>
   ): UseEnlaceSelectorResult<TMethod> | UseEnlaceQueryResult<TData, TError> {
     let trackingResult: TrackingResult = {
       trackedCall: null,
@@ -70,11 +96,13 @@ export function createEnlaceHook<TSchema = unknown>(
     );
 
     if (typeof result === "function") {
-      const actualResult = (selectorOrQuery as (api: ApiClient<TSchema>) => unknown)(
-        api as ApiClient<TSchema>
-      );
+      const actualResult = (
+        selectorOrQuery as (api: ApiClient<TSchema>) => unknown
+      )(api as ApiClient<TSchema>);
       return useSelectorMode<TMethod>(
-        actualResult as (...args: unknown[]) => Promise<EnlaceResponse<unknown, unknown>>,
+        actualResult as (
+          ...args: unknown[]
+        ) => Promise<EnlaceResponse<unknown, unknown>>,
         trackingResult.selectorPath ?? [],
         autoRevalidateTags
       );
