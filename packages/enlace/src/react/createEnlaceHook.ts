@@ -21,7 +21,7 @@ import { useQueryMode, createTrackingProxy } from "./useQueryMode";
 import { useSelectorMode } from "./useSelectorMode";
 
 type WildcardHook = {
-  (): UseWildcardManualResult;
+  <TData = unknown, TError = unknown>(): UseWildcardManualResult<TData, TError>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Required for method type inference
   <TMethod extends (...args: any[]) => Promise<EnlaceResponse<unknown, unknown>>>(
     selector: WildcardSelectorFn<TMethod>
@@ -30,7 +30,7 @@ type WildcardHook = {
 };
 
 type TypedHook<TSchema> = {
-  (): UseEnlaceManualResult<TSchema>;
+  <TData = unknown, TError = unknown>(): UseEnlaceManualResult<TSchema, TData, TError>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Required for method type inference
   <TMethod extends (...args: any[]) => Promise<EnlaceResponse<unknown, unknown>>>(
     selector: SelectorFn<TSchema, TMethod>
@@ -52,8 +52,8 @@ type TypedHook<TSchema> = {
  * const { trigger, loading, data, error } = useAPI((api) => api.posts.delete);
  * onClick={() => trigger({ body: { id: 1 } })}
  *
- * // Manual mode - untyped client
- * const { client, loading, data, ok, error } = useAPI();
+ * // Manual mode - typed client with optional data/error types
+ * const { client, loading, data, ok, error } = useAPI<Post[], ApiError>();
  */
 export function createEnlaceHook(baseUrl: string, defaultOptions?: EnlaceOptions): WildcardHook;
 export function createEnlaceHook<TSchema>(
@@ -74,13 +74,13 @@ export function createEnlaceHook<TSchema = unknown>(
       | WildcardSelectorFn<TMethod>
       | WildcardQueryFn<TData, TError>
   ):
-    | UseEnlaceManualResult<TSchema>
-    | UseWildcardManualResult
+    | UseEnlaceManualResult<TSchema, TData, TError>
+    | UseWildcardManualResult<TData, TError>
     | UseEnlaceSelectorResult<TMethod>
     | UseEnlaceQueryResult<TData, TError> {
     // Manual mode - no selector provided
     if (!selectorOrQuery) {
-      return useManualMode(api as ApiClient<TSchema>) as UseEnlaceManualResult<TSchema>;
+      return useManualMode(api as ApiClient<TSchema>) as UseEnlaceManualResult<TSchema, TData, TError>;
     }
 
     // Use tracking proxy to capture path/method/options without executing

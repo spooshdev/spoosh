@@ -46,21 +46,21 @@ type ExtractData<T> = T extends (...args: any[]) => Promise<EnlaceResponse<infer
 type ExtractError<T> = T extends (...args: any[]) => Promise<EnlaceResponse<unknown, infer E>> ? E : never;
 
 /** Result when hook is called without selector (manual mode) */
-export type UseEnlaceManualResult<TSchema> = {
+export type UseEnlaceManualResult<TSchema, TData = unknown, TError = unknown> = {
   client: ApiClient<TSchema>;
   loading: boolean;
   ok: boolean | undefined;
-  data: unknown;
-  error: unknown;
+  data: TData | undefined;
+  error: TError | undefined;
 };
 
 /** Result when hook is called without selector (manual mode) - wildcard version */
-export type UseWildcardManualResult = {
+export type UseWildcardManualResult<TData = unknown, TError = unknown> = {
   client: WildcardClient<object>;
   loading: boolean;
   ok: boolean | undefined;
-  data: unknown;
-  error: unknown;
+  data: TData | undefined;
+  error: TError | undefined;
 };
 
 /** Result when hook is called with query function (auto-fetch mode) */
