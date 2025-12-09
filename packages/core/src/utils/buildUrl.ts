@@ -1,36 +1,29 @@
 import qs from "query-string";
 
-function getOrigin(): string {
-  if (typeof window !== "undefined") {
-    return window.location.origin;
-  }
-  return "";
-}
-
 export function buildUrl(
   baseUrl: string,
   path: string[],
   query?: Record<string, string | number | boolean | undefined>
 ): string {
-  let normalizedBase = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
+  const isAbsolute = /^https?:\/\//.test(baseUrl);
 
-  const isRelative =
-    !normalizedBase.startsWith("http://") &&
-    !normalizedBase.startsWith("https://");
-
-  if (isRelative) {
-    const origin = getOrigin();
-    if (origin) {
-      const prefix = normalizedBase.startsWith("/") ? "" : "/";
-      normalizedBase = `${origin}${prefix}${normalizedBase}`;
+  if (isAbsolute) {
+    const normalizedBase = baseUrl.replace(/\/?$/, "/");
+    const url = new URL(path.join("/"), normalizedBase);
+    if (query) {
+      url.search = qs.stringify(query, {
+        skipNull: true,
+        skipEmptyString: true,
+      });
     }
+    return url.toString();
   }
 
-  const url = new URL(path.join("/"), normalizedBase);
+  const cleanBase = `/${baseUrl.replace(/^\/|\/$/g, "")}`;
+  const pathStr = path.length > 0 ? `/${path.join("/")}` : "";
+  const queryStr = query
+    ? qs.stringify(query, { skipNull: true, skipEmptyString: true })
+    : "";
 
-  if (query) {
-    url.search = qs.stringify(query, { skipNull: true, skipEmptyString: true });
-  }
-
-  return url.toString();
+  return `${cleanBase}${pathStr}${queryStr ? `?${queryStr}` : ""}`;
 }
