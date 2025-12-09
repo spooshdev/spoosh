@@ -1,5 +1,7 @@
 import {
   createEnlace,
+  type EnlaceCallbackPayload,
+  type EnlaceErrorCallbackPayload,
   type EnlaceOptions,
   type EnlaceResponse,
 } from "enlace-core";
@@ -28,6 +30,12 @@ export type EnlaceHookOptions = {
 
   /** Time in ms before cached data is considered stale. @default 0 (always stale) */
   staleTime?: number;
+
+  /** Callback called on successful API responses */
+  onSuccess?: (payload: EnlaceCallbackPayload<unknown>) => void;
+
+  /** Callback called on error responses (HTTP errors or network failures) */
+  onError?: (payload: EnlaceErrorCallbackPayload<unknown>) => void;
 };
 
 type EnlaceHook<TSchema> = {
@@ -65,12 +73,14 @@ export function createEnlaceHook<TSchema = unknown>(
   defaultOptions: EnlaceOptions = {},
   hookOptions: EnlaceHookOptions = {}
 ): EnlaceHook<TSchema> {
-  const api = createEnlace<TSchema>(baseUrl, defaultOptions);
   const {
     autoGenerateTags = true,
     autoRevalidateTags = true,
     staleTime = 0,
+    onSuccess,
+    onError,
   } = hookOptions;
+  const api = createEnlace<TSchema>(baseUrl, defaultOptions, { onSuccess, onError });
 
   function useEnlaceHook<
     TData,

@@ -7,7 +7,7 @@
     "declaration": true,
     "declarationMap": true,
     "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true,
+    "exactOptionalPropertyTypes": false,
     "strict": true,
     "jsx": "react-jsx",
     "verbatimModuleSyntax": false,

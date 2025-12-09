@@ -1,25 +1,32 @@
 import { buildUrl, isJsonBody, mergeHeaders } from "./utils";
-import type { EnlaceOptions, EnlaceResponse, HttpMethod, RequestOptions } from "./types";
+import type {
+  EnlaceCallbacks,
+  EnlaceOptions,
+  EnlaceResponse,
+  HttpMethod,
+  RequestOptions,
+} from "./types";
 
 export async function executeFetch<TData, TError>(
   baseUrl: string,
   path: string[],
   method: HttpMethod,
-  defaultOptions: EnlaceOptions,
+  defaultOptions: EnlaceOptions & EnlaceCallbacks,
   requestOptions?: RequestOptions<unknown>
 ): Promise<EnlaceResponse<TData, TError>> {
+  const { onSuccess, onError, ...fetchDefaults } = defaultOptions;
+
   const url = buildUrl(baseUrl, path, requestOptions?.query);
 
-  let headers = mergeHeaders(defaultOptions.headers, requestOptions?.headers);
+  let headers = mergeHeaders(fetchDefaults.headers, requestOptions?.headers);
 
-  const fetchOptions: RequestInit = {
-    ...defaultOptions,
-    method,
-  };
+  const fetchOptions: RequestInit = { ...fetchDefaults, method };
 
   if (headers) {
     fetchOptions.headers = headers;
   }
+
+  fetchOptions.cache = requestOptions?.cache ?? fetchDefaults?.cache;
 
   if (requestOptions?.body !== undefined) {
     if (isJsonBody(requestOptions.body)) {
@@ -33,22 +40,32 @@ export async function executeFetch<TData, TError>(
     }
   }
 
-  const response = await fetch(url, fetchOptions);
+  try {
+    const res = await fetch(url, fetchOptions);
+    const status = res.status;
+    const headers = res.headers;
 
-  const contentType = response.headers.get("content-type");
-  const isJson = contentType?.includes("application/json");
+    const contentType = headers.get("content-type");
+    const isJson = contentType?.includes("application/json");
 
-  if (response.ok) {
-    return {
-      ok: true,
-      status: response.status,
-      data: (isJson ? await response.json() : response) as TData,
+    const body = (isJson ? await res.json() : res) as never;
+
+    if (res.ok) {
+      const payload = { status, data: body, headers };
+      onSuccess?.(payload);
+      return { ok: true, ...payload };
+    }
+
+    const payload = { status, error: body, headers };
+    onError?.(payload);
+    return { ok: false, ...payload };
+  } catch (err) {
+    const errorPayload = {
+      status: 0 as const,
+      error: err as Error,
+      headers: null,
     };
+    onError?.(errorPayload);
+    return { ok: false, ...errorPayload };
   }
-
-  return {
-    ok: false,
-    status: response.status,
-    error: (isJson ? await response.json() : response) as TError,
-  };
 }

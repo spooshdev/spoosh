@@ -9,13 +9,18 @@ import type { NextOptions, NextRequestOptionsBase } from "./types";
 
 export function createEnlace<TSchema = unknown>(
   baseUrl: string,
-  defaultOptions: EnlaceOptions = {},
+  defaultOptions: EnlaceOptions | null = {},
   nextOptions: NextOptions = {}
 ): unknown extends TSchema
   ? WildcardClient<NextRequestOptionsBase>
   : EnlaceClient<TSchema, NextRequestOptionsBase> {
   const combinedOptions = { ...defaultOptions, ...nextOptions };
-  return createProxyHandler(baseUrl, combinedOptions, [], executeNextFetch) as unknown extends TSchema
+  return createProxyHandler(
+    baseUrl,
+    combinedOptions,
+    [],
+    executeNextFetch
+  ) as unknown extends TSchema
     ? WildcardClient<NextRequestOptionsBase>
     : EnlaceClient<TSchema, NextRequestOptionsBase>;
 }

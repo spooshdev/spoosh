@@ -3,10 +3,32 @@ export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 export type SchemaMethod = "$get" | "$post" | "$put" | "$patch" | "$delete";
 
 export type EnlaceResponse<TData, TError> =
-  | { ok: true; status: number; data: TData; error?: never }
-  | { ok: false; status: number; data?: never; error: TError };
+  | { ok: true; status: number; data: TData; headers: Headers; error?: never }
+  | { ok: false; status: number; data?: never; headers: Headers; error: TError }
+  | { ok: false; status: 0; data?: never; headers: null; error: Error };
 
 export type EnlaceOptions = Omit<RequestInit, "method" | "body">;
+
+export type EnlaceCallbackPayload<T> = {
+  status: number;
+  data: T;
+  headers: Headers;
+};
+
+export type EnlaceNetworkError = {
+  status: 0;
+  error: Error;
+  headers: null;
+};
+
+export type EnlaceErrorCallbackPayload<T> =
+  | { status: number; error: T; headers: Headers }
+  | EnlaceNetworkError;
+
+export type EnlaceCallbacks = {
+  onSuccess?: ((payload: EnlaceCallbackPayload<unknown>) => void) | undefined;
+  onError?: ((payload: EnlaceErrorCallbackPayload<unknown>) => void) | undefined;
+};
 
 /** Function type for custom fetch implementations */
 export type FetchExecutor<

@@ -1,11 +1,18 @@
 import { createProxyHandler } from "./proxy";
-import type { EnlaceClient, EnlaceOptions, WildcardClient } from "./types";
+import type {
+  EnlaceCallbacks,
+  EnlaceClient,
+  EnlaceOptions,
+  WildcardClient,
+} from "./types";
 
 export function createEnlace<TSchema = unknown>(
   baseUrl: string,
-  defaultOptions: EnlaceOptions = {}
+  defaultOptions: EnlaceOptions | null = {},
+  enlaceOptions: EnlaceCallbacks = {}
 ): unknown extends TSchema ? WildcardClient : EnlaceClient<TSchema> {
-  return createProxyHandler(baseUrl, defaultOptions) as unknown extends TSchema
+  const combinedOptions = { ...defaultOptions, ...enlaceOptions };
+  return createProxyHandler(baseUrl, combinedOptions) as unknown extends TSchema
     ? WildcardClient
     : EnlaceClient<TSchema>;
 }

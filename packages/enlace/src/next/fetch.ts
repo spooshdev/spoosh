@@ -1,7 +1,7 @@
 import {
-  buildUrl,
-  isJsonBody,
-  mergeHeaders,
+  executeFetch,
+  type EnlaceCallbackPayload,
+  type EnlaceCallbacks,
   type EnlaceOptions,
   type EnlaceResponse,
   type HttpMethod,
@@ -12,7 +12,7 @@ import { generateTags } from "../utils/generateTags";
 
 type NextFetchOptions = Pick<NextRequestOptionsBase, "tags" | "revalidate">;
 
-type CombinedOptions = EnlaceOptions & NextOptions;
+type CombinedOptions = EnlaceOptions & NextOptions & EnlaceCallbacks;
 
 export async function executeNextFetch<TData, TError>(
   baseUrl: string,
@@ -25,27 +25,32 @@ export async function executeNextFetch<TData, TError>(
     autoGenerateTags = true,
     autoRevalidateTags = true,
     revalidator,
-    headers: defaultHeaders,
-    ...restOptions
+    onSuccess,
+    ...coreOptions
   } = combinedOptions;
-
-  const url = buildUrl(baseUrl, path, requestOptions?.query);
-  let headers = mergeHeaders(defaultHeaders, requestOptions?.headers);
 
   const isGet = method === "GET";
   const autoTags = generateTags(path);
 
-  const fetchOptions: RequestInit & { next?: NextFetchOptions } = {
-    ...restOptions,
-    method,
+  const nextOnSuccess = (payload: EnlaceCallbackPayload<unknown>) => {
+    if (!isGet && !requestOptions?.skipRevalidator) {
+      const revalidateTags =
+        requestOptions?.revalidateTags ?? (autoRevalidateTags ? autoTags : []);
+      const revalidatePaths = requestOptions?.revalidatePaths ?? [];
+      if (revalidateTags.length || revalidatePaths.length) {
+        revalidator?.(revalidateTags, revalidatePaths);
+      }
+    }
+    onSuccess?.(payload);
   };
 
-  if (requestOptions?.cache) {
-    fetchOptions.cache = requestOptions.cache;
-  }
+  const nextRequestOptions: RequestOptions<unknown> & {
+    next?: NextFetchOptions;
+  } = { ...requestOptions };
 
   if (isGet) {
-    const tags = requestOptions?.tags ?? (autoGenerateTags ? autoTags : undefined);
+    const tags =
+      requestOptions?.tags ?? (autoGenerateTags ? autoTags : undefined);
     const nextFetchOptions: NextFetchOptions = {};
     if (tags) {
       nextFetchOptions.tags = tags;
@@ -53,49 +58,14 @@ export async function executeNextFetch<TData, TError>(
     if (requestOptions?.revalidate !== undefined) {
       nextFetchOptions.revalidate = requestOptions.revalidate;
     }
-    fetchOptions.next = nextFetchOptions;
+    nextRequestOptions.next = nextFetchOptions;
   }
 
-  if (headers) {
-    fetchOptions.headers = headers;
-  }
-
-  if (requestOptions?.body !== undefined) {
-    if (isJsonBody(requestOptions.body)) {
-      fetchOptions.body = JSON.stringify(requestOptions.body);
-      headers = mergeHeaders(headers, { "Content-Type": "application/json" });
-      if (headers) {
-        fetchOptions.headers = headers;
-      }
-    } else {
-      fetchOptions.body = requestOptions.body as BodyInit;
-    }
-  }
-
-  const response = await fetch(url, fetchOptions);
-
-  const contentType = response.headers.get("content-type");
-  const isJson = contentType?.includes("application/json");
-
-  if (response.ok) {
-    if (!isGet && !requestOptions?.skipRevalidator) {
-      const revalidateTags = requestOptions?.revalidateTags ?? (autoRevalidateTags ? autoTags : []);
-      const revalidatePaths = requestOptions?.revalidatePaths ?? [];
-      if (revalidateTags.length || revalidatePaths.length) {
-        revalidator?.(revalidateTags, revalidatePaths);
-      }
-    }
-
-    return {
-      ok: true,
-      status: response.status,
-      data: (isJson ? await response.json() : response) as TData,
-    };
-  }
-
-  return {
-    ok: false,
-    status: response.status,
-    error: (isJson ? await response.json() : response) as TError,
-  };
+  return executeFetch<TData, TError>(
+    baseUrl,
+    path,
+    method,
+    { ...coreOptions, onSuccess: nextOnSuccess },
+    nextRequestOptions
+  );
 }

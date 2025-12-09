@@ -1,7 +1,7 @@
 import type { HookState } from "./types";
 
 export type HookAction =
-  | { type: "RESET"; state: HookState }
+  | { type: "RESET"; state?: HookState }
   | { type: "FETCH_START" }
   | { type: "FETCH_SUCCESS"; data: unknown }
   | { type: "FETCH_ERROR"; error: unknown }
@@ -18,7 +18,7 @@ export const initialState: HookState = {
 export function hookReducer(state: HookState, action: HookAction): HookState {
   switch (action.type) {
     case "RESET":
-      return action.state;
+      return action.state ?? initialState;
 
     case "FETCH_START":
       return {

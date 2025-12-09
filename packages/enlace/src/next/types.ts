@@ -1,4 +1,5 @@
-export { type EnlaceOptions } from "enlace-core";
+export { type EnlaceOptions, type EnlaceCallbacks } from "enlace-core";
+import type { EnlaceCallbacks } from "enlace-core";
 import type { EnlaceHookOptions } from "../react/createEnlaceHook";
 import type { ReactRequestOptionsBase } from "../react/types";
 
@@ -16,19 +17,20 @@ export type RevalidateHandler = (
 export type NextOptions = Pick<
   EnlaceHookOptions,
   "autoGenerateTags" | "autoRevalidateTags"
-> & {
-  /**
-   * Handler called after successful mutations to trigger server-side revalidation.
-   * Receives auto-generated or manually specified tags and paths.
-   * @example
-   * ```ts
-   * createEnlace("http://localhost:3000/api/", {}, {
-   *   revalidator: (tags, paths) => revalidateServerAction(tags, paths)
-   * });
-   * ```
-   */
-  revalidator?: RevalidateHandler;
-};
+> &
+  EnlaceCallbacks & {
+    /**
+     * Handler called after successful mutations to trigger server-side revalidation.
+     * Receives auto-generated or manually specified tags and paths.
+     * @example
+     * ```ts
+     * createEnlace("http://localhost:3000/api/", {}, {
+     *   revalidator: (tags, paths) => revalidateServerAction(tags, paths)
+     * });
+     * ```
+     */
+    revalidator?: RevalidateHandler;
+  };
 
 /** Next.js hook options (third argument for createEnlaceHook) - extends React's EnlaceHookOptions */
 export type NextHookOptions = EnlaceHookOptions &

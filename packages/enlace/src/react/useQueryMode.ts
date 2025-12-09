@@ -53,7 +53,10 @@ export function useQueryMode<TSchema, TData, TError>(
   const requestOptions = trackedCall.options as
     | ReactRequestOptionsBase
     | undefined;
-  const resolvedPath = resolvePath(trackedCall.path, requestOptions?.pathParams);
+  const resolvedPath = resolvePath(
+    trackedCall.path,
+    requestOptions?.pathParams
+  );
   const queryTags =
     requestOptions?.tags ??
     (autoGenerateTags ? generateTags(resolvedPath) : []);
@@ -62,7 +65,8 @@ export function useQueryMode<TSchema, TData, TError>(
     const cached = getCache<TData, TError>(queryKey);
     const hasCachedData = cached?.data !== undefined;
     const isFetching = !!cached?.promise;
-    const needsFetch = includeNeedsFetch && (!hasCachedData || isStale(queryKey, staleTime));
+    const needsFetch =
+      includeNeedsFetch && (!hasCachedData || isStale(queryKey, staleTime));
     return {
       loading: !hasCachedData && (isFetching || needsFetch),
       fetching: isFetching || needsFetch,
@@ -72,7 +76,9 @@ export function useQueryMode<TSchema, TData, TError>(
     };
   };
 
-  const [state, dispatch] = useReducer(hookReducer, null, () => getCacheState(true));
+  const [state, dispatch] = useReducer(hookReducer, null, () =>
+    getCacheState(true)
+  );
 
   const mountedRef = useRef(true);
   const fetchRef = useRef<(() => void) | null>(null);
@@ -81,22 +87,13 @@ export function useQueryMode<TSchema, TData, TError>(
     mountedRef.current = true;
 
     if (!enabled) {
-      dispatch({
-        type: "RESET",
-        state: { loading: false, fetching: false, ok: undefined, data: undefined, error: undefined },
-      });
+      dispatch({ type: "RESET" });
       return () => {
         mountedRef.current = false;
       };
     }
 
     dispatch({ type: "RESET", state: getCacheState(true) });
-
-    const unsubscribe = subscribeCache(queryKey, () => {
-      if (mountedRef.current) {
-        dispatch({ type: "SYNC_CACHE", state: getCacheState() });
-      }
-    });
 
     const doFetch = () => {
       const cached = getCache<TData, TError>(queryKey);
@@ -111,15 +108,17 @@ export function useQueryMode<TSchema, TData, TError>(
       for (const segment of resolvedPath) {
         current = (current as Record<string, unknown>)[segment];
       }
-      const method = (current as Record<string, unknown>)[trackedCall.method] as (
-        opts?: unknown
-      ) => Promise<EnlaceResponse<TData, TError>>;
+
+      const method = (current as Record<string, unknown>)[
+        trackedCall.method
+      ] as (opts?: unknown) => Promise<EnlaceResponse<TData, TError>>;
 
       const fetchPromise = method(trackedCall.options).then((res) => {
         if (mountedRef.current) {
           setCache<TData, TError>(queryKey, {
             data: res.ok ? res.data : undefined,
-            error: res.ok ? undefined : res.error,
+            error:
+              res.ok || res.status === 0 ? undefined : (res.error as TError),
             ok: res.ok,
             timestamp: Date.now(),
             tags: queryTags,
@@ -141,6 +140,12 @@ export function useQueryMode<TSchema, TData, TError>(
     } else {
       doFetch();
     }
+
+    const unsubscribe = subscribeCache(queryKey, () => {
+      if (mountedRef.current) {
+        dispatch({ type: "SYNC_CACHE", state: getCacheState() });
+      }
+    });
 
     return () => {
       mountedRef.current = false;
