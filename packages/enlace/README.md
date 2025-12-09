@@ -398,6 +398,55 @@ const { data } = useAPI((api) =>
 );
 ```
 
+### Global Callbacks
+
+You can set up global `onSuccess` and `onError` callbacks that are called for every request:
+
+```typescript
+const useAPI = createEnlaceHook<ApiSchema>(
+  "https://api.example.com",
+  {
+    headers: { Authorization: "Bearer token" },
+  },
+  {
+    onSuccess: (payload) => {
+      console.log("Request succeeded:", payload.status, payload.data);
+    },
+    onError: (payload) => {
+      if (payload.status === 0) {
+        // Network error
+        console.error("Network error:", payload.error.message);
+      } else {
+        // HTTP error (4xx, 5xx)
+        console.error("HTTP error:", payload.status, payload.error);
+      }
+    },
+  }
+);
+```
+
+**Callback Payloads:**
+
+```typescript
+// onSuccess payload
+type EnlaceCallbackPayload<T> = {
+  status: number;
+  data: T;
+  headers: Headers;
+};
+
+// onError payload (HTTP error or network error)
+type EnlaceErrorCallbackPayload<T> =
+  | { status: number; error: T; headers: Headers }  // HTTP error
+  | { status: 0; error: Error; headers: null };     // Network error
+```
+
+**Use cases:**
+- Global error logging/reporting
+- Toast notifications for all API errors
+- Authentication refresh on 401 errors
+- Analytics tracking
+
 ## Return Types
 
 ### Query Mode
@@ -569,6 +618,8 @@ type EnlaceHookOptions = {
   autoGenerateTags?: boolean;    // default: true
   autoRevalidateTags?: boolean;  // default: true
   staleTime?: number;            // default: 0
+  onSuccess?: (payload: EnlaceCallbackPayload<unknown>) => void;
+  onError?: (payload: EnlaceErrorCallbackPayload<unknown>) => void;
 };
 ```
 

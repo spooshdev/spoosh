@@ -143,6 +143,51 @@ api.users.get({
 });
 ```
 
+### Global Callbacks
+
+You can set up global `onSuccess` and `onError` callbacks that are called for every request:
+
+```typescript
+const api = createEnlace<ApiSchema>("https://api.example.com", {
+  headers: { Authorization: "Bearer token" },
+}, {
+  onSuccess: (payload) => {
+    console.log("Request succeeded:", payload.status, payload.data);
+  },
+  onError: (payload) => {
+    if (payload.status === 0) {
+      // Network error
+      console.error("Network error:", payload.error.message);
+    } else {
+      // HTTP error
+      console.error("HTTP error:", payload.status, payload.error);
+    }
+  },
+});
+```
+
+**Callback Payloads:**
+
+```typescript
+// onSuccess payload
+type EnlaceCallbackPayload<T> = {
+  status: number;
+  data: T;
+  headers: Headers;
+};
+
+// onError payload (HTTP error or network error)
+type EnlaceErrorCallbackPayload<T> =
+  | { status: number; error: T; headers: Headers }  // HTTP error
+  | { status: 0; error: Error; headers: null };     // Network error
+```
+
+**Use cases:**
+- Global error logging/reporting
+- Toast notifications
+- Authentication refresh on 401 errors
+- Analytics tracking
+
 ### `Endpoint<TData, TError, TBody?>`
 
 Type helper for defining endpoints:
