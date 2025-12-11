@@ -1,9 +1,9 @@
 {
   "name": "enlace-openapi",
-  "version": "0.0.1-beta.1",
+  "version": "0.0.1-beta.2",
   "license": "MIT",
   "bin": {
-    "enlace-openapi": "./dist/index.mjs"
+    "enlace-openapi": "./dist/cli.mjs"
   },
   "files": [
     "dist"

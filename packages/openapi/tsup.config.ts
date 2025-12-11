@@ -1,7 +1,7 @@
 import { defineConfig } from "tsup";
 
 export default defineConfig((options) => ({
-  entry: { index: "src/index.ts" },
+  entry: { index: "src/index.ts", cli: "src/cli.ts" },
   outDir: "dist",
   external: ["typescript"],
   format: ["cjs", "esm"],
