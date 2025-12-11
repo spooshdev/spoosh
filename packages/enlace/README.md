@@ -139,12 +139,12 @@ For GET requests that fetch data automatically:
 
 ```typescript
 function Posts({ page, limit }: { page: number; limit: number }) {
-  const { data, loading, error, ok } = useAPI((api) =>
+  const { data, loading, error } = useAPI((api) =>
     api.posts.get({ query: { page, limit, published: true } })
   );
 
   if (loading) return <div>Loading...</div>;
-  if (!ok) return <div>Error: {error.message}</div>;
+  if (error) return <div>Error: {error.message}</div>;
 
   return (
     <ul>
@@ -250,7 +250,7 @@ function CreatePost() {
 
   const handleSubmit = async (title: string) => {
     const result = await trigger({ body: { title } });
-    if (result.ok) {
+    if (!result.error) {
       console.log("Created:", result.data);
     }
   };
@@ -520,7 +520,6 @@ const result = useAPI(
 type UseEnlaceQueryResult<TData, TError> = {
   loading: boolean; // No cached data and fetching
   fetching: boolean; // Request in progress
-  ok: boolean | undefined;
   data: TData | undefined;
   error: TError | undefined;
 };
@@ -533,7 +532,6 @@ type UseEnlaceSelectorResult<TMethod> = {
   trigger: TMethod; // Function to trigger the request
   loading: boolean;
   fetching: boolean;
-  ok: boolean | undefined;
   data: TData | undefined;
   error: TError | undefined;
 };

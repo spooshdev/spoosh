@@ -70,7 +70,6 @@ export function useQueryMode<TSchema, TData, TError>(
     return {
       loading: !hasCachedData && (isFetching || needsFetch),
       fetching: isFetching || needsFetch,
-      ok: cached?.ok,
       data: cached?.data,
       error: cached?.error,
     };
@@ -116,10 +115,8 @@ export function useQueryMode<TSchema, TData, TError>(
       const fetchPromise = method(trackedCall.options).then((res) => {
         if (mountedRef.current) {
           setCache<TData, TError>(queryKey, {
-            data: res.ok ? res.data : undefined,
-            error:
-              res.ok || res.status === 0 ? undefined : (res.error as TError),
-            ok: res.ok,
+            data: res.error ? undefined : res.data,
+            error: res.error,
             timestamp: Date.now(),
             tags: queryTags,
           });

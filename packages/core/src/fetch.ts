@@ -60,16 +60,15 @@ export async function executeFetch<TData, TError>(
     if (res.ok) {
       const payload = { status, data: body, headers };
       onSuccess?.(payload);
-      return { ok: true, ...payload };
+      return { ...payload, error: undefined };
     }
 
     const payload = { status, error: body, headers };
     onError?.(payload);
-    return { ok: false, ...payload };
+    return { ...payload, data: undefined };
   } catch (err) {
-    const errorPayload = { status: 0 as const, error: err as never };
-
-    onError?.(errorPayload);
-    return { ok: false, ...errorPayload };
+    const error = err as TError;
+    onError?.({ status: 0, error });
+    return { status: 0, error, data: undefined };
   }
 }

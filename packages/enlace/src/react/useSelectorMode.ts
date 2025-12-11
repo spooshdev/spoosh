@@ -77,7 +77,7 @@ export function useSelectorMode<
         res = await methodRef.current(...args);
       }
 
-      if (res.ok) {
+      if (!res.error) {
         dispatch({ type: "FETCH_SUCCESS", data: res.data });
 
         const tagsToInvalidate =

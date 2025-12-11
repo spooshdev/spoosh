@@ -20,7 +20,7 @@ export function createTrackingProxy<TSchema>(
               selectorPath: null,
               selectorMethod: null,
             });
-            return Promise.resolve({ ok: true, data: undefined });
+            return Promise.resolve({ status: 200, data: undefined, error: undefined });
           };
           onTrack({
             trackedCall: null,

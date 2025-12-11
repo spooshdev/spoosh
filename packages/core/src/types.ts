@@ -3,8 +3,8 @@ export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 export type SchemaMethod = "$get" | "$post" | "$put" | "$patch" | "$delete";
 
 export type EnlaceResponse<TData, TError> =
-  | { ok: true; status: number; data: TData; headers?: Headers; error?: never }
-  | { ok: false; status: number; data?: never; headers?: Headers; error: TError }; // prettier-ignore
+  | { status: number; data: TData; headers?: Headers; error?: undefined }
+  | { status: number; data?: undefined; headers?: Headers; error: TError };
 
 export type HeadersInitOrGetter =
   | HeadersInit

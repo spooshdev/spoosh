@@ -10,7 +10,6 @@ export type HookAction =
 export const initialState: HookState = {
   loading: false,
   fetching: false,
-  ok: undefined,
   data: undefined,
   error: undefined,
 };
@@ -31,7 +30,6 @@ export function hookReducer(state: HookState, action: HookAction): HookState {
       return {
         loading: false,
         fetching: false,
-        ok: true,
         data: action.data,
         error: undefined,
       };
@@ -40,7 +38,6 @@ export function hookReducer(state: HookState, action: HookAction): HookState {
       return {
         loading: false,
         fetching: false,
-        ok: false,
         data: undefined,
         error: action.error,
       };

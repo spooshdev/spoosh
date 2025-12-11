@@ -4,7 +4,6 @@ import { sortObjectKeys } from "../utils/sortObjectKeys";
 export type CacheEntry<TData = unknown, TError = unknown> = {
   data: TData | undefined;
   error: TError | undefined;
-  ok: boolean | undefined;
   timestamp: number;
   promise?: Promise<void>;
   tags: string[];
@@ -35,7 +34,7 @@ export function setCache<TData, TError>(
 ): void {
   const existing = cache.get(key);
   if (existing) {
-    if ("ok" in entry) {
+    if ("data" in entry || "error" in entry) {
       delete existing.promise;
     }
     Object.assign(existing, entry);
@@ -44,7 +43,6 @@ export function setCache<TData, TError>(
     cache.set(key, {
       data: undefined,
       error: undefined,
-      ok: undefined,
       timestamp: 0,
       tags: [],
       subscribers: new Set(),
@@ -59,7 +57,6 @@ export function subscribeCache(key: string, callback: () => void): () => void {
     cache.set(key, {
       data: undefined,
       error: undefined,
-      ok: undefined,
       timestamp: 0,
       tags: [],
       subscribers: new Set(),
@@ -92,7 +89,6 @@ export function clearCacheByTags(tags: string[]): void {
     if (hasMatch) {
       entry.data = undefined;
       entry.error = undefined;
-      entry.ok = undefined;
       entry.timestamp = 0;
       delete entry.promise;
     }

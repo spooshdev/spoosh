@@ -76,7 +76,6 @@ export type SelectorFn<
 export type HookState = {
   loading: boolean;
   fetching: boolean;
-  ok: boolean | undefined;
   data: unknown;
   error: unknown;
 };
@@ -107,11 +106,10 @@ type ExtractError<T> = T extends (
   ? E
   : never;
 
-/** Discriminated union for hook response state - enables type narrowing on ok check */
+/** Discriminated union for hook response state - enables type narrowing via error check */
 type HookResponseState<TData, TError> =
-  | { ok: undefined; data: undefined; error: undefined }
-  | { ok: true; data: TData; error: undefined }
-  | { ok: false; data: undefined; error: TError };
+  | { data: TData; error?: undefined }
+  | { data?: undefined; error: TError };
 
 /** Result when hook is called with query function (auto-fetch mode) */
 export type UseEnlaceQueryResult<TData, TError> = {

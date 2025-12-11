@@ -19,11 +19,11 @@ const api = createEnlace("https://api.example.com");
 
 // Make requests
 const response = await api.users.get();
-if (response.ok) {
-  console.log(response.data);
-} else {
+if (response.error) {
   console.error(response.error);
+  return;
 }
+console.log(response.data); // data is typed as non-undefined here
 ```
 
 ### Type-Safe Schema
@@ -251,8 +251,8 @@ All requests return `EnlaceResponse<TData, TError>`:
 
 ```typescript
 type EnlaceResponse<TData, TError> =
-  | { ok: true; status: number; data: TData }
-  | { ok: false; status: number; error: TError };
+  | { status: number; data: TData; error?: undefined }
+  | { status: number; data?: undefined; error: TError };
 ```
 
 **Usage with type narrowing:**
@@ -260,13 +260,13 @@ type EnlaceResponse<TData, TError> =
 ```typescript
 const response = await api.users.get();
 
-if (response.ok) {
-  // response.data is typed as User[]
-  console.log(response.data);
-} else {
+if (response.error) {
   // response.error is typed as ApiError
   console.error(response.error);
+  return;
 }
+// response.data is typed as User[] (no longer undefined)
+console.log(response.data);
 ```
 
 ## Features
