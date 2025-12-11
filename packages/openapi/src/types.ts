@@ -1,0 +1,92 @@
+export type JSONSchema = {
+  type?: string;
+  items?: JSONSchema;
+  properties?: Record<string, JSONSchema>;
+  required?: string[];
+  $ref?: string;
+  oneOf?: JSONSchema[];
+  anyOf?: JSONSchema[];
+  allOf?: JSONSchema[];
+  enum?: (string | number | boolean | null)[];
+  const?: unknown;
+  additionalProperties?: boolean | JSONSchema;
+  nullable?: boolean;
+  format?: string;
+  description?: string;
+};
+
+export type OpenAPIOperation = {
+  operationId?: string;
+  summary?: string;
+  description?: string;
+  tags?: string[];
+  parameters?: OpenAPIParameter[];
+  requestBody?: {
+    required?: boolean;
+    content: {
+      "application/json": {
+        schema: JSONSchema;
+      };
+    };
+  };
+  responses: Record<
+    string,
+    {
+      description: string;
+      content?: {
+        "application/json": {
+          schema: JSONSchema;
+        };
+      };
+    }
+  >;
+};
+
+export type OpenAPIParameter = {
+  name: string;
+  in: "path" | "query" | "header" | "cookie";
+  required?: boolean;
+  schema: JSONSchema;
+  description?: string;
+};
+
+export type OpenAPIPathItem = {
+  get?: OpenAPIOperation;
+  post?: OpenAPIOperation;
+  put?: OpenAPIOperation;
+  patch?: OpenAPIOperation;
+  delete?: OpenAPIOperation;
+  parameters?: OpenAPIParameter[];
+};
+
+export type OpenAPISpec = {
+  openapi: "3.0.0";
+  info: {
+    title: string;
+    version: string;
+    description?: string;
+  };
+  servers?: { url: string; description?: string }[];
+  paths: Record<string, OpenAPIPathItem>;
+  components?: {
+    schemas?: Record<string, JSONSchema>;
+  };
+};
+
+export type ParsedEndpoint = {
+  path: string;
+  method: "get" | "post" | "put" | "patch" | "delete";
+  responseSchema: JSONSchema;
+  requestBodySchema?: JSONSchema;
+  errorSchema?: JSONSchema;
+  pathParams: string[];
+};
+
+export type CLIOptions = {
+  schema: string;
+  type: string;
+  output?: string;
+  title?: string;
+  version?: string;
+  baseUrl?: string;
+};

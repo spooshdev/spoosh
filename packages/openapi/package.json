@@ -1,0 +1,32 @@
+{
+  "name": "enlace-openapi",
+  "version": "0.0.1-beta.1",
+  "license": "MIT",
+  "bin": {
+    "enlace-openapi": "./dist/index.mjs"
+  },
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "dev": "tsup --watch",
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --max-warnings 0",
+    "prepublishOnly": "npm run build && npm run typecheck && npm run lint"
+  },
+  "dependencies": {
+    "commander": "^12.1.0",
+    "typescript": "^5.9.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.2"
+  }
+}
