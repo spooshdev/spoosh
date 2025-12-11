@@ -18,12 +18,7 @@ export function generateOpenAPISpec(
   schemas: Map<string, JSONSchema>,
   options: GeneratorOptions = {}
 ): OpenAPISpec {
-  const {
-    title = "API",
-    version = "1.0.0",
-    description,
-    baseUrl,
-  } = options;
+  const { title = "API", version = "1.0.0", description, baseUrl } = options;
 
   const paths: Record<string, OpenAPIPathItem> = {};
 
@@ -90,11 +85,16 @@ function createOperation(endpoint: ParsedEndpoint): OpenAPIOperation {
     };
   }
 
+  if (endpoint.queryParams && endpoint.queryParams.length > 0) {
+    operation.parameters = endpoint.queryParams;
+  }
+
   if (endpoint.requestBodySchema && hasContent(endpoint.requestBodySchema)) {
+    const contentType = endpoint.requestBodyContentType || "application/json";
     operation.requestBody = {
       required: true,
       content: {
-        "application/json": {
+        [contentType]: {
           schema: endpoint.requestBodySchema,
         },
       },

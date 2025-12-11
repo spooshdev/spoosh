@@ -1,4 +1,4 @@
-import { buildUrl, isJsonBody, mergeHeaders } from "./utils";
+import { buildUrl, isJsonBody, mergeHeaders, objectToFormData } from "./utils";
 import type {
   EnlaceCallbacks,
   EnlaceOptions,
@@ -33,7 +33,9 @@ export async function executeFetch<TData, TError>(
 
   fetchOptions.cache = requestOptions?.cache ?? fetchDefaults?.cache;
 
-  if (requestOptions?.body !== undefined) {
+  if (requestOptions?.formData !== undefined) {
+    fetchOptions.body = objectToFormData(requestOptions.formData as Record<string, unknown>);
+  } else if (requestOptions?.body !== undefined) {
     if (isJsonBody(requestOptions.body)) {
       fetchOptions.body = JSON.stringify(requestOptions.body);
       headers = await mergeHeaders(headers, {

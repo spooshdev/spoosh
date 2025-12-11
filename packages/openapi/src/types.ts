@@ -15,20 +15,25 @@ export type JSONSchema = {
   description?: string;
 };
 
+export type OpenAPIRequestBody = {
+  required?: boolean;
+  content: {
+    "application/json"?: {
+      schema: JSONSchema;
+    };
+    "multipart/form-data"?: {
+      schema: JSONSchema;
+    };
+  };
+};
+
 export type OpenAPIOperation = {
   operationId?: string;
   summary?: string;
   description?: string;
   tags?: string[];
   parameters?: OpenAPIParameter[];
-  requestBody?: {
-    required?: boolean;
-    content: {
-      "application/json": {
-        schema: JSONSchema;
-      };
-    };
-  };
+  requestBody?: OpenAPIRequestBody;
   responses: Record<
     string,
     {
@@ -78,6 +83,8 @@ export type ParsedEndpoint = {
   method: "get" | "post" | "put" | "patch" | "delete";
   responseSchema: JSONSchema;
   requestBodySchema?: JSONSchema;
+  requestBodyContentType?: "application/json" | "multipart/form-data";
+  queryParams?: OpenAPIParameter[];
   errorSchema?: JSONSchema;
   pathParams: string[];
 };

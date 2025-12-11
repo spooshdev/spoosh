@@ -1,6 +1,6 @@
 import ts from "typescript";
 import path from "path";
-import type { ParsedEndpoint, JSONSchema } from "./types.js";
+import type { ParsedEndpoint, JSONSchema, OpenAPIParameter } from "./types.js";
 import { createSchemaContext, typeToSchema, type SchemaContext } from "./type-to-schema.js";
 
 const HTTP_METHODS = ["$get", "$post", "$put", "$patch", "$delete"] as const;
@@ -174,6 +174,8 @@ function isEndpointStructure(type: ts.Type): boolean {
   propNames.delete("data");
   propNames.delete("body");
   propNames.delete("error");
+  propNames.delete("query");
+  propNames.delete("formData");
 
   const remainingProps = [...propNames].filter(
     (name) => !name.startsWith("__@") && !name.includes("Brand")
@@ -184,7 +186,7 @@ function isEndpointStructure(type: ts.Type): boolean {
 
 function parseEndpointType(
   type: ts.Type,
-  path: string,
+  pathStr: string,
   method: "get" | "post" | "put" | "patch" | "delete",
   pathParams: string[],
   ctx: SchemaContext
@@ -194,6 +196,8 @@ function parseEndpointType(
   let dataType: ts.Type | undefined;
   let bodyType: ts.Type | undefined;
   let errorType: ts.Type | undefined;
+  let queryType: ts.Type | undefined;
+  let formDataType: ts.Type | undefined;
 
   const typesToCheck = type.isIntersection() ? type.types : [type];
 
@@ -207,19 +211,31 @@ function parseEndpointType(
         bodyType = checker.getTypeOfSymbol(prop);
       } else if (name === "error") {
         errorType = checker.getTypeOfSymbol(prop);
+      } else if (name === "query") {
+        queryType = checker.getTypeOfSymbol(prop);
+      } else if (name === "formData") {
+        formDataType = checker.getTypeOfSymbol(prop);
       }
     }
   }
 
   const endpoint: ParsedEndpoint = {
-    path,
+    path: pathStr,
     method,
     responseSchema: dataType ? typeToSchema(dataType, ctx) : {},
     pathParams,
   };
 
-  if (bodyType && !(bodyType.flags & ts.TypeFlags.Never)) {
+  if (formDataType && !(formDataType.flags & ts.TypeFlags.Never)) {
+    endpoint.requestBodySchema = formDataTypeToSchema(formDataType, ctx);
+    endpoint.requestBodyContentType = "multipart/form-data";
+  } else if (bodyType && !(bodyType.flags & ts.TypeFlags.Never)) {
     endpoint.requestBodySchema = typeToSchema(bodyType, ctx);
+    endpoint.requestBodyContentType = "application/json";
+  }
+
+  if (queryType && !(queryType.flags & ts.TypeFlags.Never)) {
+    endpoint.queryParams = queryTypeToParams(queryType, ctx);
   }
 
   if (errorType && !(errorType.flags & ts.TypeFlags.Never) && !(errorType.flags & ts.TypeFlags.Unknown)) {
@@ -227,4 +243,70 @@ function parseEndpointType(
   }
 
   return endpoint;
+}
+
+function queryTypeToParams(queryType: ts.Type, ctx: SchemaContext): OpenAPIParameter[] {
+  const { checker } = ctx;
+  const params: OpenAPIParameter[] = [];
+
+  const props = queryType.getProperties();
+  for (const prop of props) {
+    const propName = prop.getName();
+    const propType = checker.getTypeOfSymbol(prop);
+    const isOptional = !!(prop.flags & ts.SymbolFlags.Optional);
+
+    params.push({
+      name: propName,
+      in: "query",
+      required: !isOptional,
+      schema: typeToSchema(propType, ctx),
+    });
+  }
+
+  return params;
+}
+
+function formDataTypeToSchema(formDataType: ts.Type, ctx: SchemaContext): JSONSchema {
+  const { checker } = ctx;
+  const properties: Record<string, JSONSchema> = {};
+  const required: string[] = [];
+
+  const props = formDataType.getProperties();
+  for (const prop of props) {
+    const propName = prop.getName();
+    const propType = checker.getTypeOfSymbol(prop);
+    const isOptional = !!(prop.flags & ts.SymbolFlags.Optional);
+
+    const typeName = checker.typeToString(propType);
+    if (typeName.includes("File") || typeName.includes("Blob")) {
+      properties[propName] = { type: "string", format: "binary" };
+    } else if (propType.isUnion()) {
+      const hasFile = propType.types.some(t => {
+        const name = checker.typeToString(t);
+        return name.includes("File") || name.includes("Blob");
+      });
+      if (hasFile) {
+        properties[propName] = { type: "string", format: "binary" };
+      } else {
+        properties[propName] = typeToSchema(propType, ctx);
+      }
+    } else {
+      properties[propName] = typeToSchema(propType, ctx);
+    }
+
+    if (!isOptional) {
+      required.push(propName);
+    }
+  }
+
+  const schema: JSONSchema = {
+    type: "object",
+    properties,
+  };
+
+  if (required.length > 0) {
+    schema.required = required;
+  }
+
+  return schema;
 }
