@@ -21,11 +21,11 @@ import { createTrackingProxy } from "../react/trackingProxy";
 
 /**
  * Creates a React hook for making API calls in Next.js Client Components.
- * Uses Next.js-specific features like revalidator for server-side cache invalidation.
+ * Uses Next.js-specific features like serverRevalidator for server-side cache invalidation.
  *
  * @example
  * const useAPI = createEnlaceHookNext<ApiSchema>('https://api.com', {}, {
- *   revalidator: (tags) => revalidateTagsAction(tags),
+ *   serverRevalidator: (tags) => revalidateTagsAction(tags),
  *   staleTime: 5000,
  * });
  *

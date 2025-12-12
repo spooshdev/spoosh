@@ -24,7 +24,8 @@ export async function executeNextFetch<TData, TError>(
   const {
     autoGenerateTags = true,
     autoRevalidateTags = true,
-    revalidator,
+    skipServerRevalidation = false,
+    serverRevalidator,
     onSuccess,
     ...coreOptions
   } = combinedOptions;
@@ -33,12 +34,19 @@ export async function executeNextFetch<TData, TError>(
   const autoTags = generateTags(path);
 
   const nextOnSuccess = (payload: EnlaceCallbackPayload<unknown>) => {
-    if (!isGet && !requestOptions?.skipRevalidator) {
-      const revalidateTags =
-        requestOptions?.revalidateTags ?? (autoRevalidateTags ? autoTags : []);
-      const revalidatePaths = requestOptions?.revalidatePaths ?? [];
-      if (revalidateTags.length || revalidatePaths.length) {
-        revalidator?.(revalidateTags, revalidatePaths);
+    if (!isGet) {
+      const shouldRevalidateServer =
+        requestOptions?.serverRevalidate ?? !skipServerRevalidation;
+
+      if (shouldRevalidateServer) {
+        const revalidateTags =
+          requestOptions?.revalidateTags ??
+          (autoRevalidateTags ? autoTags : []);
+        const revalidatePaths = requestOptions?.revalidatePaths ?? [];
+
+        if (revalidateTags.length || revalidatePaths.length) {
+          serverRevalidator?.(revalidateTags, revalidatePaths);
+        }
       }
     }
     onSuccess?.(payload);
@@ -52,12 +60,15 @@ export async function executeNextFetch<TData, TError>(
     const tags =
       requestOptions?.tags ?? (autoGenerateTags ? autoTags : undefined);
     const nextFetchOptions: NextFetchOptions = {};
+
     if (tags) {
       nextFetchOptions.tags = tags;
     }
+
     if (requestOptions?.revalidate !== undefined) {
       nextFetchOptions.revalidate = requestOptions.revalidate;
     }
+
     nextRequestOptions.next = nextFetchOptions;
   }
 

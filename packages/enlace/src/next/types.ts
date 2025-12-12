@@ -16,7 +16,7 @@ import type {
  * @param tags - Cache tags to revalidate
  * @param paths - URL paths to revalidate
  */
-export type RevalidateHandler = (
+export type ServerRevalidateHandler = (
   tags: string[],
   paths: string[]
 ) => void | Promise<void>;
@@ -33,16 +33,24 @@ export type NextOptions = Pick<
      * @example
      * ```ts
      * createEnlaceNext("http://localhost:3000/api/", {}, {
-     *   revalidator: (tags, paths) => revalidateServerAction(tags, paths)
+     *   serverRevalidator: (tags, paths) => revalidateServerAction(tags, paths)
      * });
      * ```
      */
-    revalidator?: RevalidateHandler;
+    serverRevalidator?: ServerRevalidateHandler;
+
+    /**
+     * Skip server-side revalidation by default for all mutations.
+     * Individual requests can override with serverRevalidate: true.
+     * Useful for CSR-heavy apps where server cache invalidation is rarely needed.
+     * @default false
+     */
+    skipServerRevalidation?: boolean;
   };
 
 /** Next.js hook options (third argument for createEnlaceHookNext) - extends React's EnlaceHookOptions */
 export type NextHookOptions = EnlaceHookOptions &
-  Pick<NextOptions, "revalidator">;
+  Pick<NextOptions, "serverRevalidator" | "skipServerRevalidation">;
 
 /** Per-request options for Next.js fetch - extends React's base options */
 export type NextRequestOptionsBase = ReactRequestOptionsBase & {
@@ -50,20 +58,18 @@ export type NextRequestOptionsBase = ReactRequestOptionsBase & {
   revalidate?: number | false;
 
   /**
-   * URL paths to revalidate after mutation
-   * This doesn't do anything on the client by itself - it's passed to the revalidator handler.
-   * You must implement the revalidation logic in the revalidator.
+   * URL paths to revalidate after mutation.
+   * Passed to the serverRevalidator handler.
    */
   revalidatePaths?: string[];
 
   /**
-   * Skip server-side revalidation for this request.
-   * Useful when autoRevalidateTags is enabled but you want to opt-out for specific mutations.
-   * You can still pass empty [] to revalidateTags to skip triggering revalidation.
-   * But this flag can be used if you want to revalidate client-side and skip server-side entirely.
-   * Eg. you don't fetch any data on server component and you might want to skip the overhead of revalidation.
+   * Control server-side revalidation for this specific request.
+   * - true: Force server revalidation
+   * - false: Skip server revalidation
+   * When undefined, follows the global skipServerRevalidation setting.
    */
-  skipRevalidator?: boolean;
+  serverRevalidate?: boolean;
 };
 
 // ============================================================================

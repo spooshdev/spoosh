@@ -695,7 +695,7 @@ const useAPI = createEnlaceHookNext<ApiSchema, ApiError>(
   "/api",
   {},
   {
-    revalidator: revalidateAction,
+    serverRevalidator: revalidateAction,
   }
 );
 ```
@@ -709,11 +709,44 @@ function CreatePost() {
   const handleCreate = () => {
     trigger({
       body: { title: "New Post" },
-      revalidateTags: ["posts"], // Passed to revalidator
-      revalidatePaths: ["/posts"], // Passed to revalidator
+      revalidateTags: ["posts"], // Passed to serverRevalidator
+      revalidatePaths: ["/posts"], // Passed to serverRevalidator
     });
   };
 }
+```
+
+### CSR-Heavy Projects
+
+For projects that primarily use client-side rendering with minimal SSR, you can disable server-side revalidation by default:
+
+```typescript
+const useAPI = createEnlaceHookNext<ApiSchema, ApiError>(
+  "/api",
+  {},
+  {
+    serverRevalidator: revalidateAction,
+    skipServerRevalidation: true, // Disable server revalidation by default
+  }
+);
+
+// Mutations won't trigger server revalidation by default
+await trigger({ body: { title: "New Post" } });
+
+// Opt-in to server revalidation when needed
+await trigger({ body: { title: "New Post" }, serverRevalidate: true });
+```
+
+### Per-Request Server Revalidation Control
+
+Override the global setting for individual requests:
+
+```typescript
+// Skip server revalidation for this request
+await trigger({ body: data, serverRevalidate: false });
+
+// Force server revalidation for this request
+await trigger({ body: data, serverRevalidate: true });
 ```
 
 ### Next.js Request Options
@@ -724,7 +757,7 @@ api.posts.get({
   revalidate: 60, // ISR revalidation (seconds)
   revalidateTags: ["posts"], // Tags to invalidate after mutation
   revalidatePaths: ["/"], // Paths to revalidate after mutation
-  skipRevalidator: false, // Skip server-side revalidation
+  serverRevalidate: true, // Control server-side revalidation per-request
 });
 ```
 
