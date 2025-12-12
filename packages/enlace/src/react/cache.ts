@@ -87,10 +87,9 @@ export function clearCacheByTags(tags: string[]): void {
   cache.forEach((entry) => {
     const hasMatch = entry.tags.some((tag) => tags.includes(tag));
     if (hasMatch) {
-      entry.data = undefined;
-      entry.error = undefined;
       entry.timestamp = 0;
       delete entry.promise;
+      entry.subscribers.forEach((cb) => cb());
     }
   });
 }

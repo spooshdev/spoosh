@@ -65,8 +65,8 @@ export function useQueryMode<TSchema, TData, TError>(
     const cached = getCache<TData, TError>(queryKey);
     const hasCachedData = cached?.data !== undefined;
     const isFetching = !!cached?.promise;
-    const needsFetch =
-      includeNeedsFetch && (!hasCachedData || isStale(queryKey, staleTime));
+    const stale = isStale(queryKey, staleTime);
+    const needsFetch = includeNeedsFetch && (!hasCachedData || stale);
     return {
       loading: !hasCachedData && (isFetching || needsFetch),
       fetching: isFetching || needsFetch,

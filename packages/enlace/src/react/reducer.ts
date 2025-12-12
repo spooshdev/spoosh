@@ -24,6 +24,7 @@ export function hookReducer(state: HookState, action: HookAction): HookState {
         ...state,
         loading: state.data === undefined,
         fetching: true,
+        error: undefined,
       };
 
     case "FETCH_SUCCESS":
