@@ -523,15 +523,43 @@ const useAPI = enlaceHookReact<ApiSchema>(
 Override auto-generated tags when needed:
 
 ```typescript
-// Custom cache tags
+// Custom cache tags (replaces auto-generated)
 const { data } = useAPI((api) => api.posts.$get({ tags: ["my-custom-tag"] }));
 
-// Custom revalidation tags
+// Custom revalidation tags (replaces auto-generated)
 trigger({
   body: { title: "New" },
-  revalidateTags: ["posts", "dashboard"], // Override auto-generated
+  revalidateTags: ["posts", "dashboard"],
 });
 ```
+
+### Extending Auto-Generated Tags
+
+Use `additionalTags` and `additionalRevalidateTags` to **merge** with auto-generated tags instead of replacing them:
+
+```typescript
+// Extend cache tags (merges with auto-generated)
+const { data } = useAPI((api) =>
+  api.posts.$get({ additionalTags: ["custom-tag"] })
+);
+// If autoGenerateTags produces ['posts'], final tags: ['posts', 'custom-tag']
+
+// Extend revalidation tags (merges with auto-generated)
+trigger({
+  body: { title: "New" },
+  additionalRevalidateTags: ["dashboard", "stats"],
+});
+// If autoRevalidateTags produces ['posts'], final tags: ['posts', 'dashboard', 'stats']
+```
+
+**Behavior:**
+
+| Scenario | `tags` / `revalidateTags` | `additionalTags` / `additionalRevalidateTags` | Final Tags |
+|----------|---------------------------|-----------------------------------------------|------------|
+| Override | `['custom']` | - | `['custom']` |
+| Extend auto | - | `['extra']` | `['posts', 'extra']` |
+| Both | `['custom']` | `['extra']` | `['custom', 'extra']` |
+| Neither | - | - | `['posts']` (auto) |
 
 ### Disable Auto-Revalidation
 
@@ -710,8 +738,10 @@ type RequestOptions = {
   body?: TBody; // Request body (JSON)
   formData?: TFormData; // FormData fields (auto-converted, for file uploads)
   headers?: HeadersInit | (() => HeadersInit | Promise<HeadersInit>); // Request headers
-  tags?: string[]; // Cache tags (GET only)
-  revalidateTags?: string[]; // Tags to invalidate after mutation
+  tags?: string[]; // Cache tags - replaces auto-generated (GET only)
+  additionalTags?: string[]; // Cache tags - merges with auto-generated (GET only)
+  revalidateTags?: string[]; // Revalidation tags - replaces auto-generated
+  additionalRevalidateTags?: string[]; // Revalidation tags - merges with auto-generated
   params?: Record<string, string | number>; // Dynamic path parameters
 };
 ```

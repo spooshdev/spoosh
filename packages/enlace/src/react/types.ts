@@ -37,15 +37,34 @@ export type ReactRequestOptionsBase = {
    * */
   tags?: string[];
 
+  /**
+   * Additional cache tags to merge with auto-generated tags.
+   * Use this when you want to extend (not replace) the auto-generated tags.
+   * @example
+   * api.posts.$get({ additionalTags: ['custom-tag'] })
+   * // If autoGenerateTags produces ['posts'], final tags: ['posts', 'custom-tag']
+   */
+  additionalTags?: string[];
+
   /** Tags to invalidate after mutation (triggers refetch in matching queries) */
   revalidateTags?: string[];
+
+  /**
+   * Additional revalidation tags to merge with auto-generated tags.
+   * Use this when you want to extend (not replace) the auto-generated revalidation tags.
+   * @example
+   * api.posts.$post({ body: {...}, additionalRevalidateTags: ['other-tag'] })
+   * // If autoRevalidateTags produces ['posts'], final tags: ['posts', 'other-tag']
+   */
+  additionalRevalidateTags?: string[];
 
   /** @internal Used by type system to conditionally include params */
   __hasDynamicParams?: DynamicParamsOption;
 };
 
 /** Runtime request options that includes all possible properties */
-export type AnyReactRequestOptions = ReactRequestOptionsBase & DynamicParamsOption;
+export type AnyReactRequestOptions = ReactRequestOptionsBase &
+  DynamicParamsOption;
 
 /** Polling interval value: milliseconds to wait, or false to stop polling */
 export type PollingIntervalValue = number | false;
@@ -118,10 +137,8 @@ export type SelectorFn<
   TSchema,
   TMethod,
   TDefaultError = unknown,
-  TOptions = ReactRequestOptionsBase
-> = (
-  api: ApiClient<TSchema, TDefaultError, TOptions>
-) => TMethod;
+  TOptions = ReactRequestOptionsBase,
+> = (api: ApiClient<TSchema, TDefaultError, TOptions>) => TMethod;
 
 export type HookState = {
   loading: boolean;
@@ -136,7 +153,13 @@ export type TrackedCall = {
   options: unknown;
 };
 
-export const HTTP_METHODS = ["$get", "$post", "$put", "$patch", "$delete"] as const;
+export const HTTP_METHODS = [
+  "$get",
+  "$post",
+  "$put",
+  "$patch",
+  "$delete",
+] as const;
 
 // ============================================================================
 // Public Result Types

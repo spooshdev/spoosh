@@ -44,9 +44,13 @@ export async function executeNextFetch<TData, TError>(
         requestOptions?.serverRevalidate ?? !skipServerRevalidation;
 
       if (shouldRevalidateServer) {
-        const revalidateTags =
+        const baseRevalidateTags =
           requestOptions?.revalidateTags ??
           (autoRevalidateTags ? autoTags : []);
+        const revalidateTags = [
+          ...baseRevalidateTags,
+          ...(requestOptions?.additionalRevalidateTags ?? []),
+        ];
         const revalidatePaths = requestOptions?.revalidatePaths ?? [];
 
         if (revalidateTags.length || revalidatePaths.length) {

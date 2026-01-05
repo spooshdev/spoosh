@@ -56,9 +56,10 @@ export function useQueryMode<TSchema, TData, TError>(
     | AnyReactRequestOptions
     | undefined;
   const resolvedPath = resolvePath(trackedCall.path, requestOptions?.params);
-  const queryTags =
+  const baseTags =
     requestOptions?.tags ??
     (autoGenerateTags ? generateTags(resolvedPath) : []);
+  const queryTags = [...baseTags, ...(requestOptions?.additionalTags ?? [])];
 
   const getCacheState = (includeNeedsFetch = false): HookState => {
     const cached = getCache<TData, TError>(queryKey);
@@ -105,7 +106,11 @@ export function useQueryMode<TSchema, TData, TError>(
     const scheduleNextPoll = () => {
       const currentPollingInterval = pollingIntervalRef.current;
 
-      if (!mountedRef.current || !enabled || currentPollingInterval === undefined) {
+      if (
+        !mountedRef.current ||
+        !enabled ||
+        currentPollingInterval === undefined
+      ) {
         return;
       }
 
