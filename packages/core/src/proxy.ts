@@ -1,5 +1,10 @@
 import { executeFetch } from "./fetch";
-import type { EnlaceOptions, FetchExecutor, HttpMethod, RequestOptions } from "./types";
+import type {
+  AnyRequestOptions,
+  EnlaceOptions,
+  FetchExecutor,
+  HttpMethod,
+} from "./types";
 
 const HTTP_METHODS: Record<string, HttpMethod> = {
   $get: "GET",
@@ -9,13 +14,16 @@ const HTTP_METHODS: Record<string, HttpMethod> = {
   $delete: "DELETE",
 };
 
-export function createProxyHandler<TSchema extends object, TOptions = EnlaceOptions>(
+export function createProxyHandler<
+  TSchema extends object,
+  TOptions = EnlaceOptions,
+>(
   baseUrl: string,
   defaultOptions: TOptions,
   path: string[] = [],
-  fetchExecutor: FetchExecutor<TOptions, RequestOptions<unknown>> = executeFetch as FetchExecutor<
+  fetchExecutor: FetchExecutor<TOptions, AnyRequestOptions> = executeFetch as FetchExecutor<
     TOptions,
-    RequestOptions<unknown>
+    AnyRequestOptions
   >
 ): TSchema {
   const handler: ProxyHandler<TSchema> = {
@@ -24,7 +32,7 @@ export function createProxyHandler<TSchema extends object, TOptions = EnlaceOpti
 
       const method = HTTP_METHODS[prop];
       if (method) {
-        return (options?: RequestOptions<unknown>) =>
+        return (options?: AnyRequestOptions) =>
           fetchExecutor(baseUrl, path, method, defaultOptions, options);
       }
 

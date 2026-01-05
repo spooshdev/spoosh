@@ -1,10 +1,10 @@
 import { useRef, useReducer, useEffect } from "react";
 import type { EnlaceResponse } from "enlace-core";
 import type {
+  AnyReactRequestOptions,
   ApiClient,
   HookState,
   PollingInterval,
-  ReactRequestOptionsBase,
   TrackedCall,
   UseEnlaceQueryResult,
 } from "./types";
@@ -53,7 +53,7 @@ export function useQueryMode<TSchema, TData, TError>(
   const queryKey = createQueryKey(trackedCall);
 
   const requestOptions = trackedCall.options as
-    | ReactRequestOptionsBase
+    | AnyReactRequestOptions
     | undefined;
   const resolvedPath = resolvePath(trackedCall.path, requestOptions?.params);
   const queryTags =

@@ -33,10 +33,44 @@ export type EnlaceCallbacks = {
     | undefined;
 };
 
+/** Base request options that are always available */
+type BaseRequestOptions = {
+  /** Request headers - merged with default headers. Can be HeadersInit or async function returning HeadersInit */
+  headers?: HeadersInitOrGetter;
+
+  /** Cache mode for the request */
+  cache?: RequestCache;
+};
+
+/** Conditional body option - only exists when TBody is not never */
+type BodyOption<TBody> = [TBody] extends [never] ? object : { body: TBody };
+
+/** Conditional query option - only exists when TQuery is not never */
+type QueryOption<TQuery> = [TQuery] extends [never] ? object : { query: TQuery };
+
+/** Conditional formData option - only exists when TFormData is not never */
+type FormDataOption<TFormData> = [TFormData] extends [never]
+  ? object
+  : { formData: TFormData };
+
+/** Per-request options - properties only appear when their types are defined */
+export type RequestOptions<TBody = never, TQuery = never, TFormData = never> =
+  BaseRequestOptions &
+    BodyOption<TBody> &
+    QueryOption<TQuery> &
+    FormDataOption<TFormData>;
+
+/** Runtime request options type - used internally for fetch execution */
+export type AnyRequestOptions = BaseRequestOptions & {
+  body?: unknown;
+  query?: Record<string, string | number | boolean | undefined>;
+  formData?: Record<string, unknown>;
+};
+
 /** Function type for custom fetch implementations */
 export type FetchExecutor<
   TOptions = EnlaceOptions,
-  TRequestOptions = RequestOptions<unknown>,
+  TRequestOptions = AnyRequestOptions,
 > = <TData, TError>(
   baseUrl: string,
   path: string[],
@@ -44,26 +78,6 @@ export type FetchExecutor<
   defaultOptions: TOptions,
   requestOptions?: TRequestOptions
 ) => Promise<EnlaceResponse<TData, TError>>;
-
-/** Per-request options */
-export type RequestOptions<TBody = never, TQuery = never, TFormData = never> = {
-  /** Request body - automatically JSON stringified if object/array */
-  body?: TBody;
-
-  /** Query parameters appended to URL */
-  query?: [TQuery] extends [never]
-    ? Record<string, string | number | boolean | undefined>
-    : TQuery;
-
-  /** FormData for file uploads - automatically converted to FormData */
-  formData?: TFormData;
-
-  /** Request headers - merged with default headers. Can be HeadersInit or async function returning HeadersInit */
-  headers?: HeadersInitOrGetter;
-
-  /** Cache mode for the request */
-  cache?: RequestCache;
-};
 
 export type MethodDefinition = {
   data: unknown;
@@ -242,11 +256,23 @@ type HasRequiredOptions<
     : true
   : true;
 
+/** Helper to compute final request options with dynamic segment awareness */
+type ComputeRequestOptions<
+  TRequestOptionsBase,
+  THasDynamicSegment extends boolean,
+> = "__hasDynamicParams" extends keyof TRequestOptionsBase
+  ? THasDynamicSegment extends true
+    ? Omit<TRequestOptionsBase, "__hasDynamicParams"> &
+        NonNullable<TRequestOptionsBase["__hasDynamicParams"]>
+    : Omit<TRequestOptionsBase, "__hasDynamicParams">
+  : TRequestOptionsBase;
+
 type MethodFn<
   TSchema,
   TMethod extends SchemaMethod,
   TDefaultError = unknown,
   TRequestOptionsBase = object,
+  THasDynamicSegment extends boolean = false,
 > =
   HasMethod<TSchema, TMethod> extends true
     ? HasRequiredOptions<TSchema, TMethod, TDefaultError> extends true
@@ -256,7 +282,7 @@ type MethodFn<
             ExtractQuery<TSchema, TMethod, TDefaultError>,
             ExtractFormData<TSchema, TMethod, TDefaultError>
           > &
-            TRequestOptionsBase
+            ComputeRequestOptions<TRequestOptionsBase, THasDynamicSegment>
         ) => Promise<
           EnlaceResponse<
             ExtractData<TSchema, TMethod, TDefaultError>,
@@ -269,7 +295,7 @@ type MethodFn<
             ExtractQuery<TSchema, TMethod, TDefaultError>,
             never
           > &
-            TRequestOptionsBase
+            ComputeRequestOptions<TRequestOptionsBase, THasDynamicSegment>
         ) => Promise<
           EnlaceResponse<
             ExtractData<TSchema, TMethod, TDefaultError>,
@@ -294,12 +320,14 @@ type HttpMethods<
   TSchema,
   TDefaultError = unknown,
   TRequestOptionsBase = object,
+  THasDynamicSegment extends boolean = false,
 > = {
   [K in SchemaMethod as K extends keyof TSchema ? K : never]: MethodFn<
     TSchema,
     K,
     TDefaultError,
-    TRequestOptionsBase
+    TRequestOptionsBase,
+    THasDynamicSegment
   >;
 };
 
@@ -314,12 +342,14 @@ type DynamicAccess<
         [key: string]: EnlaceClient<
           ExtractDynamicSchema<TSchema>,
           TDefaultError,
-          TRequestOptionsBase
+          TRequestOptionsBase,
+          true
         >;
         [key: number]: EnlaceClient<
           ExtractDynamicSchema<TSchema>,
           TDefaultError,
-          TRequestOptionsBase
+          TRequestOptionsBase,
+          true
         >;
       };
 
@@ -327,7 +357,7 @@ type MethodNameKeys = SchemaMethod;
 
 type DynamicKey<TSchema, TDefaultError, TRequestOptionsBase> =
   TSchema extends { _: infer D }
-    ? { _: EnlaceClient<D, TDefaultError, TRequestOptionsBase> }
+    ? { _: EnlaceClient<D, TDefaultError, TRequestOptionsBase, true> }
     : object;
 
 /** Typed API client based on schema definition */
@@ -335,12 +365,13 @@ export type EnlaceClient<
   TSchema,
   TDefaultError = unknown,
   TRequestOptionsBase = object,
-> = HttpMethods<TSchema, TDefaultError, TRequestOptionsBase> &
+  THasDynamicSegment extends boolean = false,
+> = HttpMethods<TSchema, TDefaultError, TRequestOptionsBase, THasDynamicSegment> &
   DynamicAccess<TSchema, TDefaultError, TRequestOptionsBase> &
   DynamicKey<TSchema, TDefaultError, TRequestOptionsBase> & {
     [K in keyof StaticPathKeys<TSchema> as K extends MethodNameKeys
       ? never
-      : K]: EnlaceClient<TSchema[K], TDefaultError, TRequestOptionsBase>;
+      : K]: EnlaceClient<TSchema[K], TDefaultError, TRequestOptionsBase, THasDynamicSegment>;
   };
 
 /** Untyped API client - allows any path access when no schema is provided */

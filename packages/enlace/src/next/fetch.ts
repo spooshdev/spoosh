@@ -1,12 +1,13 @@
 import {
   executeFetch,
+  type AnyRequestOptions,
   type EnlaceCallbackPayload,
   type EnlaceCallbacks,
   type EnlaceOptions,
   type EnlaceResponse,
   type HttpMethod,
-  type RequestOptions,
 } from "enlace-core";
+import type { AnyReactRequestOptions } from "../react/types";
 import type { NextOptions, NextRequestOptionsBase } from "./types";
 import { generateTags } from "../utils/generateTags";
 
@@ -14,12 +15,16 @@ type NextFetchOptions = Pick<NextRequestOptionsBase, "tags" | "revalidate">;
 
 type CombinedOptions = EnlaceOptions & NextOptions & EnlaceCallbacks;
 
+type AnyNextRequestOptions = AnyRequestOptions &
+  AnyReactRequestOptions &
+  NextRequestOptionsBase;
+
 export async function executeNextFetch<TData, TError>(
   baseUrl: string,
   path: string[],
   method: HttpMethod,
   combinedOptions: CombinedOptions,
-  requestOptions?: RequestOptions<unknown> & NextRequestOptionsBase
+  requestOptions?: AnyNextRequestOptions
 ): Promise<EnlaceResponse<TData, TError>> {
   const {
     autoGenerateTags = true,
@@ -52,7 +57,7 @@ export async function executeNextFetch<TData, TError>(
     onSuccess?.(payload);
   };
 
-  const nextRequestOptions: RequestOptions<unknown> & {
+  const nextRequestOptions: AnyRequestOptions & {
     next?: NextFetchOptions;
   } = { ...requestOptions };
 

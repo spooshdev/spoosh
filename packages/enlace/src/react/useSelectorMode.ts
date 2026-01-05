@@ -1,6 +1,6 @@
 import { useRef, useReducer } from "react";
 import type { EnlaceResponse } from "enlace-core";
-import type { ReactRequestOptionsBase, UseEnlaceSelectorResult } from "./types";
+import type { AnyReactRequestOptions, UseEnlaceSelectorResult } from "./types";
 import { hookReducer, initialState } from "./reducer";
 import { generateTags } from "../utils/generateTags";
 import { invalidateTags } from "./revalidator";
@@ -59,7 +59,7 @@ export function useSelectorMode<
     triggerRef.current = (async (...args: unknown[]) => {
       dispatch({ type: "MUTATION_START" });
 
-      const options = args[0] as ReactRequestOptionsBase | undefined;
+      const options = args[0] as AnyReactRequestOptions | undefined;
       const resolvedPath = resolvePath(pathRef.current, options?.params);
 
       let res: EnlaceResponse<unknown, unknown>;

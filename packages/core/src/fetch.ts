@@ -1,10 +1,10 @@
 import { buildUrl, isJsonBody, mergeHeaders, objectToFormData } from "./utils";
 import type {
+  AnyRequestOptions,
   EnlaceCallbacks,
   EnlaceOptions,
   EnlaceResponse,
   HttpMethod,
-  RequestOptions,
 } from "./types";
 
 export async function executeFetch<TData, TError>(
@@ -12,7 +12,7 @@ export async function executeFetch<TData, TError>(
   path: string[],
   method: HttpMethod,
   defaultOptions: EnlaceOptions & EnlaceCallbacks,
-  requestOptions?: RequestOptions<unknown>
+  requestOptions?: AnyRequestOptions
 ): Promise<EnlaceResponse<TData, TError>> {
   const {
     onSuccess,
