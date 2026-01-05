@@ -1,7 +1,16 @@
 {
   "name": "enlace-openapi",
-  "version": "0.0.1-beta.6",
+  "version": "0.0.1-beta.7",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nxnom/enlace.git",
+    "directory": "packages/openapi"
+  },
+  "bugs": {
+    "url": "https://github.com/nxnom/enlace/issues"
+  },
+  "homepage": "https://github.com/nxnom/enlace/tree/main/packages/openapi#readme",
   "bin": {
     "enlace-openapi": "./dist/cli.mjs"
   },

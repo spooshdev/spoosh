@@ -1,8 +1,19 @@
 {
   "name": "enlace",
-  "version": "0.0.1-beta.18",
+  "version": "0.0.1-beta.19",
   "license": "MIT",
-  "files": ["dist"],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nxnom/enlace.git",
+    "directory": "packages/enlace"
+  },
+  "bugs": {
+    "url": "https://github.com/nxnom/enlace/issues"
+  },
+  "homepage": "https://github.com/nxnom/enlace/tree/main/packages/enlace#readme",
+  "files": [
+    "dist"
+  ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

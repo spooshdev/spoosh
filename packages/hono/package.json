@@ -1,7 +1,16 @@
 {
   "name": "enlace-hono",
-  "version": "0.0.1-beta.2",
+  "version": "0.0.1-beta.3",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nxnom/enlace.git",
+    "directory": "packages/hono"
+  },
+  "bugs": {
+    "url": "https://github.com/nxnom/enlace/issues"
+  },
+  "homepage": "https://github.com/nxnom/enlace/tree/main/packages/hono#readme",
   "files": [
     "dist"
   ],
