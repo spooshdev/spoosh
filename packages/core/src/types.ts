@@ -342,12 +342,106 @@ type ComputeRequestOptions<
     : Omit<TRequestOptionsBase, "__hasDynamicParams">
   : TRequestOptionsBase;
 
+// ============================================================================
+// Optimistic Update Types
+// ============================================================================
+
+/** Extract data type from endpoint definition for optimistic updates */
+type ExtractOptimisticData<T> = T extends { data: infer D }
+  ? D
+  : T extends void
+    ? void
+    : T;
+
+/** Convert endpoint definition to a method signature for optimistic selector */
+type EndpointToOptimisticMethod<T> = () => Promise<
+  EnlaceResponse<ExtractOptimisticData<T>, unknown>
+>;
+
+/**
+ * Helper type for navigating schema in optimistic `for` selector.
+ * Provides autocomplete for schema paths and $get methods.
+ */
+type OptimisticSchemaHelper<TSchema> = {
+  [K in keyof TSchema as K extends SchemaMethod | "_"
+    ? never
+    : K extends keyof TSchema
+      ? K
+      : never]: K extends keyof TSchema
+    ? OptimisticSchemaHelper<TSchema[K]>
+    : never;
+} & {
+  [K in SchemaMethod as K extends keyof TSchema
+    ? K
+    : never]: K extends keyof TSchema
+    ? EndpointToOptimisticMethod<TSchema[K]>
+    : never;
+} & (TSchema extends { _: infer D }
+    ? {
+        [key: string]: OptimisticSchemaHelper<D>;
+        [key: number]: OptimisticSchemaHelper<D>;
+      }
+    : object);
+
+/** Config passed to the cache function */
+export type CacheConfig<TData, TResponse = unknown> = {
+  for: () => Promise<EnlaceResponse<TData, unknown>>;
+  updater: (data: TData, response?: TResponse) => TData;
+  timing?: "immediate" | "onSuccess";
+  rollbackOnError?: boolean;
+  /**
+   * Still revalidate/refetch after optimistic update.
+   * Rarely needed - use when API response has minimal data but you need complete data.
+   * Consider returning full data from your API instead.
+   * @default false
+   */
+  refetch?: boolean;
+  /** Called when mutation fails. Useful for showing toast notifications. */
+  onError?: (error: unknown) => void;
+};
+
+/** Resolved config returned by cache function (runtime type) */
+export type ResolvedCacheConfig = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for: (...args: any[]) => Promise<EnlaceResponse<unknown, unknown>>;
+  timing?: "immediate" | "onSuccess";
+  updater: (data: unknown, response?: unknown) => unknown;
+  rollbackOnError?: boolean;
+  refetch?: boolean;
+  onError?: (error: unknown) => void;
+};
+
+/** Optimistic callback function for mutations */
+type OptimisticCallbackFn<TSchema, TResponse = unknown> = (
+  cache: <TData>(config: CacheConfig<TData, TResponse>) => ResolvedCacheConfig,
+  api: OptimisticSchemaHelper<TSchema>
+) => ResolvedCacheConfig | ResolvedCacheConfig[];
+
+/** Optimistic option for mutation methods */
+type MutationOptimisticOption<TRootSchema, TResponse = unknown> = {
+  optimistic?: OptimisticCallbackFn<TRootSchema, TResponse>;
+};
+
+/** Add optimistic option only for mutation methods */
+type WithOptimistic<
+  TSchema,
+  TMethod extends SchemaMethod,
+  TDefaultError,
+  TRootSchema,
+> = TMethod extends "$get"
+  ? object
+  : MutationOptimisticOption<
+      TRootSchema,
+      ExtractData<TSchema, TMethod, TDefaultError>
+    >;
+
 type MethodFn<
   TSchema,
   TMethod extends SchemaMethod,
   TDefaultError = unknown,
   TOptionsMap = object,
   THasDynamicSegment extends boolean = false,
+  TRootSchema = TSchema,
 > =
   HasMethod<TSchema, TMethod> extends true
     ? HasRequiredOptions<TSchema, TMethod, TDefaultError> extends true
@@ -360,7 +454,8 @@ type MethodFn<
             ComputeRequestOptions<
               ExtractMethodOptions<TOptionsMap, TMethod>,
               THasDynamicSegment
-            >
+            > &
+            WithOptimistic<TSchema, TMethod, TDefaultError, TRootSchema>
         ) => Promise<
           EnlaceResponse<
             ExtractData<TSchema, TMethod, TDefaultError>,
@@ -376,7 +471,8 @@ type MethodFn<
             ComputeRequestOptions<
               ExtractMethodOptions<TOptionsMap, TMethod>,
               THasDynamicSegment
-            >
+            > &
+            WithOptimistic<TSchema, TMethod, TDefaultError, TRootSchema>
         ) => Promise<
           EnlaceResponse<
             ExtractData<TSchema, TMethod, TDefaultError>,
@@ -402,17 +498,24 @@ type HttpMethods<
   TDefaultError = unknown,
   TOptionsMap = object,
   THasDynamicSegment extends boolean = false,
+  TRootSchema = TSchema,
 > = {
   [K in SchemaMethod as K extends keyof TSchema ? K : never]: MethodFn<
     TSchema,
     K,
     TDefaultError,
     TOptionsMap,
-    THasDynamicSegment
+    THasDynamicSegment,
+    TRootSchema
   >;
 };
 
-type DynamicAccess<TSchema, TDefaultError = unknown, TOptionsMap = object> =
+type DynamicAccess<
+  TSchema,
+  TDefaultError = unknown,
+  TOptionsMap = object,
+  TRootSchema = TSchema,
+> =
   ExtractDynamicSchema<TSchema> extends never
     ? object
     : {
@@ -420,22 +523,29 @@ type DynamicAccess<TSchema, TDefaultError = unknown, TOptionsMap = object> =
           ExtractDynamicSchema<TSchema>,
           TDefaultError,
           TOptionsMap,
-          true
+          true,
+          TRootSchema
         >;
         [key: number]: EnlaceClient<
           ExtractDynamicSchema<TSchema>,
           TDefaultError,
           TOptionsMap,
-          true
+          true,
+          TRootSchema
         >;
       };
 
 type MethodNameKeys = SchemaMethod;
 
-type DynamicKey<TSchema, TDefaultError, TOptionsMap> = TSchema extends {
+type DynamicKey<
+  TSchema,
+  TDefaultError,
+  TOptionsMap,
+  TRootSchema = TSchema,
+> = TSchema extends {
   _: infer D;
 }
-  ? { _: EnlaceClient<D, TDefaultError, TOptionsMap, true> }
+  ? { _: EnlaceClient<D, TDefaultError, TOptionsMap, true, TRootSchema> }
   : object;
 
 /** Typed API client based on schema definition */
@@ -444,16 +554,24 @@ export type EnlaceClient<
   TDefaultError = unknown,
   TOptionsMap = object,
   THasDynamicSegment extends boolean = false,
-> = HttpMethods<TSchema, TDefaultError, TOptionsMap, THasDynamicSegment> &
-  DynamicAccess<TSchema, TDefaultError, TOptionsMap> &
-  DynamicKey<TSchema, TDefaultError, TOptionsMap> & {
+  TRootSchema = TSchema,
+> = HttpMethods<
+  TSchema,
+  TDefaultError,
+  TOptionsMap,
+  THasDynamicSegment,
+  TRootSchema
+> &
+  DynamicAccess<TSchema, TDefaultError, TOptionsMap, TRootSchema> &
+  DynamicKey<TSchema, TDefaultError, TOptionsMap, TRootSchema> & {
     [K in keyof StaticPathKeys<TSchema> as K extends MethodNameKeys
       ? never
       : K]: EnlaceClient<
       TSchema[K],
       TDefaultError,
       TOptionsMap,
-      THasDynamicSegment
+      THasDynamicSegment,
+      TRootSchema
     >;
   };
 

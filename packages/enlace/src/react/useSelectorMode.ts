@@ -1,9 +1,21 @@
 import { useRef, useReducer, useCallback } from "react";
-import type { EnlaceResponse } from "enlace-core";
+import type { EnlaceResponse, ResolvedCacheConfig } from "enlace-core";
 import type { AnyReactRequestOptions, UseEnlaceSelectorResult } from "./types";
 import { hookReducer, initialState } from "./reducer";
 import { generateTags } from "../utils/generateTags";
 import { invalidateTags } from "./revalidator";
+import {
+  setCacheOptimistic,
+  confirmOptimistic,
+  rollbackOptimistic,
+  updateCacheByTags,
+} from "./cache";
+import {
+  createTrackingProxy,
+  SELECTOR_PATH_KEY,
+  type MethodWithPath,
+} from "./trackingProxy";
+import { cache } from "./optimistic";
 
 function resolvePath(
   path: string[],
@@ -27,6 +39,15 @@ function hasPathParams(path: string[]): boolean {
   return path.some((segment) => segment.startsWith(":"));
 }
 
+function extractTagsFromMethod(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Runtime type
+  method: (...args: any[]) => Promise<EnlaceResponse<unknown, unknown>>
+): string[] {
+  const path = (method as unknown as MethodWithPath)[SELECTOR_PATH_KEY];
+  if (!path) return [];
+  return generateTags(path);
+}
+
 export type SelectorModeConfig = {
   method: (...args: unknown[]) => Promise<EnlaceResponse<unknown, unknown>>;
   api: unknown;
@@ -36,6 +57,14 @@ export type SelectorModeConfig = {
   retry?: number | false;
   retryDelay?: number;
 };
+
+function normalizeOptimisticConfigs(
+  result: ResolvedCacheConfig | ResolvedCacheConfig[] | undefined
+): ResolvedCacheConfig[] {
+  if (!result) return [];
+
+  return Array.isArray(result) ? result : [result];
+}
 
 export function useSelectorMode<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Required for method type inference
@@ -85,37 +114,118 @@ export function useSelectorMode<
 
       const resolvedPath = resolvePath(pathRef.current, options?.params);
 
+      let optimisticConfigs: ResolvedCacheConfig[] = [];
+
+      if (options?.optimistic) {
+        const trackingProxy = createTrackingProxy(() => {});
+        const callbackResult = options.optimistic(cache, trackingProxy);
+        optimisticConfigs = normalizeOptimisticConfigs(callbackResult);
+      }
+
+      const immediateUpdates = optimisticConfigs.filter(
+        (c) => c.timing !== "onSuccess"
+      );
+      const onSuccessUpdates = optimisticConfigs.filter(
+        (c) => c.timing === "onSuccess"
+      );
+
+      const affectedKeysByConfig: Map<ResolvedCacheConfig, string[]> =
+        new Map();
+      const immediateTagsSet = new Set<string>();
+
+      for (const cfg of immediateUpdates) {
+        const tags = extractTagsFromMethod(cfg.for);
+        if (!cfg.refetch) {
+          tags.forEach((t) => immediateTagsSet.add(t));
+        }
+        const keys = setCacheOptimistic(tags, cfg.updater);
+        affectedKeysByConfig.set(cfg, keys);
+      }
+
       let res: EnlaceResponse<unknown, unknown>;
 
-      if (hasPathParams(pathRef.current)) {
-        let current: unknown = apiRef.current;
-        for (const segment of resolvedPath) {
-          current = (current as Record<string, unknown>)[segment];
+      try {
+        if (hasPathParams(pathRef.current)) {
+          let current: unknown = apiRef.current;
+
+          for (const segment of resolvedPath) {
+            current = (current as Record<string, unknown>)[segment];
+          }
+
+          const resolvedMethod = (current as Record<string, unknown>)[
+            methodNameRef.current
+          ] as (
+            ...args: unknown[]
+          ) => Promise<EnlaceResponse<unknown, unknown>>;
+
+          res = await resolvedMethod(...argsWithSignal);
+        } else {
+          res = await methodRef.current(...argsWithSignal);
         }
-        const resolvedMethod = (current as Record<string, unknown>)[
-          methodNameRef.current
-        ] as (...args: unknown[]) => Promise<EnlaceResponse<unknown, unknown>>;
-        res = await resolvedMethod(...argsWithSignal);
-      } else {
-        res = await methodRef.current(...argsWithSignal);
+      } catch (error) {
+        for (const cfg of immediateUpdates) {
+          if (cfg.rollbackOnError !== false) {
+            const keys = affectedKeysByConfig.get(cfg) ?? [];
+            rollbackOptimistic(keys);
+          }
+
+          cfg.onError?.(error);
+        }
+
+        throw error;
       }
 
       if (res.aborted) {
+        for (const cfg of immediateUpdates) {
+          const keys = affectedKeysByConfig.get(cfg) ?? [];
+          rollbackOptimistic(keys);
+        }
+
         return res;
       }
 
       if (!res.error) {
         dispatch({ type: "FETCH_SUCCESS", data: res.data });
 
+        for (const cfg of immediateUpdates) {
+          const keys = affectedKeysByConfig.get(cfg) ?? [];
+          confirmOptimistic(keys);
+        }
+
+        for (const cfg of onSuccessUpdates) {
+          const tags = extractTagsFromMethod(cfg.for);
+
+          if (!cfg.refetch) {
+            tags.forEach((t) => immediateTagsSet.add(t));
+          }
+
+          updateCacheByTags(tags, cfg.updater, res.data);
+        }
+
         const tagsToInvalidate =
           options?.revalidateTags ??
           (autoRevalidateRef.current ? generateTags(resolvedPath) : []);
 
-        if (tagsToInvalidate.length > 0) {
-          invalidateTags(tagsToInvalidate);
+        const filteredTags = tagsToInvalidate.filter(
+          (t) => !immediateTagsSet.has(t)
+        );
+
+        if (filteredTags.length > 0) {
+          invalidateTags(filteredTags);
         }
       } else {
         dispatch({ type: "FETCH_ERROR", error: res.error });
+
+        for (const cfg of immediateUpdates) {
+          if (cfg.rollbackOnError !== false) {
+            const keys = affectedKeysByConfig.get(cfg) ?? [];
+            rollbackOptimistic(keys);
+            const tags = extractTagsFromMethod(cfg.for);
+            invalidateTags(tags);
+          }
+
+          cfg.onError?.(res.error);
+        }
       }
 
       return res;

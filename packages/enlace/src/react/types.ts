@@ -5,6 +5,7 @@ import type {
   EnlaceErrorCallbackPayload,
   EnlaceResponse,
   MethodOptionsMap,
+  ResolvedCacheConfig,
   RetryConfig,
   WildcardClient,
 } from "enlace-core";
@@ -66,6 +67,12 @@ export type ReactRequestOptionsBase = QueryRequestOptions &
 /** Runtime request options that includes all possible properties */
 export type AnyReactRequestOptions = ReactRequestOptionsBase & {
   params?: Record<string, string | number>;
+  optimistic?: (
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    cache: any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    api: any
+  ) => ResolvedCacheConfig | ResolvedCacheConfig[];
 };
 
 /** Polling interval value: milliseconds to wait, or false to stop polling */
@@ -204,6 +211,8 @@ export type UseEnlaceQueryResult<TData, TError> = {
   fetching: boolean;
   /** Abort the current in-flight request */
   abort: () => void;
+  /** Whether the current data is from an optimistic update (not yet confirmed by server) */
+  isOptimistic: boolean;
 } & HookResponseState<TData, TError>;
 
 /** Result when hook is called with method selector (trigger mode) */

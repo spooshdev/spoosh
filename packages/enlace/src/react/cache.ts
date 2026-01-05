@@ -8,6 +8,8 @@ export type CacheEntry<TData = unknown, TError = unknown> = {
   promise?: Promise<void>;
   tags: string[];
   subscribers: Set<() => void>;
+  isOptimistic?: boolean;
+  previousData?: TData;
 };
 
 const cache = new Map<string, CacheEntry>();
@@ -89,6 +91,75 @@ export function clearCacheByTags(tags: string[]): void {
     if (hasMatch) {
       entry.timestamp = 0;
       delete entry.promise;
+      entry.subscribers.forEach((cb) => cb());
+    }
+  });
+}
+
+export function getCacheByTags<TData>(
+  tags: string[]
+): CacheEntry<TData> | undefined {
+  for (const entry of cache.values()) {
+    const hasMatch = entry.tags.some((tag) => tags.includes(tag));
+    if (hasMatch && entry.data !== undefined) {
+      return entry as CacheEntry<TData>;
+    }
+  }
+  return undefined;
+}
+
+export function setCacheOptimistic<TData>(
+  tags: string[],
+  updater: (data: TData) => TData
+): string[] {
+  const affectedKeys: string[] = [];
+
+  cache.forEach((entry, key) => {
+    const hasMatch = entry.tags.some((tag) => tags.includes(tag));
+    if (hasMatch && entry.data !== undefined) {
+      entry.previousData = entry.data;
+      entry.data = updater(entry.data as TData);
+      entry.isOptimistic = true;
+      entry.subscribers.forEach((cb) => cb());
+      affectedKeys.push(key);
+    }
+  });
+
+  return affectedKeys;
+}
+
+export function confirmOptimistic(keys: string[]): void {
+  keys.forEach((key) => {
+    const entry = cache.get(key);
+    if (entry) {
+      delete entry.isOptimistic;
+      delete entry.previousData;
+    }
+  });
+}
+
+export function rollbackOptimistic(keys: string[]): void {
+  keys.forEach((key) => {
+    const entry = cache.get(key);
+    if (entry && entry.previousData !== undefined) {
+      entry.data = entry.previousData;
+      delete entry.isOptimistic;
+      delete entry.previousData;
+      entry.subscribers.forEach((cb) => cb());
+    }
+  });
+}
+
+export function updateCacheByTags<TData, TResponse>(
+  tags: string[],
+  updater: (data: TData, response: TResponse) => TData,
+  response: TResponse
+): void {
+  cache.forEach((entry) => {
+    const hasMatch = entry.tags.some((tag) => tags.includes(tag));
+    if (hasMatch && entry.data !== undefined) {
+      entry.data = updater(entry.data as TData, response);
+      entry.timestamp = Date.now();
       entry.subscribers.forEach((cb) => cb());
     }
   });

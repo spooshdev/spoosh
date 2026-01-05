@@ -459,6 +459,161 @@ trigger({
 // → PATCH /products/123 with body
 ```
 
+### Optimistic Updates
+
+Update the UI instantly before the server responds, with automatic rollback on error:
+
+```typescript
+function DeletePost({ id }: { id: number }) {
+  const { trigger } = useAPI((api) => api.posts[":id"].$delete);
+
+  const handleDelete = () => {
+    trigger({
+      params: { id },
+      optimistic: (cache, api) => cache({
+        for: api.posts.$get,
+        updater: (posts) => posts.filter((p) => p.id !== id),
+      }),
+    });
+  };
+
+  return <button onClick={handleDelete}>Delete</button>;
+}
+```
+
+**With response data (e.g., creating a post):**
+
+```typescript
+function CreatePost() {
+  const { trigger } = useAPI((api) => api.posts.$post);
+
+  const handleCreate = async () => {
+    await trigger({
+      body: { title: "New Post", content: "..." },
+      optimistic: (cache, api) => cache({
+        for: api.posts.$get,
+        timing: "onSuccess", // Wait for response
+        updater: (posts, newPost) => [...posts, newPost!],
+        //               ^^^^^^^ typed as Post (mutation response)
+      }),
+    });
+  };
+}
+```
+
+**Multiple cache updates:**
+
+```typescript
+trigger({
+  optimistic: (cache, api) => [
+    cache({
+      for: api.posts.$get,
+      updater: (posts) => posts.filter((p) => p.id !== id),
+    }),
+    cache({
+      for: api.dashboard.stats.$get,
+      timing: "onSuccess",
+      updater: (stats, _) => ({ ...stats, postCount: stats.postCount - 1 }),
+    }),
+  ],
+});
+```
+
+**Options:**
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `for` | `api.path.$get` | required | Which cache to update |
+| `updater` | `(data, response?) => data` | required | Transform function |
+| `timing` | `"immediate"` \| `"onSuccess"` | `"immediate"` | When to apply update |
+| `rollbackOnError` | `boolean` | `true` | Revert on failure |
+| `refetch` | `boolean` | `false` | Still refetch after update (rarely needed) |
+| `onError` | `(error) => void` | - | Error callback (e.g., show toast) |
+
+### Retry
+
+Configure automatic retry for failed requests:
+
+```typescript
+const useAPI = enlaceHookReact<ApiSchema>(
+  "https://api.example.com",
+  {},
+  {
+    retry: 3,        // Retry up to 3 times (default)
+    retryDelay: 1000 // Base delay 1s with exponential backoff
+  }
+);
+```
+
+**Per-query retry:**
+
+```typescript
+const { data } = useAPI(
+  (api) => api.posts.$get(),
+  {
+    retry: 5,         // Override for this query
+    retryDelay: 500   // Faster retry
+  }
+);
+```
+
+**Disable retry:**
+
+```typescript
+const { data } = useAPI(
+  (api) => api.posts.$get(),
+  { retry: false }
+);
+```
+
+Retry uses exponential backoff: 1s → 2s → 4s → 8s...
+
+### Abort Requests
+
+Cancel in-flight requests using the `abort` function:
+
+```typescript
+function SearchPosts() {
+  const { data, loading, abort } = useAPI((api) =>
+    api.posts.$get({ query: { search: debouncedQuery } })
+  );
+
+  // Abort on unmount or query change is automatic
+  // Manual abort:
+  return (
+    <div>
+      {loading && <button onClick={abort}>Cancel</button>}
+      <PostList posts={data} />
+    </div>
+  );
+}
+```
+
+**In selector mode:**
+
+```typescript
+function UploadFile() {
+  const { trigger, loading, abort } = useAPI((api) => api.files.$post);
+
+  const handleUpload = () => {
+    trigger({ formData: { file: selectedFile } });
+  };
+
+  return (
+    <div>
+      <button onClick={handleUpload} disabled={loading}>Upload</button>
+      {loading && <button onClick={abort}>Cancel Upload</button>}
+    </div>
+  );
+}
+```
+
+**Abort behavior:**
+
+- Returns `{ aborted: true }` in the response
+- Optimistic updates are automatically rolled back on abort
+- No error is thrown; check `response.aborted` if needed
+
 ## Caching & Auto-Revalidation
 
 ### Automatic Cache Tags (Zero Config)
@@ -723,6 +878,8 @@ type UseEnlaceQueryResult<TData, TError> = {
   fetching: boolean; // Request in progress
   data: TData | undefined;
   error: TError | undefined;
+  abort: () => void; // Cancel in-flight request
+  isOptimistic: boolean; // Data is from optimistic update (not confirmed)
 };
 ```
 
@@ -735,6 +892,7 @@ type UseEnlaceSelectorResult<TMethod> = {
   fetching: boolean;
   data: TData | undefined;
   error: TError | undefined;
+  abort: () => void; // Cancel in-flight request
 };
 ```
 
@@ -763,6 +921,7 @@ type RequestOptions = {
   revalidateTags?: string[]; // Revalidation tags - replaces auto-generated
   additionalRevalidateTags?: string[]; // Revalidation tags - merges with auto-generated
   params?: Record<string, string | number>; // Dynamic path parameters
+  optimistic?: (cache, api) => CacheConfig | CacheConfig[]; // Optimistic updates (mutations only)
 };
 ```
 

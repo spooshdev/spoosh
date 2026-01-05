@@ -7,6 +7,12 @@ export type TrackingResult = {
   selectorMethod: string | null;
 };
 
+export const SELECTOR_PATH_KEY = Symbol("selectorPath");
+
+export type MethodWithPath = {
+  [SELECTOR_PATH_KEY]?: string[];
+};
+
 export function createTrackingProxy<TSchema>(
   onTrack: (result: TrackingResult) => void
 ): ApiClient<TSchema> {
@@ -26,6 +32,7 @@ export function createTrackingProxy<TSchema>(
               error: undefined,
             });
           };
+          (methodFn as unknown as MethodWithPath)[SELECTOR_PATH_KEY] = path;
           onTrack({
             trackedCall: null,
             selectorPath: path,

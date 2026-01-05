@@ -70,7 +70,9 @@ export function useQueryMode<TSchema, TData, TError>(
     (autoGenerateTags ? generateTags(resolvedPath) : []);
   const queryTags = [...baseTags, ...(requestOptions?.additionalTags ?? [])];
 
-  const getCacheState = (includeNeedsFetch = false): HookState => {
+  const getCacheState = (
+    includeNeedsFetch = false
+  ): HookState & { isOptimistic: boolean } => {
     const cached = getCache<TData, TError>(queryKey);
     const hasCachedData = cached?.data !== undefined;
     const isFetching = !!cached?.promise;
@@ -81,6 +83,7 @@ export function useQueryMode<TSchema, TData, TError>(
       fetching: isFetching || needsFetch,
       data: cached?.data,
       error: cached?.error,
+      isOptimistic: cached?.isOptimistic ?? false,
     };
   };
 
@@ -247,5 +250,11 @@ export function useQueryMode<TSchema, TData, TError>(
     });
   }, [JSON.stringify(queryTags)]);
 
-  return { ...state, abort } as UseEnlaceQueryResult<TData, TError>;
+  const cached = getCache<TData, TError>(queryKey);
+  const isOptimistic = cached?.isOptimistic ?? false;
+
+  return { ...state, abort, isOptimistic } as UseEnlaceQueryResult<
+    TData,
+    TError
+  >;
 }
