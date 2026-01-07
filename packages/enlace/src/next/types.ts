@@ -91,7 +91,58 @@ export type NextUseAPIMutation<TSchema, TDefaultError = unknown> = <
   selectorFn: NextSelectorFn<TSchema, TMethod, TDefaultError>
 ) => import("../react/types").UseEnlaceSelectorResult<TMethod>;
 
-export type NextEnlaceHooks<TSchema, TDefaultError = unknown> = [
-  NextUseAPIQuery<TSchema, TDefaultError>,
-  NextUseAPIMutation<TSchema, TDefaultError>,
-];
+export type NextInfiniteQueryFn<TSchema, TDefaultError = unknown> = (
+  api: NextQueryApiClient<TSchema, TDefaultError>
+) => Promise<EnlaceResponse<unknown, unknown, unknown>>;
+
+type InferData<T> =
+  T extends Promise<EnlaceResponse<infer D, unknown, unknown>> ? D : unknown;
+
+type InferError<T> =
+  T extends Promise<EnlaceResponse<unknown, infer E, unknown>> ? E : unknown;
+
+type PickOnlyRequestOptions<T> = Pick<
+  T,
+  Extract<keyof T, "query" | "params" | "body">
+>;
+
+type MakePartialRequest<T> = {
+  [K in keyof T]?: T[K] extends Record<string, unknown> ? Partial<T[K]> : T[K];
+};
+
+type InferRequest<T> =
+  T extends Promise<EnlaceResponse<unknown, unknown, infer R>>
+    ? PickOnlyRequestOptions<R>
+    : import("../react/types").AnyInfiniteRequestOptions;
+
+type InferPartialRequest<T> =
+  T extends Promise<EnlaceResponse<unknown, unknown, infer R>>
+    ? MakePartialRequest<PickOnlyRequestOptions<R>>
+    : import("../react/types").AnyInfiniteRequestOptions;
+
+export type NextUseAPIInfiniteQuery<TSchema, TDefaultError = unknown> = <
+  TReturn extends Promise<EnlaceResponse<unknown, unknown, unknown>>,
+  TData = InferData<TReturn>,
+  TError = InferError<TReturn>,
+  TRequest = InferRequest<TReturn>,
+  TPartialRequest = InferPartialRequest<TReturn>,
+  TItem = TData extends Array<infer U> ? U : TData,
+>(
+  queryFn: (api: NextQueryApiClient<TSchema, TDefaultError>) => TReturn,
+  options: import("../react/types").UseEnlaceInfiniteQueryOptions<
+    TData,
+    TItem,
+    TRequest,
+    TPartialRequest
+  >
+) => import("../react/types").UseEnlaceInfiniteQueryResult<
+  TData,
+  TError,
+  TItem
+>;
+
+export type NextEnlaceHooks<TSchema, TDefaultError = unknown> = {
+  useQuery: NextUseAPIQuery<TSchema, TDefaultError>;
+  useMutation: NextUseAPIMutation<TSchema, TDefaultError>;
+  useInfiniteQuery: NextUseAPIInfiniteQuery<TSchema, TDefaultError>;
+};

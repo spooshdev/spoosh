@@ -8,24 +8,41 @@ import type {
   UseEnlaceQueryOptions,
   UseEnlaceQueryResult,
   UseEnlaceSelectorResult,
+  InfiniteQueryFn,
+  UseEnlaceInfiniteQueryOptions,
+  UseEnlaceInfiniteQueryResult,
 } from "./types";
 import { useAPIQueryImpl, type QueryModeOptions } from "./hooks/useAPIQuery";
 import { useAPIMutationImpl } from "./hooks/useAPIMutation";
+import {
+  useAPIInfiniteQueryImpl,
+  type InfiniteQueryModeOptions,
+} from "./hooks/useAPIInfiniteQuery";
 import { createTrackingProxy, type TrackingResult } from "./trackingProxy";
 
 /**
  * Creates React hooks for making API calls.
- * Returns a tuple of [useAPIQuery, useAPIMutation].
+ * Returns { useQuery, useMutation, useInfiniteQuery }.
  *
  * @example
- * const [useAPIQuery, useAPIMutation] = enlaceHookReact<ApiSchema>('https://api.com');
+ * const { useQuery, useMutation, useInfiniteQuery } = enlaceHookReact<ApiSchema>('https://api.com');
  *
  * // Query - auto-fetch GET requests
- * const { loading, data, error } = useAPIQuery((api) => api.posts.$get({ query: { userId } }));
+ * const { loading, data, error } = useQuery((api) => api.posts.$get({ query: { userId } }));
  *
  * // Mutation - trigger-based mutations
- * const { trigger, loading } = useAPIMutation((api) => api.posts.$delete);
+ * const { trigger, loading } = useMutation((api) => api.posts.$delete);
  * onClick={() => trigger({ body: { id: 1 } })}
+ *
+ * // Infinite Query - paginated data with fetchNext/fetchPrev
+ * const { data, fetchNext, canFetchNext } = useInfiniteQuery(
+ *   (api) => api.posts.$get({ query: { limit: 10 } }),
+ *   {
+ *     canFetchNext: ({ response }) => response?.hasMore ?? false,
+ *     nextPageRequest: ({ response }) => ({ query: { cursor: response?.nextCursor } }),
+ *     merger: (allResponses) => allResponses.flatMap(r => r.items),
+ *   }
+ * );
  */
 export function enlaceHookReact<TSchema = unknown, TDefaultError = unknown>(
   baseUrl: string,
@@ -47,7 +64,7 @@ export function enlaceHookReact<TSchema = unknown, TDefaultError = unknown>(
     onError,
   });
 
-  function useAPIQuery<TData, TError>(
+  function useQuery<TData, TError>(
     queryFn: QueryFn<TSchema, TData, TError, TDefaultError>,
     queryOptions?: UseEnlaceQueryOptions<TData, TError>
   ): UseEnlaceQueryResult<TData, TError> {
@@ -67,8 +84,8 @@ export function enlaceHookReact<TSchema = unknown, TDefaultError = unknown>(
 
     if (!trackingResult.trackedCall) {
       throw new Error(
-        "useAPIQuery requires calling an HTTP method ($get). " +
-          "Example: useAPIQuery((api) => api.posts.$get())"
+        "useQuery requires calling an HTTP method ($get). " +
+          "Example: useQuery((api) => api.posts.$get())"
       );
     }
 
@@ -88,7 +105,7 @@ export function enlaceHookReact<TSchema = unknown, TDefaultError = unknown>(
     );
   }
 
-  function useAPIMutation<
+  function useMutation<
     TMethod extends (
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ...args: any[]
@@ -127,5 +144,55 @@ export function enlaceHookReact<TSchema = unknown, TDefaultError = unknown>(
     });
   }
 
-  return [useAPIQuery, useAPIMutation] as EnlaceHooks<TSchema, TDefaultError>;
+  function useInfiniteQuery<
+    TData,
+    TError,
+    TItem = TData extends Array<infer U> ? U : TData,
+    TRequest = unknown,
+  >(
+    queryFn: InfiniteQueryFn<TSchema, TDefaultError>,
+    queryOptions: UseEnlaceInfiniteQueryOptions<TData, TItem, TRequest>
+  ): UseEnlaceInfiniteQueryResult<TData, TError, TItem> {
+    let trackingResult: TrackingResult = {
+      trackedCall: null,
+      selectorPath: null,
+      selectorMethod: null,
+    };
+
+    const trackingProxy = createTrackingProxy<TSchema>((result) => {
+      trackingResult = result;
+    });
+
+    (queryFn as (api: ApiClient<TSchema, TDefaultError>) => unknown)(
+      trackingProxy as ApiClient<TSchema, TDefaultError>
+    );
+
+    if (!trackingResult.trackedCall) {
+      throw new Error(
+        "useInfiniteQuery requires calling an HTTP method ($get, $post, etc). " +
+          "Example: useInfiniteQuery((api) => api.posts.$get({ query: { limit: 10 } }), options)"
+      );
+    }
+
+    const options = {
+      autoGenerateTags,
+      staleTime,
+      ...queryOptions,
+      enabled: queryOptions.enabled ?? true,
+      retry: queryOptions.retry ?? retry,
+      retryDelay: queryOptions.retryDelay ?? retryDelay,
+    };
+
+    return useAPIInfiniteQueryImpl<TSchema, TData, TError, TItem>(
+      api as ApiClient<TSchema, TDefaultError>,
+      trackingResult.trackedCall,
+      options as unknown as InfiniteQueryModeOptions<TData, TItem>
+    );
+  }
+
+  return {
+    useQuery,
+    useMutation,
+    useInfiniteQuery,
+  } as EnlaceHooks<TSchema, TDefaultError>;
 }

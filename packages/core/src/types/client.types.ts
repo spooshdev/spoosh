@@ -16,6 +16,33 @@ import type {
 } from "./endpoint.types";
 import type { WithOptimistic } from "./optimistic.types";
 
+type MethodRequestOptions<
+  TSchema,
+  TMethod extends SchemaMethod,
+  TDefaultError,
+  TOptionsMap,
+  THasDynamicSegment extends boolean,
+  TRequired extends boolean,
+> = TRequired extends true
+  ? RequestOptions<
+      ExtractBody<TSchema, TMethod, TDefaultError>,
+      ExtractQuery<TSchema, TMethod, TDefaultError>,
+      ExtractFormData<TSchema, TMethod, TDefaultError>
+    > &
+      ComputeRequestOptions<
+        ExtractMethodOptions<TOptionsMap, TMethod>,
+        THasDynamicSegment
+      >
+  : RequestOptions<
+      never,
+      ExtractQuery<TSchema, TMethod, TDefaultError>,
+      never
+    > &
+      ComputeRequestOptions<
+        ExtractMethodOptions<TOptionsMap, TMethod>,
+        THasDynamicSegment
+      >;
+
 export type MethodFn<
   TSchema,
   TMethod extends SchemaMethod,
@@ -27,37 +54,51 @@ export type MethodFn<
   HasMethod<TSchema, TMethod> extends true
     ? HasRequiredOptions<TSchema, TMethod, TDefaultError> extends true
       ? (
-          options: RequestOptions<
-            ExtractBody<TSchema, TMethod, TDefaultError>,
-            ExtractQuery<TSchema, TMethod, TDefaultError>,
-            ExtractFormData<TSchema, TMethod, TDefaultError>
+          options: MethodRequestOptions<
+            TSchema,
+            TMethod,
+            TDefaultError,
+            TOptionsMap,
+            THasDynamicSegment,
+            true
           > &
-            ComputeRequestOptions<
-              ExtractMethodOptions<TOptionsMap, TMethod>,
-              THasDynamicSegment
-            > &
             WithOptimistic<TSchema, TMethod, TDefaultError, TRootSchema>
         ) => Promise<
           EnlaceResponse<
             ExtractData<TSchema, TMethod, TDefaultError>,
-            ExtractError<TSchema, TMethod, TDefaultError>
+            ExtractError<TSchema, TMethod, TDefaultError>,
+            MethodRequestOptions<
+              TSchema,
+              TMethod,
+              TDefaultError,
+              TOptionsMap,
+              THasDynamicSegment,
+              true
+            >
           >
         >
       : (
-          options?: RequestOptions<
-            never,
-            ExtractQuery<TSchema, TMethod, TDefaultError>,
-            never
+          options?: MethodRequestOptions<
+            TSchema,
+            TMethod,
+            TDefaultError,
+            TOptionsMap,
+            THasDynamicSegment,
+            false
           > &
-            ComputeRequestOptions<
-              ExtractMethodOptions<TOptionsMap, TMethod>,
-              THasDynamicSegment
-            > &
             WithOptimistic<TSchema, TMethod, TDefaultError, TRootSchema>
         ) => Promise<
           EnlaceResponse<
             ExtractData<TSchema, TMethod, TDefaultError>,
-            ExtractError<TSchema, TMethod, TDefaultError>
+            ExtractError<TSchema, TMethod, TDefaultError>,
+            MethodRequestOptions<
+              TSchema,
+              TMethod,
+              TDefaultError,
+              TOptionsMap,
+              THasDynamicSegment,
+              false
+            >
           >
         >
     : never;

@@ -178,3 +178,49 @@ export function updateCacheByTags<TData, TResponse>(
     }
   });
 }
+
+export function createInfiniteQueryKey(
+  path: string[],
+  method: string,
+  baseOptions: unknown
+): string {
+  return JSON.stringify(
+    sortObjectKeys({
+      type: "infinite",
+      path,
+      method,
+      options: baseOptions,
+    })
+  );
+}
+
+export function addResponseToInfiniteCache<TData>(
+  key: string,
+  response: TData,
+  request: { query?: unknown; params?: unknown; body?: unknown },
+  direction: "next" | "prev"
+): void {
+  const existing = cache.get(key);
+  const entry = { data: response, request };
+
+  if (!existing?.data) {
+    setCache(key, {
+      data: { responses: [entry] },
+      timestamp: Date.now(),
+    });
+    return;
+  }
+
+  const infiniteData = existing.data as {
+    responses: Array<{ data: TData; request: unknown }>;
+  };
+
+  if (direction === "next") {
+    infiniteData.responses = [...infiniteData.responses, entry];
+  } else {
+    infiniteData.responses = [entry, ...infiniteData.responses];
+  }
+
+  existing.timestamp = Date.now();
+  existing.subscribers.forEach((cb) => cb());
+}
