@@ -33,14 +33,30 @@ export type OptimisticSchemaHelper<TSchema> = {
       }
     : object);
 
-export type CacheConfig<TData, TResponse = unknown> = {
+/** Base config options shared by both timing modes */
+type CacheConfigBase<TData> = {
   for: () => Promise<EnlaceResponse<TData, unknown>>;
-  updater: (data: TData, response?: TResponse) => TData;
-  timing?: "immediate" | "onSuccess";
   rollbackOnError?: boolean;
   refetch?: boolean;
   onError?: (error: unknown) => void;
 };
+
+/** Config for immediate timing (default) - no response available */
+type ImmediateCacheConfig<TData> = CacheConfigBase<TData> & {
+  timing?: "immediate";
+  updater: (data: TData) => TData;
+};
+
+/** Config for onSuccess timing - response is available */
+type OnSuccessCacheConfig<TData, TResponse> = CacheConfigBase<TData> & {
+  timing: "onSuccess";
+  updater: (data: TData, response: TResponse) => TData;
+};
+
+/** Combined cache config - discriminated by timing */
+export type CacheConfig<TData, TResponse = unknown> =
+  | ImmediateCacheConfig<TData>
+  | OnSuccessCacheConfig<TData, TResponse>;
 
 export type ResolvedCacheConfig = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -483,6 +483,9 @@ function DeletePost({ id }: { id: number }) {
 
 **With response data (e.g., creating a post):**
 
+This is useful when the server returns the created object with an ID:
+And you don't want to wait the query to refetch to show it in the list.
+
 ```typescript
 function CreatePost() {
   const { trigger } = useAPI((api) => api.posts.$post);
@@ -490,12 +493,13 @@ function CreatePost() {
   const handleCreate = async () => {
     await trigger({
       body: { title: "New Post", content: "..." },
-      optimistic: (cache, api) => cache({
-        for: api.posts.$get,
-        timing: "onSuccess", // Wait for response
-        updater: (posts, newPost) => [...posts, newPost!],
-        //               ^^^^^^^ typed as Post (mutation response)
-      }),
+      optimistic: (cache, api) =>
+        cache({
+          for: api.posts.$get,
+          timing: "onSuccess", // Wait for response
+          updater: (posts, newPost) => [...posts, newPost],
+          //               ^^^^^^^ typed as Post (You can use response data)
+        }),
     });
   };
 }
@@ -521,14 +525,14 @@ trigger({
 
 **Options:**
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `for` | `api.path.$get` | required | Which cache to update |
-| `updater` | `(data, response?) => data` | required | Transform function |
-| `timing` | `"immediate"` \| `"onSuccess"` | `"immediate"` | When to apply update |
-| `rollbackOnError` | `boolean` | `true` | Revert on failure |
-| `refetch` | `boolean` | `false` | Still refetch after update (rarely needed) |
-| `onError` | `(error) => void` | - | Error callback (e.g., show toast) |
+| Option            | Type                                           | Default       | Description                                         |
+| ----------------- | ---------------------------------------------- | ------------- | --------------------------------------------------- |
+| `for`             | `api.path.$get`                                | required      | Which cache to update                               |
+| `updater`         | `(data) => data` or `(data, response) => data` | required      | Transform function (response only with `onSuccess`) |
+| `timing`          | `"immediate"` \| `"onSuccess"`                 | `"immediate"` | When to apply update                                |
+| `rollbackOnError` | `boolean`                                      | `true`        | Revert on failure                                   |
+| `refetch`         | `boolean`                                      | `false`       | Still refetch after update (rarely needed)          |
+| `onError`         | `(error) => void`                              | -             | Error callback (e.g., show toast)                   |
 
 ### Retry
 
@@ -539,8 +543,8 @@ const useAPI = enlaceHookReact<ApiSchema>(
   "https://api.example.com",
   {},
   {
-    retry: 3,        // Retry up to 3 times (default)
-    retryDelay: 1000 // Base delay 1s with exponential backoff
+    retry: 3, // Retry up to 3 times (default)
+    retryDelay: 1000, // Base delay 1s with exponential backoff
   }
 );
 ```
@@ -548,22 +552,16 @@ const useAPI = enlaceHookReact<ApiSchema>(
 **Per-query retry:**
 
 ```typescript
-const { data } = useAPI(
-  (api) => api.posts.$get(),
-  {
-    retry: 5,         // Override for this query
-    retryDelay: 500   // Faster retry
-  }
-);
+const { data } = useAPI((api) => api.posts.$get(), {
+  retry: 5, // Override for this query
+  retryDelay: 500, // Faster retry
+});
 ```
 
 **Disable retry:**
 
 ```typescript
-const { data } = useAPI(
-  (api) => api.posts.$get(),
-  { retry: false }
-);
+const { data } = useAPI((api) => api.posts.$get(), { retry: false });
 ```
 
 Retry uses exponential backoff: 1s → 2s → 4s → 8s...
@@ -709,12 +707,12 @@ trigger({
 
 **Behavior:**
 
-| Scenario | `tags` / `revalidateTags` | `additionalTags` / `additionalRevalidateTags` | Final Tags |
-|----------|---------------------------|-----------------------------------------------|------------|
-| Override | `['custom']` | - | `['custom']` |
-| Extend auto | - | `['extra']` | `['posts', 'extra']` |
-| Both | `['custom']` | `['extra']` | `['custom', 'extra']` |
-| Neither | - | - | `['posts']` (auto) |
+| Scenario    | `tags` / `revalidateTags` | `additionalTags` / `additionalRevalidateTags` | Final Tags            |
+| ----------- | ------------------------- | --------------------------------------------- | --------------------- |
+| Override    | `['custom']`              | -                                             | `['custom']`          |
+| Extend auto | -                         | `['extra']`                                   | `['posts', 'extra']`  |
+| Both        | `['custom']`              | `['extra']`                                   | `['custom', 'extra']` |
+| Neither     | -                         | -                                             | `['posts']` (auto)    |
 
 ### Manual Tag Invalidation
 
