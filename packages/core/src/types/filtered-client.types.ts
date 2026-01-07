@@ -6,7 +6,7 @@ import type { MethodFn, StaticPathKeys } from "./client.types";
 type QueryMethod = "$get";
 type MutationMethod = "$post" | "$put" | "$patch" | "$delete";
 
-type HasQueryMethods<TSchema> = TSchema extends object
+export type HasQueryMethods<TSchema> = TSchema extends object
   ? "$get" extends keyof TSchema
     ? true
     : TSchema extends { _: infer D }

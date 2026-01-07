@@ -716,11 +716,47 @@ trigger({
 });
 ```
 
+**Targeting specific cache entries with `match`:**
+
+When you have multiple cache entries for the same endpoint (e.g., paginated data), use `match` to target specific entries:
+
+```typescript
+// Add new post only to page 1
+trigger({
+  body: { title: "New Post" },
+  optimistic: (cache, api) =>
+    cache({
+      for: api.posts.paginated.$get,
+      match: (request) => request.query?.page === 1,
+      //      ^^^^^^^ typed based on endpoint's query/params/body
+      timing: "onSuccess",
+      updater: (data, newPost) => ({
+        ...data,
+        items: [newPost, ...data.items],
+      }),
+    }),
+});
+```
+
+The `match` function receives the request options (`query`, `params`, `body`) that were used to fetch that cache entry. Only entries where `match` returns `true` will be updated.
+
+```typescript
+// Update only entries with specific query params
+match: (request) => request.query?.status === "published"
+
+// Update only entries with specific path params
+match: (request) => request.params?.userId === "123"
+
+// Combine conditions
+match: (request) => request.query?.page === 1 && request.params?.categoryId === "tech"
+```
+
 **Options:**
 
 | Option            | Type                                           | Default       | Description                                         |
 | ----------------- | ---------------------------------------------- | ------------- | --------------------------------------------------- |
-| `for`             | `api.path.$get`                                | required      | Which cache to update                               |
+| `for`             | `api.path.$get`                                | required      | Which cache to update (only `$get` endpoints)       |
+| `match`           | `(request) => boolean`                         | -             | Filter which cache entries to update                |
 | `updater`         | `(data) => data` or `(data, response) => data` | required      | Transform function (response only with `onSuccess`) |
 | `timing`          | `"immediate"` \| `"onSuccess"`                 | `"immediate"` | When to apply update                                |
 | `rollbackOnError` | `boolean`                                      | `true`        | Revert on failure                                   |

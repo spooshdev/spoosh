@@ -1,6 +1,7 @@
 import type { EnlaceResponse } from "./response.types";
 import type { SchemaMethod } from "./common.types";
 import type { ExtractData } from "./endpoint.types";
+import type { HasQueryMethods } from "./filtered-client.types";
 
 type ExtractOptimisticData<T> = T extends { data: infer D }
   ? D
@@ -23,22 +24,22 @@ type EndpointToOptimisticMethod<T> = () => Promise<
 export type OptimisticSchemaHelper<TSchema> = {
   [K in keyof TSchema as K extends SchemaMethod | "_"
     ? never
-    : K extends keyof TSchema
+    : HasQueryMethods<TSchema[K]> extends true
       ? K
       : never]: K extends keyof TSchema
     ? OptimisticSchemaHelper<TSchema[K]>
     : never;
 } & {
-  [K in SchemaMethod as K extends keyof TSchema
-    ? K
-    : never]: K extends keyof TSchema
+  [K in "$get" as K extends keyof TSchema ? K : never]: K extends keyof TSchema
     ? EndpointToOptimisticMethod<TSchema[K]>
     : never;
 } & (TSchema extends { _: infer D }
-    ? {
-        [key: string]: OptimisticSchemaHelper<D>;
-        [key: number]: OptimisticSchemaHelper<D>;
-      }
+    ? HasQueryMethods<D> extends true
+      ? {
+          [key: string]: OptimisticSchemaHelper<D>;
+          [key: number]: OptimisticSchemaHelper<D>;
+        }
+      : object
     : object);
 
 export type MatchRequest = {
