@@ -16,7 +16,7 @@ type UnionToIntersection<U> = (
   : never;
 
 export type MergePluginOptions<
-  TPlugins extends EnlacePlugin<object, object, object>[],
+  TPlugins extends readonly EnlacePlugin<object, object, object>[],
 > = {
   read: UnionToIntersection<ExtractReadOptions<TPlugins[number]>>;
   write: UnionToIntersection<ExtractWriteOptions<TPlugins[number]>>;

@@ -94,6 +94,7 @@ export function createOperationController<TData, TError>(
       setCache: (entry) => stateManager.setCache(queryKey, entry),
       invalidateTags: (t) => stateManager.invalidateByTags(t),
       subscribe: (cb) => stateManager.subscribeCache(queryKey, cb),
+      onInvalidate: (cb) => stateManager.onInvalidate(cb),
     };
   };
 
@@ -114,7 +115,7 @@ export function createOperationController<TData, TError>(
     }
   };
 
-  return {
+  const controller: OperationController<TData, TError> = {
     async execute(
       opts?: AnyRequestOptions
     ): Promise<EnlaceResponse<TData, TError>> {
@@ -266,6 +267,7 @@ export function createOperationController<TData, TError>(
     },
 
     mount() {
+      metadata.set("execute", () => controller.execute());
       const context = createContext();
       pluginExecutor.execute("onMount", operationType, context);
     },
@@ -280,4 +282,6 @@ export function createOperationController<TData, TError>(
       metadata.set(key, value);
     },
   };
+
+  return controller;
 }

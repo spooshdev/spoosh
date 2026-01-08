@@ -35,16 +35,11 @@ export type WriteApiClient<
   ? WildcardMutationClient<TOptionsMap>
   : MutationOnlyClient<TSchema, TDefaultError, TOptionsMap>;
 
-export type PollingIntervalValue = number | false;
-
-export type PollingIntervalFn<TData, TError> = (
-  data: TData | undefined,
-  error: TError | undefined
-) => PollingIntervalValue;
-
-export type PollingInterval<TData = unknown, TError = unknown> =
-  | PollingIntervalValue
-  | PollingIntervalFn<TData, TError>;
+export type {
+  PollingIntervalValue,
+  PollingIntervalFn,
+  PollingInterval,
+} from "enlace-core";
 
 export type EnlaceHookOptions = EnlaceCallbacks & {
   autoGenerateTags?: boolean;

@@ -10,4 +10,7 @@ export {
   type CachePluginConfig,
   type CacheReadOptions,
   type CacheWriteOptions,
+  pollingPlugin,
+  type PollingPluginConfig,
+  type PollingReadOptions,
 } from "enlace-core";

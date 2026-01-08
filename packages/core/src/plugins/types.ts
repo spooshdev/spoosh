@@ -50,6 +50,7 @@ export type PluginContext<TData = unknown, TError = unknown> = {
   setCache: (entry: Partial<CacheEntry<TData, TError>>) => void;
   invalidateTags: (tags: string[]) => void;
   subscribe: (callback: () => void) => () => void;
+  onInvalidate: (callback: (tags: string[]) => void) => () => void;
 
   skipFetch?: boolean;
   skipRemainingPlugins?: boolean;
