@@ -11,7 +11,6 @@ export {
   type CacheReadOptions,
   type CacheWriteOptions,
   pollingPlugin,
-  type PollingPluginConfig,
   type PollingReadOptions,
   revalidationPlugin,
   type RevalidationPluginConfig,

@@ -5,6 +5,10 @@ import type {
 
 export type { AutoInvalidate, InvalidateOption };
 
+export interface InvalidationPluginConfig {
+  autoInvalidate?: AutoInvalidate;
+}
+
 export type InvalidateCallbackFn<TSchema = unknown> = (
   api: TSchema
 ) => ((() => Promise<{ data?: unknown }>) | string)[];

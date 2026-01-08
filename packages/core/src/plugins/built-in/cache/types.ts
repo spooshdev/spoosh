@@ -1,3 +1,7 @@
+export interface CachePluginConfig {
+  staleTime?: number;
+}
+
 export interface CacheReadOptions {
   staleTime?: number;
   tags?: string[];

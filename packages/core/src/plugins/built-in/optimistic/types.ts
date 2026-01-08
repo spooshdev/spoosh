@@ -6,6 +6,8 @@ import type {
 
 export type { CacheConfig, ResolvedCacheConfig, OptimisticSchemaHelper };
 
+export type OptimisticPluginConfig = object;
+
 export type OptimisticCallbackFn<TSchema = unknown> = (
   cache: <TData, TRequest = unknown>(
     config: CacheConfig<TData, unknown, TRequest>

@@ -1,3 +1,8 @@
+export interface RevalidationPluginConfig {
+  revalidateOnFocus?: boolean;
+  revalidateOnReconnect?: boolean;
+}
+
 export interface RevalidationReadOptions {
   revalidateOnFocus?: boolean;
   revalidateOnReconnect?: boolean;
