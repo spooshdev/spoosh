@@ -1,5 +1,5 @@
 import { enlace, type EnlaceOptions } from "enlace-core";
-import type { ApiClient, EnlaceHookOptions, EnlaceHooks } from "./types";
+import type { EnlaceHookOptions, EnlaceHooks } from "./types";
 import type { ReactOptionsMap } from "./types/request.types";
 import { createHooksFactory } from "./createHooksFactory";
 
@@ -49,14 +49,11 @@ export function enlaceHookReact<TSchema = unknown, TDefaultError = unknown>(
     middlewares,
   });
 
-  return createHooksFactory<TSchema, TDefaultError, ReactOptionsMap>(
-    api as ApiClient<TSchema, TDefaultError, ReactOptionsMap>,
-    {
-      autoGenerateTags,
-      autoRevalidateTags,
-      staleTime,
-      retry,
-      retryDelay,
-    }
-  );
+  return createHooksFactory<TSchema, TDefaultError, ReactOptionsMap>(api, {
+    autoGenerateTags,
+    autoRevalidateTags,
+    staleTime,
+    retry,
+    retryDelay,
+  });
 }

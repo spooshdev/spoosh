@@ -367,7 +367,7 @@ export function useInfiniteReadImpl<TSchema, TData, TError, TItem>(
 
       await fetchPromise;
     },
-    [api, trackedCall, baseOptionsForKey, retry, retryDelay]
+    [api as unknown, trackedCall, baseOptionsForKey, retry, retryDelay]
   );
 
   const fetchNext = useCallback(async () => {

@@ -1,7 +1,7 @@
 "use client";
 
 import type { EnlaceOptions } from "enlace-core";
-import type { ApiClient, EnlaceHooks } from "enlace";
+import type { EnlaceHooks } from "enlace";
 import { createHooksFactory } from "enlace";
 import { enlace } from "../index";
 import type { NextHookOptions, NextOptionsMap } from "../types";
@@ -53,16 +53,13 @@ export function enlaceHooks<TSchema = unknown, TDefaultError = unknown>(
     ...nextOptions,
   });
 
-  return createHooksFactory<TSchema, TDefaultError, NextOptionsMap>(
-    api as ApiClient<TSchema, TDefaultError, NextOptionsMap>,
-    {
-      autoGenerateTags,
-      autoRevalidateTags,
-      staleTime,
-      retry,
-      retryDelay,
-    }
-  );
+  return createHooksFactory<TSchema, TDefaultError, NextOptionsMap>(api, {
+    autoGenerateTags,
+    autoRevalidateTags,
+    staleTime,
+    retry,
+    retryDelay,
+  });
 }
 
 export { invalidateTags } from "enlace";

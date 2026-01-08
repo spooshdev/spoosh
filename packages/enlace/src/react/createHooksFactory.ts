@@ -28,7 +28,7 @@ export type HookFactoryConfig = {
 };
 
 export function createHooksFactory<TSchema, TDefaultError, TOptionsMap>(
-  api: ApiClient<TSchema, TDefaultError, TOptionsMap>,
+  api: unknown,
   config: HookFactoryConfig
 ): EnlaceHooks<TSchema, TDefaultError, TOptionsMap> {
   const { autoGenerateTags, autoRevalidateTags, staleTime, retry, retryDelay } =
@@ -50,7 +50,9 @@ export function createHooksFactory<TSchema, TDefaultError, TOptionsMap>(
 
     (
       readFn as (api: ApiClient<TSchema, TDefaultError, TOptionsMap>) => unknown
-    )(trackingProxy as ApiClient<TSchema, TDefaultError, TOptionsMap>);
+    )(
+      trackingProxy as unknown as ApiClient<TSchema, TDefaultError, TOptionsMap>
+    );
 
     if (!trackingResult.trackedCall) {
       throw new Error(
@@ -68,8 +70,8 @@ export function createHooksFactory<TSchema, TDefaultError, TOptionsMap>(
       retryDelay: readOptions?.retryDelay ?? retryDelay,
     };
 
-    return useReadImpl<TSchema, TData, TError>(
-      api as ApiClient<TSchema, TDefaultError>,
+    return useReadImpl<unknown, TData, TError>(
+      api as unknown as ApiClient<unknown>,
       trackingResult.trackedCall,
       options
     );
@@ -97,13 +99,15 @@ export function createHooksFactory<TSchema, TDefaultError, TOptionsMap>(
       selectorFn as (
         api: ApiClient<TSchema, TDefaultError, TOptionsMap>
       ) => unknown
-    )(trackingProxy as ApiClient<TSchema, TDefaultError, TOptionsMap>);
+    )(
+      trackingProxy as unknown as ApiClient<TSchema, TDefaultError, TOptionsMap>
+    );
 
     const actualMethod = (
       selectorFn as (
         api: ApiClient<TSchema, TDefaultError, TOptionsMap>
       ) => unknown
-    )(api as ApiClient<TSchema, TDefaultError, TOptionsMap>);
+    )(api as unknown as ApiClient<TSchema, TDefaultError, TOptionsMap>);
 
     return useWriteImpl<TMethod>({
       method: actualMethod as (
@@ -139,7 +143,9 @@ export function createHooksFactory<TSchema, TDefaultError, TOptionsMap>(
 
     (
       readFn as (api: ApiClient<TSchema, TDefaultError, TOptionsMap>) => unknown
-    )(trackingProxy as ApiClient<TSchema, TDefaultError, TOptionsMap>);
+    )(
+      trackingProxy as unknown as ApiClient<TSchema, TDefaultError, TOptionsMap>
+    );
 
     if (!trackingResult.trackedCall) {
       throw new Error(
@@ -157,8 +163,8 @@ export function createHooksFactory<TSchema, TDefaultError, TOptionsMap>(
       retryDelay: readOptions.retryDelay ?? retryDelay,
     };
 
-    return useInfiniteReadImpl<TSchema, TData, TError, TItem>(
-      api as ApiClient<TSchema, TDefaultError>,
+    return useInfiniteReadImpl<unknown, TData, TError, TItem>(
+      api as unknown as ApiClient<unknown>,
       trackingResult.trackedCall,
       options as unknown as InfiniteReadModeOptions<TData, TItem>
     );
