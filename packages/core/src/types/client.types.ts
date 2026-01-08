@@ -106,6 +106,63 @@ export type MethodFn<
         >
     : never;
 
+export type CleanMethodFn<
+  TSchema,
+  TMethod extends SchemaMethod,
+  TDefaultError = unknown,
+  TOptionsMap = object,
+  THasDynamicSegment extends boolean = false,
+> =
+  HasMethod<TSchema, TMethod> extends true
+    ? HasRequiredOptions<TSchema, TMethod, TDefaultError> extends true
+      ? (
+          options: MethodRequestOptions<
+            TSchema,
+            TMethod,
+            TDefaultError,
+            TOptionsMap,
+            THasDynamicSegment,
+            true
+          >
+        ) => Promise<
+          EnlaceResponse<
+            ExtractData<TSchema, TMethod, TDefaultError>,
+            ExtractError<TSchema, TMethod, TDefaultError>,
+            MethodRequestOptions<
+              TSchema,
+              TMethod,
+              TDefaultError,
+              TOptionsMap,
+              THasDynamicSegment,
+              true
+            >
+          >
+        >
+      : (
+          options?: MethodRequestOptions<
+            TSchema,
+            TMethod,
+            TDefaultError,
+            TOptionsMap,
+            THasDynamicSegment,
+            false
+          >
+        ) => Promise<
+          EnlaceResponse<
+            ExtractData<TSchema, TMethod, TDefaultError>,
+            ExtractError<TSchema, TMethod, TDefaultError>,
+            MethodRequestOptions<
+              TSchema,
+              TMethod,
+              TDefaultError,
+              TOptionsMap,
+              THasDynamicSegment,
+              false
+            >
+          >
+        >
+    : never;
+
 type IsSpecialKey<K> = K extends SchemaMethod | "_" ? true : false;
 
 export type StaticPathKeys<TSchema> = {

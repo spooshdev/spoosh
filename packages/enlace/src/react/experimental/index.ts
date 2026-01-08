@@ -4,4 +4,5 @@ export type {
   PluginHooksConfig,
   BaseReadOptions,
   UseReadResult,
+  UseWriteResult,
 } from "./createPluginHooks";

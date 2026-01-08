@@ -1,13 +1,22 @@
-import { useSyncExternalStore, useRef, useEffect, useCallback } from "react";
+import {
+  useSyncExternalStore,
+  useRef,
+  useEffect,
+  useCallback,
+  useState,
+} from "react";
 import {
   enlace,
   type EnlaceOptions,
   type EnlacePlugin,
   type EnlaceResponse,
   type QueryOnlyClient,
+  type CleanMutationOnlyClient,
   type PollingInterval,
   type DataAwareCallback,
   type DataAwareTransform,
+  type PluginContext,
+  type OperationState,
   createPluginExecutor,
   createStateManager,
   createOperationController,
@@ -57,11 +66,42 @@ export type UseReadResult<TData, TError> = {
   abort: () => void;
 };
 
+export type UseWriteResult<TData, TError, TOptions> = {
+  trigger: (options?: TOptions) => Promise<EnlaceResponse<TData, TError>>;
+  loading: boolean;
+  data: TData | undefined;
+  error: TError | undefined;
+  reset: () => void;
+  abort: () => void;
+};
+
 type ReadApiClient<TSchema, TDefaultError> = QueryOnlyClient<
   TSchema,
   TDefaultError,
   ReactOptionsMap
 >;
+
+type WriteApiClient<TSchema, TDefaultError> = CleanMutationOnlyClient<
+  TSchema,
+  TDefaultError,
+  ReactOptionsMap
+>;
+
+type ExtractMethodData<T> = T extends (
+  ...args: never[]
+) => Promise<EnlaceResponse<infer D, unknown>>
+  ? D
+  : unknown;
+
+type ExtractMethodError<T> = T extends (
+  ...args: never[]
+) => Promise<EnlaceResponse<unknown, infer E>>
+  ? E
+  : unknown;
+
+type ExtractMethodOptions<T> = T extends (...args: infer A) => unknown
+  ? A[0]
+  : never;
 
 function resolvePath(
   path: string[],
@@ -220,8 +260,185 @@ export function createPluginHooks<
     };
   }
 
+  function useWrite<
+    TMethod extends (
+      ...args: never[]
+    ) => Promise<EnlaceResponse<unknown, unknown>>,
+  >(
+    writeFn: (api: WriteApiClient<TSchema, TDefaultError>) => TMethod
+  ): UseWriteResult<
+    ExtractMethodData<TMethod>,
+    ExtractMethodError<TMethod>,
+    ExtractMethodOptions<TMethod> & PluginOptions["write"]
+  > {
+    type TData = ExtractMethodData<TMethod>;
+    type TError = ExtractMethodError<TMethod>;
+    type TOptions = ExtractMethodOptions<TMethod> & PluginOptions["write"];
+
+    const trackingResultRef = useRef<TrackingResult>({
+      trackedCall: null,
+      selectorPath: null,
+      selectorMethod: null,
+    });
+
+    const trackingProxy = createTrackingProxy<TSchema>((result) => {
+      trackingResultRef.current = result;
+    });
+
+    (writeFn as (api: unknown) => unknown)(trackingProxy);
+
+    const selectorPath = trackingResultRef.current.selectorPath;
+    const selectorMethod = trackingResultRef.current.selectorMethod;
+
+    if (!selectorPath || !selectorMethod) {
+      throw new Error(
+        "useWrite requires selecting an HTTP method ($post, $put, $patch, $delete). " +
+          "Example: useWrite((api) => api.posts.$post)"
+      );
+    }
+
+    const [state, setState] = useState<{
+      loading: boolean;
+      data: TData | undefined;
+      error: TError | undefined;
+    }>({
+      loading: false,
+      data: undefined,
+      error: undefined,
+    });
+
+    const abortControllerRef = useRef<AbortController | null>(null);
+
+    const reset = useCallback(() => {
+      setState({ loading: false, data: undefined, error: undefined });
+    }, []);
+
+    const abort = useCallback(() => {
+      abortControllerRef.current?.abort();
+      abortControllerRef.current = null;
+    }, []);
+
+    const trigger = useCallback(
+      async (options?: TOptions): Promise<EnlaceResponse<TData, TError>> => {
+        setState((prev) => ({ ...prev, loading: true, error: undefined }));
+
+        abortControllerRef.current = new AbortController();
+        const signal = abortControllerRef.current.signal;
+
+        const requestOptions = options as
+          | { params?: Record<string, string | number> }
+          | undefined;
+        const resolvedPath = resolvePath(selectorPath, requestOptions?.params);
+        const tags = autoGenerateTags ? generateTags(resolvedPath) : [];
+
+        const createContext = (): PluginContext<TData, TError> => {
+          const initialState: OperationState<TData, TError> = {
+            loading: true,
+            fetching: true,
+            data: undefined,
+            error: undefined,
+            isOptimistic: false,
+            isStale: true,
+            timestamp: 0,
+          };
+
+          return {
+            operationType: "write",
+            path: selectorPath,
+            method: selectorMethod as "POST" | "PUT" | "PATCH" | "DELETE",
+            queryKey: JSON.stringify({
+              path: selectorPath,
+              method: selectorMethod,
+              options,
+            }),
+            tags,
+            requestOptions: options ?? {},
+            state: initialState,
+            metadata: new Map([["pluginOptions", options]]),
+            abort: () => abortControllerRef.current?.abort(),
+            getCache: () => undefined,
+            setCache: () => {},
+            invalidateTags: (t) => stateManager.invalidateByTags(t),
+            subscribe: () => () => {},
+            onInvalidate: (cb) => stateManager.onInvalidate(cb),
+          };
+        };
+
+        let context = createContext();
+
+        context = await pluginExecutor.execute("beforeFetch", "write", context);
+
+        try {
+          let current: unknown = api;
+
+          for (const segment of resolvedPath) {
+            current = (current as Record<string, unknown>)[segment];
+          }
+
+          const method = (current as Record<string, unknown>)[
+            selectorMethod
+          ] as (o?: unknown) => Promise<EnlaceResponse<TData, TError>>;
+
+          const response = await method({
+            ...(options as Record<string, unknown>),
+            signal,
+          });
+          context.response = response;
+
+          context = await pluginExecutor.execute(
+            "afterFetch",
+            "write",
+            context
+          );
+
+          if (response.error) {
+            context = await pluginExecutor.execute("onError", "write", context);
+            setState({
+              loading: false,
+              data: undefined,
+              error: response.error,
+            });
+          } else {
+            context = await pluginExecutor.execute(
+              "onSuccess",
+              "write",
+              context
+            );
+            setState({ loading: false, data: response.data, error: undefined });
+          }
+
+          return response;
+        } catch (err) {
+          const errorResponse: EnlaceResponse<TData, TError> = {
+            status: 0,
+            error: err as TError,
+            data: undefined,
+          };
+
+          context.response = errorResponse;
+          context = await pluginExecutor.execute("onError", "write", context);
+
+          setState({ loading: false, data: undefined, error: err as TError });
+
+          return errorResponse;
+        }
+      },
+      [selectorPath, selectorMethod]
+    );
+
+    return {
+      trigger,
+      loading: state.loading,
+      data: state.data,
+      error: state.error,
+      reset,
+      abort,
+    };
+  }
+
   return {
     useRead,
+    useWrite,
     api,
     stateManager,
     pluginExecutor,

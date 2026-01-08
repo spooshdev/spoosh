@@ -1,7 +1,7 @@
 import type { EnlaceResponse } from "./response.types";
 import type { SchemaMethod } from "./common.types";
 import type { RequestOptions } from "./request.types";
-import type { MethodFn, StaticPathKeys } from "./client.types";
+import type { MethodFn, CleanMethodFn, StaticPathKeys } from "./client.types";
 
 type QueryMethod = "$get";
 type MutationMethod = "$post" | "$put" | "$patch" | "$delete";
@@ -213,6 +213,76 @@ export type MutationOnlyClient<
       TOptionsMap,
       THasDynamicSegment,
       TRootSchema
+    >;
+  };
+
+type CleanMutationHttpMethods<
+  TSchema,
+  TDefaultError = unknown,
+  TOptionsMap = object,
+  THasDynamicSegment extends boolean = false,
+> = {
+  [K in MutationMethod as K extends keyof TSchema ? K : never]: CleanMethodFn<
+    TSchema,
+    K,
+    TDefaultError,
+    TOptionsMap,
+    THasDynamicSegment
+  >;
+};
+
+type CleanMutationDynamicAccess<
+  TSchema,
+  TDefaultError = unknown,
+  TOptionsMap = object,
+> = TSchema extends { _: infer D }
+  ? HasMutationMethods<D> extends true
+    ? {
+        [key: string]: CleanMutationOnlyClient<
+          D,
+          TDefaultError,
+          TOptionsMap,
+          true
+        >;
+        [key: number]: CleanMutationOnlyClient<
+          D,
+          TDefaultError,
+          TOptionsMap,
+          true
+        >;
+      }
+    : object
+  : object;
+
+type CleanMutationDynamicKey<TSchema, TDefaultError, TOptionsMap> =
+  TSchema extends { _: infer D }
+    ? HasMutationMethods<D> extends true
+      ? { _: CleanMutationOnlyClient<D, TDefaultError, TOptionsMap, true> }
+      : object
+    : object;
+
+export type CleanMutationOnlyClient<
+  TSchema,
+  TDefaultError = unknown,
+  TOptionsMap = object,
+  THasDynamicSegment extends boolean = false,
+> = CleanMutationHttpMethods<
+  TSchema,
+  TDefaultError,
+  TOptionsMap,
+  THasDynamicSegment
+> &
+  CleanMutationDynamicAccess<TSchema, TDefaultError, TOptionsMap> &
+  CleanMutationDynamicKey<TSchema, TDefaultError, TOptionsMap> & {
+    [K in keyof StaticPathKeys<TSchema> as K extends MethodNameKeys
+      ? never
+      : HasMutationMethods<TSchema[K]> extends true
+        ? K
+        : never]: CleanMutationOnlyClient<
+      TSchema[K],
+      TDefaultError,
+      TOptionsMap,
+      THasDynamicSegment
     >;
   };
 
