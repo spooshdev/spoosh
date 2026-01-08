@@ -15,6 +15,7 @@ import type {
   HasRequiredOptions,
 } from "./endpoint.types";
 import type { WithOptimistic } from "./optimistic.types";
+import type { WithInvalidate } from "./invalidation.types";
 
 type MethodRequestOptions<
   TSchema,
@@ -62,7 +63,8 @@ export type MethodFn<
             THasDynamicSegment,
             true
           > &
-            WithOptimistic<TSchema, TMethod, TDefaultError, TRootSchema>
+            WithOptimistic<TSchema, TMethod, TDefaultError, TRootSchema> &
+            WithInvalidate<TMethod, TRootSchema>
         ) => Promise<
           EnlaceResponse<
             ExtractData<TSchema, TMethod, TDefaultError>,
@@ -86,7 +88,8 @@ export type MethodFn<
             THasDynamicSegment,
             false
           > &
-            WithOptimistic<TSchema, TMethod, TDefaultError, TRootSchema>
+            WithOptimistic<TSchema, TMethod, TDefaultError, TRootSchema> &
+            WithInvalidate<TMethod, TRootSchema>
         ) => Promise<
           EnlaceResponse<
             ExtractData<TSchema, TMethod, TDefaultError>,

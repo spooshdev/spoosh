@@ -19,6 +19,7 @@ import {
   type MethodWithPath,
 } from "../trackingProxy";
 import { cache } from "../optimistic";
+import { resolveInvalidateTagsRuntime } from "../invalidationProxy";
 
 function resolvePath(
   path: string[],
@@ -118,7 +119,21 @@ export function useWriteImpl<
       const signal = abortControllerRef.current.signal;
 
       const options = args[0] as AnyReactRequestOptions | undefined;
-      const optionsWithSignal = { retry, retryDelay, ...options, signal };
+
+      const resolvedInvalidateTags = resolveInvalidateTagsRuntime(
+        options?.invalidate
+      );
+
+      const optionsWithSignal = {
+        retry,
+        retryDelay,
+        ...options,
+        invalidate:
+          resolvedInvalidateTags.length > 0
+            ? resolvedInvalidateTags
+            : undefined,
+        signal,
+      };
       const argsWithSignal = [optionsWithSignal, ...args.slice(1)];
 
       const resolvedPath = resolvePath(pathRef.current, options?.params);
@@ -213,9 +228,20 @@ export function useWriteImpl<
           updateCacheByTags(tags, cfg.updater, res.data, cfg.match);
         }
 
-        const tagsToInvalidate =
-          options?.revalidateTags ??
-          (autoRevalidateRef.current ? generateTags(resolvedPath) : []);
+        const autoInvalidate =
+          options?.autoInvalidate ??
+          (autoRevalidateRef.current ? "all" : false);
+
+        let autoTags: string[] = [];
+
+        if (autoInvalidate === "all") {
+          autoTags = generateTags(resolvedPath);
+        } else if (autoInvalidate === "self") {
+          autoTags = [resolvedPath.join("/")];
+        }
+
+        const customTags = resolveInvalidateTagsRuntime(options?.invalidate);
+        const tagsToInvalidate = [...new Set([...autoTags, ...customTags])];
 
         const filteredTags = tagsToInvalidate.filter(
           (t) => !immediateTagsSet.has(t)

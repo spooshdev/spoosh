@@ -2,6 +2,7 @@ import {
   createMiddleware,
   generateTags,
   type MiddlewareContext,
+  type AutoInvalidate,
 } from "enlace-core";
 import type { ServerRevalidateHandler } from "../types";
 
@@ -32,8 +33,8 @@ export const createServerRevalidationMiddleware = (
     const requestOptions = context.requestOptions as
       | {
           serverRevalidate?: boolean;
-          revalidateTags?: string[];
-          additionalRevalidateTags?: string[];
+          autoInvalidate?: AutoInvalidate;
+          invalidate?: string[];
           revalidatePaths?: string[];
         }
       | undefined;
@@ -45,13 +46,19 @@ export const createServerRevalidationMiddleware = (
       return context;
     }
 
-    const autoTags = generateTags(context.path);
-    const baseRevalidateTags =
-      requestOptions?.revalidateTags ?? (autoRevalidateTags ? autoTags : []);
-    const revalidateTags = [
-      ...baseRevalidateTags,
-      ...(requestOptions?.additionalRevalidateTags ?? []),
-    ];
+    const autoInvalidateSetting =
+      requestOptions?.autoInvalidate ?? (autoRevalidateTags ? "all" : false);
+
+    let autoTags: string[] = [];
+
+    if (autoInvalidateSetting === "all") {
+      autoTags = generateTags(context.path);
+    } else if (autoInvalidateSetting === "self") {
+      autoTags = [context.path.join("/")];
+    }
+
+    const customTags = requestOptions?.invalidate ?? [];
+    const revalidateTags = [...new Set([...autoTags, ...customTags])];
     const revalidatePaths = requestOptions?.revalidatePaths ?? [];
 
     if (revalidateTags.length > 0 || revalidatePaths.length > 0) {
