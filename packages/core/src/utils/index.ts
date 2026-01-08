@@ -3,3 +3,4 @@ export { generateTags } from "./generateTags";
 export { isJsonBody } from "./isJsonBody";
 export { mergeHeaders } from "./mergeHeaders";
 export { objectToFormData } from "./objectToFormData";
+export { sortObjectKeys } from "./sortObjectKeys";

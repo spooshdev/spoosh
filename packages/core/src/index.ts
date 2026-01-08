@@ -29,3 +29,7 @@ export {
   applyMiddlewares,
   composeMiddlewares,
 } from "./middleware";
+
+export * from "./plugins";
+export * from "./state";
+export * from "./operations";
