@@ -67,6 +67,8 @@ export interface EnlacePlugin<
   TReadOptions extends object = object,
   TWriteOptions extends object = object,
   TInfiniteReadOptions extends object = object,
+  TReadResult extends object = object,
+  TWriteResult extends object = object,
 > {
   name: string;
   operations: OperationType[];
@@ -76,6 +78,8 @@ export interface EnlacePlugin<
   __readOptions?: TReadOptions;
   __writeOptions?: TWriteOptions;
   __infiniteReadOptions?: TInfiniteReadOptions;
+  __readResult?: TReadResult;
+  __writeResult?: TWriteResult;
 }
 
 export type PluginFactory<
@@ -83,11 +87,25 @@ export type PluginFactory<
   TReadOptions extends object = object,
   TWriteOptions extends object = object,
   TInfiniteReadOptions extends object = object,
+  TReadResult extends object = object,
+  TWriteResult extends object = object,
 > = TConfig extends void
-  ? () => EnlacePlugin<TReadOptions, TWriteOptions, TInfiniteReadOptions>
+  ? () => EnlacePlugin<
+      TReadOptions,
+      TWriteOptions,
+      TInfiniteReadOptions,
+      TReadResult,
+      TWriteResult
+    >
   : (
       config?: TConfig
-    ) => EnlacePlugin<TReadOptions, TWriteOptions, TInfiniteReadOptions>;
+    ) => EnlacePlugin<
+      TReadOptions,
+      TWriteOptions,
+      TInfiniteReadOptions,
+      TReadResult,
+      TWriteResult
+    >;
 
 /**
  * Marker type for callbacks that need TData/TError from useRead/useWrite.

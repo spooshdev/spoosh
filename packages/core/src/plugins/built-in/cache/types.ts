@@ -11,3 +11,9 @@ export interface CacheInfiniteReadOptions {
   tags?: string[];
   additionalTags?: string[];
 }
+
+export interface CacheReadResult {
+  isStale: boolean;
+}
+
+export type CacheWriteResult = object;

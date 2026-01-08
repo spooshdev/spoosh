@@ -20,3 +20,9 @@ export interface OptimisticWriteOptions<TSchema = unknown> {
 export type OptimisticReadOptions = object;
 
 export type OptimisticInfiniteReadOptions = object;
+
+export interface OptimisticReadResult {
+  isOptimistic: boolean;
+}
+
+export type OptimisticWriteResult = object;

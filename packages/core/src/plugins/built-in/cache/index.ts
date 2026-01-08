@@ -3,9 +3,17 @@ import type {
   CacheReadOptions,
   CacheWriteOptions,
   CacheInfiniteReadOptions,
+  CacheReadResult,
+  CacheWriteResult,
 } from "./types";
 
-export type { CacheReadOptions, CacheWriteOptions, CacheInfiniteReadOptions };
+export type {
+  CacheReadOptions,
+  CacheWriteOptions,
+  CacheInfiniteReadOptions,
+  CacheReadResult,
+  CacheWriteResult,
+};
 
 export interface CachePluginConfig {
   staleTime?: number;
@@ -13,7 +21,13 @@ export interface CachePluginConfig {
 
 export function cachePlugin(
   config: CachePluginConfig = {}
-): EnlacePlugin<CacheReadOptions, CacheWriteOptions, CacheInfiniteReadOptions> {
+): EnlacePlugin<
+  CacheReadOptions,
+  CacheWriteOptions,
+  CacheInfiniteReadOptions,
+  CacheReadResult,
+  CacheWriteResult
+> {
   const { staleTime: defaultStaleTime = 0 } = config;
 
   return {

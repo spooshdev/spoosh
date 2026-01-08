@@ -5,6 +5,8 @@ import type {
   OptimisticWriteOptions,
   OptimisticReadOptions,
   OptimisticInfiniteReadOptions,
+  OptimisticReadResult,
+  OptimisticWriteResult,
   CacheConfig,
 } from "./types";
 
@@ -12,6 +14,8 @@ export type {
   OptimisticWriteOptions,
   OptimisticReadOptions,
   OptimisticInfiniteReadOptions,
+  OptimisticReadResult,
+  OptimisticWriteResult,
   CacheConfig,
 };
 export type {
@@ -212,7 +216,9 @@ function rollbackOptimistic(
 export function optimisticPlugin(): EnlacePlugin<
   OptimisticReadOptions,
   OptimisticWriteOptions,
-  OptimisticInfiniteReadOptions
+  OptimisticInfiniteReadOptions,
+  OptimisticReadResult,
+  OptimisticWriteResult
 > {
   return {
     name: "enlace:optimistic",
