@@ -6,3 +6,7 @@ export interface RevalidationReadOptions {
 export type RevalidationWriteOptions = object;
 
 export type RevalidationInfiniteReadOptions = object;
+
+export type RevalidationReadResult = object;
+
+export type RevalidationWriteResult = object;

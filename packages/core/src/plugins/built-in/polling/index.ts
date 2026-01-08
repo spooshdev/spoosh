@@ -3,6 +3,8 @@ import type {
   PollingReadOptions,
   PollingWriteOptions,
   PollingInfiniteReadOptions,
+  PollingReadResult,
+  PollingWriteResult,
   PollingInterval,
   PollingIntervalValue,
   PollingIntervalFn,
@@ -12,6 +14,8 @@ export type {
   PollingReadOptions,
   PollingWriteOptions,
   PollingInfiniteReadOptions,
+  PollingReadResult,
+  PollingWriteResult,
   PollingInterval,
   PollingIntervalValue,
   PollingIntervalFn,
@@ -26,7 +30,9 @@ export function pollingPlugin(
 ): EnlacePlugin<
   PollingReadOptions,
   PollingWriteOptions,
-  PollingInfiniteReadOptions
+  PollingInfiniteReadOptions,
+  PollingReadResult,
+  PollingWriteResult
 > {
   const { defaultInterval } = config;
   const timeouts = new Map<string, ReturnType<typeof setTimeout>>();

@@ -3,12 +3,16 @@ import type {
   RevalidationReadOptions,
   RevalidationWriteOptions,
   RevalidationInfiniteReadOptions,
+  RevalidationReadResult,
+  RevalidationWriteResult,
 } from "./types";
 
 export type {
   RevalidationReadOptions,
   RevalidationWriteOptions,
   RevalidationInfiniteReadOptions,
+  RevalidationReadResult,
+  RevalidationWriteResult,
 };
 
 export interface RevalidationPluginConfig {
@@ -23,7 +27,9 @@ export function revalidationPlugin(
 ): EnlacePlugin<
   RevalidationReadOptions,
   RevalidationWriteOptions,
-  RevalidationInfiniteReadOptions
+  RevalidationInfiniteReadOptions,
+  RevalidationReadResult,
+  RevalidationWriteResult
 > {
   const { revalidateOnFocus = false, revalidateOnReconnect = false } = config;
 

@@ -3,6 +3,8 @@ import type {
   InvalidationWriteOptions,
   InvalidationReadOptions,
   InvalidationInfiniteReadOptions,
+  InvalidationReadResult,
+  InvalidationWriteResult,
   AutoInvalidate,
 } from "./types";
 
@@ -10,6 +12,8 @@ export type {
   InvalidationWriteOptions,
   InvalidationReadOptions,
   InvalidationInfiniteReadOptions,
+  InvalidationReadResult,
+  InvalidationWriteResult,
   AutoInvalidate,
 };
 export type { InvalidateCallbackFn, InvalidateOption } from "./types";
@@ -99,7 +103,9 @@ export function invalidationPlugin(
 ): EnlacePlugin<
   InvalidationReadOptions,
   InvalidationWriteOptions,
-  InvalidationInfiniteReadOptions
+  InvalidationInfiniteReadOptions,
+  InvalidationReadResult,
+  InvalidationWriteResult
 > {
   const { autoInvalidate: defaultAutoInvalidate = "all" } = config;
 

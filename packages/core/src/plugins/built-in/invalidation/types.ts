@@ -17,3 +17,7 @@ export interface InvalidationWriteOptions<TSchema = unknown> {
 export type InvalidationReadOptions = object;
 
 export type InvalidationInfiniteReadOptions = object;
+
+export type InvalidationReadResult = object;
+
+export type InvalidationWriteResult = object;
