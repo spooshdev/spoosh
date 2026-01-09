@@ -1,16 +1,16 @@
 {
-  "name": "enlace",
-  "version": "0.0.1-beta.21",
+  "name": "enlace-react",
+  "version": "0.0.1-beta.1",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/nxnom/enlace.git",
-    "directory": "packages/enlace"
+    "directory": "packages/react"
   },
   "bugs": {
     "url": "https://github.com/nxnom/enlace/issues"
   },
-  "homepage": "https://github.com/nxnom/enlace/tree/main/packages/enlace#readme",
+  "homepage": "https://github.com/nxnom/enlace/tree/main/packages/react#readme",
   "files": [
     "dist"
   ],
@@ -30,9 +30,9 @@
     "prepublishOnly": "npm run build && npm run typecheck && npm run lint"
   },
   "dependencies": {
-    "enlace-core": "workspace:*"
+    "enlace": "workspace:*"
   },
   "peerDependencies": {
-    "react": "^19"
+    "react": "^18 || ^19"
   }
 }

@@ -13,7 +13,7 @@ import type {
   MergePluginResults,
   MethodOptionsMap,
   CoreRequestOptionsBase,
-} from "enlace-core";
+} from "enlace";
 
 export const HTTP_METHODS = [
   "$get",
@@ -82,11 +82,9 @@ export type ResolveDataTypes<TOptions, TData, TError> = {
 };
 
 export type ResolveSchemaTypes<TOptions, TSchema> = {
-  [K in keyof TOptions]: TOptions[K] extends
-    | OptimisticCallbackFn<unknown>
-    | undefined
+  [K in keyof TOptions]: K extends "optimistic"
     ? OptimisticCallbackFn<TSchema> | undefined
-    : TOptions[K] extends InvalidateOption<unknown> | undefined
+    : K extends "invalidate"
       ? InvalidateOption<TSchema> | undefined
       : TOptions[K];
 };

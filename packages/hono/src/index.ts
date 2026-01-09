@@ -5,4 +5,4 @@ export type {
   EndpointWithQuery,
   EndpointWithFormData,
   EndpointFull,
-} from "enlace-core";
+} from "enlace";

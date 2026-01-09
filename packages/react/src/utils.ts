@@ -1,4 +1,4 @@
-import { generateTags } from "enlace-core";
+import { generateTags } from "enlace";
 
 type TagOptions = {
   tags?: string[];

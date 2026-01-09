@@ -8,7 +8,7 @@ import {
   type MergePluginResults,
   type EnlacePlugin,
   createOperationController,
-} from "enlace-core";
+} from "enlace";
 import { createTrackingProxy, type TrackingResult } from "./trackingProxy";
 import type {
   BaseReadOptions,

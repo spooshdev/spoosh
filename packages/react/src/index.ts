@@ -1,7 +1,7 @@
 "use client";
 
-export * from "enlace-core";
-export { enlaceHooks } from "./enlaceHooks";
+export { enlaceReact, type EnlaceReactHooks } from "./enlaceReact";
+
 export type {
   PluginHooksConfig,
   BaseReadOptions,
@@ -12,7 +12,8 @@ export type {
   BaseWriteResult,
   BaseInfiniteReadResult,
   BaseInfiniteReadOptions,
-} from "./enlaceHooks";
+} from "./types";
+
 export { nextjsPlugin } from "./plugins/nextjs";
 export type {
   NextjsPluginConfig,

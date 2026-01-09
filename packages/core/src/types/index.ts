@@ -7,3 +7,4 @@ export * from "./invalidation.types";
 export * from "./client.types";
 export * from "./filtered-client.types";
 export * from "./middleware.types";
+export * from "./instance.types";

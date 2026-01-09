@@ -1,5 +1,5 @@
 {
-  "name": "enlace-core",
+  "name": "enlace",
   "version": "0.0.1-beta.13",
   "license": "MIT",
   "repository": {
@@ -10,7 +10,7 @@
   "bugs": {
     "url": "https://github.com/nxnom/enlace/issues"
   },
-  "homepage": "https://github.com/nxnom/enlace/tree/main/packages/core#readme",
+  "homepage": "https://github.com/nxnom/enlace#readme",
   "files": [
     "dist"
   ],

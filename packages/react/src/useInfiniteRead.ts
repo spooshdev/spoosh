@@ -9,7 +9,7 @@ import {
   type EnlacePlugin,
   type PluginContext,
   type OperationState,
-} from "enlace-core";
+} from "enlace";
 import { createTrackingProxy, type TrackingResult } from "./trackingProxy";
 import type {
   BaseInfiniteReadOptions,

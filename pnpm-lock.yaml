@@ -42,18 +42,9 @@ importers:
         specifier: ^9.3.1
         version: 9.3.1
 
-  packages/enlace:
-    dependencies:
-      enlace-core:
-        specifier: workspace:*
-        version: link:../core
-      react:
-        specifier: ^19
-        version: 19.2.1
-
   packages/hono:
     devDependencies:
-      enlace-core:
+      enlace:
         specifier: workspace:*
         version: link:../core
       hono:
@@ -80,13 +71,13 @@ importers:
         version: 0.7.6(hono@4.11.3)(zod@4.3.4)
       enlace:
         specifier: workspace:*
-        version: link:../enlace
-      enlace-core:
-        specifier: workspace:*
         version: link:../core
       enlace-hono:
         specifier: workspace:*
         version: link:../hono
+      enlace-react:
+        specifier: workspace:*
+        version: link:../react
       hono:
         specifier: ^4.11.3
         version: 4.11.3
@@ -127,6 +118,15 @@ importers:
       typescript:
         specifier: ^5
         version: 5.9.2
+
+  packages/react:
+    dependencies:
+      enlace:
+        specifier: workspace:*
+        version: link:../core
+      react:
+        specifier: ^18 || ^19
+        version: 19.2.0
 
 packages:
 
@@ -2108,10 +2108,6 @@ packages:
 
   react@19.2.0:
     resolution: {integrity: sha512-tmbWg6W31tQLeB5cdIBOicJDJRR2KzXsV7uSK9iNfLWQ5bIZfxuPEHp7M8wiHyHnn0DD1i7w3Zmin0FtkrwoCQ==}
-    engines: {node: '>=0.10.0'}
-
-  react@19.2.1:
-    resolution: {integrity: sha512-DGrYcCWK7tvYMnWh79yrPHt+vdx9tY+1gPZa7nJQtO/p8bLTDaHp4dzwEhQB7pZ4Xe3ok4XKuEPrVuc+wlpkmw==}
     engines: {node: '>=0.10.0'}
 
   readdirp@4.1.2:
@@ -4425,8 +4421,6 @@ snapshots:
   react-is@16.13.1: {}
 
   react@19.2.0: {}
-
-  react@19.2.1: {}
 
   readdirp@4.1.2: {}
 

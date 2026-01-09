@@ -1,4 +1,4 @@
-import type { EnlacePlugin } from "enlace-core";
+import type { EnlacePlugin } from "enlace";
 import type {
   NextjsPluginConfig,
   NextjsReadOptions,

@@ -8,10 +8,8 @@ export type { CacheConfig, ResolvedCacheConfig, OptimisticSchemaHelper };
 
 export type OptimisticPluginConfig = object;
 
-export type OptimisticCallbackFn<TSchema = unknown> = (
-  cache: <TData, TRequest = unknown>(
-    config: CacheConfig<TData, unknown, TRequest>
-  ) => ResolvedCacheConfig,
+export type OptimisticCallbackFn<TSchema = unknown, TResponse = unknown> = (
+  cache: <TData>(config: CacheConfig<TData, TResponse>) => ResolvedCacheConfig,
   api: OptimisticSchemaHelper<TSchema>
 ) => ResolvedCacheConfig | ResolvedCacheConfig[];
 

@@ -59,8 +59,8 @@ function resolveOptimisticConfigs(
 
   if (!pluginOptions?.optimistic) return [];
 
-  const cache = <TData, TRequest = unknown>(
-    config: CacheConfig<TData, unknown, TRequest>
+  const cache = <TData>(
+    config: CacheConfig<TData, unknown>
   ): ResolvedCacheConfig => ({
     for: config.for as ResolvedCacheConfig["for"],
     match: config.match as ResolvedCacheConfig["match"],

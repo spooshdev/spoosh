@@ -54,37 +54,15 @@ type PickRequestFields<T> = [T] extends [unknown]
     : Pick<T, Extract<keyof T, "query" | "params" | "body">>
   : Pick<T, Extract<keyof T, "query" | "params" | "body">>;
 
-/** Base config options shared by both timing modes */
-type CacheConfigBase<TData, TRequest> = {
-  for: () => Promise<EnlaceResponse<TData, unknown, TRequest>>;
+export type CacheConfig<TData, TResponse = unknown, TRequest = MatchRequest> = {
+  for: () => Promise<EnlaceResponse<TData, unknown, unknown>>;
   match?: (request: PickRequestFields<TRequest>) => boolean;
+  timing?: "immediate" | "onSuccess";
+  updater: (data: TData, response?: TResponse) => TData;
   rollbackOnError?: boolean;
   refetch?: boolean;
   onError?: (error: unknown) => void;
 };
-
-/** Config for immediate timing (default) - no response available */
-type ImmediateCacheConfig<TData, TRequest> = CacheConfigBase<
-  TData,
-  TRequest
-> & {
-  timing?: "immediate";
-  updater: (data: TData) => TData;
-};
-
-/** Config for onSuccess timing - response is available */
-type OnSuccessCacheConfig<TData, TResponse, TRequest> = CacheConfigBase<
-  TData,
-  TRequest
-> & {
-  timing: "onSuccess";
-  updater: (data: TData, response: TResponse) => TData;
-};
-
-/** Combined cache config - discriminated by timing */
-export type CacheConfig<TData, TResponse = unknown, TRequest = MatchRequest> =
-  | ImmediateCacheConfig<TData, TRequest>
-  | OnSuccessCacheConfig<TData, TResponse, TRequest>;
 
 export type ResolvedCacheConfig = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -98,9 +76,7 @@ export type ResolvedCacheConfig = {
 };
 
 type OptimisticCallbackFn<TSchema, TResponse = unknown> = (
-  cache: <TData, TRequest = unknown>(
-    config: CacheConfig<TData, TResponse, TRequest>
-  ) => ResolvedCacheConfig,
+  cache: <TData>(config: CacheConfig<TData, TResponse>) => ResolvedCacheConfig,
   api: OptimisticSchemaHelper<TSchema>
 ) => ResolvedCacheConfig | ResolvedCacheConfig[];
 

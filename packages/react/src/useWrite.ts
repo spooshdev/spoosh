@@ -9,7 +9,7 @@ import {
   type MergePluginOptions,
   type MergePluginResults,
   type EnlacePlugin,
-} from "enlace-core";
+} from "enlace";
 import { createTrackingProxy, type TrackingResult } from "./trackingProxy";
 import type {
   ResolveSchemaTypes,

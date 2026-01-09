@@ -30,11 +30,11 @@
     "prepublishOnly": "npm run build && npm run typecheck && npm run lint"
   },
   "peerDependencies": {
-    "enlace-core": ">=0.0.1-beta.1",
+    "enlace": ">=0.0.1-beta.1",
     "hono": ">=4.0.0"
   },
   "devDependencies": {
-    "enlace-core": "workspace:*",
+    "enlace": "workspace:*",
     "hono": "^4.10.6"
   }
 }

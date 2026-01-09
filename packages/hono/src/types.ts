@@ -3,7 +3,7 @@ import type {
   EndpointWithQuery,
   EndpointWithFormData,
   EndpointFull,
-} from "enlace-core";
+} from "enlace";
 import type { Hono } from "hono";
 import type { HonoBase } from "hono/hono-base";
 
