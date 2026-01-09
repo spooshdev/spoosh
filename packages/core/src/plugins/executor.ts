@@ -53,11 +53,6 @@ export function createPluginExecutor(
         ctx = (await handler(
           ctx as PluginContext<unknown, unknown>
         )) as PluginContext<TData, TError>;
-
-        if (ctx.skipRemainingPlugins) {
-          ctx.skipRemainingPlugins = false;
-          break;
-        }
       }
 
       return ctx;

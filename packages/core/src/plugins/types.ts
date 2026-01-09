@@ -56,7 +56,6 @@ export type PluginContext<TData = unknown, TError = unknown> = {
   plugins: PluginAccessor;
 
   skipFetch?: boolean;
-  skipRemainingPlugins?: boolean;
 };
 
 export type PluginHandler<TData = unknown, TError = unknown> = (
