@@ -9,7 +9,6 @@ import {
   type MergePluginOptions,
   type MergePluginResults,
   type EnlacePlugin,
-  generateTags,
 } from "enlace-core";
 import { createTrackingProxy, type TrackingResult } from "./trackingProxy";
 import type {
@@ -20,14 +19,13 @@ import type {
   ExtractMethodError,
   ExtractMethodOptions,
 } from "./types";
-import { resolvePath } from "./utils";
+import { resolvePath, resolveTags } from "./utils";
 
 export type CreateUseWriteOptions = {
   api: unknown;
   stateManager: StateManager;
   eventEmitter: EventEmitter;
   pluginExecutor: PluginExecutor;
-  autoGenerateTags: boolean;
 };
 
 export function createUseWrite<
@@ -41,8 +39,7 @@ export function createUseWrite<
     object
   >[],
 >(options: CreateUseWriteOptions) {
-  const { api, stateManager, eventEmitter, pluginExecutor, autoGenerateTags } =
-    options;
+  const { api, stateManager, eventEmitter, pluginExecutor } = options;
 
   type PluginOptions = MergePluginOptions<TPlugins>;
   type PluginResults = MergePluginResults<TPlugins>;
@@ -121,7 +118,7 @@ export function createUseWrite<
           | { params?: Record<string, string | number> }
           | undefined;
         const resolvedPath = resolvePath(selectorPath, requestOptions?.params);
-        const tags = autoGenerateTags ? generateTags(resolvedPath) : [];
+        const tags = resolveTags(triggerOptions, resolvedPath);
 
         const createContext = (): PluginContext<TData, TError> => {
           const initialState: OperationState<TData, TError> = {

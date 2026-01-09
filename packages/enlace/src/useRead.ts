@@ -8,7 +8,6 @@ import {
   type MergePluginResults,
   type EnlacePlugin,
   createOperationController,
-  generateTags,
 } from "enlace-core";
 import { createTrackingProxy, type TrackingResult } from "./trackingProxy";
 import type {
@@ -17,14 +16,13 @@ import type {
   BaseReadResult,
   ReadApiClient,
 } from "./types";
-import { resolvePath } from "./utils";
+import { resolvePath, resolveTags } from "./utils";
 
 export type CreateUseReadOptions = {
   api: unknown;
   stateManager: StateManager;
   eventEmitter: EventEmitter;
   pluginExecutor: PluginExecutor;
-  autoGenerateTags: boolean;
 };
 
 export function createUseRead<
@@ -38,8 +36,7 @@ export function createUseRead<
     object
   >[],
 >(options: CreateUseReadOptions) {
-  const { api, stateManager, eventEmitter, pluginExecutor, autoGenerateTags } =
-    options;
+  const { api, stateManager, eventEmitter, pluginExecutor } = options;
 
   type PluginOptions = MergePluginOptions<TPlugins>;
   type PluginResults = MergePluginResults<TPlugins>;
@@ -79,7 +76,7 @@ export function createUseRead<
       | undefined;
 
     const resolvedPath = resolvePath(trackedCall.path, requestOptions?.params);
-    const tags = autoGenerateTags ? generateTags(resolvedPath) : [];
+    const tags = resolveTags(pluginOpts, resolvedPath);
 
     const queryKey = stateManager.createQueryKey({
       path: trackedCall.path,

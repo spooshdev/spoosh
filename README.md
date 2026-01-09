@@ -24,6 +24,8 @@ No route strings. No path templates. No runtime typos. Just types, all the way d
 
 **Proxy Navigation** — Navigate your API like a file system. Paths are validated at compile time.
 
+**Plugin Architecture** — Compose behavior with plugins: caching, polling, retries, optimistic updates, and more.
+
 **Zero Configuration Caching** — Cache tags are derived from URL structure automatically. `GET /posts/123` caches under `['posts', 'posts/123']`. Mutations to `/posts` invalidate what they should.
 
 **Framework Native** — First-class React hooks. Native Next.js cache integration with ISR and server revalidation.
@@ -33,8 +35,7 @@ No route strings. No path templates. No runtime typos. Just types, all the way d
 | Package                                | Description                                   |
 | -------------------------------------- | --------------------------------------------- |
 | [`enlace-core`](./packages/core)       | Core fetch wrapper and type-safe API client   |
-| [`enlace`](./packages/enlace)          | React hooks for data fetching                 |
-| [`enlace-next`](./packages/next)       | Next.js integration with server revalidation  |
+| [`enlace`](./packages/enlace)          | React hooks with plugin system                |
 | [`enlace-openapi`](./packages/openapi) | Generate OpenAPI specs from TypeScript schema |
 | [`enlace-hono`](./packages/hono)       | Type adapter for Hono framework               |
 
@@ -44,14 +45,11 @@ No route strings. No path templates. No runtime typos. Just types, all the way d
 # For React projects
 npm install enlace
 
-# For Next.js projects
-npm install enlace-next
-
 # For vanilla JS/TS (no React)
 npm install enlace-core
 ```
 
-## Usage
+## Quick Start
 
 ### Define Your Schema
 
@@ -62,33 +60,51 @@ type ApiError = { message: string; code: number };
 
 type ApiSchema = {
   posts: {
-    $get: Post[]; // GET /posts → Post[]
-    $post: Endpoint<Post, CreatePost>; // POST /posts
+    $get: Post[];
+    $post: Endpoint<Post, CreatePost>;
     _: {
-      $get: Post; // GET /posts/:id → Post
-      $put: Endpoint<Post, UpdatePost>; // PUT /posts/:id
-      $delete: void; // DELETE /posts/:id
+      $get: Post;
+      $put: Endpoint<Post, UpdatePost>;
+      $delete: void;
     };
   };
   users: {
     _: {
       $get: User;
       posts: {
-        $get: Post[]; // GET /users/:id/posts
+        $get: Post[];
       };
     };
   };
 };
 ```
 
-### Create Your Hook
+### Create Your Hooks with Plugins
 
 ```typescript
-import { enlaceHooks } from "enlace/hook";
+import {
+  enlaceHooks,
+  cachePlugin,
+  retryPlugin,
+  pollingPlugin,
+  revalidationPlugin,
+  optimisticPlugin,
+  invalidationPlugin,
+} from "enlace";
 
-const { useRead, useWrite } = enlaceHooks<ApiSchema, ApiError>(
-  "https://api.example.com"
-);
+const plugins = [
+  cachePlugin({ staleTime: 5000 }),
+  retryPlugin({ retries: 3, retryDelay: 1000 }),
+  pollingPlugin(),
+  revalidationPlugin({ revalidateOnFocus: true, revalidateOnReconnect: true }),
+  optimisticPlugin(),
+  invalidationPlugin(),
+] as const;
+
+const { useRead, useWrite, useInfiniteRead } = enlaceHooks<ApiSchema, ApiError>()({
+  baseUrl: "https://api.example.com",
+  plugins,
+});
 ```
 
 ### Read Data
@@ -110,7 +126,7 @@ function PostList() {
 }
 ```
 
-### Write Data
+### Write Data with Auto-Invalidation
 
 ```typescript
 function CreatePost() {
@@ -121,7 +137,11 @@ function CreatePost() {
     // Cache for 'posts' is automatically invalidated
   };
 
-  return <button onClick={() => handleSubmit("New Post")} disabled={loading}>Create</button>;
+  return (
+    <button onClick={() => handleSubmit("New Post")} disabled={loading}>
+      Create
+    </button>
+  );
 }
 ```
 
@@ -129,46 +149,82 @@ function CreatePost() {
 
 ```typescript
 function UserPosts({ userId }: { userId: string }) {
-  // GET /users/:userId/posts
   const { data } = useRead((api) => api.users[userId].posts.$get());
-
   // Cache tags: ['users', 'users/:userId', 'users/:userId/posts']
+
   return <PostList posts={data} />;
 }
 ```
 
-### Next.js Server Revalidation
+## Plugin System
+
+Enlace uses a composable plugin architecture. Each plugin adds specific functionality:
+
+| Plugin               | Description                                      |
+| -------------------- | ------------------------------------------------ |
+| `cachePlugin`        | Response caching with stale time control         |
+| `retryPlugin`        | Automatic retry with exponential backoff         |
+| `pollingPlugin`      | Periodic refetching at configurable intervals    |
+| `revalidationPlugin` | Revalidate on focus, reconnect, or invalidation  |
+| `optimisticPlugin`   | Optimistic UI updates with automatic rollback    |
+| `invalidationPlugin` | Tag-based cache invalidation after mutations     |
+| `nextjsPlugin`       | Next.js server-side revalidation integration     |
+
+### Plugin Configuration
+
+```typescript
+const plugins = [
+  cachePlugin({ staleTime: 60000 }),
+  retryPlugin({ retries: 3, retryDelay: 1000 }),
+  pollingPlugin(),
+  revalidationPlugin({
+    revalidateOnFocus: true,
+    revalidateOnReconnect: true,
+  }),
+  optimisticPlugin(),
+  invalidationPlugin({ autoInvalidate: "all" }),
+] as const;
+```
+
+### Next.js Integration
 
 ```typescript
 // actions.ts
 "use server";
+import { revalidateTag, revalidatePath } from "next/cache";
 
-import { revalidateTag } from "next/cache";
-
-export async function revalidateAction(tags: string[]) {
-  for (const tag of tags) {
-    revalidateTag(tag);
-  }
+export async function serverRevalidator(tags: string[], paths: string[]) {
+  tags.forEach((tag) => revalidateTag(tag));
+  paths.forEach((path) => revalidatePath(path));
 }
 ```
 
 ```typescript
 // hooks.ts
-import { enlaceHooks } from "enlace-next/client";
-import { revalidateAction } from "./actions";
+import {
+  enlaceHooks,
+  cachePlugin,
+  invalidationPlugin,
+  nextjsPlugin,
+} from "enlace";
+import { serverRevalidator } from "./actions";
 
-export const { useRead, useWrite } = enlaceHooks<ApiSchema, ApiError>(
-  "https://api.example.com",
-  {},
-  { serverRevalidator: revalidateAction }
-);
+const plugins = [
+  cachePlugin({ staleTime: 60000 }),
+  invalidationPlugin(),
+  nextjsPlugin({ serverRevalidator }),
+] as const;
+
+export const { useRead, useWrite } = enlaceHooks<ApiSchema, ApiError>()({
+  baseUrl: "https://api.example.com",
+  plugins,
+});
 ```
 
 ## Documentation
 
 - [enlace-core](./packages/core/README.md) — Core API client
-- [enlace](./packages/enlace/README.md) — React hooks
-- [enlace-next](./packages/next/README.md) — Next.js integration
+- [enlace](./packages/enlace/README.md) — React hooks with plugins
 - [enlace-openapi](./packages/openapi/README.md) — OpenAPI generation
 - [enlace-hono](./packages/hono/README.md) — Hono type adapter
 

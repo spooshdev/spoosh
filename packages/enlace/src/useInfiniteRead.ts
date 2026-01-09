@@ -9,7 +9,6 @@ import {
   type EnlacePlugin,
   type PluginContext,
   type OperationState,
-  generateTags,
 } from "enlace-core";
 import { createTrackingProxy, type TrackingResult } from "./trackingProxy";
 import type {
@@ -19,14 +18,13 @@ import type {
   InfiniteReadApiClient,
   AnyInfiniteRequestOptions,
 } from "./types";
-import { resolvePath } from "./utils";
+import { resolvePath, resolveTags } from "./utils";
 
 export type CreateUseInfiniteReadOptions = {
   api: unknown;
   stateManager: StateManager;
   eventEmitter: EventEmitter;
   pluginExecutor: PluginExecutor;
-  autoGenerateTags: boolean;
 };
 
 type FetchDirection = "next" | "prev";
@@ -156,8 +154,7 @@ export function createUseInfiniteRead<
     object
   >[],
 >(options: CreateUseInfiniteReadOptions) {
-  const { api, stateManager, eventEmitter, pluginExecutor, autoGenerateTags } =
-    options;
+  const { api, stateManager, eventEmitter, pluginExecutor } = options;
 
   type PluginOptions = MergePluginOptions<TPlugins>;
   type PluginResults = MergePluginResults<TPlugins>;
@@ -227,7 +224,7 @@ export function createUseInfiniteRead<
     };
 
     const resolvedPath = resolvePath(trackedCall.path, requestOptions?.params);
-    const tags = autoGenerateTags ? generateTags(resolvedPath) : [];
+    const tags = resolveTags(pluginOpts, resolvedPath);
 
     const trackerKey = createInfiniteTrackerKey(
       trackedCall.path,

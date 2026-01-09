@@ -1,3 +1,20 @@
+import { generateTags } from "enlace-core";
+
+type TagOptions = {
+  tags?: string[];
+  additionalTags?: string[];
+};
+
+export function resolveTags(
+  options: TagOptions | undefined,
+  resolvedPath: string[]
+): string[] {
+  const customTags = options?.tags;
+  const additionalTags = options?.additionalTags ?? [];
+  const baseTags = customTags ?? generateTags(resolvedPath);
+  return [...baseTags, ...additionalTags];
+}
+
 export function resolvePath(
   path: string[],
   params: Record<string, string | number> | undefined

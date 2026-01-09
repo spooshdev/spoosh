@@ -1,6 +1,6 @@
 # enlace
 
-Type-safe API client with React hooks.
+Type-safe API client with React hooks and a composable plugin system.
 
 ## Installation
 
@@ -8,221 +8,266 @@ Type-safe API client with React hooks.
 npm install enlace
 ```
 
-> **For Next.js projects**, use [`enlace-next`](../next/README.md) instead for server revalidation support.
-
 ## Quick Start
 
 ```typescript
-import { enlaceHooks } from "enlace/hook";
-import { Endpoint } from "enlace";
+import {
+  enlaceHooks,
+  cachePlugin,
+  retryPlugin,
+  pollingPlugin,
+  revalidationPlugin,
+  optimisticPlugin,
+  invalidationPlugin,
+  Endpoint,
+} from "enlace";
 
-// Define your API error type
 type ApiError = { message: string; code: number };
 
 type ApiSchema = {
   posts: {
-    $get: Post[]; // Simple: just data type
-    $post: Endpoint<Post, CreatePost>; // Data + Body
-    $put: Endpoint<Post, UpdatePost, CustomError>; // Data + Body + Custom Error
+    $get: Post[];
+    $post: Endpoint<Post, CreatePost>;
     _: {
-      $get: Post; // Simple: just data type
-      $delete: void; // Simple: void response
+      $get: Post;
+      $delete: void;
     };
   };
 };
 
-// Create hooks
-const { useRead, useWrite, useInfiniteRead } = enlaceHooks<ApiSchema, ApiError>(
-  "https://api.example.com"
-);
+const plugins = [
+  cachePlugin({ staleTime: 5000 }),
+  retryPlugin({ retries: 3 }),
+  pollingPlugin(),
+  revalidationPlugin({ revalidateOnFocus: true }),
+  optimisticPlugin(),
+  invalidationPlugin(),
+] as const;
+
+const { useRead, useWrite, useInfiniteRead } = enlaceHooks<ApiSchema, ApiError>()({
+  baseUrl: "https://api.example.com",
+  plugins,
+});
+```
+
+## Plugin System
+
+Enlace uses a composable plugin architecture. Plugins are executed in order and can modify request/response behavior at various lifecycle points.
+
+### Available Plugins
+
+| Plugin               | Description                                      |
+| -------------------- | ------------------------------------------------ |
+| `cachePlugin`        | Response caching with stale time control         |
+| `retryPlugin`        | Automatic retry with exponential backoff         |
+| `pollingPlugin`      | Periodic refetching at configurable intervals    |
+| `revalidationPlugin` | Revalidate on focus, reconnect, or invalidation  |
+| `optimisticPlugin`   | Optimistic UI updates with automatic rollback    |
+| `invalidationPlugin` | Tag-based cache invalidation after mutations     |
+| `nextjsPlugin`       | Next.js server-side revalidation integration     |
+
+### cachePlugin
+
+Caches responses and serves stale data while revalidating.
+
+```typescript
+cachePlugin({
+  staleTime: 5000, // Data is fresh for 5 seconds (default: 0)
+})
+```
+
+**Per-request override:**
+
+```typescript
+const { data } = useRead((api) => api.posts.$get(), {
+  staleTime: 60000, // Override for this query
+});
+```
+
+### retryPlugin
+
+Automatically retries failed requests with exponential backoff.
+
+```typescript
+retryPlugin({
+  retries: 3,        // Max retry attempts (default: 3)
+  retryDelay: 1000,  // Base delay in ms (default: 1000)
+})
+```
+
+**Per-request override:**
+
+```typescript
+const { data } = useRead((api) => api.posts.$get(), {
+  retries: 5,
+  retryDelay: 500,
+});
+
+// Disable retry for specific request
+const { data } = useRead((api) => api.posts.$get(), { retries: false });
+```
+
+### pollingPlugin
+
+Enables periodic refetching. Polling uses sequential timing — the interval starts after the previous request completes.
+
+```typescript
+pollingPlugin()
+```
+
+**Usage:**
+
+```typescript
+const { data } = useRead((api) => api.notifications.$get(), {
+  pollingInterval: 5000, // Refetch every 5 seconds
+});
+
+// Dynamic polling based on response
+const { data } = useRead((api) => api.orders[id].$get(), {
+  pollingInterval: (order) => (order?.status === "pending" ? 2000 : false),
+});
+```
+
+### revalidationPlugin
+
+Handles revalidation on window focus, network reconnect, and tag invalidation.
+
+```typescript
+revalidationPlugin({
+  revalidateOnFocus: true,     // Refetch when window gains focus (default: false)
+  revalidateOnReconnect: true, // Refetch when network reconnects (default: false)
+})
+```
+
+**Per-request override:**
+
+```typescript
+const { data } = useRead((api) => api.posts.$get(), {
+  revalidateOnFocus: false,
+});
+```
+
+### optimisticPlugin
+
+Enables optimistic UI updates with automatic rollback on error.
+
+```typescript
+optimisticPlugin()
+```
+
+**Usage:**
+
+```typescript
+const { trigger } = useWrite((api) => api.posts[":id"].$delete);
+
+trigger({
+  params: { id: postId },
+  optimistic: (cache, api) =>
+    cache({
+      for: api.posts.$get,
+      updater: (posts) => posts.filter((p) => p.id !== postId),
+    }),
+});
+```
+
+See [Optimistic Updates](#optimistic-updates) for more details.
+
+### invalidationPlugin
+
+Automatically invalidates cache tags after mutations.
+
+```typescript
+invalidationPlugin({
+  autoInvalidate: "all", // "all" | "self" | false (default: "all")
+})
+```
+
+- `"all"` — Invalidate all tags derived from the mutation path
+- `"self"` — Only invalidate the exact path tag
+- `false` — Disable auto-invalidation
+
+**Per-request override:**
+
+```typescript
+trigger({
+  body: { title: "New Post" },
+  autoInvalidate: false, // Disable for this mutation
+  invalidate: (api) => [api.posts.$get, api.dashboard.stats.$get], // Manual tags
+});
+```
+
+### nextjsPlugin
+
+Integrates with Next.js server-side revalidation.
+
+```typescript
+// actions.ts
+"use server";
+import { revalidateTag, revalidatePath } from "next/cache";
+
+export async function serverRevalidator(tags: string[], paths: string[]) {
+  tags.forEach((tag) => revalidateTag(tag));
+  paths.forEach((path) => revalidatePath(path));
+}
+
+// hooks.ts
+import { nextjsPlugin } from "enlace";
+import { serverRevalidator } from "./actions";
+
+nextjsPlugin({ serverRevalidator })
+```
+
+**Per-request path revalidation:**
+
+```typescript
+trigger({
+  body: { title: "New Post" },
+  revalidatePaths: ["/posts", "/dashboard"], // Next.js paths to revalidate
+});
 ```
 
 ## Schema Conventions
 
-Defining a schema is **recommended** for full type safety, but **optional**. You can go without types:
+Defining a schema is **recommended** for full type safety, but **optional**.
 
 ```typescript
-// Without schema (untyped, but still works!)
-const { useRead } = enlaceHooks("https://api.example.com");
-const { data } = useRead((api) => api.any.path.you.want.$get());
-```
+import { Endpoint, EndpointWithQuery, EndpointWithFormData } from "enlace";
 
-```typescript
-// With schema (recommended for type safety)
-const { useRead } = enlaceHooks<ApiSchema>("https://api.example.com");
+type ApiSchema = {
+  users: {
+    $get: User[];                                    // GET /users
+    $post: Endpoint<User, CreateUser>;               // POST /users with body
+    _: {                                             // /users/:id
+      $get: User;                                    // GET /users/:id
+      $put: Endpoint<User, UpdateUser>;              // PUT /users/:id
+      $delete: void;                                 // DELETE /users/:id
+      profile: {
+        $get: Profile;                               // GET /users/:id/profile
+      };
+    };
+  };
+  posts: {
+    $get: EndpointWithQuery<Post[], { page: number; limit: number }>;
+  };
+  uploads: {
+    $post: EndpointWithFormData<Upload, { file: File; name: string }>;
+  };
+};
 ```
-
-### Schema Structure
 
 - `$get`, `$post`, `$put`, `$patch`, `$delete` — HTTP method endpoints
 - `_` — Dynamic path segment (e.g., `/users/:id`)
 
-```typescript
-import { Endpoint } from "enlace";
-
-type ApiError = { message: string };
-
-type ApiSchema = {
-  users: {
-    $get: User[]; // GET /users (simple)
-    $post: Endpoint<User, CreateUser>; // POST /users with body
-    _: {
-      // /users/:id
-      $get: User; // GET /users/:id (simple)
-      $put: Endpoint<User, UpdateUser>; // PUT /users/:id with body
-      $delete: void; // DELETE /users/:id (void response)
-      profile: {
-        $get: Profile; // GET /users/:id/profile (simple)
-      };
-    };
-  };
-};
-
-// Pass global error type - applies to all endpoints
-const api = enlace<ApiSchema, ApiError>("https://api.example.com");
-
-// Usage
-api.users.$get(); // GET /users
-api.users[123].$get(); // GET /users/123
-api.users[123].profile.$get(); // GET /users/123/profile
-```
-
-### Endpoint Types
-
-The `Endpoint` type helpers let you define response data, request body, query params, formData, and error types.
-
-#### `Endpoint<TData, TBody?, TError?>`
-
-For endpoints with JSON body:
-
-```typescript
-import { Endpoint } from "enlace";
-
-type ApiSchema = {
-  posts: {
-    $get: Post[]; // Direct type (simplest)
-    $post: Endpoint<Post, CreatePost>; // Data + Body
-    $put: Endpoint<Post, UpdatePost, ValidationError>; // Data + Body + Error
-    $delete: void; // void response
-    $patch: Endpoint<Post, never, NotFoundError>; // Custom error without body
-  };
-};
-```
-
-#### `EndpointWithQuery<TData, TQuery, TError?>`
-
-For endpoints with typed query parameters:
-
-```typescript
-import { EndpointWithQuery } from "enlace";
-
-type ApiSchema = {
-  users: {
-    $get: EndpointWithQuery<
-      User[],
-      { page: number; limit: number; search?: string }
-    >;
-  };
-  posts: {
-    $get: EndpointWithQuery<
-      Post[],
-      { status: "draft" | "published" },
-      ApiError
-    >;
-  };
-};
-
-// Usage - query params are fully typed
-const { data } = useAPI((api) =>
-  api.users.$get({ query: { page: 1, limit: 10 } })
-);
-// api.users.$get({ query: { foo: "bar" } }); // ✗ Error: 'foo' does not exist
-```
-
-#### `EndpointWithFormData<TData, TFormData, TError?>`
-
-For file uploads (multipart/form-data):
-
-```typescript
-import { EndpointWithFormData } from "enlace";
-
-type ApiSchema = {
-  uploads: {
-    $post: EndpointWithFormData<Upload, { file: Blob | File; name: string }>;
-  };
-  avatars: {
-    $post: EndpointWithFormData<Avatar, { image: File }, UploadError>;
-  };
-};
-
-// Usage - formData is automatically converted to FormData
-const { trigger } = useAPI((api) => api.uploads.$post);
-trigger({
-  formData: {
-    file: selectedFile, // File object
-    name: "document.pdf", // String - converted automatically
-  },
-});
-// → Sends as multipart/form-data
-```
-
-**FormData conversion rules:**
-
-| Type                            | Conversion                       |
-| ------------------------------- | -------------------------------- |
-| `File` / `Blob`                 | Appended directly                |
-| `string` / `number` / `boolean` | Converted to string              |
-| `object` (nested)               | JSON stringified                 |
-| `array` of primitives           | Each item appended separately    |
-| `array` of files                | Each file appended with same key |
-
-#### `EndpointFull<T>`
-
-Object-style for complex endpoints:
-
-```typescript
-import { EndpointFull } from "enlace";
-
-type ApiSchema = {
-  products: {
-    $post: EndpointFull<{
-      data: Product;
-      body: CreateProduct;
-      query: { categoryId: string };
-      error: ValidationError;
-    }>;
-  };
-  files: {
-    $post: EndpointFull<{
-      data: FileUpload;
-      formData: { file: File; description: string };
-      query: { folder: string };
-    }>;
-  };
-};
-```
-
-**Global error type:**
-
-```typescript
-type ApiError = { message: string; code: number };
-
-// Second generic sets default error type for all endpoints
-const api = enlace<ApiSchema, ApiError>("https://api.example.com");
-// const useAPI = enlaceHookReact<ApiSchema, ApiError>("...");
-// const useAPI = enlaceHookNext<ApiSchema, ApiError>("...");
-```
-
 ## React Hooks
 
-### useRead (Auto-Fetch)
+### useRead
 
 For GET requests that fetch data automatically:
 
 ```typescript
-function Posts({ page, limit }: { page: number; limit: number }) {
-  const { data, loading, error } = useRead((api) =>
-    api.posts.$get({ query: { page, limit, published: true } })
+function Posts() {
+  const { data, loading, error, fetching, isOptimistic, abort } = useRead(
+    (api) => api.posts.$get({ query: { page: 1, limit: 10 } })
   );
 
   if (loading) return <div>Loading...</div>;
@@ -238,167 +283,35 @@ function Posts({ page, limit }: { page: number; limit: number }) {
 }
 ```
 
-**Features:**
-
-- Auto-fetches on mount
-- Re-fetches when dependencies change (no deps array needed!)
-- Returns cached data while revalidating
-- **Request deduplication** — identical requests from multiple components trigger only one fetch
-
-### Conditional Fetching
-
-Skip fetching with the `enabled` option:
+**Options:**
 
 ```typescript
-function ProductForm({ id }: { id: string | "new" }) {
-  // Skip fetching when creating a new product
-  const { data, loading } = useRead(
-    (api) => api.products[id].$get(),
-    { enabled: id !== "new" }
-  );
-
-  if (id === "new") return <CreateProductForm />;
-  if (loading) return <div>Loading...</div>;
-  return <EditProductForm product={data} />;
-}
+const { data } = useRead((api) => api.posts.$get(), {
+  enabled: true,           // Skip fetching when false
+  staleTime: 5000,         // Cache freshness (from cachePlugin)
+  retries: 3,              // Retry attempts (from retryPlugin)
+  pollingInterval: 5000,   // Polling interval (from pollingPlugin)
+  revalidateOnFocus: true, // Refetch on focus (from revalidationPlugin)
+});
 ```
+
+**Conditional fetching:**
 
 ```typescript
-// Also useful when waiting for a dependency
-function UserPosts({ userId }: { userId: string | undefined }) {
-  const { data } = useRead((api) => api.users[userId!].posts.$get(), {
-    enabled: userId !== undefined,
-  });
-}
+const { data } = useRead((api) => api.users[userId!].posts.$get(), {
+  enabled: userId !== undefined,
+});
 ```
 
-```typescript
-function Post({ id }: { id: number }) {
-  // Automatically re-fetches when `id` or query values change
-  const { data } = useRead((api) => api.posts[id].$get({ query: { include: "author" } }));
-  return <div>{data?.title}</div>;
-}
-```
+### useWrite
 
-### Polling
-
-Automatically refetch data at intervals using the `pollingInterval` option. Polling uses sequential timing — the interval starts counting **after** the previous request completes, preventing request pile-up:
-
-```typescript
-function Notifications() {
-  const { data } = useRead(
-    (api) => api.notifications.$get(),
-    { pollingInterval: 5000 } // Refetch every 5 seconds after previous request completes
-  );
-
-  return <NotificationList notifications={data} />;
-}
-```
-
-**Behavior:**
-
-- Polling starts after the initial fetch completes
-- Next poll is scheduled only after the current request finishes (success or error)
-- Continues polling even on errors (retry behavior)
-- Stops when component unmounts or `enabled` becomes `false`
-- Resets when component remounts
-
-**Dynamic polling with function:**
-
-Use a function to conditionally poll based on the response data or error:
-
-```typescript
-function OrderStatus({ orderId }: { orderId: string }) {
-  const { data } = useRead(
-    (api) => api.orders[orderId].$get(),
-    {
-      // Poll every 2s while pending, stop when completed
-      pollingInterval: (order) => order?.status === "pending" ? 2000 : false,
-    }
-  );
-
-  return <div>Status: {data?.status}</div>;
-}
-```
-
-The function receives `(data, error)` and should return:
-
-- `number`: Interval in milliseconds
-- `false`: Stop polling
-
-```typescript
-// Poll faster when there's an error (retry), slower otherwise
-{
-  pollingInterval: (data, error) => (error ? 1000 : 10000);
-}
-
-// Stop polling once data meets a condition
-{
-  pollingInterval: (order) => (order?.status === "completed" ? false : 3000);
-}
-```
-
-**Combined with conditional fetching:**
-
-```typescript
-function OrderStatus({ orderId }: { orderId: string | undefined }) {
-  const { data } = useRead((api) => api.orders[orderId!].$get(), {
-    enabled: !!orderId,
-    pollingInterval: 10000, // Poll every 10 seconds
-  });
-  // Polling only runs when orderId is defined
-}
-```
-
-### Request Deduplication
-
-Multiple components requesting the same data will share a single network request:
-
-```typescript
-// Both components render at the same time
-function PostTitle({ id }: { id: number }) {
-  const { data } = useRead((api) => api.posts[id].$get());
-  return <h1>{data?.title}</h1>;
-}
-
-function PostBody({ id }: { id: number }) {
-  const { data } = useRead((api) => api.posts[id].$get());
-  return <p>{data?.body}</p>;
-}
-
-// Only ONE fetch request is made to GET /posts/123
-// Both components share the same cached result
-function PostPage() {
-  return (
-    <>
-      <PostTitle id={123} />
-      <PostBody id={123} />
-    </>
-  );
-}
-```
-
-### useWrite (Manual Trigger)
-
-For mutations or lazy-loaded requests:
-
-```typescript
-function DeleteButton({ id }: { id: number }) {
-  const { trigger, loading } = useWrite((api) => api.posts[id].$delete);
-
-  return (
-    <button onClick={() => trigger()} disabled={loading}>
-      {loading ? "Deleting..." : "Delete"}
-    </button>
-  );
-}
-```
-
-**With request body:**
+For mutations (POST, PUT, PATCH, DELETE):
 
 ```typescript
 function CreatePost() {
-  const { trigger, loading, data } = useWrite((api) => api.posts.$post);
+  const { trigger, loading, data, error, abort } = useWrite(
+    (api) => api.posts.$post
+  );
 
   const handleSubmit = async (title: string) => {
     const result = await trigger({ body: { title } });
@@ -407,77 +320,37 @@ function CreatePost() {
     }
   };
 
-  return <button onClick={() => handleSubmit("New Post")}>Create</button>;
-}
-```
-
-### Dynamic Path Parameters
-
-Use `:paramName` syntax for dynamic IDs passed at trigger time:
-
-```typescript
-function PostList({ posts }: { posts: Post[] }) {
-  // Define once with :id placeholder
-  const { trigger, loading } = useWrite((api) => api.posts[":id"].$delete);
-
-  const handleDelete = (postId: number) => {
-    // Pass the actual ID when triggering
-    trigger({ params: { id: postId } });
-  };
-
   return (
-    <ul>
-      {posts.map((post) => (
-        <li key={post.id}>
-          {post.title}
-          <button onClick={() => handleDelete(post.id)} disabled={loading}>
-            Delete
-          </button>
-        </li>
-      ))}
-    </ul>
+    <button onClick={() => handleSubmit("New Post")} disabled={loading}>
+      Create
+    </button>
   );
 }
 ```
 
-**Multiple path parameters:**
+**Dynamic path parameters:**
 
 ```typescript
-const { trigger } = useWrite(
-  (api) => api.users[":userId"].posts[":postId"].$delete
-);
+const { trigger } = useWrite((api) => api.posts[":id"].$delete);
 
-trigger({ params: { userId: "1", postId: "42" } });
-// → DELETE /users/1/posts/42
+trigger({ params: { id: postId } });
+// → DELETE /posts/123
 ```
 
-**With request body:**
+### useInfiniteRead
 
-```typescript
-const { trigger } = useWrite((api) => api.products[":id"].$patch);
-
-trigger({
-  params: { id: "123" },
-  body: { name: "Updated Product" },
-});
-// → PATCH /products/123 with body
-```
-
-### useInfiniteRead (Pagination)
-
-For paginated data with infinite scroll or load-more patterns:
+For paginated data with infinite scroll:
 
 ```typescript
 function PostFeed() {
   const {
-    data,           // Merged items from all pages
-    allResponses,   // Raw responses array
+    data,
+    allResponses,
     loading,
     fetchingNext,
     canFetchNext,
     fetchNext,
     refetch,
-    error,
   } = useInfiniteRead(
     (api) => api.posts.$get({ query: { limit: 20 } }),
     {
@@ -491,10 +364,12 @@ function PostFeed() {
 
   return (
     <div>
-      {data?.map((post) => <PostCard key={post.id} post={post} />)}
+      {data?.map((post) => (
+        <PostCard key={post.id} post={post} />
+      ))}
       {canFetchNext && (
         <button onClick={fetchNext} disabled={fetchingNext}>
-          {fetchingNext ? "Loading..." : "Load More"}
+          Load More
         </button>
       )}
     </div>
@@ -502,200 +377,36 @@ function PostFeed() {
 }
 ```
 
-**Required Options:**
+## Optimistic Updates
 
-| Option | Type | Description |
-|--------|------|-------------|
-| `canFetchNext` | `({ response, allResponses, request }) => boolean` | Determines if more data is available |
-| `nextPageRequest` | `({ response, allResponses, request }) => RequestOverride` | Returns request options for next page (merged with initial) |
-| `merger` | `(allResponses) => TItem[]` | Combines all responses into a single array |
-
-**Optional Options:**
-
-| Option | Type | Description |
-|--------|------|-------------|
-| `canFetchPrev` | `({ response, allResponses, request }) => boolean` | For bi-directional pagination |
-| `prevPageRequest` | `({ response, allResponses, request }) => RequestOverride` | Request options for previous page |
-| `enabled` | `boolean` | Skip fetching when false (default: true) |
-| `retry` | `number \| false` | Retry failed requests |
-| `retryDelay` | `number` | Delay between retries |
-
-#### Pagination Patterns
-
-**Cursor-based (recommended):**
+Update the UI instantly before the server responds:
 
 ```typescript
-useInfiniteRead(
-  (api) => api.posts.$get({ query: { limit: 20 } }),
-  {
-    canFetchNext: ({ response }) => response?.meta.hasMore ?? false,
-    nextPageRequest: ({ response }) => ({
-      query: { cursor: response?.meta.nextCursor },
+const { trigger } = useWrite((api) => api.posts[":id"].$delete);
+
+trigger({
+  params: { id: postId },
+  optimistic: (cache, api) =>
+    cache({
+      for: api.posts.$get,
+      updater: (posts) => posts.filter((p) => p.id !== postId),
+      rollbackOnError: true,
     }),
-    merger: (allResponses) => allResponses.flatMap((r) => r.items),
-  }
-);
+});
 ```
 
-**Page-based:**
+**With response data (e.g., creating):**
 
 ```typescript
-useInfiniteRead(
-  (api) => api.posts.$get({ query: { page: 1, limit: 20 } }),
-  {
-    canFetchNext: ({ response }) => response?.meta.hasMore ?? false,
-    nextPageRequest: ({ response }) => ({
-      query: { page: response?.meta.nextPage },
+trigger({
+  body: { title: "New Post" },
+  optimistic: (cache, api) =>
+    cache({
+      for: api.posts.$get,
+      timing: "onSuccess", // Wait for response
+      updater: (posts, newPost) => [...posts, newPost],
     }),
-    merger: (allResponses) => allResponses.flatMap((r) => r.items),
-  }
-);
-```
-
-**Offset-based:**
-
-```typescript
-useInfiniteRead(
-  (api) => api.posts.$get({ query: { offset: 0, limit: 20 } }),
-  {
-    canFetchNext: ({ response, allResponses }) => {
-      const loaded = allResponses.reduce((sum, r) => sum + r.items.length, 0);
-      return loaded < response?.total;
-    },
-    nextPageRequest: ({ request }) => ({
-      query: { offset: (request.query?.offset ?? 0) + 20 },
-    }),
-    merger: (allResponses) => allResponses.flatMap((r) => r.items),
-  }
-);
-```
-
-**Bi-directional (chat-style):**
-
-```typescript
-useInfiniteRead(
-  (api) => api.messages.$get({ query: { around: messageId, limit: 20 } }),
-  {
-    canFetchNext: ({ response }) => response?.hasNewer ?? false,
-    nextPageRequest: ({ response }) => ({
-      query: { after: response?.items.at(-1)?.id },
-    }),
-    canFetchPrev: ({ response }) => response?.hasOlder ?? false,
-    prevPageRequest: ({ response }) => ({
-      query: { before: response?.items.at(0)?.id },
-    }),
-    merger: (allResponses) => allResponses.flatMap((r) => r.items),
-  }
-);
-```
-
-**With path parameters:**
-
-```typescript
-useInfiniteRead(
-  (api) => api.users[":userId"].posts.$get({
-    params: { userId: "123" },
-    query: { limit: 10 }
-  }),
-  {
-    canFetchNext: ({ response }) => response?.hasMore ?? false,
-    nextPageRequest: ({ response }) => ({
-      query: { cursor: response?.nextCursor },
-    }),
-    merger: (allResponses) => allResponses.flatMap((r) => r.items),
-  }
-);
-```
-
-#### Infinite Scroll Integration
-
-```typescript
-function InfinitePostList() {
-  const loaderRef = useRef<HTMLDivElement>(null);
-  const { data, canFetchNext, fetchingNext, fetchNext } = useInfiniteRead(
-    (api) => api.posts.$get({ query: { limit: 20 } }),
-    {
-      canFetchNext: ({ response }) => response?.meta.hasMore ?? false,
-      nextPageRequest: ({ response }) => ({
-        query: { cursor: response?.meta.nextCursor },
-      }),
-      merger: (allResponses) => allResponses.flatMap((r) => r.items),
-    }
-  );
-
-  useEffect(() => {
-    const loader = loaderRef.current;
-    if (!loader) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && canFetchNext && !fetchingNext) {
-          fetchNext();
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    observer.observe(loader);
-    return () => observer.disconnect();
-  }, [canFetchNext, fetchingNext, fetchNext]);
-
-  return (
-    <div>
-      {data?.map((post) => <PostCard key={post.id} post={post} />)}
-      <div ref={loaderRef}>
-        {fetchingNext && <Spinner />}
-        {!canFetchNext && data?.length > 0 && <p>No more posts</p>}
-      </div>
-    </div>
-  );
-}
-```
-
-### Optimistic Updates
-
-Update the UI instantly before the server responds, with automatic rollback on error:
-
-```typescript
-function DeletePost({ id }: { id: number }) {
-  const { trigger } = useWrite((api) => api.posts[":id"].$delete);
-
-  const handleDelete = () => {
-    trigger({
-      params: { id },
-      optimistic: (cache, api) => cache({
-        for: api.posts.$get,
-        updater: (posts) => posts.filter((p) => p.id !== id),
-      }),
-    });
-  };
-
-  return <button onClick={handleDelete}>Delete</button>;
-}
-```
-
-**With response data (e.g., creating a post):**
-
-This is useful when the server returns the created object with an ID:
-And you don't want to wait the query to refetch to show it in the list.
-
-```typescript
-function CreatePost() {
-  const { trigger } = useWrite((api) => api.posts.$post);
-
-  const handleCreate = async () => {
-    await trigger({
-      body: { title: "New Post", content: "..." },
-      optimistic: (cache, api) =>
-        cache({
-          for: api.posts.$get,
-          timing: "onSuccess", // Wait for response
-          updater: (posts, newPost) => [...posts, newPost],
-          //               ^^^^^^^ typed as Post (You can use response data)
-        }),
-    });
-  };
-}
+});
 ```
 
 **Multiple cache updates:**
@@ -710,7 +421,7 @@ trigger({
     cache({
       for: api.dashboard.stats.$get,
       timing: "onSuccess",
-      updater: (stats, _) => ({ ...stats, postCount: stats.postCount - 1 }),
+      updater: (stats) => ({ ...stats, postCount: stats.postCount - 1 }),
     }),
   ],
 });
@@ -718,18 +429,12 @@ trigger({
 
 **Targeting specific cache entries with `match`:**
 
-When you have multiple cache entries for the same endpoint (e.g., paginated data), use `match` to target specific entries:
-
 ```typescript
-// Add new post only to page 1
 trigger({
-  body: { title: "New Post" },
   optimistic: (cache, api) =>
     cache({
       for: api.posts.paginated.$get,
       match: (request) => request.query?.page === 1,
-      //      ^^^^^^^ typed based on endpoint's query/params/body
-      timing: "onSuccess",
       updater: (data, newPost) => ({
         ...data,
         items: [newPost, ...data.items],
@@ -738,75 +443,76 @@ trigger({
 });
 ```
 
-The `match` function receives the request options (`query`, `params`, `body`) that were used to fetch that cache entry. Only entries where `match` returns `true` will be updated.
-
-```typescript
-// Update only entries with specific query params
-match: (request) => request.query?.status === "published"
-
-// Update only entries with specific path params
-match: (request) => request.params?.userId === "123"
-
-// Combine conditions
-match: (request) => request.query?.page === 1 && request.params?.categoryId === "tech"
-```
-
 **Options:**
 
-| Option            | Type                                           | Default       | Description                                         |
-| ----------------- | ---------------------------------------------- | ------------- | --------------------------------------------------- |
-| `for`             | `api.path.$get`                                | required      | Which cache to update (only `$get` endpoints)       |
-| `match`           | `(request) => boolean`                         | -             | Filter which cache entries to update                |
-| `updater`         | `(data) => data` or `(data, response) => data` | required      | Transform function (response only with `onSuccess`) |
-| `timing`          | `"immediate"` \| `"onSuccess"`                 | `"immediate"` | When to apply update                                |
-| `rollbackOnError` | `boolean`                                      | `true`        | Revert on failure                                   |
-| `refetch`         | `boolean`                                      | `false`       | Still refetch after update (rarely needed)          |
-| `onError`         | `(error) => void`                              | -             | Error callback (e.g., show toast)                   |
+| Option            | Type                           | Default       | Description                            |
+| ----------------- | ------------------------------ | ------------- | -------------------------------------- |
+| `for`             | `api.path.$get`                | required      | Which cache to update                  |
+| `match`           | `(request) => boolean`         | -             | Filter which cache entries to update   |
+| `updater`         | `(data, response?) => data`    | required      | Transform function                     |
+| `timing`          | `"immediate"` \| `"onSuccess"` | `"immediate"` | When to apply update                   |
+| `rollbackOnError` | `boolean`                      | `true`        | Revert on failure                      |
+| `onError`         | `(error) => void`              | -             | Error callback                         |
 
-### Retry
+## Caching & Auto-Revalidation
 
-Configure automatic retry for failed requests:
+### Automatic Cache Tags
+
+Tags are automatically generated from URL paths:
 
 ```typescript
-const { useRead } = enlaceHooks<ApiSchema>(
-  "https://api.example.com",
-  {},
-  {
-    retry: 3, // Retry up to 3 times (default)
-    retryDelay: 1000, // Base delay 1s with exponential backoff
-  }
-);
+// GET /posts       → tags: ['posts']
+// GET /posts/123   → tags: ['posts', 'posts/123']
+// GET /users/5/posts → tags: ['users', 'users/5', 'users/5/posts']
 ```
 
-**Per-query retry:**
+**Mutations automatically invalidate matching tags:**
 
 ```typescript
-const { data } = useRead((api) => api.posts.$get(), {
-  retry: 5, // Override for this query
-  retryDelay: 500, // Faster retry
+const { trigger } = useWrite((api) => api.posts.$post);
+trigger({ body: { title: "New" } });
+// → Automatically invalidates 'posts' tag
+// → All queries with 'posts' tag refetch
+```
+
+### Manual Tag Invalidation
+
+```typescript
+const { eventEmitter } = enlaceHooks<ApiSchema, ApiError>()({
+  baseUrl: "https://api.example.com",
+  plugins,
 });
+
+// Invalidate specific tags
+eventEmitter.emit("invalidate", ["posts", "users"]);
 ```
 
-**Disable retry:**
+## Request Deduplication
+
+Multiple components requesting the same data share a single network request:
 
 ```typescript
-const { data } = useRead((api) => api.posts.$get(), { retry: false });
+function PostTitle({ id }: { id: number }) {
+  const { data } = useRead((api) => api.posts[id].$get());
+  return <h1>{data?.title}</h1>;
+}
+
+function PostBody({ id }: { id: number }) {
+  const { data } = useRead((api) => api.posts[id].$get());
+  return <p>{data?.body}</p>;
+}
+
+// Both render → Only ONE fetch to GET /posts/123
 ```
 
-Retry uses exponential backoff: 1s → 2s → 4s → 8s...
-
-### Abort Requests
-
-Cancel in-flight requests using the `abort` function:
+## Abort Requests
 
 ```typescript
 function SearchPosts() {
   const { data, loading, abort } = useRead((api) =>
-    api.posts.$get({ query: { search: debouncedQuery } })
+    api.posts.$get({ query: { search: query } })
   );
 
-  // Abort on unmount or query change is automatic
-  // Manual abort:
   return (
     <div>
       {loading && <button onClick={abort}>Cancel</button>}
@@ -816,407 +522,72 @@ function SearchPosts() {
 }
 ```
 
-**In useWrite:**
-
-```typescript
-function UploadFile() {
-  const { trigger, loading, abort } = useWrite((api) => api.files.$post);
-
-  const handleUpload = () => {
-    trigger({ formData: { file: selectedFile } });
-  };
-
-  return (
-    <div>
-      <button onClick={handleUpload} disabled={loading}>Upload</button>
-      {loading && <button onClick={abort}>Cancel Upload</button>}
-    </div>
-  );
-}
-```
-
-**Abort behavior:**
-
-- Returns `{ aborted: true }` in the response
-- Optimistic updates are automatically rolled back on abort
-- No error is thrown; check `response.aborted` if needed
-
-## Caching & Auto-Revalidation
-
-### Automatic Cache Tags (Zero Config)
-
-**Tags are automatically generated from URL paths** — no manual configuration needed:
-
-```typescript
-// GET /posts       → tags: ['posts']
-// GET /posts/123   → tags: ['posts', 'posts/123']
-// GET /users/5/posts → tags: ['users', 'users/5', 'users/5/posts']
-```
-
-**Mutations automatically revalidate matching tags:**
-
-```typescript
-const { trigger } = useWrite((api) => api.posts.$post);
-
-// POST /posts automatically revalidates 'posts' tag
-// All queries with 'posts' tag will refetch!
-trigger({ body: { title: "New Post" } });
-```
-
-This means in most cases, **you don't need to specify any tags manually**. The cache just works.
-
-### How It Works
-
-1. **Queries** automatically cache with tags derived from the URL
-2. **Mutations** automatically revalidate tags derived from the URL
-3. All queries matching those tags refetch automatically
-
-```typescript
-// Component A: fetches posts (cached with tag 'posts')
-const { data } = useRead((api) => api.posts.$get());
-
-// Component B: creates a post
-const { trigger } = useWrite((api) => api.posts.$post);
-trigger({ body: { title: "New" } });
-// → Automatically revalidates 'posts' tag
-// → Component A refetches automatically!
-```
-
-### Stale Time
-
-Control how long cached data is considered fresh:
-
-```typescript
-const { useRead } = enlaceHooks<ApiSchema>(
-  "https://api.example.com",
-  {},
-  {
-    staleTime: 5000, // 5 seconds
-  }
-);
-```
-
-- `staleTime: 0` (default) — Always revalidate on mount
-- `staleTime: 5000` — Data is fresh for 5 seconds
-- `staleTime: Infinity` — Never revalidate automatically
-
-### Manual Tag Override (Optional)
-
-Override auto-generated tags when needed:
-
-```typescript
-// Custom cache tags (replaces auto-generated)
-const { data } = useRead((api) => api.posts.$get({ tags: ["my-custom-tag"] }));
-
-// Custom revalidation tags (replaces auto-generated)
-trigger({
-  body: { title: "New" },
-  revalidateTags: ["posts", "dashboard"],
-});
-```
-
-### Extending Auto-Generated Tags
-
-Use `additionalTags` and `additionalRevalidateTags` to **merge** with auto-generated tags instead of replacing them:
-
-```typescript
-// Extend cache tags (merges with auto-generated)
-const { data } = useRead((api) =>
-  api.posts.$get({ additionalTags: ["custom-tag"] })
-);
-// If autoGenerateTags produces ['posts'], final tags: ['posts', 'custom-tag']
-
-// Extend revalidation tags (merges with auto-generated)
-trigger({
-  body: { title: "New" },
-  additionalRevalidateTags: ["dashboard", "stats"],
-});
-// If autoRevalidateTags produces ['posts'], final tags: ['posts', 'dashboard', 'stats']
-```
-
-**Behavior:**
-
-| Scenario    | `tags` / `revalidateTags` | `additionalTags` / `additionalRevalidateTags` | Final Tags            |
-| ----------- | ------------------------- | --------------------------------------------- | --------------------- |
-| Override    | `['custom']`              | -                                             | `['custom']`          |
-| Extend auto | -                         | `['extra']`                                   | `['posts', 'extra']`  |
-| Both        | `['custom']`              | `['extra']`                                   | `['custom', 'extra']` |
-| Neither     | -                         | -                                             | `['posts']` (auto)    |
-
-### Manual Tag Invalidation
-
-Use `invalidateTags` to manually trigger cache invalidation and refetch queries:
-
-```typescript
-import { invalidateTags } from "enlace/hook";
-
-// Invalidate all queries tagged with 'posts'
-invalidateTags(["posts"]);
-
-// Invalidate multiple tags
-invalidateTags(["posts", "users"]);
-```
-
-This is useful when you need to refresh data outside of the normal mutation flow, such as:
-
-- After receiving a WebSocket message
-- After a background sync
-- After external state changes
-
-### Disable Auto-Revalidation
-
-```typescript
-const { useRead } = enlaceHooks<ApiSchema>(
-  "https://api.example.com",
-  {},
-  {
-    autoGenerateTags: false, // Disable auto tag generation
-    autoRevalidateTags: false, // Disable auto revalidation
-  }
-);
-```
-
-## Hook Options
-
-```typescript
-const { useRead, useWrite } = enlaceHooks<ApiSchema>(
-  "https://api.example.com",
-  {
-    // Default fetch options
-    headers: { Authorization: "Bearer token" },
-  },
-  {
-    // Hook options
-    autoGenerateTags: true, // Auto-generate cache tags from URL
-    autoRevalidateTags: true, // Auto-revalidate after mutations
-    staleTime: 0, // Cache freshness duration (ms)
-  }
-);
-```
-
-### Async Headers
-
-Headers can be provided as a static value, sync function, or async function. This is useful when you need to fetch headers dynamically (e.g., auth tokens from async storage):
-
-```typescript
-// Static headers
-const { useRead } = enlaceHooks<ApiSchema>("https://api.example.com", {
-  headers: { Authorization: "Bearer token" },
-});
-
-// Sync function
-const { useRead } = enlaceHooks<ApiSchema>("https://api.example.com", {
-  headers: () => ({ Authorization: `Bearer ${getToken()}` }),
-});
-
-// Async function
-const { useRead } = enlaceHooks<ApiSchema>("https://api.example.com", {
-  headers: async () => {
-    const token = await getTokenFromStorage();
-    return { Authorization: `Bearer ${token}` };
-  },
-});
-```
-
-This also works for per-request headers:
-
-```typescript
-const { data } = useRead((api) =>
-  api.posts.$get({
-    headers: async () => {
-      const token = await refreshToken();
-      return { Authorization: `Bearer ${token}` };
-    },
-  })
-);
-```
-
-### Global Callbacks
-
-You can set up global `onSuccess` and `onError` callbacks that are called for every request:
-
-```typescript
-const { useRead, useWrite } = enlaceHooks<ApiSchema>(
-  "https://api.example.com",
-  {
-    headers: { Authorization: "Bearer token" },
-  },
-  {
-    onSuccess: (payload) => {
-      console.log("Request succeeded:", payload.status, payload.data);
-    },
-    onError: (payload) => {
-      if (payload.status === 0) {
-        // Network error
-        console.error("Network error:", payload.error.message);
-      } else {
-        // HTTP error (4xx, 5xx)
-        console.error("HTTP error:", payload.status, payload.error);
-      }
-    },
-  }
-);
-```
-
-**Callback Payloads:**
-
-```typescript
-// onSuccess payload
-type EnlaceCallbackPayload<T> = {
-  status: number;
-  data: T;
-  headers: Headers;
-};
-
-// onError payload (HTTP error or network error)
-type EnlaceErrorCallbackPayload<T> =
-  | { status: number; error: T; headers: Headers } // HTTP error
-  | { status: 0; error: Error; headers: null }; // Network error
-```
-
-**Use cases:**
-
-- Global error logging/reporting
-- Toast notifications for all API errors
-- Authentication refresh on 401 errors
-- Analytics tracking
-
 ## Return Types
 
 ### useRead
 
 ```typescript
-// Basic usage
-const result = useRead((api) => api.posts.$get());
-
-// With options
-const result = useRead((api) => api.posts.$get(), {
-  enabled: true, // Skip fetching when false
-  pollingInterval: 5000, // Refetch every 5s after previous request completes
-});
-
-// With dynamic polling
-const result = useRead((api) => api.orders[id].$get(), {
-  pollingInterval: (order) => (order?.status === "pending" ? 2000 : false),
-});
-
-type UseEnlaceReadResult<TData, TError> = {
-  loading: boolean; // No cached data and fetching
-  fetching: boolean; // Request in progress
+type UseReadResult<TData, TError> = {
+  loading: boolean;
+  fetching: boolean;
   data: TData | undefined;
   error: TError | undefined;
-  abort: () => void; // Cancel in-flight request
-  isOptimistic: boolean; // Data is from optimistic update (not confirmed)
+  isOptimistic: boolean;
+  isStale: boolean;
+  abort: () => void;
 };
 ```
 
 ### useWrite
 
 ```typescript
-type UseEnlaceWriteResult<TMethod> = {
-  trigger: TMethod; // Function to trigger the request
+type UseWriteResult<TData, TError> = {
+  trigger: (options) => Promise<EnlaceResponse<TData, TError>>;
   loading: boolean;
   fetching: boolean;
   data: TData | undefined;
   error: TError | undefined;
-  abort: () => void; // Cancel in-flight request
+  abort: () => void;
+  reset: () => void;
 };
 ```
 
 ### useInfiniteRead
 
 ```typescript
-type UseEnlaceInfiniteReadResult<TData, TError, TItem> = {
-  data: TItem[] | undefined;         // Merged data from merger()
-  allResponses: TData[] | undefined; // Raw responses array
-  loading: boolean;                  // Initial load in progress
-  fetching: boolean;                 // Any fetch in progress
-  fetchingNext: boolean;             // Fetching next page
-  fetchingPrev: boolean;             // Fetching previous page
-  canFetchNext: boolean;             // More pages available (forward)
-  canFetchPrev: boolean;             // More pages available (backward)
-  fetchNext: () => Promise<void>;    // Load next page
-  fetchPrev: () => Promise<void>;    // Load previous page
-  refetch: () => Promise<void>;      // Clear and reload from start
-  abort: () => void;                 // Cancel in-flight request
+type UseInfiniteReadResult<TData, TError, TItem> = {
+  data: TItem[] | undefined;
+  allResponses: TData[] | undefined;
+  loading: boolean;
+  fetching: boolean;
+  fetchingNext: boolean;
+  fetchingPrev: boolean;
+  canFetchNext: boolean;
+  canFetchPrev: boolean;
+  fetchNext: () => Promise<void>;
+  fetchPrev: () => Promise<void>;
+  refetch: () => Promise<void>;
+  abort: () => void;
   error: TError | undefined;
   isOptimistic: boolean;
 };
-
-type UseEnlaceInfiniteReadOptions<TData, TItem, TRequest> = {
-  canFetchNext: (ctx: { response: TData; allResponses: TData[]; request: TRequest }) => boolean;
-  nextPageRequest: (ctx: { response: TData; allResponses: TData[]; request: TRequest }) => Partial<TRequest>;
-  merger: (allResponses: TData[]) => TItem[];
-  canFetchPrev?: (ctx: { response: TData; allResponses: TData[]; request: TRequest }) => boolean;
-  prevPageRequest?: (ctx: { response: TData; allResponses: TData[]; request: TRequest }) => Partial<TRequest>;
-  enabled?: boolean;
-  retry?: number | false;
-  retryDelay?: number;
-};
 ```
-
-### Read Options
-
-```typescript
-type UseEnlaceReadOptions<TData, TError> = {
-  enabled?: boolean; // Skip fetching when false (default: true)
-  pollingInterval?: // Refetch interval after request completes
-    | number // Fixed interval in ms
-    | false // Disable polling
-    | ((data: TData | undefined, error: TError | undefined) => number | false); // Dynamic
-};
-```
-
-### Request Options
-
-```typescript
-type RequestOptions = {
-  query?: TQuery; // Query parameters (typed when using EndpointWithQuery/EndpointFull)
-  body?: TBody; // Request body (JSON)
-  formData?: TFormData; // FormData fields (auto-converted, for file uploads)
-  headers?: HeadersInit | (() => HeadersInit | Promise<HeadersInit>); // Request headers
-  tags?: string[]; // Cache tags - replaces auto-generated (GET only)
-  additionalTags?: string[]; // Cache tags - merges with auto-generated (GET only)
-  revalidateTags?: string[]; // Revalidation tags - replaces auto-generated
-  additionalRevalidateTags?: string[]; // Revalidation tags - merges with auto-generated
-  params?: Record<string, string | number>; // Dynamic path parameters
-  optimistic?: (cache, api) => CacheConfig | CacheConfig[]; // Optimistic updates (mutations only)
-};
-```
-
----
 
 ## API Reference
 
-### `enlaceHooks<TSchema, TDefaultError>(baseUrl, options?, hookOptions?)`
+### `enlaceHooks<TSchema, TDefaultError>()(config)`
 
-Creates React hooks for making API calls. Returns `{ useRead, useWrite, useInfiniteRead }`.
-
-### `enlace<TSchema, TDefaultError>(baseUrl, options?, callbacks?)`
-
-Creates a typed API client (non-hook, for direct calls).
-
-**Generic Parameters:**
-
-- `TSchema` — API schema type defining endpoints
-- `TDefaultError` — Default error type for all endpoints (default: `unknown`)
-
-**Function Parameters:**
-
-- `baseUrl` — Base URL for requests
-- `options` — Default fetch options (headers, cache, etc.)
-- `hookOptions` / `callbacks` / `nextOptions` — Additional configuration
-
-**Hook Options:**
+Creates React hooks with the plugin system.
 
 ```typescript
-type EnlaceHookOptions = {
-  autoGenerateTags?: boolean; // default: true
-  autoRevalidateTags?: boolean; // default: true
-  staleTime?: number; // default: 0
-  onSuccess?: (payload: EnlaceCallbackPayload<unknown>) => void;
-  onError?: (payload: EnlaceErrorCallbackPayload<unknown>) => void;
-};
+const { useRead, useWrite, useInfiniteRead, api, stateManager, eventEmitter } =
+  enlaceHooks<ApiSchema, ApiError>()({
+    baseUrl: "https://api.example.com",
+    plugins,
+    defaultOptions: {
+      headers: { Authorization: "Bearer token" },
+    },
+  });
 ```
 
 ### Re-exports from enlace-core
@@ -1226,37 +597,21 @@ type EnlaceHookOptions = {
 - `EndpointWithFormData` — Type helper for file upload endpoints
 - `EndpointFull` — Object-style type helper for complex endpoints
 - `EnlaceResponse` — Response type
-- `EnlaceOptions` — Fetch options type
-
-## OpenAPI Generation
-
-Generate OpenAPI 3.0 specs from your TypeScript schema using [`enlace-openapi`](../openapi/README.md):
-
-```bash
-npm install enlace-openapi
-enlace-openapi --schema ./types/APISchema.ts --output ./openapi.json
-```
 
 ## Framework Adapters
 
 ### Hono
 
-Use [`enlace-hono`](../hono/README.md) to automatically generate Enlace schemas from your Hono app:
+Use [`enlace-hono`](../hono/README.md) to generate schemas from Hono apps:
 
 ```typescript
-import { Hono } from "hono";
 import type { HonoToEnlace } from "enlace-hono";
 
 const app = new Hono()
   .basePath("/api")
-  .get("/posts", (c) => c.json([{ id: 1, title: "Hello" }]))
-  .get("/posts/:id", (c) => c.json({ id: c.req.param("id") }));
+  .get("/posts", (c) => c.json([{ id: 1, title: "Hello" }]));
 
-// Auto-generate schema from Hono types
 type ApiSchema = HonoToEnlace<typeof app>;
-
-// Use with Enlace
-const client = enlace<ApiSchema["api"]>("http://localhost:3000/api");
 ```
 
 ## License

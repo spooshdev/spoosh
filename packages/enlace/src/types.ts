@@ -59,7 +59,6 @@ export type PluginHooksConfig<
   baseUrl: string;
   defaultOptions?: EnlaceOptions;
   plugins: TPlugins;
-  autoGenerateTags?: boolean;
 };
 
 export type BaseReadOptions = {

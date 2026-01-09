@@ -8,6 +8,8 @@ Core fetch wrapper and type-safe API client for Enlace.
 npm install enlace-core
 ```
 
+> **For React projects**, use [`enlace`](../enlace/README.md) instead for hooks and plugin system.
+
 ## Usage
 
 ### Basic Setup
@@ -17,13 +19,12 @@ import { enlace } from "enlace-core";
 
 const api = enlace("https://api.example.com");
 
-// Make requests
 const response = await api.users.$get();
 if (response.error) {
   console.error(response.error);
   return;
 }
-console.log(response.data); // data is typed as non-undefined here
+console.log(response.data);
 ```
 
 ### Type-Safe Schema
@@ -33,29 +34,27 @@ Define your API schema for full type safety:
 ```typescript
 import { enlace, Endpoint } from "enlace-core";
 
-// Define your API error type
 type ApiError = { message: string; code: number };
 
 type ApiSchema = {
   users: {
-    $get: User[];                               // Simple: just data type
-    $post: Endpoint<User, CreateUser>;          // Data + Body
+    $get: User[];
+    $post: Endpoint<User, CreateUser>;
     _: {
-      $get: User;                               // Simple: just data type
-      $put: Endpoint<User, UpdateUser>;         // Data + Body
-      $delete: void;                            // void response
+      $get: User;
+      $put: Endpoint<User, UpdateUser>;
+      $delete: void;
     };
   };
   posts: {
     $get: Post[];
-    $post: Endpoint<Post, CreatePost, CustomError>;  // Custom error override
+    $post: Endpoint<Post, CreatePost, CustomError>;
   };
 };
 
-// Pass global error type as second generic
 const api = enlace<ApiSchema, ApiError>("https://api.example.com");
 
-// Fully typed!
+// Fully typed
 const users = await api.users.$get();
 const user = await api.users[123].$get();
 const newUser = await api.users.$post({ body: { name: "John" } });
@@ -69,13 +68,13 @@ const newUser = await api.users.$post({ body: { name: "John" } });
 ```typescript
 type Schema = {
   users: {
-    $get: User[];                               // GET /users
-    $post: Endpoint<User, CreateUser>;          // POST /users with body
-    _: {                                        // /users/:id
-      $get: User;                               // GET /users/:id
-      $delete: void;                            // DELETE /users/:id
+    $get: User[];                      // GET /users
+    $post: Endpoint<User, CreateUser>; // POST /users
+    _: {                               // /users/:id
+      $get: User;                      // GET /users/:id
+      $delete: void;                   // DELETE /users/:id
       profile: {
-        $get: Profile;                          // GET /users/:id/profile
+        $get: Profile;                 // GET /users/:id/profile
       };
     };
   };
@@ -87,15 +86,104 @@ api.users[123].$get();         // GET /users/123
 api.users[123].profile.$get(); // GET /users/123/profile
 ```
 
+## Endpoint Types
+
+### `Endpoint<TData, TBody?, TError?>`
+
+For endpoints with JSON body:
+
+```typescript
+type ApiSchema = {
+  posts: {
+    $get: Post[];                                  // Direct type
+    $post: Endpoint<Post, CreatePost>;             // Data + Body
+    $put: Endpoint<Post, UpdatePost, CustomError>; // Data + Body + Error
+    $delete: void;                                 // void response
+  };
+};
+```
+
+### `EndpointWithQuery<TData, TQuery, TError?>`
+
+For endpoints with typed query parameters:
+
+```typescript
+import { EndpointWithQuery } from "enlace-core";
+
+type ApiSchema = {
+  users: {
+    $get: EndpointWithQuery<User[], { page: number; limit: number; search?: string }>;
+  };
+};
+
+// Usage - query params are fully typed
+api.users.$get({ query: { page: 1, limit: 10 } });
+```
+
+### `EndpointWithFormData<TData, TFormData, TError?>`
+
+For file uploads (multipart/form-data):
+
+```typescript
+import { EndpointWithFormData } from "enlace-core";
+
+type ApiSchema = {
+  uploads: {
+    $post: EndpointWithFormData<Upload, { file: Blob | File; name: string }>;
+  };
+};
+
+// Usage - formData is automatically converted
+api.uploads.$post({
+  formData: {
+    file: selectedFile,
+    name: "document.pdf",
+  },
+});
+```
+
+**FormData conversion rules:**
+
+| Type                            | Conversion                    |
+| ------------------------------- | ----------------------------- |
+| `File` / `Blob`                 | Appended directly             |
+| `string` / `number` / `boolean` | Converted to string           |
+| `object` (nested)               | JSON stringified              |
+| `array` of primitives           | Each item appended separately |
+| `array` of files                | Each file appended            |
+| `null` / `undefined`            | Skipped                       |
+
+### `EndpointFull<T>`
+
+Object-style for complex endpoints:
+
+```typescript
+import { EndpointFull } from "enlace-core";
+
+type ApiSchema = {
+  products: {
+    $post: EndpointFull<{
+      data: Product;
+      body: CreateProduct;
+      query: { categoryId: string };
+      error: ValidationError;
+    }>;
+  };
+};
+
+api.products.$post({
+  body: { name: "Widget" },
+  query: { categoryId: "electronics" },
+});
+```
+
 ## API Reference
 
-### `enlace<TSchema, TDefaultError>(baseUrl, options?, callbacks?)`
+### `enlace<TSchema, TDefaultError>(baseUrl, options?)`
 
 Creates a type-safe API client.
 
 ```typescript
-type ApiError = { message: string };
-
 const api = enlace<ApiSchema, ApiError>("https://api.example.com", {
   headers: {
     Authorization: "Bearer token",
@@ -104,29 +192,40 @@ const api = enlace<ApiSchema, ApiError>("https://api.example.com", {
 ```
 
 **Generic Parameters:**
+
 - `TSchema` — API schema type defining endpoints
 - `TDefaultError` — Default error type for all endpoints (default: `unknown`)
 
 **Function Parameters:**
-- `baseUrl` — Base URL for all requests (supports relative paths in browser)
-- `options` — Default options for all requests
-- `callbacks` — Global callbacks (`onSuccess`, `onError`)
 
-**Options:**
+- `baseUrl` — Base URL for all requests
+- `options` — Default options for all requests
+
+### Request Options
+
 ```typescript
-type EnlaceOptions = {
-  headers?: HeadersInit | (() => HeadersInit | Promise<HeadersInit>);
-  cache?: RequestCache;
-  // ...other fetch options
-};
+api.users.$post({
+  body: { name: "John" },
+  query: { include: "profile" },
+  headers: { "X-Custom": "value" },
+  cache: "no-store",
+});
 ```
+
+**Available options:**
+
+- `body` — Request body (auto-serialized to JSON)
+- `query` — Query parameters (auto-serialized)
+- `formData` — FormData fields (auto-converted)
+- `headers` — Request headers (merged with defaults)
+- `cache` — Cache mode
 
 ### Async Headers
 
-Headers can be provided as a static value, sync function, or async function. This is useful when you need to fetch headers dynamically (e.g., auth tokens from async storage):
+Headers can be static, sync, or async:
 
 ```typescript
-// Static headers
+// Static
 const api = enlace("https://api.example.com", {
   headers: { Authorization: "Bearer token" },
 });
@@ -145,220 +244,6 @@ const api = enlace("https://api.example.com", {
 });
 ```
 
-This also works for per-request headers:
-
-```typescript
-api.users.$get({
-  headers: async () => {
-    const token = await refreshToken();
-    return { Authorization: `Bearer ${token}` };
-  },
-});
-```
-
-### Global Callbacks
-
-You can set up global `onSuccess` and `onError` callbacks that are called for every request:
-
-```typescript
-const api = enlace<ApiSchema>("https://api.example.com", {
-  headers: { Authorization: "Bearer token" },
-}, {
-  onSuccess: (payload) => {
-    console.log("Request succeeded:", payload.status, payload.data);
-  },
-  onError: (payload) => {
-    if (payload.status === 0) {
-      // Network error
-      console.error("Network error:", payload.error.message);
-    } else {
-      // HTTP error
-      console.error("HTTP error:", payload.status, payload.error);
-    }
-  },
-});
-```
-
-**Callback Payloads:**
-
-```typescript
-// onSuccess payload
-type EnlaceCallbackPayload<T> = {
-  status: number;
-  data: T;
-  headers: Headers;
-};
-
-// onError payload (HTTP error or network error)
-type EnlaceErrorCallbackPayload<T> =
-  | { status: number; error: T; headers: Headers }  // HTTP error
-  | { status: 0; error: Error; headers: null };     // Network error
-```
-
-**Use cases:**
-- Global error logging/reporting
-- Toast notifications
-- Authentication refresh on 401 errors
-- Analytics tracking
-
-### `Endpoint<TData, TBody?, TError?>`
-
-Type helper for defining endpoints with JSON body:
-
-```typescript
-// Signature: Endpoint<TData, TBody?, TError?>
-type Endpoint<TData, TBody = never, TError = never>;
-```
-
-**Three ways to define endpoints:**
-
-```typescript
-type ApiSchema = {
-  posts: {
-    $get: Post[];                                   // Direct type (simplest)
-    $post: Endpoint<Post, CreatePost>;              // Data + Body
-    $put: Endpoint<Post, UpdatePost, CustomError>;  // Data + Body + Custom Error
-    $delete: void;                                  // void response
-  };
-};
-
-// Global error type applies to all endpoints without explicit error
-const api = enlace<ApiSchema, ApiError>("https://api.example.com");
-```
-
-### `EndpointWithQuery<TData, TQuery, TError?>`
-
-Type helper for endpoints with typed query parameters:
-
-```typescript
-import { EndpointWithQuery } from "enlace-core";
-
-type ApiSchema = {
-  users: {
-    $get: EndpointWithQuery<User[], { page: number; limit: number; search?: string }>;
-  };
-  posts: {
-    $get: EndpointWithQuery<Post[], { status: "draft" | "published" }, ApiError>;
-  };
-};
-
-// Usage - query params are fully typed
-api.users.$get({ query: { page: 1, limit: 10 } });
-api.users.$get({ query: { page: 1, limit: 10, search: "john" } });
-// api.users.$get({ query: { foo: "bar" } }); // ✗ Error: 'foo' does not exist
-```
-
-### `EndpointWithFormData<TData, TFormData, TError?>`
-
-Type helper for endpoints with file uploads (multipart/form-data):
-
-```typescript
-import { EndpointWithFormData } from "enlace-core";
-
-type ApiSchema = {
-  uploads: {
-    $post: EndpointWithFormData<Upload, { file: Blob | File; name: string }>;
-  };
-  avatars: {
-    $post: EndpointWithFormData<Avatar, { image: File }, UploadError>;
-  };
-};
-
-// Usage - formData is automatically converted to FormData
-api.uploads.$post({
-  formData: {
-    file: selectedFile,        // File object
-    name: "document.pdf",      // String - converted automatically
-  }
-});
-// → Sends as multipart/form-data
-```
-
-**FormData conversion rules:**
-
-| Type | Conversion |
-|------|------------|
-| `File` / `Blob` | Appended directly |
-| `string` / `number` / `boolean` | Converted to string |
-| `object` (nested) | JSON stringified |
-| `array` of primitives | Each item appended separately |
-| `array` of files | Each file appended with same key |
-| `null` / `undefined` | Skipped |
-
-### `EndpointFull<T>`
-
-Object-style type helper for complex endpoints with multiple options:
-
-```typescript
-import { EndpointFull } from "enlace-core";
-
-type ApiSchema = {
-  products: {
-    $post: EndpointFull<{
-      data: Product;
-      body: CreateProduct;
-      query: { categoryId: string };
-      error: ValidationError;
-    }>;
-  };
-  search: {
-    $get: EndpointFull<{
-      data: SearchResult[];
-      query: { q: string; page?: number; limit?: number };
-    }>;
-  };
-  files: {
-    $post: EndpointFull<{
-      data: FileUpload;
-      formData: { file: File; description: string };
-      query: { folder: string };
-      error: UploadError;
-    }>;
-  };
-};
-
-// Usage
-api.products.$post({
-  body: { name: "Widget" },
-  query: { categoryId: "electronics" }
-});
-```
-
-**Available properties:**
-
-| Property | Description |
-|----------|-------------|
-| `data` | Response data type (required) |
-| `body` | JSON request body type |
-| `query` | Query parameters type |
-| `formData` | FormData fields type (for file uploads) |
-| `error` | Error response type |
-
-### Request Options
-
-Per-request options:
-
-```typescript
-api.users.$post({
-  body: { name: "John" },
-  query: { include: "profile" },
-  headers: { "X-Custom": "value" },
-  cache: "no-store",
-});
-
-// FormData request
-api.uploads.$post({
-  formData: { file: selectedFile, name: "document.pdf" },
-});
-```
-
-**Available options:**
-- `body` — Request body (auto-serialized to JSON for objects/arrays)
-- `query` — Query parameters (auto-serialized). Typed when using `EndpointWithQuery` or `EndpointFull`
-- `formData` — FormData fields (auto-converted to native FormData). Use with `EndpointWithFormData` or `EndpointFull`
-- `headers` — Request headers (merged with defaults). Can be `HeadersInit` or `() => HeadersInit | Promise<HeadersInit>`
-- `cache` — Cache mode
-
 ### Response Type
 
 All requests return `EnlaceResponse<TData, TError>`:
@@ -375,12 +260,10 @@ type EnlaceResponse<TData, TError> =
 const response = await api.users.$get();
 
 if (response.error) {
-  // response.error is typed as ApiError
-  console.error(response.error);
+  console.error(response.error); // typed as ApiError
   return;
 }
-// response.data is typed as User[] (no longer undefined)
-console.log(response.data);
+console.log(response.data); // typed as User[]
 ```
 
 ## Features
@@ -410,22 +293,153 @@ Query parameters are automatically serialized:
 
 ```typescript
 api.posts.$get({
-  query: {
-    page: 1,
-    limit: 10,
-    active: true,
-  },
+  query: { page: 1, limit: 10, active: true },
 });
 // GET /posts?page=1&limit=10&active=true
 ```
 
-## OpenAPI Generation
+## Plugin System (Core)
 
-Generate OpenAPI 3.0 specs from your TypeScript schema using [`enlace-openapi`](../openapi/README.md):
+The core package provides the plugin infrastructure used by `enlace` React hooks:
 
-```bash
-npm install enlace-openapi
-enlace-openapi --schema ./types/APISchema.ts --output ./openapi.json
+```typescript
+import {
+  createPluginExecutor,
+  createStateManager,
+  createEventEmitter,
+  type EnlacePlugin,
+} from "enlace-core";
+```
+
+### Plugin Lifecycle Handlers
+
+Plugins can hook into these lifecycle points:
+
+| Handler       | Description                          |
+| ------------- | ------------------------------------ |
+| `beforeFetch` | Before the request is made           |
+| `afterFetch`  | After response is received           |
+| `onSuccess`   | On successful response               |
+| `onError`     | On error response                    |
+| `onCacheHit`  | When cached data is found            |
+| `onCacheMiss` | When no cached data exists           |
+| `onMount`     | When the operation mounts (React)    |
+| `onUnmount`   | When the operation unmounts (React)  |
+
+### Creating Custom Plugins
+
+```typescript
+import type { EnlacePlugin, PluginContext } from "enlace-core";
+
+type MyPluginConfig = {
+  debug?: boolean;
+};
+
+type MyReadOptions = {
+  customOption?: string;
+};
+
+export function myPlugin(
+  config: MyPluginConfig = {}
+): EnlacePlugin<MyReadOptions, object, object, object, object> {
+  return {
+    name: "my-plugin",
+    operations: ["read", "write"],
+
+    handlers: {
+      beforeFetch(context: PluginContext) {
+        if (config.debug) {
+          console.log("Fetching:", context.queryKey);
+        }
+        return context;
+      },
+
+      onSuccess(context: PluginContext) {
+        if (config.debug) {
+          console.log("Success:", context.response?.data);
+        }
+        return context;
+      },
+    },
+  };
+}
+```
+
+### State Manager
+
+Manages cache state for all queries:
+
+```typescript
+const stateManager = createStateManager();
+
+// Create query key
+const key = stateManager.createQueryKey({
+  path: ["users"],
+  method: "GET",
+  options: { query: { page: 1 } },
+});
+
+// Get/set cache
+const cached = stateManager.getCache(key);
+stateManager.setCache(key, { state: { data: users }, tags: ["users"] });
+
+// Subscribe to changes
+const unsubscribe = stateManager.subscribeCache(key, () => {
+  console.log("Cache updated");
+});
+```
+
+### Event Emitter
+
+Used for cross-component communication (e.g., cache invalidation):
+
+```typescript
+const eventEmitter = createEventEmitter();
+
+// Subscribe to events
+const unsubscribe = eventEmitter.on("invalidate", (tags: string[]) => {
+  console.log("Invalidating tags:", tags);
+});
+
+// Emit events
+eventEmitter.emit("invalidate", ["posts", "users"]);
+```
+
+## Exports
+
+```typescript
+// Client
+export { enlace } from "./client";
+
+// Types
+export type {
+  Endpoint,
+  EndpointWithQuery,
+  EndpointWithFormData,
+  EndpointFull,
+  EnlaceResponse,
+  EnlaceOptions,
+} from "./types";
+
+// Plugin System
+export { createPluginExecutor } from "./plugins/executor";
+export { createStateManager } from "./state/manager";
+export { createEventEmitter } from "./events/emitter";
+export type { EnlacePlugin, PluginContext, PluginHandler } from "./plugins/types";
+
+// Built-in Plugins
+export {
+  cachePlugin,
+  retryPlugin,
+  pollingPlugin,
+  revalidationPlugin,
+  optimisticPlugin,
+  invalidationPlugin,
+} from "./plugins/built-in";
+
+// Utilities
+export { generateTags } from "./utils/tags";
+export { createOperationController } from "./operations/controller";
 ```
 
 ## License

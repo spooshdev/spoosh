@@ -33,19 +33,13 @@ type HooksConfig<TPlugins extends PluginArray> = {
   baseUrl: string;
   defaultOptions?: EnlaceOptions;
   plugins: TPlugins;
-  autoGenerateTags?: boolean;
 };
 
 export function enlaceHooks<TSchema, TDefaultError = unknown>() {
   return <const TPlugins extends PluginArray>(
     config: HooksConfig<TPlugins>
   ) => {
-    const {
-      baseUrl,
-      defaultOptions = {},
-      plugins,
-      autoGenerateTags = true,
-    } = config;
+    const { baseUrl, defaultOptions = {}, plugins } = config;
 
     const api = enlace<TSchema, TDefaultError>(baseUrl, defaultOptions);
     const stateManager = createStateManager();
@@ -57,7 +51,6 @@ export function enlaceHooks<TSchema, TDefaultError = unknown>() {
       stateManager,
       eventEmitter,
       pluginExecutor,
-      autoGenerateTags,
     });
 
     const useWrite = createUseWrite<TSchema, TDefaultError, TPlugins>({
@@ -65,7 +58,6 @@ export function enlaceHooks<TSchema, TDefaultError = unknown>() {
       stateManager,
       eventEmitter,
       pluginExecutor,
-      autoGenerateTags,
     });
 
     const useInfiniteRead = createUseInfiniteRead<
@@ -77,7 +69,6 @@ export function enlaceHooks<TSchema, TDefaultError = unknown>() {
       stateManager,
       eventEmitter,
       pluginExecutor,
-      autoGenerateTags,
     });
 
     return {
