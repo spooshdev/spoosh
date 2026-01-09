@@ -3,21 +3,28 @@ import type { SchemaMethod } from "../../../types/common.types";
 import type { ExtractData } from "../../../types/endpoint.types";
 import type { QuerySchemaHelper } from "../../schema-helper";
 
-export type MatchRequest = {
-  query?: Record<string, unknown>;
-  params?: Record<string, unknown>;
-  body?: unknown;
-};
+type ExtractResponseData<T> =
+  T extends EnlaceResponse<infer D, unknown, unknown> ? D : unknown;
 
-type PickRequestFields<T> = [T] extends [unknown]
-  ? unknown extends T
-    ? MatchRequest
-    : Pick<T, Extract<keyof T, "query" | "params" | "body">>
-  : Pick<T, Extract<keyof T, "query" | "params" | "body">>;
+type ExtractRequestOptions<T> =
+  T extends EnlaceResponse<unknown, unknown, infer R> ? R : never;
 
-export type CacheConfig<TData, TResponse = unknown, TRequest = MatchRequest> = {
-  for: () => Promise<EnlaceResponse<TData, unknown, unknown>>;
-  match?: (request: PickRequestFields<TRequest>) => boolean;
+type CleanRequestOptions<T> = unknown extends T
+  ? never
+  : keyof T extends never
+    ? never
+    : T;
+
+export type CacheConfig<
+  TFor extends () => Promise<EnlaceResponse<unknown, unknown, unknown>>,
+  TResponse = unknown,
+  TData = ExtractResponseData<Awaited<ReturnType<TFor>>>,
+  TRequest = CleanRequestOptions<
+    ExtractRequestOptions<Awaited<ReturnType<TFor>>>
+  >,
+> = {
+  for: TFor;
+  match?: [TRequest] extends [never] ? never : (request: TRequest) => boolean;
   timing?: "immediate" | "onSuccess";
   updater: (data: TData, response?: TResponse) => TData;
   rollbackOnError?: boolean;
@@ -28,7 +35,7 @@ export type CacheConfig<TData, TResponse = unknown, TRequest = MatchRequest> = {
 export type ResolvedCacheConfig = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   for: (...args: any[]) => Promise<EnlaceResponse<unknown, unknown>>;
-  match?: (request: MatchRequest) => boolean;
+  match?: (request: Record<string, unknown>) => boolean;
   timing?: "immediate" | "onSuccess";
   updater: (data: unknown, response?: unknown) => unknown;
   rollbackOnError?: boolean;
@@ -37,7 +44,9 @@ export type ResolvedCacheConfig = {
 };
 
 export type OptimisticCallbackFn<TSchema = unknown, TResponse = unknown> = (
-  cache: <TData>(config: CacheConfig<TData, TResponse>) => ResolvedCacheConfig,
+  $: <TFor extends () => Promise<EnlaceResponse<unknown, unknown, unknown>>>(
+    config: CacheConfig<TFor, TResponse>
+  ) => ResolvedCacheConfig,
   api: QuerySchemaHelper<TSchema>
 ) => ResolvedCacheConfig | ResolvedCacheConfig[];
 

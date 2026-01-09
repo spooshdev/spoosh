@@ -59,9 +59,8 @@ function resolveOptimisticConfigs(
 
   if (!pluginOptions?.optimistic) return [];
 
-  const cache = <TData>(
-    config: CacheConfig<TData, unknown>
-  ): ResolvedCacheConfig => ({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const $ = (config: CacheConfig<any, unknown>): ResolvedCacheConfig => ({
     for: config.for as ResolvedCacheConfig["for"],
     match: config.match as ResolvedCacheConfig["match"],
     timing: config.timing,
@@ -72,7 +71,7 @@ function resolveOptimisticConfigs(
   });
 
   const apiProxy = createApiProxy();
-  const result = pluginOptions.optimistic(cache, apiProxy as never);
+  const result = pluginOptions.optimistic($ as never, apiProxy as never);
 
   return Array.isArray(result) ? result : [result];
 }
