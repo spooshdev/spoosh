@@ -10,6 +10,7 @@ import type {
   CoreRequestOptionsBase,
   ResolveSchemaTypes,
   ResolveDataTypes,
+  PluginTypeConfig,
 } from "enlace";
 
 export const HTTP_METHODS = [
@@ -42,13 +43,7 @@ export type ApiClient<TSchema> = EnlaceClient<
 >;
 
 export type PluginHooksConfig<
-  TPlugins extends readonly EnlacePlugin<
-    object,
-    object,
-    object,
-    object,
-    object
-  >[],
+  TPlugins extends readonly EnlacePlugin<PluginTypeConfig>[],
 > = {
   baseUrl: string;
   defaultOptions?: EnlaceOptions;
@@ -83,26 +78,14 @@ export type BaseWriteResult<TData, TError, TOptions> = {
 export type UseReadResult<
   TData,
   TError,
-  TPlugins extends readonly EnlacePlugin<
-    object,
-    object,
-    object,
-    object,
-    object
-  >[],
+  TPlugins extends readonly EnlacePlugin<PluginTypeConfig>[],
 > = BaseReadResult<TData, TError> & MergePluginResults<TPlugins>["read"];
 
 export type UseWriteResult<
   TData,
   TError,
   TOptions,
-  TPlugins extends readonly EnlacePlugin<
-    object,
-    object,
-    object,
-    object,
-    object
-  >[],
+  TPlugins extends readonly EnlacePlugin<PluginTypeConfig>[],
 > = BaseWriteResult<TData, TError, TOptions> &
   MergePluginResults<TPlugins>["write"];
 
@@ -191,13 +174,7 @@ export type UseInfiniteReadResult<
   TData,
   TError,
   TItem,
-  TPlugins extends readonly EnlacePlugin<
-    object,
-    object,
-    object,
-    object,
-    object
-  >[],
+  TPlugins extends readonly EnlacePlugin<PluginTypeConfig>[],
 > = BaseInfiniteReadResult<TData, TError, TItem> &
   MergePluginResults<TPlugins>["read"];
 

@@ -10,13 +10,13 @@ import type {
 
 export function nextjsPlugin(
   config: NextjsPluginConfig = {}
-): EnlacePlugin<
-  NextjsReadOptions,
-  NextjsWriteOptions,
-  NextjsInfiniteReadOptions,
-  NextjsReadResult,
-  NextjsWriteResult
-> {
+): EnlacePlugin<{
+  readOptions: NextjsReadOptions;
+  writeOptions: NextjsWriteOptions;
+  infiniteReadOptions: NextjsInfiniteReadOptions;
+  readResult: NextjsReadResult;
+  writeResult: NextjsWriteResult;
+}> {
   const { serverRevalidator, skipServerRevalidation = false } = config;
 
   return {

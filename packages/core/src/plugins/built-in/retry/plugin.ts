@@ -10,13 +10,13 @@ import type {
 
 export function retryPlugin(
   config: RetryPluginConfig = {}
-): EnlacePlugin<
-  RetryReadOptions,
-  RetryWriteOptions,
-  RetryInfiniteReadOptions,
-  RetryReadResult,
-  RetryWriteResult
-> {
+): EnlacePlugin<{
+  readOptions: RetryReadOptions;
+  writeOptions: RetryWriteOptions;
+  infiniteReadOptions: RetryInfiniteReadOptions;
+  readResult: RetryReadResult;
+  writeResult: RetryWriteResult;
+}> {
   const { retries: defaultRetries = 3, retryDelay: defaultRetryDelay = 1000 } =
     config;
 

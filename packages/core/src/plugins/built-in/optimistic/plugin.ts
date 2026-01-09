@@ -156,13 +156,13 @@ function rollbackOptimistic(
   }
 }
 
-export function optimisticPlugin(): EnlacePlugin<
-  OptimisticReadOptions,
-  OptimisticWriteOptions,
-  OptimisticInfiniteReadOptions,
-  OptimisticReadResult,
-  OptimisticWriteResult
-> {
+export function optimisticPlugin(): EnlacePlugin<{
+  readOptions: OptimisticReadOptions;
+  writeOptions: OptimisticWriteOptions;
+  infiniteReadOptions: OptimisticInfiniteReadOptions;
+  readResult: OptimisticReadResult;
+  writeResult: OptimisticWriteResult;
+}> {
   return {
     name: "enlace:optimistic",
     operations: ["write"],

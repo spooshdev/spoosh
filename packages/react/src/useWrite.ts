@@ -9,6 +9,7 @@ import {
   type MergePluginOptions,
   type MergePluginResults,
   type EnlacePlugin,
+  type PluginTypeConfig,
 } from "enlace";
 import { createTrackingProxy, type TrackingResult } from "./trackingProxy";
 import type {
@@ -31,13 +32,7 @@ export type CreateUseWriteOptions = {
 export function createUseWrite<
   TSchema,
   TDefaultError,
-  TPlugins extends readonly EnlacePlugin<
-    object,
-    object,
-    object,
-    object,
-    object
-  >[],
+  TPlugins extends readonly EnlacePlugin<PluginTypeConfig>[],
 >(options: CreateUseWriteOptions) {
   const { api, stateManager, eventEmitter, pluginExecutor } = options;
 

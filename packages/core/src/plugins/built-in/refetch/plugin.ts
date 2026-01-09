@@ -12,13 +12,13 @@ type CleanupFn = () => void;
 
 export function refetchPlugin(
   config: RefetchPluginConfig = {}
-): EnlacePlugin<
-  RefetchReadOptions,
-  RefetchWriteOptions,
-  RefetchInfiniteReadOptions,
-  RefetchReadResult,
-  RefetchWriteResult
-> {
+): EnlacePlugin<{
+  readOptions: RefetchReadOptions;
+  writeOptions: RefetchWriteOptions;
+  infiniteReadOptions: RefetchInfiniteReadOptions;
+  readResult: RefetchReadResult;
+  writeResult: RefetchWriteResult;
+}> {
   const { refetchOnFocus = false, refetchOnReconnect = false } = config;
 
   const invalidateUnsubscribers = new Map<string, CleanupFn>();

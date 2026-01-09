@@ -64,49 +64,82 @@ export type PluginHandlers<TData = unknown, TError = unknown> = Partial<
   Record<PluginPhase, PluginHandler<TData, TError>>
 >;
 
-export interface EnlacePlugin<
-  TReadOptions extends object = object,
-  TWriteOptions extends object = object,
-  TInfiniteReadOptions extends object = object,
-  TReadResult extends object = object,
-  TWriteResult extends object = object,
-> {
+/**
+ * Configuration object for plugin type definitions.
+ * Use this to specify which options and results your plugin provides.
+ *
+ * @example
+ * ```ts
+ * // Plugin with read options only
+ * EnlacePlugin<{ readOptions: MyReadOptions }>
+ *
+ * // Plugin with read/write options and results
+ * EnlacePlugin<{
+ *   readOptions: MyReadOptions;
+ *   writeOptions: MyWriteOptions;
+ *   readResult: MyReadResult;
+ * }>
+ * ```
+ */
+export type PluginTypeConfig = {
+  readOptions?: object;
+  writeOptions?: object;
+  infiniteReadOptions?: object;
+  readResult?: object;
+  writeResult?: object;
+};
+
+/**
+ * Base interface for Enlace plugins.
+ *
+ * @typeParam T - Plugin type configuration object. Specify only the types your plugin needs.
+ *
+ * @example
+ * ```ts
+ * // Plugin with read options and result
+ * function myPlugin(): EnlacePlugin<{
+ *   readOptions: { myOption: boolean };
+ *   readResult: { myResult: string };
+ * }> {
+ *   return {
+ *     name: "my-plugin",
+ *     operations: ["read"],
+ *     handlers: { ... },
+ *   };
+ * }
+ * ```
+ */
+export interface EnlacePlugin<T extends PluginTypeConfig = PluginTypeConfig> {
   name: string;
   operations: OperationType[];
   handlers: PluginHandlers;
   cleanup?: () => void;
 
-  __readOptions?: TReadOptions;
-  __writeOptions?: TWriteOptions;
-  __infiniteReadOptions?: TInfiniteReadOptions;
-  __readResult?: TReadResult;
-  __writeResult?: TWriteResult;
+  /** @internal Type carrier for inference - do not use directly */
+  readonly _types?: T;
 }
 
+/**
+ * Helper type for creating plugin factory functions.
+ *
+ * @typeParam TConfig - Configuration object type (use `void` for no config)
+ * @typeParam TTypes - Plugin type configuration object
+ *
+ * @example
+ * ```ts
+ * // Factory with no config
+ * const myPlugin: PluginFactory<void, { readOptions: MyOpts }> = () => ({ ... });
+ *
+ * // Factory with config
+ * const myPlugin: PluginFactory<MyConfig, { readOptions: MyOpts }> = (config) => ({ ... });
+ * ```
+ */
 export type PluginFactory<
   TConfig = void,
-  TReadOptions extends object = object,
-  TWriteOptions extends object = object,
-  TInfiniteReadOptions extends object = object,
-  TReadResult extends object = object,
-  TWriteResult extends object = object,
+  TTypes extends PluginTypeConfig = PluginTypeConfig,
 > = TConfig extends void
-  ? () => EnlacePlugin<
-      TReadOptions,
-      TWriteOptions,
-      TInfiniteReadOptions,
-      TReadResult,
-      TWriteResult
-    >
-  : (
-      config?: TConfig
-    ) => EnlacePlugin<
-      TReadOptions,
-      TWriteOptions,
-      TInfiniteReadOptions,
-      TReadResult,
-      TWriteResult
-    >;
+  ? () => EnlacePlugin<TTypes>
+  : (config?: TConfig) => EnlacePlugin<TTypes>;
 
 /**
  * Marker type for callbacks that need TData/TError from useRead/useWrite.

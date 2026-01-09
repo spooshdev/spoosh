@@ -61,13 +61,13 @@ function resolveInvalidateTags(
 
 export function invalidationPlugin(
   config: InvalidationPluginConfig = {}
-): EnlacePlugin<
-  InvalidationReadOptions,
-  InvalidationWriteOptions,
-  InvalidationInfiniteReadOptions,
-  InvalidationReadResult,
-  InvalidationWriteResult
-> {
+): EnlacePlugin<{
+  readOptions: InvalidationReadOptions;
+  writeOptions: InvalidationWriteOptions;
+  infiniteReadOptions: InvalidationInfiniteReadOptions;
+  readResult: InvalidationReadResult;
+  writeResult: InvalidationWriteResult;
+}> {
   const { autoInvalidate: defaultAutoInvalidate = "all" } = config;
 
   return {

@@ -7,13 +7,13 @@ import type {
   PollingWriteResult,
 } from "./types";
 
-export function pollingPlugin(): EnlacePlugin<
-  PollingReadOptions,
-  PollingWriteOptions,
-  PollingInfiniteReadOptions,
-  PollingReadResult,
-  PollingWriteResult
-> {
+export function pollingPlugin(): EnlacePlugin<{
+  readOptions: PollingReadOptions;
+  writeOptions: PollingWriteOptions;
+  infiniteReadOptions: PollingInfiniteReadOptions;
+  readResult: PollingReadResult;
+  writeResult: PollingWriteResult;
+}> {
   const timeouts = new Map<string, ReturnType<typeof setTimeout>>();
   const refetchFns = new Map<string, () => void>();
 

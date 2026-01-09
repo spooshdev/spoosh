@@ -7,6 +7,7 @@ import {
   type MergePluginOptions,
   type MergePluginResults,
   type EnlacePlugin,
+  type PluginTypeConfig,
   type PluginContext,
   type OperationState,
 } from "enlace";
@@ -146,13 +147,7 @@ function shallowMergeRequest(
 export function createUseInfiniteRead<
   TSchema,
   TDefaultError,
-  TPlugins extends readonly EnlacePlugin<
-    object,
-    object,
-    object,
-    object,
-    object
-  >[],
+  TPlugins extends readonly EnlacePlugin<PluginTypeConfig>[],
 >(options: CreateUseInfiniteReadOptions) {
   const { api, stateManager, eventEmitter, pluginExecutor } = options;
 

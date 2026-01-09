@@ -10,13 +10,13 @@ import type {
 
 export function cachePlugin(
   config: CachePluginConfig = {}
-): EnlacePlugin<
-  CacheReadOptions,
-  CacheWriteOptions,
-  CacheInfiniteReadOptions,
-  CacheReadResult,
-  CacheWriteResult
-> {
+): EnlacePlugin<{
+  readOptions: CacheReadOptions;
+  writeOptions: CacheWriteOptions;
+  infiniteReadOptions: CacheInfiniteReadOptions;
+  readResult: CacheReadResult;
+  writeResult: CacheWriteResult;
+}> {
   const { staleTime: defaultStaleTime = 0 } = config;
 
   return {
