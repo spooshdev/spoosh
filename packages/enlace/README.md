@@ -16,7 +16,7 @@ import {
   cachePlugin,
   retryPlugin,
   pollingPlugin,
-  revalidationPlugin,
+  refetchPlugin,
   optimisticPlugin,
   invalidationPlugin,
   Endpoint,
@@ -39,7 +39,7 @@ const plugins = [
   cachePlugin({ staleTime: 5000 }),
   retryPlugin({ retries: 3 }),
   pollingPlugin(),
-  revalidationPlugin({ revalidateOnFocus: true }),
+  refetchPlugin({ refetchOnFocus: true }),
   optimisticPlugin(),
   invalidationPlugin(),
 ] as const;
@@ -61,7 +61,7 @@ Enlace uses a composable plugin architecture. Plugins are executed in order and 
 | `cachePlugin`        | Response caching with stale time control         |
 | `retryPlugin`        | Automatic retry with exponential backoff         |
 | `pollingPlugin`      | Periodic refetching at configurable intervals    |
-| `revalidationPlugin` | Revalidate on focus, reconnect, or invalidation  |
+| `refetchPlugin`      | Refetch on focus, reconnect, or invalidation     |
 | `optimisticPlugin`   | Optimistic UI updates with automatic rollback    |
 | `invalidationPlugin` | Tag-based cache invalidation after mutations     |
 | `nextjsPlugin`       | Next.js server-side revalidation integration     |
@@ -128,14 +128,14 @@ const { data } = useRead((api) => api.orders[id].$get(), {
 });
 ```
 
-### revalidationPlugin
+### refetchPlugin
 
-Handles revalidation on window focus, network reconnect, and tag invalidation.
+Handles refetching on window focus, network reconnect, and tag invalidation.
 
 ```typescript
-revalidationPlugin({
-  revalidateOnFocus: true,     // Refetch when window gains focus (default: false)
-  revalidateOnReconnect: true, // Refetch when network reconnects (default: false)
+refetchPlugin({
+  refetchOnFocus: true,     // Refetch when window gains focus (default: false)
+  refetchOnReconnect: true, // Refetch when network reconnects (default: false)
 })
 ```
 
@@ -143,7 +143,7 @@ revalidationPlugin({
 
 ```typescript
 const { data } = useRead((api) => api.posts.$get(), {
-  revalidateOnFocus: false,
+  refetchOnFocus: false,
 });
 ```
 
@@ -296,7 +296,7 @@ const { data } = useRead((api) => api.posts.$get(), {
   staleTime: 5000,           // Cache freshness (from cachePlugin)
   retries: 3,                // Retry attempts (from retryPlugin)
   pollingInterval: 5000,     // Polling interval (from pollingPlugin)
-  revalidateOnFocus: true,   // Refetch on focus (from revalidationPlugin)
+  refetchOnFocus: true,      // Refetch on focus (from refetchPlugin)
 });
 ```
 

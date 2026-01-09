@@ -1,25 +1,25 @@
 import type { EnlacePlugin, PluginContext } from "../../types";
 import type {
-  RevalidationPluginConfig,
-  RevalidationReadOptions,
-  RevalidationWriteOptions,
-  RevalidationInfiniteReadOptions,
-  RevalidationReadResult,
-  RevalidationWriteResult,
+  RefetchPluginConfig,
+  RefetchReadOptions,
+  RefetchWriteOptions,
+  RefetchInfiniteReadOptions,
+  RefetchReadResult,
+  RefetchWriteResult,
 } from "./types";
 
 type CleanupFn = () => void;
 
-export function revalidationPlugin(
-  config: RevalidationPluginConfig = {}
+export function refetchPlugin(
+  config: RefetchPluginConfig = {}
 ): EnlacePlugin<
-  RevalidationReadOptions,
-  RevalidationWriteOptions,
-  RevalidationInfiniteReadOptions,
-  RevalidationReadResult,
-  RevalidationWriteResult
+  RefetchReadOptions,
+  RefetchWriteOptions,
+  RefetchInfiniteReadOptions,
+  RefetchReadResult,
+  RefetchWriteResult
 > {
-  const { revalidateOnFocus = false, revalidateOnReconnect = false } = config;
+  const { refetchOnFocus = false, refetchOnReconnect = false } = config;
 
   const invalidateUnsubscribers = new Map<string, CleanupFn>();
   const focusUnsubscribers = new Map<string, CleanupFn>();
@@ -74,7 +74,7 @@ export function revalidationPlugin(
   };
 
   return {
-    name: "enlace:revalidation",
+    name: "enlace:refetch",
     operations: ["read", "infiniteRead"],
 
     handlers: {
@@ -88,13 +88,13 @@ export function revalidationPlugin(
         if (!execute) return context;
 
         const pluginOptions = metadata.get("pluginOptions") as
-          | RevalidationReadOptions
+          | RefetchReadOptions
           | undefined;
 
-        const shouldRevalidateOnFocus =
-          pluginOptions?.revalidateOnFocus ?? revalidateOnFocus;
-        const shouldRevalidateOnReconnect =
-          pluginOptions?.revalidateOnReconnect ?? revalidateOnReconnect;
+        const shouldRefetchOnFocus =
+          pluginOptions?.refetchOnFocus ?? refetchOnFocus;
+        const shouldRefetchOnReconnect =
+          pluginOptions?.refetchOnReconnect ?? refetchOnReconnect;
 
         if (tags.length > 0) {
           const unsubscribe = eventEmitter.on<string[]>(
@@ -113,11 +113,11 @@ export function revalidationPlugin(
           invalidateUnsubscribers.set(queryKey, unsubscribe);
         }
 
-        if (shouldRevalidateOnFocus) {
+        if (shouldRefetchOnFocus) {
           setupFocusListener(queryKey, () => execute(true));
         }
 
-        if (shouldRevalidateOnReconnect) {
+        if (shouldRefetchOnReconnect) {
           setupReconnectListener(queryKey, () => execute(true));
         }
 
