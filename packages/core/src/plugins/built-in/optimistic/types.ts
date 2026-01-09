@@ -1,46 +1,7 @@
 import type { EnlaceResponse } from "../../../types/response.types";
 import type { SchemaMethod } from "../../../types/common.types";
 import type { ExtractData } from "../../../types/endpoint.types";
-import type { HasQueryMethods } from "../../../types/filtered-client.types";
-
-type ExtractOptimisticData<T> = T extends { data: infer D }
-  ? D
-  : T extends void
-    ? void
-    : T;
-
-type ExtractOptimisticRequestOptions<T> = {
-  [K in Extract<keyof T, "query" | "body" | "params">]?: T[K];
-};
-
-type EndpointToOptimisticMethod<T> = () => Promise<
-  EnlaceResponse<
-    ExtractOptimisticData<T>,
-    unknown,
-    ExtractOptimisticRequestOptions<T>
-  >
->;
-
-export type OptimisticSchemaHelper<TSchema> = {
-  [K in keyof TSchema as K extends SchemaMethod | "_"
-    ? never
-    : HasQueryMethods<TSchema[K]> extends true
-      ? K
-      : never]: K extends keyof TSchema
-    ? OptimisticSchemaHelper<TSchema[K]>
-    : never;
-} & {
-  [K in "$get" as K extends keyof TSchema ? K : never]: K extends keyof TSchema
-    ? EndpointToOptimisticMethod<TSchema[K]>
-    : never;
-} & (TSchema extends { _: infer D }
-    ? HasQueryMethods<D> extends true
-      ? {
-          [key: string]: OptimisticSchemaHelper<D>;
-          [key: number]: OptimisticSchemaHelper<D>;
-        }
-      : object
-    : object);
+import type { QuerySchemaHelper } from "../../schema-helper";
 
 export type MatchRequest = {
   query?: Record<string, unknown>;
@@ -77,7 +38,7 @@ export type ResolvedCacheConfig = {
 
 export type OptimisticCallbackFn<TSchema = unknown, TResponse = unknown> = (
   cache: <TData>(config: CacheConfig<TData, TResponse>) => ResolvedCacheConfig,
-  api: OptimisticSchemaHelper<TSchema>
+  api: QuerySchemaHelper<TSchema>
 ) => ResolvedCacheConfig | ResolvedCacheConfig[];
 
 type MutationOptimisticOption<TRootSchema, TResponse = unknown> = {

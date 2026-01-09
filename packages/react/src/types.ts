@@ -3,7 +3,7 @@ import type {
   EnlaceResponse,
   EnlaceClient,
   QueryOnlyClient,
-  CleanMutationOnlyClient,
+  MutationOnlyClient,
   EnlaceOptions,
   MergePluginResults,
   MethodOptionsMap,
@@ -112,7 +112,7 @@ export type ReadApiClient<TSchema, TDefaultError> = QueryOnlyClient<
   ReactOptionsMap
 >;
 
-export type WriteApiClient<TSchema, TDefaultError> = CleanMutationOnlyClient<
+export type WriteApiClient<TSchema, TDefaultError> = MutationOnlyClient<
   TSchema,
   TDefaultError,
   ReactOptionsMap

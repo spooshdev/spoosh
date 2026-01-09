@@ -1,7 +1,5 @@
-import type { EnlaceResponse } from "./response.types";
 import type { SchemaMethod } from "./common.types";
-import type { RequestOptions } from "./request.types";
-import type { MethodFn, CleanMethodFn, StaticPathKeys } from "./client.types";
+import type { MethodFn, StaticPathKeys } from "./client.types";
 
 type QueryMethod = "$get";
 type MutationMethod = "$post" | "$put" | "$patch" | "$delete";
@@ -63,21 +61,6 @@ type QueryHttpMethods<
   >;
 };
 
-type MutationHttpMethods<
-  TSchema,
-  TDefaultError = unknown,
-  TOptionsMap = object,
-  THasDynamicSegment extends boolean = false,
-> = {
-  [K in MutationMethod as K extends keyof TSchema ? K : never]: MethodFn<
-    TSchema,
-    K,
-    TDefaultError,
-    TOptionsMap,
-    THasDynamicSegment
-  >;
-};
-
 type QueryDynamicAccess<
   TSchema,
   TDefaultError = unknown,
@@ -104,32 +87,6 @@ type QueryDynamicAccess<
     : object
   : object;
 
-type MutationDynamicAccess<
-  TSchema,
-  TDefaultError = unknown,
-  TOptionsMap = object,
-  TRootSchema = TSchema,
-> = TSchema extends { _: infer D }
-  ? HasMutationMethods<D> extends true
-    ? {
-        [key: string]: MutationOnlyClient<
-          D,
-          TDefaultError,
-          TOptionsMap,
-          true,
-          TRootSchema
-        >;
-        [key: number]: MutationOnlyClient<
-          D,
-          TDefaultError,
-          TOptionsMap,
-          true,
-          TRootSchema
-        >;
-      }
-    : object
-  : object;
-
 type QueryDynamicKey<
   TSchema,
   TDefaultError,
@@ -137,24 +94,20 @@ type QueryDynamicKey<
   TRootSchema = TSchema,
 > = TSchema extends { _: infer D }
   ? HasQueryMethods<D> extends true
-    ? { _: QueryOnlyClient<D, TDefaultError, TOptionsMap, true, TRootSchema> }
-    : object
-  : object;
-
-type MutationDynamicKey<
-  TSchema,
-  TDefaultError,
-  TOptionsMap,
-  TRootSchema = TSchema,
-> = TSchema extends { _: infer D }
-  ? HasMutationMethods<D> extends true
     ? {
-        _: MutationOnlyClient<D, TDefaultError, TOptionsMap, true, TRootSchema>;
+        /**
+         * Dynamic path segment placeholder for routes like `/posts/:id`.
+         *
+         * @example
+         * ```ts
+         * useRead((api) => api.posts[123].$get())
+         * useRead((api) => api.posts[":id"].$get({ params: { id: 123 } }))
+         * ```
+         */
+        _: QueryOnlyClient<D, TDefaultError, TOptionsMap, true, TRootSchema>;
       }
     : object
   : object;
-
-type MethodNameKeys = SchemaMethod;
 
 export type QueryOnlyClient<
   TSchema,
@@ -165,7 +118,7 @@ export type QueryOnlyClient<
 > = QueryHttpMethods<TSchema, TDefaultError, TOptionsMap, THasDynamicSegment> &
   QueryDynamicAccess<TSchema, TDefaultError, TOptionsMap, TRootSchema> &
   QueryDynamicKey<TSchema, TDefaultError, TOptionsMap, TRootSchema> & {
-    [K in keyof StaticPathKeys<TSchema> as K extends MethodNameKeys
+    [K in keyof StaticPathKeys<TSchema> as K extends SchemaMethod
       ? never
       : HasQueryMethods<TSchema[K]> extends true
         ? K
@@ -178,40 +131,13 @@ export type QueryOnlyClient<
     >;
   };
 
-export type MutationOnlyClient<
-  TSchema,
-  TDefaultError = unknown,
-  TOptionsMap = object,
-  THasDynamicSegment extends boolean = false,
-  TRootSchema = TSchema,
-> = MutationHttpMethods<
-  TSchema,
-  TDefaultError,
-  TOptionsMap,
-  THasDynamicSegment
-> &
-  MutationDynamicAccess<TSchema, TDefaultError, TOptionsMap, TRootSchema> &
-  MutationDynamicKey<TSchema, TDefaultError, TOptionsMap, TRootSchema> & {
-    [K in keyof StaticPathKeys<TSchema> as K extends MethodNameKeys
-      ? never
-      : HasMutationMethods<TSchema[K]> extends true
-        ? K
-        : never]: MutationOnlyClient<
-      TSchema[K],
-      TDefaultError,
-      TOptionsMap,
-      THasDynamicSegment,
-      TRootSchema
-    >;
-  };
-
-type CleanMutationHttpMethods<
+type MutationHttpMethods<
   TSchema,
   TDefaultError = unknown,
   TOptionsMap = object,
   THasDynamicSegment extends boolean = false,
 > = {
-  [K in MutationMethod as K extends keyof TSchema ? K : never]: CleanMethodFn<
+  [K in MutationMethod as K extends keyof TSchema ? K : never]: MethodFn<
     TSchema,
     K,
     TDefaultError,
@@ -220,78 +146,59 @@ type CleanMutationHttpMethods<
   >;
 };
 
-type CleanMutationDynamicAccess<
+type MutationDynamicAccess<
   TSchema,
   TDefaultError = unknown,
   TOptionsMap = object,
 > = TSchema extends { _: infer D }
   ? HasMutationMethods<D> extends true
     ? {
-        [key: string]: CleanMutationOnlyClient<
-          D,
-          TDefaultError,
-          TOptionsMap,
-          true
-        >;
-        [key: number]: CleanMutationOnlyClient<
-          D,
-          TDefaultError,
-          TOptionsMap,
-          true
-        >;
+        [key: string]: MutationOnlyClient<D, TDefaultError, TOptionsMap, true>;
+        [key: number]: MutationOnlyClient<D, TDefaultError, TOptionsMap, true>;
       }
     : object
   : object;
 
-type CleanMutationDynamicKey<TSchema, TDefaultError, TOptionsMap> =
-  TSchema extends { _: infer D }
-    ? HasMutationMethods<D> extends true
-      ? { _: CleanMutationOnlyClient<D, TDefaultError, TOptionsMap, true> }
-      : object
-    : object;
+type MutationDynamicKey<TSchema, TDefaultError, TOptionsMap> = TSchema extends {
+  _: infer D;
+}
+  ? HasMutationMethods<D> extends true
+    ? {
+        /**
+         * Dynamic path segment placeholder for routes like `/posts/:id`.
+         *
+         * @example
+         * ```ts
+         * const { trigger } = useWrite((api) => api.posts[":id"].$delete)
+         * trigger({ params: { id: 123 } })
+         * ```
+         */
+        _: MutationOnlyClient<D, TDefaultError, TOptionsMap, true>;
+      }
+    : object
+  : object;
 
-export type CleanMutationOnlyClient<
+export type MutationOnlyClient<
   TSchema,
   TDefaultError = unknown,
   TOptionsMap = object,
   THasDynamicSegment extends boolean = false,
-> = CleanMutationHttpMethods<
+> = MutationHttpMethods<
   TSchema,
   TDefaultError,
   TOptionsMap,
   THasDynamicSegment
 > &
-  CleanMutationDynamicAccess<TSchema, TDefaultError, TOptionsMap> &
-  CleanMutationDynamicKey<TSchema, TDefaultError, TOptionsMap> & {
-    [K in keyof StaticPathKeys<TSchema> as K extends MethodNameKeys
+  MutationDynamicAccess<TSchema, TDefaultError, TOptionsMap> &
+  MutationDynamicKey<TSchema, TDefaultError, TOptionsMap> & {
+    [K in keyof StaticPathKeys<TSchema> as K extends SchemaMethod
       ? never
       : HasMutationMethods<TSchema[K]> extends true
         ? K
-        : never]: CleanMutationOnlyClient<
+        : never]: MutationOnlyClient<
       TSchema[K],
       TDefaultError,
       TOptionsMap,
       THasDynamicSegment
     >;
   };
-
-export type WildcardQueryClient<TRequestOptionsBase = object> = {
-  (
-    options?: RequestOptions<unknown> & TRequestOptionsBase
-  ): Promise<EnlaceResponse<unknown, unknown>>;
-  $get: WildcardQueryClient<TRequestOptionsBase>;
-  [key: string]: WildcardQueryClient<TRequestOptionsBase>;
-  [key: number]: WildcardQueryClient<TRequestOptionsBase>;
-};
-
-export type WildcardMutationClient<TRequestOptionsBase = object> = {
-  (
-    options?: RequestOptions<unknown> & TRequestOptionsBase
-  ): Promise<EnlaceResponse<unknown, unknown>>;
-  $post: WildcardMutationClient<TRequestOptionsBase>;
-  $put: WildcardMutationClient<TRequestOptionsBase>;
-  $patch: WildcardMutationClient<TRequestOptionsBase>;
-  $delete: WildcardMutationClient<TRequestOptionsBase>;
-  [key: string]: WildcardMutationClient<TRequestOptionsBase>;
-  [key: number]: WildcardMutationClient<TRequestOptionsBase>;
-};

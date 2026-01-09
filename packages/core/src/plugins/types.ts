@@ -135,23 +135,51 @@ export type DataAwareTransform<TData = unknown, TError = unknown> = (
 ) => TData | undefined;
 
 /**
- * Marker type for callbacks that need the API schema type.
- * Used by plugins like optimistic and invalidation that need
- * to reference the full API schema for type-safe cache updates.
+ * Schema resolver registry for plugin schema-aware types.
+ *
+ * This interface maps option key names to their schema-resolved types.
+ * Built-in plugins register their types here directly.
+ *
+ * 3rd party plugins can extend this interface via TypeScript declaration
+ * merging to register their own schema-aware types:
  *
  * @example
  * ```ts
- * interface MyPluginWriteOptions<TSchema = unknown> {
- *   onMutate?: SchemaAwareCallback<TSchema>;
+ * // In your plugin's types file:
+ * declare module 'enlace' {
+ *   interface SchemaResolvers<TSchema> {
+ *     myCallback: MyCallbackFn<TSchema>;
+ *   }
  * }
  * ```
  */
-export type SchemaAwareCallback<TSchema = unknown> = (api: TSchema) => unknown;
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type, @typescript-eslint/no-unused-vars
+export interface SchemaResolvers<TSchema> {
+  // Built-in plugin types are registered in schema-resolver.ts
+  // to avoid circular dependency issues
+}
 
 /**
- * Marker type for options that need the API schema type.
- * Array or callback form for schema-aware options.
+ * Data resolver registry for plugin data-aware types.
+ *
+ * This interface maps option key names to their data-resolved types.
+ * Built-in plugins register their types here directly.
+ *
+ * 3rd party plugins can extend this interface via TypeScript declaration
+ * merging to register their own data-aware types:
+ *
+ * @example
+ * ```ts
+ * // In your plugin's types file:
+ * declare module 'enlace' {
+ *   interface DataResolvers<TData, TError> {
+ *     myTransform: (data: TData, error: TError) => TData;
+ *   }
+ * }
+ * ```
  */
-export type SchemaAwareOption<TSchema = unknown> =
-  | string[]
-  | SchemaAwareCallback<TSchema>;
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type, @typescript-eslint/no-unused-vars
+export interface DataResolvers<TData, TError> {
+  // Built-in plugin types are registered in schema-resolver.ts
+  // to avoid circular dependency issues
+}

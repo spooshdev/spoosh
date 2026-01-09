@@ -26,7 +26,3 @@ export type EnlaceMiddleware<TData = unknown, TError = unknown> = {
   phase: MiddlewarePhase;
   handler: MiddlewareHandler<TData, TError>;
 };
-
-export type MiddlewareConfig = {
-  middlewares?: EnlaceMiddleware[];
-};

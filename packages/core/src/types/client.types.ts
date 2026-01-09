@@ -99,63 +99,6 @@ export type MethodFn<
         >
     : never;
 
-export type CleanMethodFn<
-  TSchema,
-  TMethod extends SchemaMethod,
-  TDefaultError = unknown,
-  TOptionsMap = object,
-  THasDynamicSegment extends boolean = false,
-> =
-  HasMethod<TSchema, TMethod> extends true
-    ? HasRequiredOptions<TSchema, TMethod, TDefaultError> extends true
-      ? (
-          options: MethodRequestOptions<
-            TSchema,
-            TMethod,
-            TDefaultError,
-            TOptionsMap,
-            THasDynamicSegment,
-            true
-          >
-        ) => Promise<
-          EnlaceResponse<
-            ExtractData<TSchema, TMethod, TDefaultError>,
-            ExtractError<TSchema, TMethod, TDefaultError>,
-            MethodRequestOptions<
-              TSchema,
-              TMethod,
-              TDefaultError,
-              TOptionsMap,
-              THasDynamicSegment,
-              true
-            >
-          >
-        >
-      : (
-          options?: MethodRequestOptions<
-            TSchema,
-            TMethod,
-            TDefaultError,
-            TOptionsMap,
-            THasDynamicSegment,
-            false
-          >
-        ) => Promise<
-          EnlaceResponse<
-            ExtractData<TSchema, TMethod, TDefaultError>,
-            ExtractError<TSchema, TMethod, TDefaultError>,
-            MethodRequestOptions<
-              TSchema,
-              TMethod,
-              TDefaultError,
-              TOptionsMap,
-              THasDynamicSegment,
-              false
-            >
-          >
-        >
-    : never;
-
 type IsSpecialKey<K> = K extends SchemaMethod | "_" ? true : false;
 
 export type StaticPathKeys<TSchema> = {
@@ -208,8 +151,6 @@ type DynamicAccess<
         >;
       };
 
-type MethodNameKeys = SchemaMethod;
-
 type DynamicKey<
   TSchema,
   TDefaultError,
@@ -218,7 +159,18 @@ type DynamicKey<
 > = TSchema extends {
   _: infer D;
 }
-  ? { _: EnlaceClient<D, TDefaultError, TOptionsMap, true, TRootSchema> }
+  ? {
+      /**
+       * Dynamic path segment placeholder for routes like `/posts/:id`.
+       *
+       * @example
+       * ```ts
+       * // Direct client usage
+       * const { data } = await api.posts._.$get({ params: { id: 123 } })
+       * ```
+       */
+      _: EnlaceClient<D, TDefaultError, TOptionsMap, true, TRootSchema>;
+    }
   : object;
 
 export type EnlaceClient<
@@ -230,7 +182,7 @@ export type EnlaceClient<
 > = HttpMethods<TSchema, TDefaultError, TOptionsMap, THasDynamicSegment> &
   DynamicAccess<TSchema, TDefaultError, TOptionsMap, TRootSchema> &
   DynamicKey<TSchema, TDefaultError, TOptionsMap, TRootSchema> & {
-    [K in keyof StaticPathKeys<TSchema> as K extends MethodNameKeys
+    [K in keyof StaticPathKeys<TSchema> as K extends SchemaMethod
       ? never
       : K]: EnlaceClient<
       TSchema[K],
@@ -240,16 +192,3 @@ export type EnlaceClient<
       TRootSchema
     >;
   };
-
-export type WildcardClient<TRequestOptionsBase = object> = {
-  (
-    options?: RequestOptions<unknown> & TRequestOptionsBase
-  ): Promise<EnlaceResponse<unknown, unknown>>;
-  $get: WildcardClient<TRequestOptionsBase>;
-  $post: WildcardClient<TRequestOptionsBase>;
-  $put: WildcardClient<TRequestOptionsBase>;
-  $patch: WildcardClient<TRequestOptionsBase>;
-  $delete: WildcardClient<TRequestOptionsBase>;
-  [key: string]: WildcardClient<TRequestOptionsBase>;
-  [key: number]: WildcardClient<TRequestOptionsBase>;
-};
