@@ -4,15 +4,12 @@ import type {
   EnlaceClient,
   QueryOnlyClient,
   CleanMutationOnlyClient,
-  PollingInterval,
-  DataAwareCallback,
-  DataAwareTransform,
-  OptimisticCallbackFn,
-  InvalidateOption,
   EnlaceOptions,
   MergePluginResults,
   MethodOptionsMap,
   CoreRequestOptionsBase,
+  ResolveSchemaTypes,
+  ResolveDataTypes,
 } from "enlace";
 
 export const HTTP_METHODS = [
@@ -64,30 +61,7 @@ export type BaseReadOptions = {
   additionalTags?: string[];
 };
 
-export type ResolveDataTypes<TOptions, TData, TError> = {
-  [K in keyof TOptions]: Extract<
-    TOptions[K],
-    (...args: never[]) => unknown
-  > extends never
-    ? TOptions[K]
-    : TOptions[K] extends PollingInterval<unknown, unknown> | undefined
-      ? PollingInterval<TData, TError> | undefined
-      : TOptions[K] extends
-            | DataAwareCallback<infer R, unknown, unknown>
-            | undefined
-        ? DataAwareCallback<R, TData, TError> | undefined
-        : TOptions[K] extends DataAwareTransform<unknown, unknown> | undefined
-          ? DataAwareTransform<TData, TError> | undefined
-          : TOptions[K];
-};
-
-export type ResolveSchemaTypes<TOptions, TSchema> = {
-  [K in keyof TOptions]: K extends "optimistic"
-    ? OptimisticCallbackFn<TSchema> | undefined
-    : K extends "invalidate"
-      ? InvalidateOption<TSchema> | undefined
-      : TOptions[K];
-};
+export type { ResolveSchemaTypes, ResolveDataTypes };
 
 export type BaseReadResult<TData, TError> = {
   loading: boolean;
