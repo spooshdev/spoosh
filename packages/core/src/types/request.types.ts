@@ -67,10 +67,10 @@ export type MethodOptionsMap<
 
 export type ExtractMethodOptions<TOptionsMap, TMethod extends SchemaMethod> =
   TOptionsMap extends MethodOptionsMap<infer TQuery, infer TMutation>
-  ? TMethod extends "$get"
-  ? TQuery
-  : TMutation
-  : TOptionsMap;
+    ? TMethod extends "$get"
+      ? TQuery
+      : TMutation
+    : TOptionsMap;
 
 export type FetchExecutor<
   TOptions = EnlaceOptions,
@@ -88,7 +88,7 @@ export type ComputeRequestOptions<
   THasDynamicSegment extends boolean,
 > = "__hasDynamicParams" extends keyof TRequestOptionsBase
   ? THasDynamicSegment extends true
-  ? Omit<TRequestOptionsBase, "__hasDynamicParams"> &
-  NonNullable<TRequestOptionsBase["__hasDynamicParams"]>
-  : Omit<TRequestOptionsBase, "__hasDynamicParams">
+    ? Omit<TRequestOptionsBase, "__hasDynamicParams"> &
+        NonNullable<TRequestOptionsBase["__hasDynamicParams"]>
+    : Omit<TRequestOptionsBase, "__hasDynamicParams">
   : TRequestOptionsBase;

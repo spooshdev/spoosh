@@ -8,6 +8,25 @@ import type {
   CacheWriteResult,
 } from "./types";
 
+/**
+ * Enables response caching with configurable stale time.
+ *
+ * Cached data is served immediately while fresh, avoiding unnecessary network requests.
+ * When data becomes stale, it may trigger a background refetch.
+ *
+ * @param config - Plugin configuration
+ * @returns Cache plugin instance
+ *
+ * @example
+ * ```ts
+ * const plugins = [
+ *   cachePlugin({ staleTime: 5000 }), // 5 second stale time
+ * ];
+ *
+ * // Per-query override
+ * useRead((api) => api.posts.$get(), { staleTime: 10000 });
+ * ```
+ */
 export function cachePlugin(config: CachePluginConfig = {}): EnlacePlugin<{
   readOptions: CacheReadOptions;
   writeOptions: CacheWriteOptions;

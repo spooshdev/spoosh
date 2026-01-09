@@ -14,6 +14,9 @@ import type {
   AutoInvalidate,
 } from "./types";
 
+/**
+ * Resolves tags to invalidate from context and plugin options.
+ */
 function resolveInvalidateTags(
   context: PluginContext,
   defaultAutoInvalidate: AutoInvalidate
@@ -59,6 +62,30 @@ function resolveInvalidateTags(
   return [...new Set(tags)];
 }
 
+/**
+ * Automatically invalidates cached queries after mutations.
+ *
+ * Triggers refetch for queries with matching tags when a mutation succeeds.
+ *
+ * @param config - Plugin configuration
+ * @returns Invalidation plugin instance
+ *
+ * @example
+ * ```ts
+ * const plugins = [
+ *   invalidationPlugin({ autoInvalidate: "all" }),
+ * ];
+ *
+ * // Auto-invalidates all related queries
+ * useWrite((api) => api.posts.$post);
+ *
+ * // Custom invalidation targets
+ * useWrite((api) => api.posts.$post, {
+ *   autoInvalidate: "none",
+ *   invalidate: (api) => [api.posts.$get, api.users.$get],
+ * });
+ * ```
+ */
 export function invalidationPlugin(
   config: InvalidationPluginConfig = {}
 ): EnlacePlugin<{

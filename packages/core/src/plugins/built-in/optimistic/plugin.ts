@@ -155,6 +155,54 @@ function rollbackOptimistic(
   }
 }
 
+/**
+ * Enables optimistic updates for mutations.
+ *
+ * Immediately updates cached data before the mutation completes,
+ * with automatic rollback on error.
+ *
+ * @returns Optimistic plugin instance
+ *
+ * @example
+ * ```ts
+ * const plugins = [optimisticPlugin()];
+ *
+ * // In useWrite
+ * useWrite((api) => api.posts.$delete, {
+ *   optimistic: ($, api) => $({
+ *     for: api.posts.$get,
+ *     updater: (posts) => posts.filter(p => p.id !== deletedId),
+ *     rollbackOnError: true,
+ *   }),
+ * });
+ * ```
+ *
+ * @example
+ * ```ts
+ * // Multiple targets
+ * useWrite((api) => api.posts.$delete, {
+ *   optimistic: ($, api) => [
+ *     $({ for: api.posts.$get, updater: (posts) => posts.filter(p => p.id !== deletedId) }),
+ *     $({ for: api.stats.$get, updater: (stats) => ({ ...stats, count: stats.count - 1 }) }),
+ *   ],
+ * });
+ * ```
+ *
+ * @example
+ * ```ts
+ * // Filtering by request.
+ * // You might rarely need to use this, but it's available if needed.
+ * useWrite((api) => api.items.$create, {
+ *   optimistic: ($, api) => $({
+ *     for: api.items.$get,
+ *     timing: "onSuccess", // Apply after successful mutation to get response data
+ *     match: (request) => request.query?.page === 1,
+ *     // Append the newly created item to the start of page 1
+ *     updater: (items, newItem) => [newItem!, ...items],
+ *   }),
+ * });
+ * ```
+ */
 export function optimisticPlugin(): EnlacePlugin<{
   readOptions: OptimisticReadOptions;
   writeOptions: OptimisticWriteOptions;

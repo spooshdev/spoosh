@@ -10,6 +10,24 @@ import type {
 
 type CleanupFn = () => void;
 
+/**
+ * Enables automatic refetching on window focus, network reconnect, and tag invalidation.
+ *
+ * @param config - Plugin configuration
+ * @returns Refetch plugin instance
+ *
+ * @example
+ * ```ts
+ * const plugins = [
+ *   refetchPlugin({ refetchOnFocus: true, refetchOnReconnect: true }),
+ * ];
+ *
+ * // Per-query override
+ * useRead((api) => api.posts.$get(), {
+ *   refetchOnFocus: false, // Disable for this query
+ * });
+ * ```
+ */
 export function refetchPlugin(config: RefetchPluginConfig = {}): EnlacePlugin<{
   readOptions: RefetchReadOptions;
   writeOptions: RefetchWriteOptions;

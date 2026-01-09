@@ -7,6 +7,30 @@ import type {
   PollingWriteResult,
 } from "./types";
 
+/**
+ * Enables automatic polling/refetching at configurable intervals.
+ *
+ * Supports both static intervals and dynamic intervals based on current data/error state.
+ *
+ * @returns Polling plugin instance
+ *
+ * @example
+ * ```ts
+ * const plugins = [pollingPlugin()];
+ *
+ * // Static interval
+ * useRead((api) => api.posts.$get(), { pollingInterval: 5000 });
+ *
+ * // Dynamic interval based on data
+ * useRead((api) => api.order[1].$get(), {
+ *   pollingInterval: (data, error) => {
+ *     if (error) return 10000; // Slower on error
+ *     if (data?.status === "processing") return 1000; // Fast while processing
+ *     return false; // Stop polling when complete
+ *   },
+ * });
+ * ```
+ */
 export function pollingPlugin(): EnlacePlugin<{
   readOptions: PollingReadOptions;
   writeOptions: PollingWriteOptions;

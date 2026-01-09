@@ -8,6 +8,25 @@ import type {
   RetryWriteResult,
 } from "./types";
 
+/**
+ * Automatically retries failed requests with configurable attempts and delay.
+ *
+ * @param config - Plugin configuration
+ * @returns Retry plugin instance
+ *
+ * @example
+ * ```ts
+ * const plugins = [
+ *   retryPlugin({ retries: 3, retryDelay: 1000 }),
+ * ];
+ *
+ * // Per-query override
+ * useRead((api) => api.posts.$get(), { retries: 5, retryDelay: 2000 });
+ *
+ * // Disable retries for a specific query
+ * useRead((api) => api.posts.$get(), { retries: false });
+ * ```
+ */
 export function retryPlugin(config: RetryPluginConfig = {}): EnlacePlugin<{
   readOptions: RetryReadOptions;
   writeOptions: RetryWriteOptions;
