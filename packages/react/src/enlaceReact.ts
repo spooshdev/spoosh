@@ -77,9 +77,6 @@ export type EnlaceReactHooks<
   useRead: UseReadFn<TApi, TDefaultError, TPlugins>;
   useWrite: UseWriteFn<TApi, TDefaultError, TSchema, TPlugins>;
   useInfiniteRead: UseInfiniteReadFn<TApi, TDefaultError, TPlugins>;
-  stateManager: StateManager;
-  eventEmitter: EventEmitter;
-  pluginExecutor: PluginExecutor;
 };
 
 type EnlaceInstanceShape<TApi, TSchema, TDefaultError, TPlugins> = {
@@ -133,8 +130,5 @@ export function enlaceReact<
     useRead,
     useWrite,
     useInfiniteRead,
-    stateManager,
-    eventEmitter,
-    pluginExecutor,
   } as EnlaceReactHooks<TApi, TDefaultError, TSchema, TPlugins>;
 }
