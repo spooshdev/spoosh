@@ -233,7 +233,7 @@ export function optimisticPlugin(): EnlacePlugin<{
     operations: ["write"],
 
     handlers: {
-      beforeFetch(context: PluginContext) {
+      beforeFetch(context) {
         const { stateManager } = context;
         const configs = resolveOptimisticConfigs(context);
 
@@ -263,7 +263,7 @@ export function optimisticPlugin(): EnlacePlugin<{
         return context;
       },
 
-      onSuccess(context: PluginContext) {
+      onSuccess(context) {
         const { stateManager } = context;
         const configs = resolveOptimisticConfigs(context);
         const snapshots =
@@ -305,7 +305,7 @@ export function optimisticPlugin(): EnlacePlugin<{
         return context;
       },
 
-      onError(context: PluginContext) {
+      onError(context) {
         const { stateManager } = context;
         const configs = resolveOptimisticConfigs(context);
         const snapshots =

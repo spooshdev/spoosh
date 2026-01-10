@@ -1,4 +1,4 @@
-import type { EnlacePlugin, PluginContext } from "../../types";
+import type { EnlacePlugin } from "../../types";
 import type {
   RefetchPluginConfig,
   RefetchReadOptions,
@@ -94,7 +94,7 @@ export function refetchPlugin(config: RefetchPluginConfig = {}): EnlacePlugin<{
     operations: ["read", "infiniteRead"],
 
     handlers: {
-      onMount(context: PluginContext) {
+      onMount(context) {
         const { queryKey, tags, eventEmitter, metadata } = context;
 
         const execute = metadata.get("execute") as
@@ -140,7 +140,7 @@ export function refetchPlugin(config: RefetchPluginConfig = {}): EnlacePlugin<{
         return context;
       },
 
-      onUnmount(context: PluginContext) {
+      onUnmount(context) {
         cleanupQuery(context.queryKey);
         return context;
       },

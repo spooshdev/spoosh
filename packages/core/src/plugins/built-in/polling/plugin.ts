@@ -89,7 +89,7 @@ export function pollingPlugin(): EnlacePlugin<{
     operations: ["read", "infiniteRead"],
 
     handlers: {
-      onMount(context: PluginContext) {
+      onMount(context) {
         const execute = context.metadata.get("execute") as
           | ((force?: boolean) => void)
           | undefined;
@@ -101,23 +101,23 @@ export function pollingPlugin(): EnlacePlugin<{
         return context;
       },
 
-      onSuccess(context: PluginContext) {
+      onSuccess(context) {
         scheduleNextPoll(context);
         return context;
       },
 
-      onError(context: PluginContext) {
+      onError(context) {
         scheduleNextPoll(context);
         return context;
       },
 
-      onUnmount(context: PluginContext) {
+      onUnmount(context) {
         clearPolling(context.queryKey);
         refetchFns.delete(context.queryKey);
         return context;
       },
 
-      onOptionsUpdate(context: PluginContext) {
+      onOptionsUpdate(context) {
         const { queryKey } = context;
         const refetch = refetchFns.get(queryKey);
 

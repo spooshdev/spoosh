@@ -1,4 +1,4 @@
-import type { EnlacePlugin, PluginContext } from "../../types";
+import type { EnlacePlugin } from "../../types";
 import type {
   CachePluginConfig,
   CacheReadOptions,
@@ -43,7 +43,7 @@ export function cachePlugin(config: CachePluginConfig = {}): EnlacePlugin<{
     operations: ["read", "infiniteRead"],
 
     handlers: {
-      beforeFetch(context: PluginContext) {
+      beforeFetch(context) {
         const forceRefetch = context.metadata.get(CACHE_FORCE_REFETCH_KEY);
 
         if (forceRefetch) {
@@ -71,7 +71,7 @@ export function cachePlugin(config: CachePluginConfig = {}): EnlacePlugin<{
         return context;
       },
 
-      onSuccess(context: PluginContext) {
+      onSuccess(context) {
         if (!context.response?.data) return context;
 
         context.stateManager.setCache(context.queryKey, {
@@ -91,7 +91,7 @@ export function cachePlugin(config: CachePluginConfig = {}): EnlacePlugin<{
         return context;
       },
 
-      onError(context: PluginContext) {
+      onError(context) {
         context.stateManager.setCache(context.queryKey, {
           state: {
             ...context.state,

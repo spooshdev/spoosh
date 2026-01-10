@@ -126,7 +126,7 @@ export function invalidationPlugin(
     },
 
     handlers: {
-      onSuccess(context: PluginContext) {
+      onSuccess(context) {
         const tags = resolveInvalidateTags(context, defaultAutoInvalidate);
 
         if (tags.length > 0) {

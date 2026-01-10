@@ -126,37 +126,37 @@ export function debugPlugin(config: DebugPluginConfig = {}): EnlacePlugin<{
     operations: ["read", "write", "infiniteRead"],
 
     handlers: {
-      beforeFetch(context: PluginContext) {
+      beforeFetch(context) {
         logPhase("beforeFetch", context);
         return context;
       },
 
-      afterFetch(context: PluginContext) {
+      afterFetch(context) {
         logPhase("afterFetch", context);
         return context;
       },
 
-      onSuccess(context: PluginContext) {
+      onSuccess(context) {
         logPhase("onSuccess", context);
         return context;
       },
 
-      onError(context: PluginContext) {
+      onError(context) {
         logPhase("onError", context);
         return context;
       },
 
-      onMount(context: PluginContext) {
+      onMount(context) {
         logPhase("onMount", context);
         return context;
       },
 
-      onUnmount(context: PluginContext) {
+      onUnmount(context) {
         logPhase("onUnmount", context);
         return context;
       },
 
-      onOptionsUpdate(context: PluginContext) {
+      onOptionsUpdate(context) {
         logPhase("onOptionsUpdate", context);
         return context;
       },
