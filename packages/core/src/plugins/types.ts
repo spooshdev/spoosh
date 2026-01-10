@@ -67,6 +67,9 @@ export type PluginContext<TData = unknown, TError = unknown> = {
 
   /** Force a network request even if cached data exists. */
   forceRefetch?: boolean;
+
+  /** Full response to return without fetching. Used by deduplication plugin for error propagation. */
+  earlyResponse?: EnlaceResponse<TData, TError>;
 };
 
 /** Input type for creating PluginContext (without plugins, which is injected) */

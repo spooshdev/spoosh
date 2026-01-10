@@ -14,9 +14,7 @@ export type PluginExecutor = {
     context: PluginContext<TData, TError>
   ) => Promise<PluginContext<TData, TError>>;
 
-  addPlugin: (plugin: EnlacePlugin) => void;
-  removePlugin: (name: string) => void;
-  getPlugins: () => EnlacePlugin[];
+  getPlugins: () => readonly EnlacePlugin[];
 
   /** Creates a full PluginContext with plugins accessor injected */
   createContext: <TData, TError>(
@@ -77,6 +75,7 @@ export function createPluginExecutor(
 ): PluginExecutor {
   validateDependencies(initialPlugins);
   const plugins = sortByDependencies(initialPlugins);
+  const frozenPlugins = Object.freeze([...plugins]);
 
   const createPluginAccessor = (context: PluginContext): PluginAccessor => ({
     get(name: string) {
@@ -112,20 +111,8 @@ export function createPluginExecutor(
       return ctx;
     },
 
-    addPlugin(plugin) {
-      plugins.push(plugin);
-    },
-
-    removePlugin(name) {
-      const index = plugins.findIndex((p) => p.name === name);
-
-      if (index !== -1) {
-        plugins.splice(index, 1);
-      }
-    },
-
     getPlugins() {
-      return [...plugins];
+      return frozenPlugins;
     },
 
     createContext<TData, TError>(input: PluginContextInput<TData, TError>) {

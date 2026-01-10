@@ -148,16 +148,32 @@ export function createOperationController<TData, TError>(
         return { data: context.cachedData as TData, status: 200 };
       }
 
+      if (context.earlyResponse) {
+        return context.earlyResponse;
+      }
+
       const cached = stateManager.getCache<TData, TError>(queryKey);
 
-      // Request deduplication: reuse in-flight promise (only for reads)
-      if (operationType !== "write") {
-        const existingPromise = cached?.promise as
-          | Promise<EnlaceResponse<TData, TError>>
-          | undefined;
+      // Request deduplication
+      const dedupePlugin = context.plugins.get("enlace:deduplication");
 
-        if (existingPromise) {
-          return existingPromise;
+      if (dedupePlugin) {
+        const config = dedupePlugin.getConfig();
+        const defaultMode =
+          operationType === "write" ? config.write : config.read;
+        const requestOverride = (
+          context.pluginOptions as { dedupe?: "in-flight" | false } | undefined
+        )?.dedupe;
+        const dedupeMode = requestOverride ?? defaultMode;
+
+        if (dedupeMode === "in-flight") {
+          const existingPromise = cached?.promise as
+            | Promise<EnlaceResponse<TData, TError>>
+            | undefined;
+
+          if (existingPromise) {
+            return existingPromise;
+          }
         }
       }
 
@@ -236,8 +252,11 @@ export function createOperationController<TData, TError>(
         }
       })();
 
-      // Store promise for deduplication
+      // Store promise for deduplication, clear when complete
       stateManager.setCache(queryKey, { promise: fetchPromise, tags });
+      fetchPromise.finally(() => {
+        stateManager.setCache(queryKey, { promise: undefined });
+      });
 
       return fetchPromise;
     },
