@@ -83,12 +83,15 @@ export function createOperationController<TData, TError>(
     const cached = stateManager.getCache<TData, TError>(queryKey);
     const state = cached?.state ?? createInitialState<TData, TError>();
 
+    const resolvedTags =
+      (pluginOptions as { tags?: string[] } | undefined)?.tags ?? tags;
+
     return pluginExecutor.createContext<TData, TError>({
       operationType,
       path,
       method,
       queryKey,
-      tags,
+      tags: resolvedTags,
       requestTimestamp,
       requestOptions: { ...initialRequestOptions, ...requestOptions },
       state,

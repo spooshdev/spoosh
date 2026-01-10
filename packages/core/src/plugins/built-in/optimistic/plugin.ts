@@ -36,16 +36,37 @@ function getExactMatchPath(tags: string[]): string | undefined {
   return tags.length > 0 ? tags[tags.length - 1] : undefined;
 }
 
+function findInObject(obj: unknown, key: string): unknown {
+  if (!obj || typeof obj !== "object" || Array.isArray(obj)) {
+    return undefined;
+  }
+
+  const record = obj as Record<string, unknown>;
+
+  if (key in record) {
+    return record[key];
+  }
+
+  for (const value of Object.values(record)) {
+    const found = findInObject(value, key);
+    if (found !== undefined) return found;
+  }
+
+  return undefined;
+}
+
 function parseRequestFromKey(key: string): ParsedRequest | undefined {
   try {
-    const parsed = JSON.parse(key) as {
-      options?: { query?: unknown; params?: unknown; body?: unknown };
-    };
+    const parsed = JSON.parse(key);
 
     return {
-      query: parsed.options?.query as Record<string, unknown> | undefined,
-      params: parsed.options?.params as Record<string, unknown> | undefined,
-      body: parsed.options?.body,
+      query: findInObject(parsed, "query") as
+        | Record<string, unknown>
+        | undefined,
+      params: findInObject(parsed, "params") as
+        | Record<string, unknown>
+        | undefined,
+      body: findInObject(parsed, "body"),
     };
   } catch {
     return undefined;
@@ -96,6 +117,7 @@ function applyOptimisticUpdate(
 
   for (const { key, entry } of entries) {
     if (key.includes('"type":"infinite-tracker"')) continue;
+    if (!key.includes('"method":"$get"')) continue;
 
     if (config.match) {
       const request = parseRequestFromKey(key);
@@ -289,6 +311,8 @@ export function optimisticPlugin(): EnlacePlugin<{
           const entries = stateManager.getCacheEntriesBySelfTag(targetSelfTag);
 
           for (const { key, entry } of entries) {
+            if (!key.includes('"method":"$get"')) continue;
+
             if (config.match) {
               const request = parseRequestFromKey(key);
               if (!request || !config.match(request)) continue;
