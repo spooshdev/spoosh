@@ -1,4 +1,4 @@
-import type { EnlacePlugin, PluginContext, RefetchEvent } from "../../types";
+import type { EnlacePlugin, PluginContext } from "../../types";
 import type {
   PollingReadOptions,
   PollingWriteOptions,
@@ -73,7 +73,7 @@ export function pollingPlugin(): EnlacePlugin<{
     clearPolling(queryKey);
 
     const timeout = setTimeout(() => {
-      eventEmitter.emit<RefetchEvent>("refetch", {
+      eventEmitter.emit("refetch", {
         queryKey,
         reason: "polling",
       });

@@ -8,7 +8,6 @@ import {
   type MergePluginResults,
   type EnlacePlugin,
   type PluginTypeConfig,
-  type RefetchEvent,
   createOperationController,
 } from "enlace";
 import { createTrackingProxy, type TrackingResult } from "./trackingProxy";
@@ -140,7 +139,7 @@ export function createUseRead<
       controller.mount();
       controller.execute();
 
-      const unsubscribe = eventEmitter.on<RefetchEvent>("refetch", (event) => {
+      const unsubscribe = eventEmitter.on("refetch", (event) => {
         if (event.queryKey === queryKey) {
           controller.execute(undefined, { force: true });
         }

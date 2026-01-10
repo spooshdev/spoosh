@@ -1,5 +1,5 @@
 import type { EventEmitter } from "../../../events/emitter";
-import type { EnlacePlugin, RefetchEvent } from "../../types";
+import type { EnlacePlugin } from "../../types";
 import type {
   RefetchPluginConfig,
   RefetchReadOptions,
@@ -49,7 +49,7 @@ export function refetchPlugin(config: RefetchPluginConfig = {}): EnlacePlugin<{
 
     const handler = () => {
       if (document.visibilityState === "visible") {
-        eventEmitter.emit<RefetchEvent>("refetch", {
+        eventEmitter.emit("refetch", {
           queryKey,
           reason: "focus",
         });
@@ -69,7 +69,7 @@ export function refetchPlugin(config: RefetchPluginConfig = {}): EnlacePlugin<{
     if (!isBrowser) return;
 
     const handler = () => {
-      eventEmitter.emit<RefetchEvent>("refetch", {
+      eventEmitter.emit("refetch", {
         queryKey,
         reason: "reconnect",
       });
@@ -119,7 +119,7 @@ export function refetchPlugin(config: RefetchPluginConfig = {}): EnlacePlugin<{
           pluginOptions?.refetchOnReconnect ?? refetchOnReconnect;
 
         if (tags.length > 0) {
-          const unsubscribe = eventEmitter.on<string[]>(
+          const unsubscribe = eventEmitter.on(
             "invalidate",
             (invalidatedTags) => {
               const hasMatch = invalidatedTags.some((tag) =>
@@ -127,7 +127,7 @@ export function refetchPlugin(config: RefetchPluginConfig = {}): EnlacePlugin<{
               );
 
               if (hasMatch) {
-                eventEmitter.emit<RefetchEvent>("refetch", {
+                eventEmitter.emit("refetch", {
                   queryKey,
                   reason: "invalidate",
                 });

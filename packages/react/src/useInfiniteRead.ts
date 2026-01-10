@@ -10,7 +10,6 @@ import {
   type PluginTypeConfig,
   type PluginContext,
   type OperationState,
-  type RefetchEvent,
 } from "enlace";
 import { createTrackingProxy, type TrackingResult } from "./trackingProxy";
 import type {
@@ -680,18 +679,15 @@ export function createUseInfiniteRead<
       const context = createContext(trackerKey);
       pluginExecutor.execute("onMount", "infiniteRead", context);
 
-      const unsubscribeRefetch = eventEmitter.on<RefetchEvent>(
-        "refetch",
-        (event) => {
-          const pageKeys = pageKeysRef.current;
-          const isRelevant =
-            event.queryKey === trackerKey || pageKeys.includes(event.queryKey);
+      const unsubscribeRefetch = eventEmitter.on("refetch", (event) => {
+        const pageKeys = pageKeysRef.current;
+        const isRelevant =
+          event.queryKey === trackerKey || pageKeys.includes(event.queryKey);
 
-          if (isRelevant) {
-            refetch();
-          }
+        if (isRelevant) {
+          refetch();
         }
-      );
+      });
 
       return () => {
         mountedRef.current = false;
