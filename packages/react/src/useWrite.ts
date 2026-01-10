@@ -126,7 +126,7 @@ export function createUseWrite<
             timestamp: 0,
           };
 
-          const ctx: PluginContext<TData, TError> = {
+          return pluginExecutor.createContext<TData, TError>({
             operationType: "write",
             path: selectorPath,
             method: selectorMethod as "POST" | "PUT" | "PATCH" | "DELETE",
@@ -144,12 +144,7 @@ export function createUseWrite<
             abort: () => abortControllerRef.current?.abort(),
             stateManager,
             eventEmitter,
-            plugins: null as never,
-          };
-
-          ctx.plugins = pluginExecutor.createPluginAccessor(ctx);
-
-          return ctx;
+          });
         };
 
         let context = createContext();

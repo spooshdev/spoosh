@@ -67,6 +67,12 @@ export type PluginContext<TData = unknown, TError = unknown> = {
   skipFetch?: boolean;
 };
 
+/** Input type for creating PluginContext (without plugins, which is injected) */
+export type PluginContextInput<TData = unknown, TError = unknown> = Omit<
+  PluginContext<TData, TError>,
+  "plugins"
+>;
+
 export type PluginHandler<TData = unknown, TError = unknown> = (
   context: PluginContext<TData, TError>
 ) => PluginContext<TData, TError> | Promise<PluginContext<TData, TError>>;

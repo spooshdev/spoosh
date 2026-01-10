@@ -3,6 +3,7 @@ import type {
   OperationType,
   PluginAccessor,
   PluginContext,
+  PluginContextInput,
   PluginPhase,
 } from "./types";
 
@@ -16,7 +17,11 @@ export type PluginExecutor = {
   addPlugin: (plugin: EnlacePlugin) => void;
   removePlugin: (name: string) => void;
   getPlugins: () => EnlacePlugin[];
-  createPluginAccessor: (context: PluginContext) => PluginAccessor;
+
+  /** Creates a full PluginContext with plugins accessor injected */
+  createContext: <TData, TError>(
+    input: PluginContextInput<TData, TError>
+  ) => PluginContext<TData, TError>;
 };
 
 export function createPluginExecutor(
@@ -74,6 +79,10 @@ export function createPluginExecutor(
       return [...plugins];
     },
 
-    createPluginAccessor,
+    createContext<TData, TError>(input: PluginContextInput<TData, TError>) {
+      const ctx = input as PluginContext<TData, TError>;
+      ctx.plugins = createPluginAccessor(ctx);
+      return ctx;
+    },
   };
 }

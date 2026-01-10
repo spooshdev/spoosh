@@ -84,7 +84,7 @@ export function createOperationController<TData, TError>(
     const cached = stateManager.getCache<TData, TError>(queryKey);
     const state = cached?.state ?? createInitialState<TData, TError>();
 
-    const ctx: PluginContext<TData, TError> = {
+    return pluginExecutor.createContext<TData, TError>({
       operationType,
       path,
       method,
@@ -98,12 +98,7 @@ export function createOperationController<TData, TError>(
       abort: () => abortController?.abort(),
       stateManager,
       eventEmitter,
-      plugins: null as never,
-    };
-
-    ctx.plugins = pluginExecutor.createPluginAccessor(ctx);
-
-    return ctx;
+    });
   };
 
   const updateState = (
