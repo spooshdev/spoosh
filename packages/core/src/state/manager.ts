@@ -8,7 +8,10 @@ export type CacheEntryWithKey<TData = unknown, TError = unknown> = {
   entry: CacheEntry<TData, TError>;
 };
 
-function createInitialState<TData, TError>(): OperationState<TData, TError> {
+export function createInitialState<TData, TError>(): OperationState<
+  TData,
+  TError
+> {
   return {
     loading: false,
     fetching: false,
@@ -191,19 +194,4 @@ export function createStateManager(): StateManager {
       cache.clear();
     },
   };
-}
-
-let defaultStateManager: StateManager | null = null;
-
-export function getDefaultStateManager(): StateManager {
-  if (!defaultStateManager) {
-    defaultStateManager = createStateManager();
-  }
-
-  return defaultStateManager;
-}
-
-export function resetDefaultStateManager(): void {
-  defaultStateManager?.clear();
-  defaultStateManager = null;
 }

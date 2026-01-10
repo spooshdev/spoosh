@@ -10,6 +10,7 @@ import type { PluginExecutor } from "../plugins/executor";
 import type { StateManager } from "../state/manager";
 import type { EventEmitter } from "../events/emitter";
 import { CACHE_FORCE_REFETCH_KEY } from "../plugins/built-in/cache";
+import { createInitialState } from "../state/manager";
 
 export type ExecuteOptions = {
   force?: boolean;
@@ -43,18 +44,6 @@ export type CreateOperationOptions<TData, TError> = {
     options: AnyRequestOptions
   ) => Promise<EnlaceResponse<TData, TError>>;
 };
-
-function createInitialState<TData, TError>(): OperationState<TData, TError> {
-  return {
-    loading: false,
-    fetching: false,
-    data: undefined,
-    error: undefined,
-    isOptimistic: false,
-    isStale: true,
-    timestamp: 0,
-  };
-}
 
 export function createOperationController<TData, TError>(
   options: CreateOperationOptions<TData, TError>

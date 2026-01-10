@@ -18,18 +18,6 @@ export type EnlaceResponse<TData, TError, TRequestOptions = unknown> =
       readonly __requestOptions?: TRequestOptions;
     };
 
-export type EnlaceCallbackPayload<T> = {
-  status: number;
-  data: T;
-  headers?: Headers;
-};
-
-export type EnlaceErrorCallbackPayload<T> = {
-  status: number;
-  error: T;
-  headers?: Headers;
-};
-
 export type EnlaceOptionsExtra<TData = unknown, TError = unknown> = {
   middlewares?: EnlaceMiddleware<TData, TError>[];
 };
