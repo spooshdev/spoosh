@@ -57,7 +57,7 @@ export function cachePlugin(config: CachePluginConfig = {}): EnlacePlugin<{
           return context;
         }
 
-        const pluginOptions = context.metadata.get("pluginOptions") as
+        const pluginOptions = context.pluginOptions as
           | CacheReadOptions
           | undefined;
         const staleTime = pluginOptions?.staleTime ?? defaultStaleTime;

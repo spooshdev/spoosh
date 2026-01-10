@@ -24,7 +24,7 @@ function resolveInvalidateTags(
   context: PluginContext,
   defaultAutoInvalidate: AutoInvalidate
 ): string[] {
-  const pluginOptions = context.metadata.get("pluginOptions") as
+  const pluginOptions = context.pluginOptions as
     | InvalidationWriteOptions
     | undefined;
 

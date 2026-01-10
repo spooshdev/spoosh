@@ -139,9 +139,8 @@ export function createUseWrite<
             requestTimestamp: Date.now(),
             requestOptions: triggerOptions ?? {},
             state: initialState,
-            metadata: new Map<string, unknown>([
-              ["pluginOptions", triggerOptions],
-            ]),
+            metadata: new Map(),
+            pluginOptions: triggerOptions,
             abort: () => abortControllerRef.current?.abort(),
             stateManager,
             eventEmitter,

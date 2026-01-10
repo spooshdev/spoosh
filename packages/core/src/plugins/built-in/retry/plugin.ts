@@ -43,7 +43,7 @@ export function retryPlugin(config: RetryPluginConfig = {}): EnlacePlugin<{
 
     handlers: {
       beforeFetch(context) {
-        const pluginOptions = context.metadata.get("pluginOptions") as
+        const pluginOptions = context.pluginOptions as
           | RetryReadOptions
           | undefined;
 

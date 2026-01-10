@@ -27,7 +27,7 @@ export function nextjsPlugin(config: NextjsPluginConfig = {}): EnlacePlugin<{
           return context;
         }
 
-        const pluginOptions = context.metadata.get("pluginOptions") as
+        const pluginOptions = context.pluginOptions as
           | NextjsWriteOptions
           | undefined;
 

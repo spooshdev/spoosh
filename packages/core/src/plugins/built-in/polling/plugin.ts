@@ -51,9 +51,9 @@ export function pollingPlugin(): EnlacePlugin<{
   };
 
   const scheduleNextPoll = (context: PluginContext) => {
-    const { queryKey, metadata } = context;
+    const { queryKey } = context;
 
-    const pluginOptions = metadata.get("pluginOptions") as
+    const pluginOptions = context.pluginOptions as
       | PollingReadOptions
       | undefined;
     const pollingInterval = pluginOptions?.pollingInterval;
@@ -123,10 +123,9 @@ export function pollingPlugin(): EnlacePlugin<{
 
         if (!refetch) return context;
 
-        const pluginOptions = context.metadata.get("pluginOptions") as
+        const pluginOptions = context.pluginOptions as
           | PollingReadOptions
           | undefined;
-
         const pollingInterval = pluginOptions?.pollingInterval;
 
         if (!pollingInterval) {

@@ -55,7 +55,7 @@ function parseRequestFromKey(key: string): ParsedRequest | undefined {
 function resolveOptimisticConfigs(
   context: PluginContext
 ): ResolvedCacheConfig[] {
-  const pluginOptions = context.metadata.get("pluginOptions") as
+  const pluginOptions = context.pluginOptions as
     | OptimisticWriteOptions
     | undefined;
 

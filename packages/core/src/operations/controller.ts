@@ -28,6 +28,7 @@ export type OperationController<TData = unknown, TError = unknown> = {
   mount: () => void;
   unmount: () => void;
   updateOptions: () => void;
+  setPluginOptions: (options: unknown) => void;
   setMetadata: (key: string, value: unknown) => void;
 };
 
@@ -68,6 +69,7 @@ export function createOperationController<TData, TError>(
 
   let abortController: AbortController | null = null;
   const metadata = new Map<string, unknown>();
+  let pluginOptions: unknown = undefined;
   let cachedState: OperationState<TData, TError> = createInitialState<
     TData,
     TError
@@ -92,6 +94,7 @@ export function createOperationController<TData, TError>(
       requestOptions: { ...initialRequestOptions, ...requestOptions },
       state,
       metadata,
+      pluginOptions,
       abort: () => abortController?.abort(),
       stateManager,
       eventEmitter,
@@ -302,6 +305,10 @@ export function createOperationController<TData, TError>(
     updateOptions() {
       const context = createContext({}, currentRequestTimestamp);
       pluginExecutor.execute("onOptionsUpdate", operationType, context);
+    },
+
+    setPluginOptions(options) {
+      pluginOptions = options;
     },
 
     setMetadata(key, value) {

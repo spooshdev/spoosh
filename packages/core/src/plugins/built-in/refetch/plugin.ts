@@ -103,7 +103,7 @@ export function refetchPlugin(config: RefetchPluginConfig = {}): EnlacePlugin<{
 
         if (!execute) return context;
 
-        const pluginOptions = metadata.get("pluginOptions") as
+        const pluginOptions = context.pluginOptions as
           | RefetchReadOptions
           | undefined;
 

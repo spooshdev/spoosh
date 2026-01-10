@@ -61,6 +61,9 @@ export type PluginContext<TData = unknown, TError = unknown> = {
   /** Access other plugins' exported APIs */
   plugins: PluginAccessor;
 
+  /** Plugin-specific options passed from hooks (useRead/useWrite/useInfiniteRead) */
+  pluginOptions?: unknown;
+
   skipFetch?: boolean;
 };
 

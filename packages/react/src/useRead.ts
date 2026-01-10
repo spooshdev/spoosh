@@ -120,7 +120,7 @@ export function createUseRead<
 
     const controller = controllerRef.current;
 
-    controller.setMetadata("pluginOptions", pluginOpts);
+    controller.setPluginOptions(pluginOpts);
 
     const state = useSyncExternalStore(
       controller.subscribe,
