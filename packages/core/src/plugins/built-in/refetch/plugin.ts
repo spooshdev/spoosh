@@ -145,16 +145,5 @@ export function refetchPlugin(config: RefetchPluginConfig = {}): EnlacePlugin<{
         return context;
       },
     },
-
-    cleanup() {
-      invalidateUnsubscribers.forEach((unsub) => unsub());
-      invalidateUnsubscribers.clear();
-
-      focusUnsubscribers.forEach((unsub) => unsub());
-      focusUnsubscribers.clear();
-
-      reconnectUnsubscribers.forEach((unsub) => unsub());
-      reconnectUnsubscribers.clear();
-    },
   };
 }

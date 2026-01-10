@@ -121,7 +121,6 @@ export interface EnlacePlugin<T extends PluginTypeConfig = PluginTypeConfig> {
   name: string;
   operations: OperationType[];
   handlers: PluginHandlers;
-  cleanup?: () => void;
 
   /** Expose functions/variables for other plugins to access via `context.plugins.get(name)` */
   exports?: (context: PluginContext) => object;

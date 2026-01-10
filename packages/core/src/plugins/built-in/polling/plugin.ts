@@ -143,11 +143,5 @@ export function pollingPlugin(): EnlacePlugin<{
         return context;
       },
     },
-
-    cleanup() {
-      timeouts.forEach((timeout) => clearTimeout(timeout));
-      timeouts.clear();
-      refetchFns.clear();
-    },
   };
 }
