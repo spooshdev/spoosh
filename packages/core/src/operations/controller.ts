@@ -271,7 +271,11 @@ export function createOperationController<TData, TError>(
     unmount() {
       const context = createContext({}, currentRequestTimestamp);
       pluginExecutor.execute("onUnmount", operationType, context);
-      this.abort();
+
+      // NOTE: We do not abort ongoing requests on unmount to allow background fetching
+      // And to prevent breaking shared in-flight requests
+      // Eg. Component A and B use the same operation, A unmounts while B is still mounted
+      // Aborting the request for A would break B's request as well
     },
 
     updateOptions() {
