@@ -16,7 +16,6 @@ import type {
 } from "./types";
 
 export const OPTIMISTIC_SNAPSHOTS_KEY = "optimistic:snapshots";
-export const OPTIMISTIC_PLUGIN_OPTIONS_KEY = "optimistic:pluginOptions";
 
 type ParsedRequest = {
   query?: Record<string, unknown>;
@@ -56,7 +55,7 @@ function parseRequestFromKey(key: string): ParsedRequest | undefined {
 function resolveOptimisticConfigs(
   context: PluginContext
 ): ResolvedCacheConfig[] {
-  const pluginOptions = context.metadata.get(OPTIMISTIC_PLUGIN_OPTIONS_KEY) as
+  const pluginOptions = context.metadata.get("pluginOptions") as
     | OptimisticWriteOptions
     | undefined;
 

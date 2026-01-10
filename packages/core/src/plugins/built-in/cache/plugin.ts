@@ -9,7 +9,6 @@ import type {
 } from "./types";
 
 export const CACHE_FORCE_REFETCH_KEY = "cache:forceRefetch";
-export const CACHE_PLUGIN_OPTIONS_KEY = "cache:pluginOptions";
 
 /**
  * Enables response caching with configurable stale time.
@@ -58,7 +57,7 @@ export function cachePlugin(config: CachePluginConfig = {}): EnlacePlugin<{
           return context;
         }
 
-        const pluginOptions = context.metadata.get(CACHE_PLUGIN_OPTIONS_KEY) as
+        const pluginOptions = context.metadata.get("pluginOptions") as
           | CacheReadOptions
           | undefined;
         const staleTime = pluginOptions?.staleTime ?? defaultStaleTime;
