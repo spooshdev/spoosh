@@ -35,6 +35,9 @@ export type CacheEntry<TData = unknown, TError = unknown> = {
   subscribers: Set<() => void>;
   promise?: Promise<unknown>;
   previousData?: TData;
+
+  /** Cache was invalidated while no subscriber was listening. Triggers refetch on next mount. */
+  stale?: boolean;
 };
 
 export type PluginContext<TData = unknown, TError = unknown> = {

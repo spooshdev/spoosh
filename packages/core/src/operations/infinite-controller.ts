@@ -406,6 +406,7 @@ export function createInfiniteReadController<
               timestamp: Date.now(),
             },
             tags,
+            stale: false,
           });
 
           context = await pluginExecutor.execute(
@@ -579,6 +580,15 @@ export function createInfiniteReadController<
           controller.refetch();
         }
       });
+
+      const isStale = pageKeys.some((key) => {
+        const cached = stateManager.getCache(key);
+        return cached?.stale === true;
+      });
+
+      if (isStale) {
+        controller.refetch();
+      }
     },
 
     unmount() {

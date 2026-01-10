@@ -62,6 +62,9 @@ export type StateManager = {
 
   setPluginResult: (key: string, data: Record<string, unknown>) => void;
 
+  /** Mark all cache entries with matching tags as stale */
+  markStale: (tags: string[]) => void;
+
   clear: () => void;
 };
 
@@ -108,6 +111,10 @@ export function createStateManager(): StateManager {
           existing.previousData = entry.previousData;
         }
 
+        if (entry.stale !== undefined) {
+          existing.stale = entry.stale;
+        }
+
         existing.subscribers.forEach((cb) => cb());
       } else {
         const newEntry: CacheEntry = {
@@ -118,6 +125,7 @@ export function createStateManager(): StateManager {
           subscribers: new Set(),
           promise: entry.promise,
           previousData: entry.previousData,
+          stale: entry.stale,
         };
         cache.set(key, newEntry);
       }
@@ -202,6 +210,16 @@ export function createStateManager(): StateManager {
 
         entry.subscribers.forEach((cb) => cb());
       }
+    },
+
+    markStale(tags) {
+      cache.forEach((entry) => {
+        const hasMatch = entry.tags.some((tag) => tags.includes(tag));
+
+        if (hasMatch) {
+          entry.stale = true;
+        }
+      });
     },
 
     clear() {

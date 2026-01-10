@@ -52,13 +52,17 @@ export function cachePlugin(config: CachePluginConfig = {}): EnlacePlugin<{
           return context;
         }
 
+        if (cached.stale) {
+          return context;
+        }
+
         const pluginOptions = context.pluginOptions as
           | CacheReadOptions
           | undefined;
         const staleTime = pluginOptions?.staleTime ?? defaultStaleTime;
-        const isStale = Date.now() - cached.state.timestamp > staleTime;
+        const isTimeStale = Date.now() - cached.state.timestamp > staleTime;
 
-        if (!isStale) {
+        if (!isTimeStale) {
           context.cachedData = cached.state.data;
         }
 
@@ -78,6 +82,7 @@ export function cachePlugin(config: CachePluginConfig = {}): EnlacePlugin<{
             fetching: false,
           },
           tags: context.tags,
+          stale: false,
         });
 
         return context;

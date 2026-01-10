@@ -131,6 +131,7 @@ export function invalidationPlugin(
         const tags = resolveInvalidateTags(context, defaultAutoInvalidate);
 
         if (tags.length > 0) {
+          context.stateManager.markStale(tags);
           context.eventEmitter.emit("invalidate", tags);
         }
 
