@@ -60,10 +60,7 @@ export type StateManager = {
     selfTag: string
   ) => CacheEntryWithKey<TData, TError>[];
 
-  setPluginResult: (
-    key: string,
-    data: Record<string, unknown>
-  ) => void;
+  setPluginResult: (key: string, data: Record<string, unknown>) => void;
 
   clear: () => void;
 };

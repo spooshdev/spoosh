@@ -685,8 +685,7 @@ export function createUseInfiniteRead<
         (event) => {
           const pageKeys = pageKeysRef.current;
           const isRelevant =
-            event.queryKey === trackerKey ||
-            pageKeys.includes(event.queryKey);
+            event.queryKey === trackerKey || pageKeys.includes(event.queryKey);
 
           if (isRelevant) {
             refetch();

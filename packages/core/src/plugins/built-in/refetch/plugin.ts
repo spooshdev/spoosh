@@ -44,10 +44,7 @@ export function refetchPlugin(config: RefetchPluginConfig = {}): EnlacePlugin<{
 
   const isBrowser = typeof window !== "undefined";
 
-  const setupFocusListener = (
-    queryKey: string,
-    eventEmitter: EventEmitter
-  ) => {
+  const setupFocusListener = (queryKey: string, eventEmitter: EventEmitter) => {
     if (!isBrowser) return;
 
     const handler = () => {
@@ -107,6 +104,7 @@ export function refetchPlugin(config: RefetchPluginConfig = {}): EnlacePlugin<{
   return {
     name: "enlace:refetch",
     operations: ["read", "infiniteRead"],
+    dependencies: ["enlace:invalidation"],
 
     handlers: {
       onMount(context) {

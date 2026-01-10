@@ -48,7 +48,9 @@ function sortByDependencies(plugins: EnlacePlugin[]): EnlacePlugin[] {
     if (visited.has(plugin.name)) return;
 
     if (visiting.has(plugin.name)) {
-      throw new Error(`Circular dependency detected involving "${plugin.name}"`);
+      throw new Error(
+        `Circular dependency detected involving "${plugin.name}"`
+      );
     }
 
     visiting.add(plugin.name);
