@@ -91,7 +91,7 @@ type EnlaceInstanceShape<TApi, TSchema, TDefaultError, TPlugins> = {
   };
 };
 
-export function enlaceReact<
+export function createReactEnlace<
   TSchema,
   TDefaultError,
   TPlugins extends PluginArray,

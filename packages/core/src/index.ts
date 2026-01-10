@@ -1,4 +1,5 @@
 export { createEnlace } from "./createEnlace";
+export { createClient, type ClientConfig } from "./createClient";
 
 export * from "./types";
 export * from "./utils";

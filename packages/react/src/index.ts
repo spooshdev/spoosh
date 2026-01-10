@@ -1,6 +1,6 @@
 "use client";
 
-export { enlaceReact, type EnlaceReactHooks } from "./enlaceReact";
+export { createReactEnlace, type EnlaceReactHooks } from "./createReactEnlace";
 
 export type {
   PluginHooksConfig,
