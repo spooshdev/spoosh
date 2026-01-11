@@ -248,6 +248,31 @@ export interface DataResolvers<TData, TError> {
 }
 
 /**
+ * Request resolver registry for plugin request-aware types.
+ *
+ * This interface maps option key names to their request-resolved types
+ * (based on query, body, params, formData from the request).
+ *
+ * 3rd party plugins can extend this interface via TypeScript declaration
+ * merging to register their own request-aware types:
+ *
+ * @example
+ * ```ts
+ * // In your plugin's types file:
+ * declare module 'enlace' {
+ *   interface RequestResolvers<TQuery, TBody, TParams, TFormData> {
+ *     myCallback: (prev: { prevQuery: TQuery }) => number;
+ *   }
+ * }
+ * ```
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type, @typescript-eslint/no-unused-vars
+export interface RequestResolvers<TQuery, TBody, TParams, TFormData> {
+  // Built-in plugin types are registered in schema-resolver.ts
+  // to avoid circular dependency issues
+}
+
+/**
  * Registry for plugin exports. Extend via declaration merging for type-safe access.
  *
  * Plugins can expose functions and variables that other plugins can access

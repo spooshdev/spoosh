@@ -5,19 +5,25 @@ import type {
   DebounceReadResult,
   DebounceWriteOptions,
   DebounceWriteResult,
-  DebounceContext,
-  DebounceValue,
 } from "./types";
 
 type RequestOptionsSnapshot = {
   query?: Record<string, unknown>;
   params?: Record<string, string | number>;
   body?: unknown;
+  formData?: Record<string, unknown>;
+};
+
+type PrevContext = {
+  prevQuery?: Record<string, unknown>;
+  prevParams?: Record<string, string | number>;
+  prevBody?: unknown;
+  prevFormData?: Record<string, unknown>;
 };
 
 function resolveDebounceMs(
-  debounce: DebounceValue | undefined,
-  context: DebounceContext
+  debounce: number | ((context: PrevContext) => number) | undefined,
+  context: PrevContext
 ): number {
   if (debounce === undefined) return 0;
   if (typeof debounce === "number") return debounce;
@@ -91,20 +97,30 @@ export function debouncePlugin(): EnlacePlugin<{
           query: opts?.query,
           params: opts?.params,
           body: opts?.body,
+          formData: opts?.formData,
         };
 
         const prevRequest = prevRequests.get(stableKey);
 
-        const debounceContext: DebounceContext = {
-          query: currentRequest.query,
-          params: currentRequest.params,
-          body: currentRequest.body,
-          prevQuery: prevRequest?.query,
-          prevParams: prevRequest?.params,
-          prevBody: prevRequest?.body,
-        };
+        const prevContext: PrevContext = {};
 
-        const debounceMs = resolveDebounceMs(debounceOption, debounceContext);
+        if (prevRequest?.query !== undefined) {
+          prevContext.prevQuery = prevRequest.query;
+        }
+
+        if (prevRequest?.params !== undefined) {
+          prevContext.prevParams = prevRequest.params;
+        }
+
+        if (prevRequest?.body !== undefined) {
+          prevContext.prevBody = prevRequest.body;
+        }
+
+        if (prevRequest?.formData !== undefined) {
+          prevContext.prevFormData = prevRequest.formData;
+        }
+
+        const debounceMs = resolveDebounceMs(debounceOption, prevContext);
 
         prevRequests.set(stableKey, currentRequest);
 

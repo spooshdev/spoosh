@@ -1,9 +1,11 @@
 import type { OptimisticCallbackFn } from "./built-in/optimistic/types";
 import type { InvalidateOption } from "./built-in/invalidation/types";
 import type { PollingInterval } from "./built-in/polling/types";
+import type { DebounceValue } from "./built-in/debounce/types";
 import type {
   SchemaResolvers,
   DataResolvers,
+  RequestResolvers,
   DataAwareCallback,
   DataAwareTransform,
 } from "./types";
@@ -27,6 +29,14 @@ type BuiltInDataResolvers<TData, TError> = {
 };
 
 /**
+ * Built-in request resolvers for core plugins.
+ * These are merged with any 3rd party extensions via RequestResolvers.
+ */
+type BuiltInRequestResolvers<TQuery, TBody, TParams, TFormData> = {
+  debounce: DebounceValue<TQuery, TBody, TParams, TFormData> | undefined;
+};
+
+/**
  * Combined schema resolvers: built-in + 3rd party extensions.
  */
 type AllSchemaResolvers<TSchema> = BuiltInSchemaResolvers<TSchema> &
@@ -37,6 +47,13 @@ type AllSchemaResolvers<TSchema> = BuiltInSchemaResolvers<TSchema> &
  */
 type AllDataResolvers<TData, TError> = BuiltInDataResolvers<TData, TError> &
   DataResolvers<TData, TError>;
+
+/**
+ * Combined request resolvers: built-in + 3rd party extensions.
+ */
+type AllRequestResolvers<TQuery, TBody, TParams, TFormData> =
+  BuiltInRequestResolvers<TQuery, TBody, TParams, TFormData> &
+    RequestResolvers<TQuery, TBody, TParams, TFormData>;
 
 /**
  * Resolves schema-aware types in plugin options.
@@ -85,4 +102,32 @@ export type ResolveDataTypes<TOptions, TData, TError> = {
       : TOptions[K] extends DataAwareTransform<unknown, unknown> | undefined
         ? DataAwareTransform<TData, TError> | undefined
         : TOptions[K];
+};
+
+/**
+ * Resolves request-aware types in plugin options.
+ *
+ * Built-in plugins (debounce) are resolved automatically based on
+ * the request's query, body, params, and formData types.
+ *
+ * 3rd party plugins can extend via declaration merging:
+ *
+ * @example
+ * ```ts
+ * declare module 'enlace' {
+ *   interface RequestResolvers<TQuery, TBody, TParams, TFormData> {
+ *     myDebounce: (ctx: { prevQuery: TQuery }) => number;
+ *   }
+ * }
+ * ```
+ */
+export type ResolveRequestTypes<TOptions, TQuery, TBody, TParams, TFormData> = {
+  [K in keyof TOptions]: K extends keyof AllRequestResolvers<
+    TQuery,
+    TBody,
+    TParams,
+    TFormData
+  >
+    ? AllRequestResolvers<TQuery, TBody, TParams, TFormData>[K]
+    : TOptions[K];
 };

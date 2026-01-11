@@ -14,6 +14,7 @@ import type {
   BaseReadOptions,
   BaseReadResult,
   ResolveDataTypes,
+  ResolveRequestTypes,
   BaseWriteResult,
   ResolveSchemaTypes,
   BaseInfiniteReadOptions,
@@ -31,16 +32,38 @@ import type {
 
 type InferError<T, TDefaultError> = [T] extends [unknown] ? TDefaultError : T;
 
+type ExtractParamsRecord<T> =
+  ExtractResponseParamNames<T> extends never
+    ? never
+    : Record<ExtractResponseParamNames<T>, string | number>;
+
+type ResolvedReadOptions<TPlugins extends PluginArray, TReadFn> = Omit<
+  ResolveDataTypes<
+    MergePluginOptions<TPlugins>["read"],
+    ExtractMethodData<TReadFn>,
+    InferError<ExtractMethodError<TReadFn>, unknown>
+  >,
+  keyof ResolveRequestTypes<
+    MergePluginOptions<TPlugins>["read"],
+    ExtractResponseQuery<TReadFn>,
+    ExtractResponseBody<TReadFn>,
+    ExtractParamsRecord<TReadFn>,
+    ExtractResponseFormData<TReadFn>
+  >
+> &
+  ResolveRequestTypes<
+    MergePluginOptions<TPlugins>["read"],
+    ExtractResponseQuery<TReadFn>,
+    ExtractResponseBody<TReadFn>,
+    ExtractParamsRecord<TReadFn>,
+    ExtractResponseFormData<TReadFn>
+  >;
+
 type UseReadFn<TApi, TDefaultError, TPlugins extends PluginArray> = <
   TReadFn extends (api: TApi) => Promise<{ data?: unknown; error?: unknown }>,
 >(
   readFn: TReadFn,
-  readOptions?: BaseReadOptions &
-    ResolveDataTypes<
-      MergePluginOptions<TPlugins>["read"],
-      ExtractMethodData<TReadFn>,
-      InferError<ExtractMethodError<TReadFn>, TDefaultError>
-    >
+  readOptions?: BaseReadOptions & ResolvedReadOptions<TPlugins, TReadFn>
 ) => BaseReadResult<
   ExtractMethodData<TReadFn>,
   InferError<ExtractMethodError<TReadFn>, TDefaultError>
@@ -73,6 +96,29 @@ type UseWriteFn<TApi, TDefaultError, TSchema, TPlugins extends PluginArray> = <
   > &
   MergePluginResults<TPlugins>["write"];
 
+type ResolvedInfiniteReadOptions<
+  TPlugins extends PluginArray,
+  TData,
+  TError,
+  TRequest,
+> = Omit<
+  ResolveDataTypes<MergePluginOptions<TPlugins>["infiniteRead"], TData, TError>,
+  keyof ResolveRequestTypes<
+    MergePluginOptions<TPlugins>["infiniteRead"],
+    TRequest extends { query: infer Q } ? Q : never,
+    TRequest extends { body: infer B } ? B : never,
+    TRequest extends { params: infer P } ? P : never,
+    never
+  >
+> &
+  ResolveRequestTypes<
+    MergePluginOptions<TPlugins>["infiniteRead"],
+    TRequest extends { query: infer Q } ? Q : never,
+    TRequest extends { body: infer B } ? B : never,
+    TRequest extends { params: infer P } ? P : never,
+    never
+  >;
+
 type UseInfiniteReadFn<TApi, TDefaultError, TPlugins extends PluginArray> = <
   TData,
   TItem,
@@ -81,11 +127,7 @@ type UseInfiniteReadFn<TApi, TDefaultError, TPlugins extends PluginArray> = <
 >(
   readFn: (api: TApi) => Promise<EnlaceResponse<TData, TError>>,
   readOptions: BaseInfiniteReadOptions<TData, TItem, TRequest> &
-    ResolveDataTypes<
-      MergePluginOptions<TPlugins>["infiniteRead"],
-      TData,
-      TError
-    >
+    ResolvedInfiniteReadOptions<TPlugins, TData, TError, TRequest>
 ) => BaseInfiniteReadResult<TData, TError, TItem> &
   MergePluginResults<TPlugins>["read"];
 
