@@ -62,7 +62,7 @@ export async function executeFetch<TData, TError>(
 
 function buildInputFields(
   requestOptions?: AnyRequestOptions
-): Record<string, unknown> {
+): { input: Record<string, unknown> } | object {
   const fields: Record<string, unknown> = {};
 
   if (requestOptions?.query !== undefined) {
@@ -81,7 +81,11 @@ function buildInputFields(
     fields.params = requestOptions.params;
   }
 
-  return fields;
+  if (Object.keys(fields).length === 0) {
+    return {};
+  }
+
+  return { input: fields };
 }
 
 async function executeCoreFetch<TData, TError>(

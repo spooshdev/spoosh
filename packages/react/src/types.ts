@@ -79,23 +79,23 @@ export type BaseWriteResult<TData, TError, TOptions> = {
 
 type OptionalQueryField<TQuery> = [TQuery] extends [never]
   ? object
-  : { query: TQuery | undefined };
+  : { query: TQuery };
 
 type OptionalBodyField<TBody> = [TBody] extends [never]
   ? object
-  : { body: TBody | undefined };
+  : { body: TBody };
 
 type OptionalFormDataField<TFormData> = [TFormData] extends [never]
   ? object
-  : { formData: TFormData | undefined };
+  : { formData: TFormData };
 
 type OptionalParamsField<TParamNames extends string> = [TParamNames] extends [
   never,
 ]
   ? object
-  : { params: Record<TParamNames, string | number> | undefined };
+  : { params: Record<TParamNames, string | number> };
 
-export type WriteResponseInputFields<
+type InputFields<
   TQuery,
   TBody,
   TFormData,
@@ -104,6 +104,15 @@ export type WriteResponseInputFields<
   OptionalBodyField<TBody> &
   OptionalFormDataField<TFormData> &
   OptionalParamsField<TParamNames>;
+
+export type WriteResponseInputFields<
+  TQuery,
+  TBody,
+  TFormData,
+  TParamNames extends string,
+> = [TQuery, TBody, TFormData, TParamNames] extends [never, never, never, never]
+  ? object
+  : { input: InputFields<TQuery, TBody, TFormData, TParamNames> | undefined };
 
 export type UseReadResult<
   TData,
@@ -159,27 +168,27 @@ type SuccessReturnType<T> = SuccessResponse<AwaitedReturnType<T>>;
 
 export type ExtractResponseQuery<T> =
   SuccessReturnType<T> extends {
-    query: infer Q;
+    input: { query: infer Q };
   }
     ? Q
     : never;
 
 export type ExtractResponseBody<T> =
   SuccessReturnType<T> extends {
-    body: infer B;
+    input: { body: infer B };
   }
     ? B
     : never;
 
 export type ExtractResponseFormData<T> =
   SuccessReturnType<T> extends {
-    formData: infer F;
+    input: { formData: infer F };
   }
     ? F
     : never;
 
 export type ExtractResponseParamNames<T> =
-  SuccessReturnType<T> extends { params: Record<infer K, unknown> }
+  SuccessReturnType<T> extends { input: { params: Record<infer K, unknown> } }
     ? K extends string
       ? K
       : never
@@ -197,7 +206,7 @@ type ParamsField<TParamNames extends string> = [TParamNames] extends [never]
   ? object
   : { params: Record<TParamNames, string | number> };
 
-export type ResponseInputFields<
+type ReadInputFields<
   TQuery,
   TBody,
   TFormData,
@@ -206,6 +215,15 @@ export type ResponseInputFields<
   BodyField<TBody> &
   FormDataField<TFormData> &
   ParamsField<TParamNames>;
+
+export type ResponseInputFields<
+  TQuery,
+  TBody,
+  TFormData,
+  TParamNames extends string,
+> = [TQuery, TBody, TFormData, TParamNames] extends [never, never, never, never]
+  ? object
+  : { input: ReadInputFields<TQuery, TBody, TFormData, TParamNames> };
 
 export type AnyInfiniteRequestOptions = {
   query?: Record<string, unknown>;

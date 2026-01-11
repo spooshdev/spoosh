@@ -205,29 +205,32 @@ export function createUseRead<
       ? Object.fromEntries(entry.pluginResult)
       : {};
 
-    const inputFields: Record<string, unknown> = {};
     const opts = trackedCall.options as Record<string, unknown> | undefined;
+    const inputInner: Record<string, unknown> = {};
 
     if (opts?.query !== undefined) {
-      inputFields.query = opts.query;
+      inputInner.query = opts.query;
     }
 
     if (opts?.body !== undefined) {
-      inputFields.body = opts.body;
+      inputInner.body = opts.body;
     }
 
     if (opts?.formData !== undefined) {
-      inputFields.formData = opts.formData;
+      inputInner.formData = opts.formData;
     }
 
     if (opts?.params !== undefined) {
-      inputFields.params = opts.params;
+      inputInner.params = opts.params;
     }
+
+    const inputField =
+      Object.keys(inputInner).length > 0 ? { input: inputInner } : {};
 
     const result = {
       ...state,
       ...pluginResultData,
-      ...inputFields,
+      ...inputField,
       data: state.data as TData | undefined,
       error: state.error as TError | undefined,
       abort,
