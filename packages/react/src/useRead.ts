@@ -13,7 +13,6 @@ import {
 import { createTrackingProxy, type TrackingResult } from "./trackingProxy";
 import type {
   BaseReadOptions,
-  ResolveDataTypes,
   BaseReadResult,
   ReadApiClient,
   ExtractResponseQuery,
@@ -59,12 +58,7 @@ export function createUseRead<
     ) => Promise<{ data?: unknown; error?: unknown }>,
   >(
     readFn: TReadFn,
-    readOptions?: BaseReadOptions &
-      ResolveDataTypes<
-        PluginOptions["read"],
-        ExtractData<TReadFn>,
-        InferError<ExtractError<TReadFn>>
-      >
+    readOptions?: BaseReadOptions & PluginOptions["read"]
   ): BaseReadResult<ExtractData<TReadFn>, InferError<ExtractError<TReadFn>>> &
     ResponseInputFields<
       ExtractResponseQuery<TReadFn>,

@@ -198,78 +198,58 @@ export type DataAwareTransform<TData = unknown, TError = unknown> = (
 ) => TData | undefined;
 
 /**
- * Schema resolver registry for plugin schema-aware types.
- *
- * This interface maps option key names to their schema-resolved types.
- * Built-in plugins register their types here directly.
- *
- * 3rd party plugins can extend this interface via TypeScript declaration
- * merging to register their own schema-aware types:
- *
- * @example
- * ```ts
- * // In your plugin's types file:
- * declare module 'enlace' {
- *   interface SchemaResolvers<TSchema> {
- *     myCallback: MyCallbackFn<TSchema>;
- *   }
- * }
- * ```
+ * Context object containing all type information available for resolution.
+ * 3rd party plugins can access any combination of these types.
  */
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type, @typescript-eslint/no-unused-vars
-export interface SchemaResolvers<TSchema> {
-  // Built-in plugin types are registered in schema-resolver.ts
-  // to avoid circular dependency issues
-}
+export type ResolverContext<
+  TSchema = unknown,
+  TData = unknown,
+  TError = unknown,
+  TQuery = unknown,
+  TBody = unknown,
+  TParams = unknown,
+  TFormData = unknown,
+> = {
+  schema: TSchema;
+  data: TData;
+  error: TError;
+  input: {
+    query: TQuery;
+    body: TBody;
+    params: TParams;
+    formData: TFormData;
+  };
+};
 
 /**
- * Data resolver registry for plugin data-aware types.
- *
- * This interface maps option key names to their data-resolved types.
- * Built-in plugins register their types here directly.
+ * Unified resolver registry for plugin type resolution.
  *
  * 3rd party plugins can extend this interface via TypeScript declaration
- * merging to register their own data-aware types:
+ * merging to register their own type-aware options:
  *
  * @example
  * ```ts
  * // In your plugin's types file:
  * declare module 'enlace' {
- *   interface DataResolvers<TData, TError> {
- *     myTransform: (data: TData, error: TError) => TData;
+ *   interface PluginResolvers<TContext> {
+ *     // Access schema
+ *     mySchemaCallback: MyFn<TContext['schema']> | undefined;
+ *
+ *     // Access data/error
+ *     myDataTransform: (data: TContext['data']) => TContext['data'];
+ *
+ *     // Access request input
+ *     myDebounce: (prev: { prevQuery: TContext['input']['query'] }) => number;
+ *
+ *     // Access multiple contexts at once
+ *     myComplexOption: ComplexFn<TContext['schema'], TContext['data']>;
  *   }
  * }
  * ```
  */
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type, @typescript-eslint/no-unused-vars
-export interface DataResolvers<TData, TError> {
-  // Built-in plugin types are registered in schema-resolver.ts
-  // to avoid circular dependency issues
-}
-
-/**
- * Request resolver registry for plugin request-aware types.
- *
- * This interface maps option key names to their request-resolved types
- * (based on query, body, params, formData from the request).
- *
- * 3rd party plugins can extend this interface via TypeScript declaration
- * merging to register their own request-aware types:
- *
- * @example
- * ```ts
- * // In your plugin's types file:
- * declare module 'enlace' {
- *   interface RequestResolvers<TQuery, TBody, TParams, TFormData> {
- *     myCallback: (prev: { prevQuery: TQuery }) => number;
- *   }
- * }
- * ```
- */
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type, @typescript-eslint/no-unused-vars
-export interface RequestResolvers<TQuery, TBody, TParams, TFormData> {
-  // Built-in plugin types are registered in schema-resolver.ts
-  // to avoid circular dependency issues
+export interface PluginResolvers<TContext extends ResolverContext> {
+  // Built-in plugin types are registered in type-resolver.ts
 }
 
 /**

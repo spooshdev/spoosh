@@ -15,7 +15,6 @@ import { createTrackingProxy, type TrackingResult } from "./trackingProxy";
 import type {
   BaseInfiniteReadOptions,
   BaseInfiniteReadResult,
-  ResolveDataTypes,
   InfiniteReadApiClient,
   AnyInfiniteRequestOptions,
 } from "./types";
@@ -48,7 +47,7 @@ export function createUseInfiniteRead<
       api: InfiniteReadApiClient<TSchema, TDefaultError>
     ) => Promise<EnlaceResponse<TData, TError>>,
     readOptions: BaseInfiniteReadOptions<TData, TItem, TRequest> &
-      ResolveDataTypes<PluginOptions["infiniteRead"], TData, TError>
+      PluginOptions["infiniteRead"]
   ): BaseInfiniteReadResult<TData, TError, TItem> & PluginResults["read"] {
     const {
       enabled = true,

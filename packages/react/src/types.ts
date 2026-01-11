@@ -9,8 +9,8 @@ import type {
   MethodOptionsMap,
   CoreRequestOptionsBase,
   ResolveSchemaTypes,
-  ResolveDataTypes,
-  ResolveRequestTypes,
+  ResolveTypes,
+  ResolverContext,
   PluginTypeConfig,
 } from "enlace";
 
@@ -57,7 +57,7 @@ export type BaseReadOptions = {
   additionalTags?: string[];
 };
 
-export type { ResolveSchemaTypes, ResolveDataTypes, ResolveRequestTypes };
+export type { ResolveSchemaTypes, ResolveTypes, ResolverContext };
 
 export type BaseReadResult<TData, TError> = {
   loading: boolean;
