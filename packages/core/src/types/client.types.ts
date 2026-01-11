@@ -15,12 +15,14 @@ import type {
   HasRequiredOptions,
 } from "./endpoint.types";
 
+type ExtractParamName<S extends string> = S extends `:${infer P}` ? P : never;
+
 type MethodRequestOptions<
   TSchema,
   TMethod extends SchemaMethod,
   TDefaultError,
   TOptionsMap,
-  THasDynamicSegment extends boolean,
+  TParamNames extends string,
   TRequired extends boolean,
 > = TRequired extends true
   ? RequestOptions<
@@ -30,7 +32,7 @@ type MethodRequestOptions<
     > &
       ComputeRequestOptions<
         ExtractMethodOptions<TOptionsMap, TMethod>,
-        THasDynamicSegment
+        TParamNames
       >
   : RequestOptions<
       never,
@@ -39,7 +41,7 @@ type MethodRequestOptions<
     > &
       ComputeRequestOptions<
         ExtractMethodOptions<TOptionsMap, TMethod>,
-        THasDynamicSegment
+        TParamNames
       >;
 
 export type MethodFn<
@@ -47,7 +49,7 @@ export type MethodFn<
   TMethod extends SchemaMethod,
   TDefaultError = unknown,
   TOptionsMap = object,
-  THasDynamicSegment extends boolean = false,
+  TParamNames extends string = never,
 > =
   HasMethod<TSchema, TMethod> extends true
     ? HasRequiredOptions<TSchema, TMethod, TDefaultError> extends true
@@ -57,7 +59,7 @@ export type MethodFn<
             TMethod,
             TDefaultError,
             TOptionsMap,
-            THasDynamicSegment,
+            TParamNames,
             true
           >
         ) => Promise<
@@ -69,13 +71,13 @@ export type MethodFn<
               TMethod,
               TDefaultError,
               TOptionsMap,
-              THasDynamicSegment,
+              TParamNames,
               true
             >,
             ExtractQuery<TSchema, TMethod, TDefaultError>,
             ExtractBody<TSchema, TMethod, TDefaultError>,
             ExtractFormData<TSchema, TMethod, TDefaultError>,
-            THasDynamicSegment
+            TParamNames
           >
         >
       : (
@@ -84,7 +86,7 @@ export type MethodFn<
             TMethod,
             TDefaultError,
             TOptionsMap,
-            THasDynamicSegment,
+            TParamNames,
             false
           >
         ) => Promise<
@@ -96,13 +98,13 @@ export type MethodFn<
               TMethod,
               TDefaultError,
               TOptionsMap,
-              THasDynamicSegment,
+              TParamNames,
               false
             >,
             ExtractQuery<TSchema, TMethod, TDefaultError>,
             ExtractBody<TSchema, TMethod, TDefaultError>,
             ExtractFormData<TSchema, TMethod, TDefaultError>,
-            THasDynamicSegment
+            TParamNames
           >
         >
     : never;
@@ -123,14 +125,14 @@ type HttpMethods<
   TSchema,
   TDefaultError = unknown,
   TOptionsMap = object,
-  THasDynamicSegment extends boolean = false,
+  TParamNames extends string = never,
 > = {
   [K in SchemaMethod as K extends keyof TSchema ? K : never]: MethodFn<
     TSchema,
     K,
     TDefaultError,
     TOptionsMap,
-    THasDynamicSegment
+    TParamNames
   >;
 };
 
@@ -138,6 +140,7 @@ type DynamicAccess<
   TSchema,
   TDefaultError = unknown,
   TOptionsMap = object,
+  TParamNames extends string = never,
   TRootSchema = TSchema,
 > =
   ExtractDynamicSchema<TSchema> extends never
@@ -147,14 +150,33 @@ type DynamicAccess<
           ExtractDynamicSchema<TSchema>,
           TDefaultError,
           TOptionsMap,
-          true,
+          TParamNames | string,
           TRootSchema
         >;
         [key: number]: EnlaceClient<
           ExtractDynamicSchema<TSchema>,
           TDefaultError,
           TOptionsMap,
-          true,
+          TParamNames | string,
+          TRootSchema
+        >;
+        /**
+         * Dynamic path segment with typed param name.
+         * Use `:paramName` format to get typed params in the response.
+         *
+         * @example
+         * ```ts
+         * // Typed params: { userId: string | number }
+         * const { data, params } = await api.users(':userId').$get({ params: { userId: 123 } })
+         * ```
+         */
+        <TKey extends string>(
+          key: TKey
+        ): EnlaceClient<
+          ExtractDynamicSchema<TSchema>,
+          TDefaultError,
+          TOptionsMap,
+          TParamNames | ExtractParamName<TKey>,
           TRootSchema
         >;
       };
@@ -163,6 +185,7 @@ type DynamicKey<
   TSchema,
   TDefaultError,
   TOptionsMap,
+  TParamNames extends string = never,
   TRootSchema = TSchema,
 > = TSchema extends {
   _: infer D;
@@ -177,7 +200,13 @@ type DynamicKey<
        * const { data } = await api.posts._.$get({ params: { id: 123 } })
        * ```
        */
-      _: EnlaceClient<D, TDefaultError, TOptionsMap, true, TRootSchema>;
+      _: EnlaceClient<
+        D,
+        TDefaultError,
+        TOptionsMap,
+        TParamNames | string,
+        TRootSchema
+      >;
     }
   : object;
 
@@ -185,18 +214,18 @@ export type EnlaceClient<
   TSchema,
   TDefaultError = unknown,
   TOptionsMap = object,
-  THasDynamicSegment extends boolean = false,
+  TParamNames extends string = never,
   TRootSchema = TSchema,
-> = HttpMethods<TSchema, TDefaultError, TOptionsMap, THasDynamicSegment> &
-  DynamicAccess<TSchema, TDefaultError, TOptionsMap, TRootSchema> &
-  DynamicKey<TSchema, TDefaultError, TOptionsMap, TRootSchema> & {
+> = HttpMethods<TSchema, TDefaultError, TOptionsMap, TParamNames> &
+  DynamicAccess<TSchema, TDefaultError, TOptionsMap, TParamNames, TRootSchema> &
+  DynamicKey<TSchema, TDefaultError, TOptionsMap, TParamNames, TRootSchema> & {
     [K in keyof StaticPathKeys<TSchema> as K extends SchemaMethod
       ? never
       : K]: EnlaceClient<
       TSchema[K],
       TDefaultError,
       TOptionsMap,
-      THasDynamicSegment,
+      TParamNames,
       TRootSchema
     >;
   };

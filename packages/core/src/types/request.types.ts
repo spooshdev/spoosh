@@ -84,12 +84,18 @@ export type FetchExecutor<
   requestOptions?: TRequestOptions
 ) => Promise<EnlaceResponse<TData, TError>>;
 
+type TypedParamsOption<TParamNames extends string> = [TParamNames] extends [
+  never,
+]
+  ? object
+  : { params: Record<TParamNames, string | number> };
+
 export type ComputeRequestOptions<
   TRequestOptionsBase,
-  THasDynamicSegment extends boolean,
+  TParamNames extends string,
 > = "__hasDynamicParams" extends keyof TRequestOptionsBase
-  ? THasDynamicSegment extends true
-    ? Omit<TRequestOptionsBase, "__hasDynamicParams"> &
-        NonNullable<TRequestOptionsBase["__hasDynamicParams"]>
-    : Omit<TRequestOptionsBase, "__hasDynamicParams">
-  : TRequestOptionsBase;
+  ? [TParamNames] extends [never]
+    ? Omit<TRequestOptionsBase, "__hasDynamicParams">
+    : Omit<TRequestOptionsBase, "__hasDynamicParams"> &
+        TypedParamsOption<TParamNames>
+  : TRequestOptionsBase & TypedParamsOption<TParamNames>;

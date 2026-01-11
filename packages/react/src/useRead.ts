@@ -19,7 +19,7 @@ import type {
   ExtractResponseQuery,
   ExtractResponseBody,
   ExtractResponseFormData,
-  ExtractResponseHasDynamicSegment,
+  ExtractResponseParamNames,
   ResponseInputFields,
 } from "./types";
 import { resolvePath, resolveTags } from "./utils";
@@ -70,7 +70,7 @@ export function createUseRead<
       ExtractResponseQuery<TReadFn>,
       ExtractResponseBody<TReadFn>,
       ExtractResponseFormData<TReadFn>,
-      ExtractResponseHasDynamicSegment<TReadFn>
+      ExtractResponseParamNames<TReadFn>
     > &
     PluginResults["read"] {
     const {
@@ -239,7 +239,7 @@ export function createUseRead<
         ExtractResponseQuery<TReadFn>,
         ExtractResponseBody<TReadFn>,
         ExtractResponseFormData<TReadFn>,
-        ExtractResponseHasDynamicSegment<TReadFn>
+        ExtractResponseParamNames<TReadFn>
       > &
       PluginResults["read"];
   };

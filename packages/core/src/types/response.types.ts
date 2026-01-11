@@ -8,20 +8,19 @@ type FormDataField<TFormData> = [TFormData] extends [never]
   ? object
   : { formData: TFormData };
 
-type ParamsField<THasDynamicSegment extends boolean> =
-  THasDynamicSegment extends true
-    ? { params: Record<string, unknown> }
-    : object;
+type ParamsField<TParamNames extends string> = [TParamNames] extends [never]
+  ? object
+  : { params: Record<TParamNames, string | number> };
 
 type ResponseInputFields<
   TQuery,
   TBody,
   TFormData,
-  THasDynamicSegment extends boolean,
+  TParamNames extends string,
 > = QueryField<TQuery> &
   BodyField<TBody> &
   FormDataField<TFormData> &
-  ParamsField<THasDynamicSegment>;
+  ParamsField<TParamNames>;
 
 export type EnlaceResponse<
   TData,
@@ -30,7 +29,7 @@ export type EnlaceResponse<
   TQuery = never,
   TBody = never,
   TFormData = never,
-  THasDynamicSegment extends boolean = false,
+  TParamNames extends string = never,
 > =
   | ({
       status: number;
@@ -39,7 +38,7 @@ export type EnlaceResponse<
       error?: undefined;
       aborted?: false;
       readonly __requestOptions?: TRequestOptions;
-    } & ResponseInputFields<TQuery, TBody, TFormData, THasDynamicSegment>)
+    } & ResponseInputFields<TQuery, TBody, TFormData, TParamNames>)
   | ({
       status: number;
       data?: undefined;
@@ -47,7 +46,7 @@ export type EnlaceResponse<
       error: TError;
       aborted?: boolean;
       readonly __requestOptions?: TRequestOptions;
-    } & ResponseInputFields<TQuery, TBody, TFormData, THasDynamicSegment>);
+    } & ResponseInputFields<TQuery, TBody, TFormData, TParamNames>);
 
 export type EnlaceOptionsExtra<TData = unknown, TError = unknown> = {
   middlewares?: EnlaceMiddleware<TData, TError>[];

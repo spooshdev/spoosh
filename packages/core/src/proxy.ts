@@ -26,7 +26,7 @@ export function createProxyHandler<
     AnyRequestOptions
   > = executeFetch as FetchExecutor<TOptions, AnyRequestOptions>
 ): TSchema {
-  const handler: ProxyHandler<TSchema> = {
+  const handler: ProxyHandler<() => void> = {
     get(_target, prop: string | symbol) {
       if (typeof prop === "symbol") return undefined;
 
@@ -43,7 +43,20 @@ export function createProxyHandler<
         fetchExecutor
       );
     },
+
+    apply(_target, _thisArg, args: [string]) {
+      const [segment] = args;
+
+      return createProxyHandler(
+        baseUrl,
+        defaultOptions,
+        [...path, segment],
+        fetchExecutor
+      );
+    },
   };
 
-  return new Proxy({} as TSchema, handler);
+  const noop = () => {};
+
+  return new Proxy(noop, handler) as TSchema;
 }

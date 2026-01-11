@@ -21,7 +21,7 @@ import type {
   ExtractResponseQuery,
   ExtractResponseBody,
   ExtractResponseFormData,
-  ExtractResponseHasDynamicSegment,
+  ExtractResponseParamNames,
   WriteResponseInputFields,
 } from "./types";
 import { resolvePath, resolveTags } from "./utils";
@@ -61,7 +61,7 @@ export function createUseWrite<
       ExtractResponseQuery<TMethod>,
       ExtractResponseBody<TMethod>,
       ExtractResponseFormData<TMethod>,
-      ExtractResponseHasDynamicSegment<TMethod>
+      ExtractResponseParamNames<TMethod>
     > &
     PluginResults["write"] {
     type TData = ExtractMethodData<TMethod>;
@@ -217,7 +217,7 @@ export function createUseWrite<
         ExtractResponseQuery<TMethod>,
         ExtractResponseBody<TMethod>,
         ExtractResponseFormData<TMethod>,
-        ExtractResponseHasDynamicSegment<TMethod>
+        ExtractResponseParamNames<TMethod>
       > &
       PluginResults["write"];
   };

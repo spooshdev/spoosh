@@ -22,7 +22,7 @@ import type {
   ExtractResponseQuery,
   ExtractResponseBody,
   ExtractResponseFormData,
-  ExtractResponseHasDynamicSegment,
+  ExtractResponseParamNames,
   ResponseInputFields,
   WriteResponseInputFields,
   ExtractMethodData,
@@ -49,7 +49,7 @@ type UseReadFn<TApi, TDefaultError, TPlugins extends PluginArray> = <
     ExtractResponseQuery<TReadFn>,
     ExtractResponseBody<TReadFn>,
     ExtractResponseFormData<TReadFn>,
-    ExtractResponseHasDynamicSegment<TReadFn>
+    ExtractResponseParamNames<TReadFn>
   > &
   MergePluginResults<TPlugins>["read"];
 
@@ -69,7 +69,7 @@ type UseWriteFn<TApi, TDefaultError, TSchema, TPlugins extends PluginArray> = <
     ExtractResponseQuery<TMethod>,
     ExtractResponseBody<TMethod>,
     ExtractResponseFormData<TMethod>,
-    ExtractResponseHasDynamicSegment<TMethod>
+    ExtractResponseParamNames<TMethod>
   > &
   MergePluginResults<TPlugins>["write"];
 

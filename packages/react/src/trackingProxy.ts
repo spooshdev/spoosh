@@ -45,6 +45,12 @@ export function createTrackingProxy<TSchema>(
 
         return createProxy([...path, prop]);
       },
+
+      apply(_, __, args: [string]) {
+        const [segment] = args;
+
+        return createProxy([...path, segment]);
+      },
     });
   };
 

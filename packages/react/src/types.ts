@@ -88,20 +88,21 @@ type OptionalFormDataField<TFormData> = [TFormData] extends [never]
   ? object
   : { formData: TFormData | undefined };
 
-type OptionalParamsField<THasDynamicSegment extends boolean> =
-  THasDynamicSegment extends true
-    ? { params: Record<string, unknown> | undefined }
-    : object;
+type OptionalParamsField<TParamNames extends string> = [TParamNames] extends [
+  never,
+]
+  ? object
+  : { params: Record<TParamNames, string | number> | undefined };
 
 export type WriteResponseInputFields<
   TQuery,
   TBody,
   TFormData,
-  THasDynamicSegment extends boolean,
+  TParamNames extends string,
 > = OptionalQueryField<TQuery> &
   OptionalBodyField<TBody> &
   OptionalFormDataField<TFormData> &
-  OptionalParamsField<THasDynamicSegment>;
+  OptionalParamsField<TParamNames>;
 
 export type UseReadResult<
   TData,
@@ -176,10 +177,12 @@ export type ExtractResponseFormData<T> =
     ? F
     : never;
 
-export type ExtractResponseHasDynamicSegment<T> =
-  SuccessReturnType<T> extends { params: Record<string, unknown> }
-    ? true
-    : false;
+export type ExtractResponseParamNames<T> =
+  SuccessReturnType<T> extends { params: Record<infer K, unknown> }
+    ? K extends string
+      ? K
+      : never
+    : never;
 
 type QueryField<TQuery> = [TQuery] extends [never] ? object : { query: TQuery };
 
@@ -189,20 +192,19 @@ type FormDataField<TFormData> = [TFormData] extends [never]
   ? object
   : { formData: TFormData };
 
-type ParamsField<THasDynamicSegment extends boolean> =
-  THasDynamicSegment extends true
-    ? { params: Record<string, unknown> }
-    : object;
+type ParamsField<TParamNames extends string> = [TParamNames] extends [never]
+  ? object
+  : { params: Record<TParamNames, string | number> };
 
 export type ResponseInputFields<
   TQuery,
   TBody,
   TFormData,
-  THasDynamicSegment extends boolean,
+  TParamNames extends string,
 > = QueryField<TQuery> &
   BodyField<TBody> &
   FormDataField<TFormData> &
-  ParamsField<THasDynamicSegment>;
+  ParamsField<TParamNames>;
 
 export type AnyInfiniteRequestOptions = {
   query?: Record<string, unknown>;
