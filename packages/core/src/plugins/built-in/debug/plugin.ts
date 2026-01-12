@@ -1,4 +1,4 @@
-import type { EnlacePlugin, PluginContext, LifecyclePhase } from "../../types";
+import type { EnlacePlugin, PluginContext } from "../../types";
 import type {
   DebugPluginConfig,
   DebugReadOptions,
@@ -9,7 +9,12 @@ import type {
   DebugLogEntry,
 } from "./types";
 
-type DebugPhase = LifecyclePhase | "beforeFetch" | "afterFetch";
+type DebugPhase =
+  | "onMount"
+  | "onUpdate"
+  | "onUnmount"
+  | "beforeFetch"
+  | "afterFetch";
 
 /**
  * Development plugin for debugging and inspecting plugin context.
@@ -140,12 +145,12 @@ export function debugPlugin(config: DebugPluginConfig = {}): EnlacePlugin<{
         logPhase("onMount", context);
       },
 
-      onUnmount(context) {
-        logPhase("onUnmount", context);
+      onUpdate(context) {
+        logPhase("onUpdate", context);
       },
 
-      onOptionsUpdate(context) {
-        logPhase("onOptionsUpdate", context);
+      onUnmount(context) {
+        logPhase("onUnmount", context);
       },
     },
   };

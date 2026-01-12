@@ -24,9 +24,19 @@ export type OperationController<TData = unknown, TError = unknown> = {
   subscribe: (callback: () => void) => () => void;
   abort: () => void;
   refetch: () => Promise<EnlaceResponse<TData, TError>>;
+
+  /** Called once when hook first mounts */
   mount: () => void;
+
+  /** Called once when hook finally unmounts */
   unmount: () => void;
-  updateOptions: () => void;
+
+  /** Called when options/query changes. Pass previous context for cleanup. */
+  update: (previousContext: PluginContext<TData, TError>) => void;
+
+  /** Get current context (for passing to update as previousContext) */
+  getContext: () => PluginContext<TData, TError>;
+
   setPluginOptions: (options: unknown) => void;
   setMetadata: (key: string, value: unknown) => void;
 };
@@ -249,13 +259,17 @@ export function createOperationController<TData, TError>(
       pluginExecutor.executeLifecycle("onUnmount", operationType, context);
     },
 
-    updateOptions() {
+    update(previousContext: PluginContext<TData, TError>) {
       const context = createContext({}, currentRequestTimestamp);
-      pluginExecutor.executeLifecycle(
-        "onOptionsUpdate",
+      pluginExecutor.executeUpdateLifecycle(
         operationType,
-        context
+        context,
+        previousContext
       );
+    },
+
+    getContext() {
+      return createContext({}, currentRequestTimestamp);
     },
 
     setPluginOptions(options) {

@@ -6,7 +6,7 @@ import type { StateManager } from "../state/manager";
 
 export type OperationType = "read" | "write" | "infiniteRead";
 
-export type LifecyclePhase = "onMount" | "onUnmount" | "onOptionsUpdate";
+export type LifecyclePhase = "onMount" | "onUnmount" | "onUpdate";
 
 export type OperationState<TData = unknown, TError = unknown> = {
   loading: boolean;
@@ -109,6 +109,11 @@ export type PluginHandler<TData = unknown, TError = unknown> = (
   context: PluginContext<TData, TError>
 ) => void | Promise<void>;
 
+export type PluginUpdateHandler<TData = unknown, TError = unknown> = (
+  context: PluginContext<TData, TError>,
+  previousContext: PluginContext<TData, TError>
+) => void | Promise<void>;
+
 /**
  * Handler called after every response, regardless of early returns from middleware.
  * Use this for post-response logic like scheduling polls or emitting events.
@@ -118,9 +123,16 @@ export type PluginResponseHandler<TData = unknown, TError = unknown> = (
   response: EnlaceResponse<TData, TError>
 ) => void | Promise<void>;
 
-export type PluginLifecycle<TData = unknown, TError = unknown> = Partial<
-  Record<LifecyclePhase, PluginHandler<TData, TError>>
->;
+export type PluginLifecycle<TData = unknown, TError = unknown> = {
+  /** Called on component mount */
+  onMount?: PluginHandler<TData, TError>;
+
+  /** Called when options/query changes. Receives both new and previous context. */
+  onUpdate?: PluginUpdateHandler<TData, TError>;
+
+  /** Called on component unmount */
+  onUnmount?: PluginHandler<TData, TError>;
+};
 
 /**
  * Configuration object for plugin type definitions.
@@ -153,7 +165,7 @@ export type PluginTypeConfig = {
  * Plugins can implement:
  * - `middleware`: Wraps the fetch flow for full control (intercept, retry, transform)
  * - `onResponse`: Called after every response, regardless of early returns
- * - `lifecycle`: Component lifecycle hooks (onMount, onUnmount, onOptionsUpdate)
+ * - `lifecycle`: Component lifecycle hooks (onMount, onUpdate, onUnmount)
  * - `exports`: Functions/variables accessible to other plugins
  *
  * @typeParam T - Plugin type configuration object. Specify only the types your plugin needs.
@@ -177,6 +189,7 @@ export type PluginTypeConfig = {
  *     },
  *     lifecycle: {
  *       onMount(context) { },
+ *       onUpdate(context, previousContext) { },
  *       onUnmount(context) { },
  *     },
  *   };

@@ -8,6 +8,7 @@ import {
   type MergePluginResults,
   type EnlacePlugin,
   type PluginTypeConfig,
+  type PluginContext,
   type InfiniteRequestOptions,
   type SelectorResult,
   createInfiniteReadController,
@@ -199,11 +200,26 @@ export function createUseInfiniteRead<
       controller.getState
     );
 
-    const mountedRef = useRef(false);
+    const lifecycleRef = useRef<{
+      initialized: boolean;
+      prevContext: PluginContext | null;
+    }>({
+      initialized: false,
+      prevContext: null,
+    });
 
+    // Unmount effect - runs on unmount (including StrictMode simulated unmount)
+    useEffect(() => {
+      return () => {
+        controllerRef.current?.controller.unmount();
+        lifecycleRef.current.initialized = false;
+      };
+    }, []);
+
+    // Mount effect - runs once on first mount
     useEffect(() => {
       controller.mount();
-      mountedRef.current = true;
+      lifecycleRef.current.initialized = true;
 
       const unsubInvalidate = eventEmitter.on(
         "invalidate",
@@ -219,14 +235,12 @@ export function createUseInfiniteRead<
       );
 
       return () => {
-        controller.unmount();
         unsubInvalidate();
-        mountedRef.current = false;
       };
     }, []);
 
     useEffect(() => {
-      if (!mountedRef.current) return;
+      if (!lifecycleRef.current.initialized) return;
 
       if (enabled) {
         const currentState = controller.getState();
@@ -238,9 +252,10 @@ export function createUseInfiniteRead<
     }, [enabled]);
 
     useEffect(() => {
-      if (!enabled) return;
+      if (!enabled || !lifecycleRef.current.initialized) return;
 
-      controller.updateOptions();
+      const prevContext = controller.getContext();
+      controller.update(prevContext);
     }, [JSON.stringify(pluginOpts)]);
 
     const result = {

@@ -91,11 +91,11 @@ export function pollingPlugin(): EnlacePlugin<{
     },
 
     lifecycle: {
-      onUnmount(context) {
-        clearPolling(context.queryKey);
-      },
+      onUpdate(context, previousContext) {
+        if (previousContext.queryKey !== context.queryKey) {
+          clearPolling(previousContext.queryKey);
+        }
 
-      onOptionsUpdate(context) {
         const { queryKey } = context;
 
         const pluginOptions = context.pluginOptions as
@@ -113,6 +113,10 @@ export function pollingPlugin(): EnlacePlugin<{
         if (!currentTimeout) {
           scheduleNextPoll(context);
         }
+      },
+
+      onUnmount(context) {
+        clearPolling(context.queryKey);
       },
     },
   };

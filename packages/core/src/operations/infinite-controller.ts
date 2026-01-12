@@ -41,7 +41,8 @@ export type InfiniteReadController<TData, TItem, TError> = {
 
   mount: () => void;
   unmount: () => void;
-  updateOptions: () => void;
+  update: (previousContext: PluginContext<TData, TError>) => void;
+  getContext: () => PluginContext<TData, TError>;
   setPluginOptions: (options: unknown) => void;
 };
 
@@ -600,13 +601,17 @@ export function createInfiniteReadController<
       refetchUnsubscribe = null;
     },
 
-    updateOptions() {
+    update(previousContext: PluginContext<TData, TError>) {
       const context = createContext(trackerKey);
-      pluginExecutor.executeLifecycle(
-        "onOptionsUpdate",
+      pluginExecutor.executeUpdateLifecycle(
         "infiniteRead",
-        context
+        context,
+        previousContext
       );
+    },
+
+    getContext() {
+      return createContext(trackerKey);
     },
 
     setPluginOptions(opts) {

@@ -14,6 +14,7 @@ import {
   type MergePluginResults,
   type EnlacePlugin,
   type PluginTypeConfig,
+  type PluginContext,
   type SelectorResult,
   createOperationController,
   createSelectorProxy,
@@ -117,13 +118,27 @@ export function createUseRead<
       options: capturedCall.options,
     });
 
+    type TData = ExtractData<TReadFn>;
+    type TError = InferError<ExtractError<TReadFn>>;
+
     const controllerRef = useRef<{
-      controller: ReturnType<typeof createOperationController>;
+      controller: ReturnType<typeof createOperationController<TData, TError>>;
       queryKey: string;
     } | null>(null);
 
-    type TData = ExtractData<TReadFn>;
-    type TError = InferError<ExtractError<TReadFn>>;
+    const lifecycleRef = useRef<{
+      initialized: boolean;
+      prevContext: PluginContext<TData, TError> | null;
+    }>({
+      initialized: false,
+      prevContext: null,
+    });
+
+    // Store previous context before creating new controller
+    if (controllerRef.current && controllerRef.current.queryKey !== queryKey) {
+      lifecycleRef.current.prevContext =
+        controllerRef.current.controller.getContext();
+    }
 
     // Recreate controller when queryKey changes
     if (!controllerRef.current || controllerRef.current.queryKey !== queryKey) {
@@ -172,10 +187,28 @@ export function createUseRead<
 
     const pluginOptsKey = JSON.stringify(pluginOpts);
 
+    // Unmount effect - runs on unmount (including StrictMode simulated unmount)
+    useEffect(() => {
+      return () => {
+        controllerRef.current?.controller.unmount();
+        lifecycleRef.current.initialized = false;
+      };
+    }, []);
+
+    // Main lifecycle effect
     useEffect(() => {
       if (!enabled) return;
 
-      controller.mount();
+      const { initialized, prevContext } = lifecycleRef.current;
+
+      if (!initialized) {
+        controller.mount();
+        lifecycleRef.current.initialized = true;
+      } else if (prevContext) {
+        controller.update(prevContext);
+        lifecycleRef.current.prevContext = null;
+      }
+
       controller.execute();
 
       const unsubRefetch = eventEmitter.on("refetch", (event) => {
@@ -198,16 +231,17 @@ export function createUseRead<
       );
 
       return () => {
-        controller.unmount();
         unsubRefetch();
         unsubInvalidate();
       };
     }, [queryKey, enabled]);
 
+    // Plugin options change effect
     useEffect(() => {
-      if (!enabled) return;
+      if (!enabled || !lifecycleRef.current.initialized) return;
 
-      controller.updateOptions();
+      const prevContext = controller.getContext();
+      controller.update(prevContext);
     }, [pluginOptsKey]);
 
     const abort = useCallback(() => {

@@ -43,7 +43,6 @@ export function initialDataPlugin(): EnlacePlugin<{
   writeResult: InitialDataWriteResult;
 }> {
   const initialDataAppliedFor = new Set<string>();
-  const mountCount = new Map<string, number>();
 
   return {
     name: "enlace:initialData",
@@ -139,28 +138,9 @@ export function initialDataPlugin(): EnlacePlugin<{
     },
 
     lifecycle: {
-      onMount(context) {
-        if (!context.hookId) {
-          return;
-        }
-
-        const count = mountCount.get(context.hookId) ?? 0;
-        mountCount.set(context.hookId, count + 1);
-      },
-
       onUnmount(context) {
-        if (!context.hookId) {
-          return;
-        }
-
-        const count = mountCount.get(context.hookId) ?? 0;
-        const newCount = Math.max(0, count - 1);
-
-        if (newCount === 0) {
-          mountCount.delete(context.hookId);
+        if (context.hookId) {
           initialDataAppliedFor.delete(context.hookId);
-        } else {
-          mountCount.set(context.hookId, newCount);
         }
       },
     },

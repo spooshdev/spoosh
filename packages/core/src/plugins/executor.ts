@@ -4,16 +4,22 @@ import type {
   PluginAccessor,
   PluginContext,
   PluginContextInput,
-  LifecyclePhase,
 } from "./types";
 import type { EnlaceResponse } from "../types/response.types";
 
 export type PluginExecutor = {
-  /** Execute lifecycle hooks for a specific phase */
+  /** Execute lifecycle hooks for onMount or onUnmount */
   executeLifecycle: <TData, TError>(
-    phase: LifecyclePhase,
+    phase: "onMount" | "onUnmount",
     operationType: OperationType,
     context: PluginContext<TData, TError>
+  ) => Promise<void>;
+
+  /** Execute onUpdate lifecycle with previous context */
+  executeUpdateLifecycle: <TData, TError>(
+    operationType: OperationType,
+    context: PluginContext<TData, TError>,
+    previousContext: PluginContext<TData, TError>
   ) => Promise<void>;
 
   /** Execute middleware chain with a core fetch function, then run onResponse handlers */
@@ -94,7 +100,7 @@ export function createPluginExecutor(
   });
 
   const executeLifecycleImpl = async <TData, TError>(
-    phase: LifecyclePhase,
+    phase: "onMount" | "onUnmount",
     operationType: OperationType,
     context: PluginContext<TData, TError>
   ): Promise<void> => {
@@ -113,8 +119,32 @@ export function createPluginExecutor(
     }
   };
 
+  const executeUpdateLifecycleImpl = async <TData, TError>(
+    operationType: OperationType,
+    context: PluginContext<TData, TError>,
+    previousContext: PluginContext<TData, TError>
+  ): Promise<void> => {
+    for (const plugin of plugins) {
+      if (!plugin.operations.includes(operationType)) {
+        continue;
+      }
+
+      const handler = plugin.lifecycle?.onUpdate;
+
+      if (!handler) {
+        continue;
+      }
+
+      await handler(
+        context as PluginContext<unknown, unknown>,
+        previousContext as PluginContext<unknown, unknown>
+      );
+    }
+  };
+
   return {
     executeLifecycle: executeLifecycleImpl,
+    executeUpdateLifecycle: executeUpdateLifecycleImpl,
 
     async executeMiddleware<TData, TError>(
       operationType: OperationType,
