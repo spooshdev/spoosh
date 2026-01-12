@@ -41,23 +41,21 @@ export function retryPlugin(config: RetryPluginConfig = {}): EnlacePlugin<{
     name: "enlace:retry",
     operations: ["read", "write", "infiniteRead"],
 
-    handlers: {
-      beforeFetch(context) {
-        const pluginOptions = context.pluginOptions as
-          | RetryReadOptions
-          | undefined;
+    middleware: async (context, next) => {
+      const pluginOptions = context.pluginOptions as
+        | RetryReadOptions
+        | undefined;
 
-        const retries = pluginOptions?.retries ?? defaultRetries;
-        const retryDelay = pluginOptions?.retryDelay ?? defaultRetryDelay;
+      const retries = pluginOptions?.retries ?? defaultRetries;
+      const retryDelay = pluginOptions?.retryDelay ?? defaultRetryDelay;
 
-        context.requestOptions = {
-          ...context.requestOptions,
-          retries,
-          retryDelay,
-        };
+      context.requestOptions = {
+        ...context.requestOptions,
+        retries,
+        retryDelay,
+      };
 
-        return context;
-      },
+      return next();
     },
   };
 }

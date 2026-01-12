@@ -65,6 +65,9 @@ export type CreateInfiniteReadOptions<TData, TItem, TError, TRequest> = {
     options: InfiniteRequestOptions,
     signal: AbortSignal
   ) => Promise<EnlaceResponse<TData, TError>>;
+
+  /** Unique identifier for the hook instance. Persists across queryKey changes. */
+  hookId?: string;
 };
 
 type FetchDirection = "next" | "prev";
@@ -153,6 +156,7 @@ export function createInfiniteReadController<
     eventEmitter,
     pluginExecutor,
     fetchFn,
+    hookId,
   } = options;
 
   let pageKeys: string[] = [];
@@ -308,6 +312,7 @@ export function createInfiniteReadController<
       queryKey: pageKey,
       tags,
       requestTimestamp: Date.now(),
+      hookId,
       requestOptions: {},
       state: initialState,
       metadata: new Map(),
@@ -343,114 +348,108 @@ export function createInfiniteReadController<
     abortController = new AbortController();
     const signal = abortController.signal;
 
-    let context = createContext(pageKey);
+    const context = createContext(pageKey);
 
-    const fetchPromise = (async (): Promise<void> => {
-      context = await pluginExecutor.execute(
-        "beforeFetch",
-        "infiniteRead",
-        context
-      );
+    const coreFetch = async (): Promise<EnlaceResponse<TData, TError>> => {
+      const fetchPromise = (async (): Promise<
+        EnlaceResponse<TData, TError>
+      > => {
+        try {
+          const response = await fetchFn(mergedRequest, signal);
+          context.response = response;
 
-      try {
-        const response = await fetchFn(mergedRequest, signal);
-        context.response = response;
+          if (signal.aborted) {
+            return {
+              status: 0,
+              data: undefined,
+              aborted: true,
+            } as EnlaceResponse<TData, TError>;
+          }
 
-        context = await pluginExecutor.execute(
-          "afterFetch",
-          "infiniteRead",
-          context
-        );
+          if (response.error) {
+            stateManager.setCache(pageKey, {
+              state: {
+                loading: false,
+                fetching: false,
+                data: undefined,
+                error: response.error,
+                timestamp: Date.now(),
+              },
+              tags,
+            });
+          } else if (response.data !== undefined) {
+            pageRequests.set(pageKey, mergedRequest);
 
-        if (signal.aborted) return;
+            if (direction === "next") {
+              if (!pageKeys.includes(pageKey)) {
+                pageKeys = [...pageKeys, pageKey];
+              }
+            } else {
+              if (!pageKeys.includes(pageKey)) {
+                pageKeys = [pageKey, ...pageKeys];
+              }
+            }
 
-        if (response.error) {
+            saveToTracker();
+            subscribeToPages();
+
+            stateManager.setCache(pageKey, {
+              state: {
+                loading: false,
+                fetching: false,
+                data: response.data,
+                error: undefined,
+                timestamp: Date.now(),
+              },
+              tags,
+              stale: false,
+            });
+          }
+
+          return response;
+        } catch (err) {
+          if (signal.aborted) {
+            return {
+              status: 0,
+              data: undefined,
+              aborted: true,
+            } as EnlaceResponse<TData, TError>;
+          }
+
+          const errorResponse: EnlaceResponse<TData, TError> = {
+            status: 0,
+            error: err as TError,
+            data: undefined,
+          };
+
+          context.response = errorResponse;
+
           stateManager.setCache(pageKey, {
             state: {
               loading: false,
               fetching: false,
               data: undefined,
-              error: response.error,
+              error: err,
               timestamp: Date.now(),
             },
             tags,
           });
 
-          context = await pluginExecutor.execute(
-            "onError",
-            "infiniteRead",
-            context
-          );
-        } else if (response.data !== undefined) {
-          pageRequests.set(pageKey, mergedRequest);
-
-          if (direction === "next") {
-            if (!pageKeys.includes(pageKey)) {
-              pageKeys = [...pageKeys, pageKey];
-            }
-          } else {
-            if (!pageKeys.includes(pageKey)) {
-              pageKeys = [pageKey, ...pageKeys];
-            }
-          }
-
-          saveToTracker();
-          subscribeToPages();
-
-          stateManager.setCache(pageKey, {
-            state: {
-              loading: false,
-              fetching: false,
-              data: response.data,
-              error: undefined,
-              timestamp: Date.now(),
-            },
-            tags,
-            stale: false,
-          });
-
-          context = await pluginExecutor.execute(
-            "onSuccess",
-            "infiniteRead",
-            context
-          );
+          return errorResponse;
+        } finally {
+          pendingFetches.delete(pageKey);
+          fetchingDirection = null;
+          stateManager.setCache(pageKey, { promise: undefined });
+          notify();
         }
-      } catch (err) {
-        if (signal.aborted) return;
+      })();
 
-        context.response = {
-          status: 0,
-          error: err as TError,
-          data: undefined,
-        };
+      stateManager.setCache(pageKey, { promise: fetchPromise, tags });
 
-        stateManager.setCache(pageKey, {
-          state: {
-            loading: false,
-            fetching: false,
-            data: undefined,
-            error: err,
-            timestamp: Date.now(),
-          },
-          tags,
-        });
+      return fetchPromise;
+    };
 
-        context = await pluginExecutor.execute(
-          "onError",
-          "infiniteRead",
-          context
-        );
-      } finally {
-        pendingFetches.delete(pageKey);
-        fetchingDirection = null;
-        stateManager.setCache(pageKey, { promise: undefined });
-        notify();
-      }
-    })();
-
-    stateManager.setCache(pageKey, { promise: fetchPromise, tags });
-
-    await fetchPromise;
+    await pluginExecutor.executeMiddleware("infiniteRead", context, coreFetch);
   };
 
   const controller: InfiniteReadController<TData, TItem, TError> = {
@@ -570,7 +569,7 @@ export function createInfiniteReadController<
       subscribeToPages();
 
       const context = createContext(trackerKey);
-      pluginExecutor.execute("onMount", "infiniteRead", context);
+      pluginExecutor.executeLifecycle("onMount", "infiniteRead", context);
 
       refetchUnsubscribe = eventEmitter.on("refetch", (event) => {
         const isRelevant =
@@ -593,7 +592,7 @@ export function createInfiniteReadController<
 
     unmount() {
       const context = createContext(trackerKey);
-      pluginExecutor.execute("onUnmount", "infiniteRead", context);
+      pluginExecutor.executeLifecycle("onUnmount", "infiniteRead", context);
 
       pageSubscriptions.forEach((unsub) => unsub());
       pageSubscriptions = [];
@@ -603,7 +602,11 @@ export function createInfiniteReadController<
 
     updateOptions() {
       const context = createContext(trackerKey);
-      pluginExecutor.execute("onOptionsUpdate", "infiniteRead", context);
+      pluginExecutor.executeLifecycle(
+        "onOptionsUpdate",
+        "infiniteRead",
+        context
+      );
     },
 
     setPluginOptions(opts) {

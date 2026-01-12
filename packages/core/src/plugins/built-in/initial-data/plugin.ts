@@ -42,56 +42,84 @@ export function initialDataPlugin(): EnlacePlugin<{
   readResult: InitialDataReadResult;
   writeResult: InitialDataWriteResult;
 }> {
+  const initialDataAppliedFor = new Map<string, string>();
+
   return {
     name: "enlace:initialData",
     operations: ["read", "infiniteRead"],
 
-    handlers: {
-      beforeFetch(context) {
-        const pluginOptions = context.pluginOptions as
-          | InitialDataReadOptions
-          | undefined;
+    middleware: async (context, next) => {
+      const pluginOptions = context.pluginOptions as
+        | InitialDataReadOptions
+        | undefined;
 
-        if (pluginOptions?.initialData === undefined) {
-          return context;
+      if (pluginOptions?.initialData === undefined) {
+        const response = await next();
+
+        if (!response.error) {
+          context.stateManager.setPluginResult(context.queryKey, {
+            isInitialData: false,
+          });
         }
 
-        const cached = context.stateManager.getCache(context.queryKey);
+        return response;
+      }
 
-        if (cached?.state?.data !== undefined) {
-          return context;
+      if (!context.hookId) {
+        return next();
+      }
+
+      const originalQueryKey = initialDataAppliedFor.get(context.hookId);
+
+      if (originalQueryKey && originalQueryKey !== context.queryKey) {
+        return next();
+      }
+
+      const cached = context.stateManager.getCache(context.queryKey);
+
+      if (cached?.state?.data !== undefined) {
+        return next();
+      }
+
+      if (!originalQueryKey) {
+        initialDataAppliedFor.set(context.hookId, context.queryKey);
+      }
+
+      context.stateManager.setCache(context.queryKey, {
+        state: {
+          loading: false,
+          fetching: false,
+          data: pluginOptions.initialData,
+          error: undefined,
+          timestamp: Date.now(),
+        },
+        tags: context.tags,
+      });
+
+      context.stateManager.setPluginResult(context.queryKey, {
+        isInitialData: true,
+      });
+
+      if (pluginOptions.refetchOnInitialData) {
+        const response = await next();
+
+        if (!response.error) {
+          context.stateManager.setPluginResult(context.queryKey, {
+            isInitialData: false,
+          });
         }
 
-        context.cachedData = pluginOptions.initialData;
+        return response;
+      }
 
-        context.stateManager.setCache(context.queryKey, {
-          state: {
-            loading: false,
-            fetching: false,
-            data: pluginOptions.initialData,
-            error: undefined,
-            timestamp: Date.now(),
-          },
-          tags: context.tags,
-        });
+      return { data: pluginOptions.initialData, status: 200 };
+    },
 
-        context.stateManager.setPluginResult(context.queryKey, {
-          isInitialData: true,
-        });
-
-        if (pluginOptions.refetchOnInitialData) {
-          context.forceRefetch = true;
+    lifecycle: {
+      onUnmount(context) {
+        if (context.hookId) {
+          initialDataAppliedFor.delete(context.hookId);
         }
-
-        return context;
-      },
-
-      onSuccess(context) {
-        context.stateManager.setPluginResult(context.queryKey, {
-          isInitialData: false,
-        });
-
-        return context;
       },
     },
   };

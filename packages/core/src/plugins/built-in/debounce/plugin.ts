@@ -70,121 +70,99 @@ export function debouncePlugin(): EnlacePlugin<{
     name: "enlace:debounce",
     operations: ["read", "infiniteRead"],
 
-    handlers: {
-      beforeFetch(context) {
-        const pluginOptions = context.pluginOptions as
-          | DebounceReadOptions
-          | undefined;
-        const debounceOption = pluginOptions?.debounce;
+    middleware: async (context, next) => {
+      const pluginOptions = context.pluginOptions as
+        | DebounceReadOptions
+        | undefined;
+      const debounceOption = pluginOptions?.debounce;
 
-        if (debounceOption === undefined) {
-          return context;
-        }
+      if (debounceOption === undefined || context.forceRefetch) {
+        return next();
+      }
 
-        if (context.forceRefetch) {
-          return context;
-        }
+      const { queryKey, requestOptions, path, method } = context;
+      const stableKey = `${path.join("/")}:${method}`;
 
-        const { queryKey, requestOptions, path, method } = context;
+      const opts = requestOptions as
+        | (RequestOptionsSnapshot & Record<string, unknown>)
+        | undefined;
 
-        const stableKey = `${path.join("/")}:${method}`;
+      const currentRequest: RequestOptionsSnapshot = {
+        query: opts?.query,
+        params: opts?.params,
+        body: opts?.body,
+        formData: opts?.formData,
+      };
 
-        const opts = requestOptions as
-          | (RequestOptionsSnapshot & Record<string, unknown>)
-          | undefined;
+      const prevRequest = prevRequests.get(stableKey);
 
-        const currentRequest: RequestOptionsSnapshot = {
-          query: opts?.query,
-          params: opts?.params,
-          body: opts?.body,
-          formData: opts?.formData,
-        };
+      const prevContext: PrevContext = {};
 
-        const prevRequest = prevRequests.get(stableKey);
+      if (prevRequest?.query !== undefined) {
+        prevContext.prevQuery = prevRequest.query;
+      }
 
-        const prevContext: PrevContext = {};
+      if (prevRequest?.params !== undefined) {
+        prevContext.prevParams = prevRequest.params;
+      }
 
-        if (prevRequest?.query !== undefined) {
-          prevContext.prevQuery = prevRequest.query;
-        }
+      if (prevRequest?.body !== undefined) {
+        prevContext.prevBody = prevRequest.body;
+      }
 
-        if (prevRequest?.params !== undefined) {
-          prevContext.prevParams = prevRequest.params;
-        }
+      if (prevRequest?.formData !== undefined) {
+        prevContext.prevFormData = prevRequest.formData;
+      }
 
-        if (prevRequest?.body !== undefined) {
-          prevContext.prevBody = prevRequest.body;
-        }
+      const debounceMs = resolveDebounceMs(debounceOption, prevContext);
 
-        if (prevRequest?.formData !== undefined) {
-          prevContext.prevFormData = prevRequest.formData;
-        }
+      prevRequests.set(stableKey, currentRequest);
 
-        const debounceMs = resolveDebounceMs(debounceOption, prevContext);
+      if (!debounceMs || debounceMs <= 0) {
+        return next();
+      }
 
-        prevRequests.set(stableKey, currentRequest);
+      const existingQueryKey = latestQueryKeys.get(stableKey);
 
-        if (!debounceMs || debounceMs <= 0) {
-          return context;
-        }
-
-        // Check if queryKey changed - if not, don't reset the timer
-        const existingQueryKey = latestQueryKeys.get(stableKey);
-
-        if (existingQueryKey === queryKey) {
-          if (context.cachedData !== undefined) {
-            return context;
-          }
-
-          context.earlyResponse = {
-            data: undefined,
-            status: 0,
-          };
-
-          return context;
-        }
-
-        // Clear existing timer for this endpoint
-        const existingTimer = timers.get(stableKey);
-
-        if (existingTimer) {
-          clearTimeout(existingTimer);
-        }
-
-        // Store latest queryKey for this endpoint
-        latestQueryKeys.set(stableKey, queryKey);
-
+      if (existingQueryKey === queryKey) {
         const cached = context.stateManager.getCache(queryKey);
 
         if (cached?.state?.data !== undefined) {
-          context.cachedData = cached.state.data;
+          return { data: cached.state.data, status: 200 };
         }
 
-        const timer = setTimeout(() => {
-          timers.delete(stableKey);
-          const latestKey = latestQueryKeys.get(stableKey);
+        return { data: undefined, status: 0 };
+      }
 
-          if (latestKey) {
-            context.eventEmitter.emit("refetch", {
-              queryKey: latestKey,
-              reason: "invalidate",
-            });
-          }
-        }, debounceMs);
+      const existingTimer = timers.get(stableKey);
 
-        timers.set(stableKey, timer);
+      if (existingTimer) {
+        clearTimeout(existingTimer);
+      }
 
-        if (context.cachedData !== undefined) {
-          return context;
+      latestQueryKeys.set(stableKey, queryKey);
+
+      const cached = context.stateManager.getCache(queryKey);
+
+      const timer = setTimeout(() => {
+        timers.delete(stableKey);
+        const latestKey = latestQueryKeys.get(stableKey);
+
+        if (latestKey) {
+          context.eventEmitter.emit("refetch", {
+            queryKey: latestKey,
+            reason: "invalidate",
+          });
         }
+      }, debounceMs);
 
-        context.earlyResponse = {
-          data: undefined,
-          status: 0,
-        };
+      timers.set(stableKey, timer);
 
-        return context;
-      },
+      if (cached?.state?.data !== undefined) {
+        return { data: cached.state.data, status: 200 };
+      }
+
+      return { data: undefined, status: 0 };
     },
   };
 }

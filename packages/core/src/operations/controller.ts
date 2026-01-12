@@ -43,6 +43,9 @@ export type CreateOperationOptions<TData, TError> = {
   fetchFn: (
     options: AnyRequestOptions
   ) => Promise<EnlaceResponse<TData, TError>>;
+
+  /** Unique identifier for the hook instance. Persists across queryKey changes. */
+  hookId?: string;
 };
 
 export function createOperationController<TData, TError>(
@@ -58,6 +61,7 @@ export function createOperationController<TData, TError>(
     eventEmitter,
     pluginExecutor,
     fetchFn,
+    hookId,
   } = options;
 
   const queryKey = stateManager.createQueryKey({
@@ -93,6 +97,7 @@ export function createOperationController<TData, TError>(
       queryKey,
       tags: resolvedTags,
       requestTimestamp,
+      hookId,
       requestOptions: { ...initialRequestOptions, ...requestOptions },
       state,
       metadata,
@@ -132,133 +137,80 @@ export function createOperationController<TData, TError>(
       }
       isFirstExecute = false;
 
-      let context = createContext(opts, currentRequestTimestamp);
+      const context = createContext(opts, currentRequestTimestamp);
 
       if (force) {
         context.forceRefetch = true;
       }
 
-      context = await pluginExecutor.execute(
-        "beforeFetch",
+      const coreFetch = async (): Promise<EnlaceResponse<TData, TError>> => {
+        const cached = stateManager.getCache<TData, TError>(queryKey);
+
+        abortController = new AbortController();
+        context.requestOptions.signal = abortController.signal;
+
+        updateState({
+          fetching: true,
+          loading:
+            operationType === "write" || cached?.state.data === undefined,
+        });
+
+        const fetchPromise = (async (): Promise<
+          EnlaceResponse<TData, TError>
+        > => {
+          try {
+            const response = await fetchFn(context.requestOptions);
+            context.response = response;
+
+            if (response.error) {
+              updateState({
+                fetching: false,
+                loading: false,
+                error: response.error,
+              });
+            } else {
+              updateState({
+                fetching: false,
+                loading: false,
+                data: response.data,
+                error: undefined,
+                timestamp: Date.now(),
+              });
+            }
+
+            return response;
+          } catch (err) {
+            const errorResponse: EnlaceResponse<TData, TError> = {
+              status: 0,
+              error: err as TError,
+              data: undefined,
+            };
+
+            context.response = errorResponse;
+
+            updateState({
+              fetching: false,
+              loading: false,
+              error: err as TError,
+            });
+
+            return errorResponse;
+          }
+        })();
+
+        stateManager.setCache(queryKey, { promise: fetchPromise, tags });
+        fetchPromise.finally(() => {
+          stateManager.setCache(queryKey, { promise: undefined });
+        });
+
+        return fetchPromise;
+      };
+
+      return pluginExecutor.executeMiddleware(
         operationType,
-        context
+        context,
+        coreFetch
       );
-
-      if (context.cachedData !== undefined && !context.forceRefetch) {
-        return { data: context.cachedData as TData, status: 200 };
-      }
-
-      if (context.earlyResponse) {
-        return context.earlyResponse;
-      }
-
-      const cached = stateManager.getCache<TData, TError>(queryKey);
-
-      // Request deduplication
-      const dedupePlugin = context.plugins.get("enlace:deduplication");
-
-      if (dedupePlugin) {
-        const config = dedupePlugin.getConfig();
-        const defaultMode =
-          operationType === "write" ? config.write : config.read;
-        const requestOverride = (
-          context.pluginOptions as { dedupe?: "in-flight" | false } | undefined
-        )?.dedupe;
-        const dedupeMode = requestOverride ?? defaultMode;
-
-        if (dedupeMode === "in-flight") {
-          const existingPromise = cached?.promise as
-            | Promise<EnlaceResponse<TData, TError>>
-            | undefined;
-
-          if (existingPromise) {
-            return existingPromise;
-          }
-        }
-      }
-
-      abortController = new AbortController();
-      context.requestOptions.signal = abortController.signal;
-
-      updateState({
-        fetching: true,
-        loading: operationType === "write" || cached?.state.data === undefined,
-      });
-
-      const fetchPromise = (async (): Promise<
-        EnlaceResponse<TData, TError>
-      > => {
-        try {
-          const response = await fetchFn(context.requestOptions);
-          context.response = response;
-
-          context = await pluginExecutor.execute(
-            "afterFetch",
-            operationType,
-            context
-          );
-
-          if (response.error) {
-            updateState({
-              fetching: false,
-              loading: false,
-              error: response.error,
-            });
-
-            context = await pluginExecutor.execute(
-              "onError",
-              operationType,
-              context
-            );
-          } else {
-            updateState({
-              fetching: false,
-              loading: false,
-              data: response.data,
-              error: undefined,
-              timestamp: Date.now(),
-            });
-
-            context = await pluginExecutor.execute(
-              "onSuccess",
-              operationType,
-              context
-            );
-          }
-
-          return response;
-        } catch (err) {
-          const errorResponse: EnlaceResponse<TData, TError> = {
-            status: 0,
-            error: err as TError,
-            data: undefined,
-          };
-
-          context.response = errorResponse;
-
-          updateState({
-            fetching: false,
-            loading: false,
-            error: err as TError,
-          });
-
-          context = await pluginExecutor.execute(
-            "onError",
-            operationType,
-            context
-          );
-
-          return errorResponse;
-        }
-      })();
-
-      // Store promise for deduplication, clear when complete
-      stateManager.setCache(queryKey, { promise: fetchPromise, tags });
-      fetchPromise.finally(() => {
-        stateManager.setCache(queryKey, { promise: undefined });
-      });
-
-      return fetchPromise;
     },
 
     getState() {
@@ -289,22 +241,21 @@ export function createOperationController<TData, TError>(
       currentRequestTimestamp = Date.now();
       isFirstExecute = true;
       const context = createContext({}, currentRequestTimestamp);
-      pluginExecutor.execute("onMount", operationType, context);
+      pluginExecutor.executeLifecycle("onMount", operationType, context);
     },
 
     unmount() {
       const context = createContext({}, currentRequestTimestamp);
-      pluginExecutor.execute("onUnmount", operationType, context);
-
-      // NOTE: We do not abort ongoing requests on unmount to allow background fetching
-      // And to prevent breaking shared in-flight requests
-      // Eg. Component A and B use the same operation, A unmounts while B is still mounted
-      // Aborting the request for A would break B's request as well
+      pluginExecutor.executeLifecycle("onUnmount", operationType, context);
     },
 
     updateOptions() {
       const context = createContext({}, currentRequestTimestamp);
-      pluginExecutor.execute("onOptionsUpdate", operationType, context);
+      pluginExecutor.executeLifecycle(
+        "onOptionsUpdate",
+        operationType,
+        context
+      );
     },
 
     setPluginOptions(options) {

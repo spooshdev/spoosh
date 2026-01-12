@@ -1,4 +1,10 @@
-import { useSyncExternalStore, useRef, useCallback, useState } from "react";
+import {
+  useSyncExternalStore,
+  useRef,
+  useCallback,
+  useState,
+  useId,
+} from "react";
 import {
   type EnlaceResponse,
   type PluginExecutor,
@@ -71,6 +77,8 @@ export function createUseWrite<
     type TOptions = ExtractMethodOptions<TMethod> &
       ResolveSchemaTypes<PluginOptions["write"], TSchema>;
 
+    const hookId = useId();
+
     const selectorResultRef = useRef<SelectorResult>({
       call: null,
       selector: null,
@@ -117,6 +125,7 @@ export function createUseWrite<
           stateManager,
           eventEmitter,
           pluginExecutor,
+          hookId,
           fetchFn: async (fetchOpts) => {
             const params = (
               fetchOpts as { params?: Record<string, string | number> }

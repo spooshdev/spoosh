@@ -1,4 +1,5 @@
 import type { EnlacePlugin } from "../../types";
+import type { EnlaceResponse } from "../../../types/response.types";
 import type {
   DeduplicationConfig,
   DeduplicationReadOptions,
@@ -60,7 +61,33 @@ export function deduplicationPlugin(
   return {
     name: "enlace:deduplication",
     operations: ["read", "infiniteRead", "write"],
-    handlers: {},
+
+    middleware: async (context, next) => {
+      const defaultMode =
+        context.operationType === "write"
+          ? resolvedConfig.write
+          : resolvedConfig.read;
+
+      const requestOverride = (
+        context.pluginOptions as { dedupe?: DedupeMode } | undefined
+      )?.dedupe;
+
+      const dedupeMode = requestOverride ?? defaultMode;
+
+      if (dedupeMode === "in-flight") {
+        const cached = context.stateManager.getCache(context.queryKey);
+        const existingPromise = cached?.promise;
+
+        if (existingPromise) {
+          return existingPromise as Promise<
+            EnlaceResponse<unknown, unknown>
+          > as ReturnType<typeof next>;
+        }
+      }
+
+      return next();
+    },
+
     exports: () => ({
       getConfig: () => resolvedConfig,
     }),

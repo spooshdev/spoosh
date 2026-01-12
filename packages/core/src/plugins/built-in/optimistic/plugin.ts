@@ -255,45 +255,50 @@ export function optimisticPlugin(): EnlacePlugin<{
     operations: ["write"],
     dependencies: ["enlace:invalidation"],
 
-    handlers: {
-      beforeFetch(context) {
-        const { stateManager } = context;
-        const configs = resolveOptimisticConfigs(context);
+    middleware: async (context, next) => {
+      const { stateManager } = context;
+      const configs = resolveOptimisticConfigs(context);
 
-        if (configs.length > 0) {
-          context.plugins
-            .get("enlace:invalidation")
-            ?.setAutoInvalidateDefault("none");
-        }
+      if (configs.length > 0) {
+        context.plugins
+          .get("enlace:invalidation")
+          ?.setAutoInvalidateDefault("none");
+      }
 
-        const immediateConfigs = configs.filter(
-          (c) => c.timing !== "onSuccess"
+      const immediateConfigs = configs.filter((c) => c.timing !== "onSuccess");
+      const allSnapshots: OptimisticSnapshot[] = [];
+
+      for (const config of immediateConfigs) {
+        const snapshots = applyOptimisticUpdate(stateManager, config);
+        allSnapshots.push(...snapshots);
+      }
+
+      if (allSnapshots.length > 0) {
+        context.metadata.set(OPTIMISTIC_SNAPSHOTS_KEY, allSnapshots);
+      }
+
+      const response = await next();
+
+      const snapshots =
+        (context.metadata.get(
+          OPTIMISTIC_SNAPSHOTS_KEY
+        ) as OptimisticSnapshot[]) ?? [];
+
+      if (response.error) {
+        const shouldRollback = configs.some(
+          (c) => c.rollbackOnError !== false && c.timing !== "onSuccess"
         );
 
-        if (immediateConfigs.length === 0) return context;
-
-        const allSnapshots: OptimisticSnapshot[] = [];
-
-        for (const config of immediateConfigs) {
-          const snapshots = applyOptimisticUpdate(stateManager, config);
-          allSnapshots.push(...snapshots);
+        if (shouldRollback && snapshots.length > 0) {
+          rollbackOptimistic(stateManager, snapshots);
         }
 
-        if (allSnapshots.length > 0) {
-          context.metadata.set(OPTIMISTIC_SNAPSHOTS_KEY, allSnapshots);
+        for (const config of configs) {
+          if (config.onError) {
+            config.onError(response.error);
+          }
         }
-
-        return context;
-      },
-
-      onSuccess(context) {
-        const { stateManager } = context;
-        const configs = resolveOptimisticConfigs(context);
-        const snapshots =
-          (context.metadata.get(
-            OPTIMISTIC_SNAPSHOTS_KEY
-          ) as OptimisticSnapshot[]) ?? [];
-
+      } else {
         if (snapshots.length > 0) {
           confirmOptimistic(stateManager, snapshots);
         }
@@ -321,39 +326,14 @@ export function optimisticPlugin(): EnlacePlugin<{
             stateManager.setCache(key, {
               state: {
                 ...entry.state,
-                data: config.updater(entry.state.data, context.response?.data),
+                data: config.updater(entry.state.data, response.data),
               },
             });
           }
         }
+      }
 
-        return context;
-      },
-
-      onError(context) {
-        const { stateManager } = context;
-        const configs = resolveOptimisticConfigs(context);
-        const snapshots =
-          (context.metadata.get(
-            OPTIMISTIC_SNAPSHOTS_KEY
-          ) as OptimisticSnapshot[]) ?? [];
-
-        const shouldRollback = configs.some(
-          (c) => c.rollbackOnError !== false && c.timing !== "onSuccess"
-        );
-
-        if (shouldRollback && snapshots.length > 0) {
-          rollbackOptimistic(stateManager, snapshots);
-        }
-
-        for (const config of configs) {
-          if (config.onError) {
-            config.onError(context.response?.error);
-          }
-        }
-
-        return context;
-      },
+      return response;
     },
   };
 }

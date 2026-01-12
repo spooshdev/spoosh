@@ -4,15 +4,24 @@ import type {
   PluginAccessor,
   PluginContext,
   PluginContextInput,
-  PluginPhase,
+  LifecyclePhase,
 } from "./types";
+import type { EnlaceResponse } from "../types/response.types";
 
 export type PluginExecutor = {
-  execute: <TData, TError>(
-    phase: PluginPhase,
+  /** Execute lifecycle hooks for a specific phase */
+  executeLifecycle: <TData, TError>(
+    phase: LifecyclePhase,
     operationType: OperationType,
     context: PluginContext<TData, TError>
-  ) => Promise<PluginContext<TData, TError>>;
+  ) => Promise<void>;
+
+  /** Execute middleware chain with a core fetch function, then run onResponse handlers */
+  executeMiddleware: <TData, TError>(
+    operationType: OperationType,
+    context: PluginContext<TData, TError>,
+    coreFetch: () => Promise<EnlaceResponse<TData, TError>>
+  ) => Promise<EnlaceResponse<TData, TError>>;
 
   getPlugins: () => readonly EnlacePlugin[];
 
@@ -84,31 +93,73 @@ export function createPluginExecutor(
     },
   });
 
-  return {
-    async execute<TData, TError>(
-      phase: PluginPhase,
-      operationType: OperationType,
-      context: PluginContext<TData, TError>
-    ): Promise<PluginContext<TData, TError>> {
-      let ctx = context;
-
-      for (const plugin of plugins) {
-        if (!plugin.operations.includes(operationType)) {
-          continue;
-        }
-
-        const handler = plugin.handlers[phase];
-
-        if (!handler) {
-          continue;
-        }
-
-        ctx = (await handler(
-          ctx as PluginContext<unknown, unknown>
-        )) as PluginContext<TData, TError>;
+  const executeLifecycleImpl = async <TData, TError>(
+    phase: LifecyclePhase,
+    operationType: OperationType,
+    context: PluginContext<TData, TError>
+  ): Promise<void> => {
+    for (const plugin of plugins) {
+      if (!plugin.operations.includes(operationType)) {
+        continue;
       }
 
-      return ctx;
+      const handler = plugin.lifecycle?.[phase];
+
+      if (!handler) {
+        continue;
+      }
+
+      await handler(context as PluginContext<unknown, unknown>);
+    }
+  };
+
+  return {
+    executeLifecycle: executeLifecycleImpl,
+
+    async executeMiddleware<TData, TError>(
+      operationType: OperationType,
+      context: PluginContext<TData, TError>,
+      coreFetch: () => Promise<EnlaceResponse<TData, TError>>
+    ): Promise<EnlaceResponse<TData, TError>> {
+      const applicablePlugins = plugins.filter((p) =>
+        p.operations.includes(operationType)
+      );
+
+      const middlewares = applicablePlugins
+        .filter((p) => p.middleware)
+        .map((p) => p.middleware!);
+
+      let response: EnlaceResponse<TData, TError>;
+
+      if (middlewares.length === 0) {
+        response = await coreFetch();
+      } else {
+        type NextFn = () => Promise<EnlaceResponse<TData, TError>>;
+
+        const chain: NextFn = middlewares.reduceRight<NextFn>(
+          (next, middleware) => {
+            return () =>
+              middleware(
+                context as PluginContext<unknown, unknown>,
+                next as () => Promise<EnlaceResponse<unknown, unknown>>
+              ) as Promise<EnlaceResponse<TData, TError>>;
+          },
+          coreFetch
+        );
+
+        response = await chain();
+      }
+
+      for (const plugin of applicablePlugins) {
+        if (plugin.onResponse) {
+          await plugin.onResponse(
+            context as PluginContext<unknown, unknown>,
+            response as EnlaceResponse<unknown, unknown>
+          );
+        }
+      }
+
+      return response;
     },
 
     getPlugins() {

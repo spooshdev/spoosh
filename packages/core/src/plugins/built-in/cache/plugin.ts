@@ -40,42 +40,40 @@ export function cachePlugin(config: CachePluginConfig = {}): EnlacePlugin<{
     name: "enlace:cache",
     operations: ["read", "infiniteRead"],
 
-    handlers: {
-      beforeFetch(context) {
-        if (context.forceRefetch) {
-          return context;
-        }
-
+    middleware: async (context, next) => {
+      if (!context.forceRefetch) {
         const cached = context.stateManager.getCache(context.queryKey);
 
-        if (!cached?.state.data) {
-          return context;
+        if (cached?.state.data && !cached.stale) {
+          const pluginOptions = context.pluginOptions as
+            | CacheReadOptions
+            | undefined;
+          const staleTime = pluginOptions?.staleTime ?? defaultStaleTime;
+          const isTimeStale = Date.now() - cached.state.timestamp > staleTime;
+
+          if (!isTimeStale) {
+            return { data: cached.state.data, status: 200 };
+          }
         }
+      }
 
-        if (cached.stale) {
-          return context;
-        }
+      const response = await next();
 
-        const pluginOptions = context.pluginOptions as
-          | CacheReadOptions
-          | undefined;
-        const staleTime = pluginOptions?.staleTime ?? defaultStaleTime;
-        const isTimeStale = Date.now() - cached.state.timestamp > staleTime;
-
-        if (!isTimeStale) {
-          context.cachedData = cached.state.data;
-        }
-
-        return context;
-      },
-
-      onSuccess(context) {
-        if (!context.response?.data) return context;
-
+      if (response.error) {
         context.stateManager.setCache(context.queryKey, {
           state: {
             ...context.state,
-            data: context.response.data,
+            error: response.error,
+            loading: false,
+            fetching: false,
+          },
+          tags: context.tags,
+        });
+      } else if (response.data !== undefined) {
+        context.stateManager.setCache(context.queryKey, {
+          state: {
+            ...context.state,
+            data: response.data,
             error: undefined,
             timestamp: Date.now(),
             loading: false,
@@ -84,23 +82,9 @@ export function cachePlugin(config: CachePluginConfig = {}): EnlacePlugin<{
           tags: context.tags,
           stale: false,
         });
+      }
 
-        return context;
-      },
-
-      onError(context) {
-        context.stateManager.setCache(context.queryKey, {
-          state: {
-            ...context.state,
-            error: context.response?.error,
-            loading: false,
-            fetching: false,
-          },
-          tags: context.tags,
-        });
-
-        return context;
-      },
+      return response;
     },
   };
 }

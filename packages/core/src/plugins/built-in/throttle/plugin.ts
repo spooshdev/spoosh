@@ -42,40 +42,34 @@ export function throttlePlugin(): EnlacePlugin<{
     name: "enlace:throttle",
     operations: ["read", "infiniteRead"],
 
-    handlers: {
-      beforeFetch(context) {
-        const pluginOptions = context.pluginOptions as
-          | ThrottleReadOptions
-          | undefined;
-        const throttleMs = pluginOptions?.throttle;
+    middleware: async (context, next) => {
+      const pluginOptions = context.pluginOptions as
+        | ThrottleReadOptions
+        | undefined;
+      const throttleMs = pluginOptions?.throttle;
 
-        if (!throttleMs || throttleMs <= 0) {
-          return context;
+      if (!throttleMs || throttleMs <= 0) {
+        return next();
+      }
+
+      const { queryKey } = context;
+      const now = Date.now();
+      const lastTime = lastFetchTime.get(queryKey) ?? 0;
+      const elapsed = now - lastTime;
+
+      if (elapsed < throttleMs) {
+        const cached = context.stateManager.getCache(queryKey);
+
+        if (cached?.state?.data !== undefined) {
+          return { data: cached.state.data, status: 200 };
         }
 
-        const { queryKey } = context;
-        const now = Date.now();
-        const lastTime = lastFetchTime.get(queryKey) ?? 0;
-        const elapsed = now - lastTime;
+        return { data: undefined, status: 0 };
+      }
 
-        if (elapsed < throttleMs) {
-          context.forceRefetch = false;
+      lastFetchTime.set(queryKey, now);
 
-          const cached = context.stateManager.getCache(queryKey);
-
-          if (cached?.state?.data !== undefined) {
-            context.cachedData = cached.state.data;
-          } else {
-            context.earlyResponse = { data: undefined, status: 0 };
-          }
-
-          return context;
-        }
-
-        lastFetchTime.set(queryKey, now);
-
-        return context;
-      },
+      return next();
     },
   };
 }

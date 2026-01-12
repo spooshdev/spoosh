@@ -86,20 +86,13 @@ export function pollingPlugin(): EnlacePlugin<{
     name: "enlace:polling",
     operations: ["read", "infiniteRead"],
 
-    handlers: {
-      onSuccess(context) {
-        scheduleNextPoll(context);
-        return context;
-      },
+    onResponse(context) {
+      scheduleNextPoll(context);
+    },
 
-      onError(context) {
-        scheduleNextPoll(context);
-        return context;
-      },
-
+    lifecycle: {
       onUnmount(context) {
         clearPolling(context.queryKey);
-        return context;
       },
 
       onOptionsUpdate(context) {
@@ -112,7 +105,7 @@ export function pollingPlugin(): EnlacePlugin<{
 
         if (!pollingInterval) {
           clearPolling(queryKey);
-          return context;
+          return;
         }
 
         const currentTimeout = timeouts.get(queryKey);
@@ -120,8 +113,6 @@ export function pollingPlugin(): EnlacePlugin<{
         if (!currentTimeout) {
           scheduleNextPoll(context);
         }
-
-        return context;
       },
     },
   };

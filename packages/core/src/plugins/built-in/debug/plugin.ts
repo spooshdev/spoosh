@@ -1,4 +1,4 @@
-import type { EnlacePlugin, PluginContext, PluginPhase } from "../../types";
+import type { EnlacePlugin, PluginContext, LifecyclePhase } from "../../types";
 import type {
   DebugPluginConfig,
   DebugReadOptions,
@@ -8,6 +8,8 @@ import type {
   DebugWriteResult,
   DebugLogEntry,
 } from "./types";
+
+type DebugPhase = LifecyclePhase | "beforeFetch" | "afterFetch";
 
 /**
  * Development plugin for debugging and inspecting plugin context.
@@ -48,7 +50,7 @@ export function debugPlugin(config: DebugPluginConfig = {}): EnlacePlugin<{
 
   let lastRequestTimestamp: number | null = null;
 
-  const logPhase = (phase: PluginPhase, context: PluginContext) => {
+  const logPhase = (phase: DebugPhase, context: PluginContext) => {
     if (!enabled) return;
 
     const cacheEntries = logCache
@@ -123,40 +125,27 @@ export function debugPlugin(config: DebugPluginConfig = {}): EnlacePlugin<{
     name: "enlace:debug",
     operations: ["read", "write", "infiniteRead"],
 
-    handlers: {
-      beforeFetch(context) {
-        logPhase("beforeFetch", context);
-        return context;
-      },
+    middleware: async (context, next) => {
+      logPhase("beforeFetch", context);
+      return next();
+    },
 
-      afterFetch(context) {
-        logPhase("afterFetch", context);
-        return context;
-      },
+    onResponse(context, response) {
+      context.response = response;
+      logPhase("afterFetch", context);
+    },
 
-      onSuccess(context) {
-        logPhase("onSuccess", context);
-        return context;
-      },
-
-      onError(context) {
-        logPhase("onError", context);
-        return context;
-      },
-
+    lifecycle: {
       onMount(context) {
         logPhase("onMount", context);
-        return context;
       },
 
       onUnmount(context) {
         logPhase("onUnmount", context);
-        return context;
       },
 
       onOptionsUpdate(context) {
         logPhase("onOptionsUpdate", context);
-        return context;
       },
     },
   };

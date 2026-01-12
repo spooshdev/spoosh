@@ -12,7 +12,7 @@ import type {
 type CleanupFn = () => void;
 
 /**
- * Enables automatic refetching on window focus, network reconnect, and tag invalidation.
+ * Enables automatic refetching on window focus and network reconnect.
  *
  * @param config - Plugin configuration
  * @returns Refetch plugin instance
@@ -38,7 +38,6 @@ export function refetchPlugin(config: RefetchPluginConfig = {}): EnlacePlugin<{
 }> {
   const { refetchOnFocus = false, refetchOnReconnect = false } = config;
 
-  const invalidateUnsubscribers = new Map<string, CleanupFn>();
   const focusUnsubscribers = new Map<string, CleanupFn>();
   const reconnectUnsubscribers = new Map<string, CleanupFn>();
 
@@ -82,12 +81,6 @@ export function refetchPlugin(config: RefetchPluginConfig = {}): EnlacePlugin<{
   };
 
   const cleanupQuery = (queryKey: string) => {
-    const invalidateUnsub = invalidateUnsubscribers.get(queryKey);
-    if (invalidateUnsub) {
-      invalidateUnsub();
-      invalidateUnsubscribers.delete(queryKey);
-    }
-
     const focusUnsub = focusUnsubscribers.get(queryKey);
     if (focusUnsub) {
       focusUnsub();
@@ -105,9 +98,9 @@ export function refetchPlugin(config: RefetchPluginConfig = {}): EnlacePlugin<{
     name: "enlace:refetch",
     operations: ["read", "infiniteRead"],
 
-    handlers: {
+    lifecycle: {
       onMount(context) {
-        const { queryKey, tags, eventEmitter } = context;
+        const { queryKey, eventEmitter } = context;
 
         const pluginOptions = context.pluginOptions as
           | RefetchReadOptions
@@ -118,26 +111,6 @@ export function refetchPlugin(config: RefetchPluginConfig = {}): EnlacePlugin<{
         const shouldRefetchOnReconnect =
           pluginOptions?.refetchOnReconnect ?? refetchOnReconnect;
 
-        if (tags.length > 0) {
-          const unsubscribe = eventEmitter.on(
-            "invalidate",
-            (invalidatedTags) => {
-              const hasMatch = invalidatedTags.some((tag) =>
-                tags.includes(tag)
-              );
-
-              if (hasMatch) {
-                eventEmitter.emit("refetch", {
-                  queryKey,
-                  reason: "invalidate",
-                });
-              }
-            }
-          );
-
-          invalidateUnsubscribers.set(queryKey, unsubscribe);
-        }
-
         if (shouldRefetchOnFocus) {
           setupFocusListener(queryKey, eventEmitter);
         }
@@ -145,13 +118,10 @@ export function refetchPlugin(config: RefetchPluginConfig = {}): EnlacePlugin<{
         if (shouldRefetchOnReconnect) {
           setupReconnectListener(queryKey, eventEmitter);
         }
-
-        return context;
       },
 
       onUnmount(context) {
         cleanupQuery(context.queryKey);
-        return context;
       },
     },
   };

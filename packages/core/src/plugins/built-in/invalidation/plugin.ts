@@ -116,7 +116,6 @@ export function invalidationPlugin(
   return {
     name: "enlace:invalidation",
     operations: ["write"],
-    dependencies: ["enlace:refetch"],
 
     exports(context): InvalidationPluginExports {
       return {
@@ -126,17 +125,15 @@ export function invalidationPlugin(
       };
     },
 
-    handlers: {
-      onSuccess(context) {
+    onResponse(context, response) {
+      if (!response.error) {
         const tags = resolveInvalidateTags(context, defaultAutoInvalidate);
 
         if (tags.length > 0) {
           context.stateManager.markStale(tags);
           context.eventEmitter.emit("invalidate", tags);
         }
-
-        return context;
-      },
+      }
     },
   };
 }

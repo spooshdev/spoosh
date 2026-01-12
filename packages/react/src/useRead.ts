@@ -1,4 +1,10 @@
-import { useSyncExternalStore, useRef, useEffect, useCallback } from "react";
+import {
+  useSyncExternalStore,
+  useRef,
+  useEffect,
+  useCallback,
+  useId,
+} from "react";
 import {
   type EnlaceResponse,
   type PluginExecutor,
@@ -76,6 +82,8 @@ export function createUseRead<
       ...pluginOpts
     } = readOptions ?? {};
 
+    const hookId = useId();
+
     const selectorResultRef = useRef<SelectorResult>({
       call: null,
       selector: null,
@@ -130,6 +138,7 @@ export function createUseRead<
         stateManager,
         eventEmitter,
         pluginExecutor,
+        hookId,
         fetchFn: async (fetchOpts) => {
           let current: unknown = api;
 
@@ -169,15 +178,29 @@ export function createUseRead<
       controller.mount();
       controller.execute();
 
-      const unsubscribe = eventEmitter.on("refetch", (event) => {
+      const unsubRefetch = eventEmitter.on("refetch", (event) => {
         if (event.queryKey === queryKey) {
           controller.execute(undefined, { force: true });
         }
       });
 
+      const unsubInvalidate = eventEmitter.on(
+        "invalidate",
+        (invalidatedTags) => {
+          const hasMatch = invalidatedTags.some((tag) =>
+            resolvedTags.includes(tag)
+          );
+
+          if (hasMatch) {
+            controller.execute(undefined, { force: true });
+          }
+        }
+      );
+
       return () => {
         controller.unmount();
-        unsubscribe();
+        unsubRefetch();
+        unsubInvalidate();
       };
     }, [queryKey, enabled]);
 

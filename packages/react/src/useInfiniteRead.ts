@@ -1,4 +1,4 @@
-import { useRef, useEffect, useSyncExternalStore } from "react";
+import { useRef, useEffect, useSyncExternalStore, useId } from "react";
 import {
   type EnlaceResponse,
   type PluginExecutor,
@@ -62,6 +62,8 @@ export function createUseInfiniteRead<
       prevPageRequest,
       ...pluginOpts
     } = readOptions;
+
+    const hookId = useId();
 
     const selectorResultRef = useRef<SelectorResult>({
       call: null,
@@ -158,6 +160,7 @@ export function createUseInfiniteRead<
           stateManager,
           eventEmitter,
           pluginExecutor,
+          hookId,
           fetchFn: async (opts, signal) => {
             const fetchPath = resolvePath(capturedCall.path, opts.params);
 
@@ -202,8 +205,22 @@ export function createUseInfiniteRead<
       controller.mount();
       mountedRef.current = true;
 
+      const unsubInvalidate = eventEmitter.on(
+        "invalidate",
+        (invalidatedTags) => {
+          const hasMatch = invalidatedTags.some((tag) =>
+            resolvedTags.includes(tag)
+          );
+
+          if (hasMatch) {
+            controller.refetch();
+          }
+        }
+      );
+
       return () => {
         controller.unmount();
+        unsubInvalidate();
         mountedRef.current = false;
       };
     }, []);

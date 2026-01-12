@@ -6,14 +6,7 @@ import type { StateManager } from "../state/manager";
 
 export type OperationType = "read" | "write" | "infiniteRead";
 
-export type PluginPhase =
-  | "beforeFetch"
-  | "afterFetch"
-  | "onSuccess"
-  | "onError"
-  | "onMount"
-  | "onUnmount"
-  | "onOptionsUpdate";
+export type LifecyclePhase = "onMount" | "onUnmount" | "onOptionsUpdate";
 
 export type OperationState<TData = unknown, TError = unknown> = {
   loading: boolean;
@@ -50,6 +43,9 @@ export type PluginContext<TData = unknown, TError = unknown> = {
   /** Timestamp when this request was initiated. Useful for tracing and debugging. */
   readonly requestTimestamp: number;
 
+  /** Unique identifier for the hook instance. Persists across queryKey changes within the same hook. */
+  readonly hookId?: string;
+
   requestOptions: AnyRequestOptions;
   state: OperationState<TData, TError>;
   response?: EnlaceResponse<TData, TError>;
@@ -65,14 +61,8 @@ export type PluginContext<TData = unknown, TError = unknown> = {
   /** Plugin-specific options passed from hooks (useRead/useWrite/useInfiniteRead) */
   pluginOptions?: unknown;
 
-  /** Data to return without fetching. Set by cache plugin when cache is fresh. */
-  cachedData?: TData;
-
-  /** Force a network request even if cached data exists. */
+  /** Force a network request even if cached data exists. Used by plugins to communicate intent. */
   forceRefetch?: boolean;
-
-  /** Full response to return without fetching. Used by deduplication plugin for error propagation. */
-  earlyResponse?: EnlaceResponse<TData, TError>;
 };
 
 /** Input type for creating PluginContext (without plugins, which is injected) */
@@ -81,12 +71,55 @@ export type PluginContextInput<TData = unknown, TError = unknown> = Omit<
   "plugins"
 >;
 
+/**
+ * Middleware function that wraps the fetch flow.
+ * Plugins use this for full control over request/response handling.
+ *
+ * @param context - The plugin context with request info and utilities
+ * @param next - Call this to continue to the next middleware or actual fetch
+ * @returns The response (either from next() or early return)
+ *
+ * @example
+ * ```ts
+ * // Cache middleware - return cached data or continue
+ * middleware: async (context, next) => {
+ *   const cached = context.stateManager.getCache(context.queryKey);
+ *   if (cached?.state?.data && !isStale(cached)) {
+ *     return { data: cached.state.data, status: 200 };
+ *   }
+ *   return next();
+ * }
+ *
+ * // Retry middleware - wrap and retry on error
+ * middleware: async (context, next) => {
+ *   for (let i = 0; i < 3; i++) {
+ *     const result = await next();
+ *     if (!result.error) return result;
+ *   }
+ *   return next();
+ * }
+ * ```
+ */
+export type PluginMiddleware<TData = unknown, TError = unknown> = (
+  context: PluginContext<TData, TError>,
+  next: () => Promise<EnlaceResponse<TData, TError>>
+) => Promise<EnlaceResponse<TData, TError>>;
+
 export type PluginHandler<TData = unknown, TError = unknown> = (
   context: PluginContext<TData, TError>
-) => PluginContext<TData, TError> | Promise<PluginContext<TData, TError>>;
+) => void | Promise<void>;
 
-export type PluginHandlers<TData = unknown, TError = unknown> = Partial<
-  Record<PluginPhase, PluginHandler<TData, TError>>
+/**
+ * Handler called after every response, regardless of early returns from middleware.
+ * Use this for post-response logic like scheduling polls or emitting events.
+ */
+export type PluginResponseHandler<TData = unknown, TError = unknown> = (
+  context: PluginContext<TData, TError>,
+  response: EnlaceResponse<TData, TError>
+) => void | Promise<void>;
+
+export type PluginLifecycle<TData = unknown, TError = unknown> = Partial<
+  Record<LifecyclePhase, PluginHandler<TData, TError>>
 >;
 
 /**
@@ -117,19 +150,35 @@ export type PluginTypeConfig = {
 /**
  * Base interface for Enlace plugins.
  *
+ * Plugins can implement:
+ * - `middleware`: Wraps the fetch flow for full control (intercept, retry, transform)
+ * - `onResponse`: Called after every response, regardless of early returns
+ * - `lifecycle`: Component lifecycle hooks (onMount, onUnmount, onOptionsUpdate)
+ * - `exports`: Functions/variables accessible to other plugins
+ *
  * @typeParam T - Plugin type configuration object. Specify only the types your plugin needs.
  *
  * @example
  * ```ts
- * // Plugin with read options and result
  * function myPlugin(): EnlacePlugin<{
- *   readOptions: { myOption: boolean };
- *   readResult: { myResult: string };
+ *   readOptions: { cacheTime: number };
+ *   readResult: { isFromCache: boolean };
  * }> {
  *   return {
  *     name: "my-plugin",
  *     operations: ["read"],
- *     handlers: { ... },
+ *     middleware: async (context, next) => {
+ *       // Full control over fetch flow
+ *       const result = await next();
+ *       return result;
+ *     },
+ *     onResponse(context, response) {
+ *       // Always runs after response
+ *     },
+ *     lifecycle: {
+ *       onMount(context) { },
+ *       onUnmount(context) { },
+ *     },
  *   };
  * }
  * ```
@@ -137,7 +186,15 @@ export type PluginTypeConfig = {
 export interface EnlacePlugin<T extends PluginTypeConfig = PluginTypeConfig> {
   name: string;
   operations: OperationType[];
-  handlers: PluginHandlers;
+
+  /** Middleware for controlling the fetch flow. Called in plugin order, composing a chain. */
+  middleware?: PluginMiddleware;
+
+  /** Called after every response, regardless of early returns from middleware. */
+  onResponse?: PluginResponseHandler;
+
+  /** Component lifecycle hooks (setup, cleanup, option changes) */
+  lifecycle?: PluginLifecycle;
 
   /** Expose functions/variables for other plugins to access via `context.plugins.get(name)` */
   exports?: (context: PluginContext) => object;

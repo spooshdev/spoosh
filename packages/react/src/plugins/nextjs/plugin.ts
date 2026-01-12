@@ -21,31 +21,31 @@ export function nextjsPlugin(config: NextjsPluginConfig = {}): EnlacePlugin<{
     name: "enlace:nextjs",
     operations: ["write"],
 
-    handlers: {
-      async onSuccess(context) {
-        if (!serverRevalidator) {
-          return context;
-        }
+    middleware: async (context, next) => {
+      const response = await next();
 
-        const pluginOptions = context.pluginOptions as
-          | NextjsWriteOptions
-          | undefined;
+      if (response.error || !serverRevalidator) {
+        return response;
+      }
 
-        const shouldRevalidate =
-          pluginOptions?.serverRevalidate ?? !skipServerRevalidation;
+      const pluginOptions = context.pluginOptions as
+        | NextjsWriteOptions
+        | undefined;
 
-        if (!shouldRevalidate) {
-          return context;
-        }
+      const shouldRevalidate =
+        pluginOptions?.serverRevalidate ?? !skipServerRevalidation;
 
-        const revalidatePaths = pluginOptions?.revalidatePaths ?? [];
+      if (!shouldRevalidate) {
+        return response;
+      }
 
-        if (context.tags.length > 0 || revalidatePaths.length > 0) {
-          await serverRevalidator(context.tags, revalidatePaths);
-        }
+      const revalidatePaths = pluginOptions?.revalidatePaths ?? [];
 
-        return context;
-      },
+      if (context.tags.length > 0 || revalidatePaths.length > 0) {
+        await serverRevalidator(context.tags, revalidatePaths);
+      }
+
+      return response;
     },
   };
 }
