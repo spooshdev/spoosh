@@ -38,32 +38,66 @@ export type PluginHooksConfig<
   plugins: TPlugins;
 };
 
+/**
+ * Base options for `useRead` hook.
+ */
 export type BaseReadOptions = TagOptions & {
-  /**
-   * Determines whether the read operation is enabled.
-   * When set to `false`, the read operation will not be executed on component mount.
-   * Defaults to `true`.
-   * */
+  /** Whether to fetch automatically on mount. Default: true */
   enabled?: boolean;
 };
 
 export type { ResolveSchemaTypes, ResolveTypes, ResolverContext };
 
+/**
+ * Result returned by `useRead` hook.
+ *
+ * @template TData - The response data type
+ * @template TError - The error type
+ */
 export type BaseReadResult<TData, TError> = {
+  /** True during the initial load (no data yet) */
   loading: boolean;
+
+  /** True during any fetch operation */
   fetching: boolean;
+
+  /** Response data from the API */
   data: TData | undefined;
+
+  /** Error from the last failed request */
   error: TError | undefined;
+
+  /** Abort the current fetch operation */
   abort: () => void;
+
+  /** Manually trigger a refetch */
   refetch: () => Promise<SpooshResponse<TData, TError>>;
 };
 
+/**
+ * Result returned by `useWrite` hook.
+ *
+ * @template TData - The response data type
+ * @template TError - The error type
+ * @template TOptions - The trigger options type
+ */
 export type BaseWriteResult<TData, TError, TOptions> = {
+  /** Execute the mutation with optional options */
   trigger: (options?: TOptions) => Promise<SpooshResponse<TData, TError>>;
+
+  /** True while the mutation is in progress */
   loading: boolean;
+
+  /** Response data from the API */
   data: TData | undefined;
+
+  /** Error from the last failed request */
   error: TError | undefined;
+
+  /** Reset the state to initial values */
   reset: () => void;
+
+  /** Abort the current mutation */
   abort: () => void;
 };
 
@@ -221,48 +255,114 @@ export type AnyInfiniteRequestOptions = {
   body?: unknown;
 };
 
+/**
+ * Context passed to `canFetchNext` and `nextPageRequest` callbacks.
+ */
 export type InfiniteNextContext<TData, TRequest> = {
+  /** The latest fetched response data */
   response: TData | undefined;
+
+  /** All responses fetched so far */
   allResponses: TData[];
+
+  /** The current request options (query, params, body) */
   request: TRequest;
 };
 
+/**
+ * Context passed to `canFetchPrev` and `prevPageRequest` callbacks.
+ */
 export type InfinitePrevContext<TData, TRequest> = {
+  /** The latest fetched response data */
   response: TData | undefined;
+
+  /** All responses fetched so far */
   allResponses: TData[];
+
+  /** The current request options (query, params, body) */
   request: TRequest;
 };
 
+/**
+ * Options for `useInfiniteRead` hook.
+ *
+ * @template TData - The response data type for each page
+ * @template TItem - The item type after merging all responses
+ * @template TRequest - The request options type (query, params, body)
+ */
 export type BaseInfiniteReadOptions<
   TData,
   TItem,
   TRequest = AnyInfiniteRequestOptions,
 > = TagOptions & {
+  /** Whether to fetch automatically on mount. Default: true */
   enabled?: boolean;
+
+  /** Callback to determine if there's a next page to fetch */
   canFetchNext: (ctx: InfiniteNextContext<TData, TRequest>) => boolean;
+
+  /** Callback to build the request options for the next page */
   nextPageRequest: (
     ctx: InfiniteNextContext<TData, TRequest>
   ) => Partial<TRequest>;
+
+  /** Callback to merge all responses into a single array of items */
   merger: (allResponses: TData[]) => TItem[];
+
+  /** Callback to determine if there's a previous page to fetch */
   canFetchPrev?: (ctx: InfinitePrevContext<TData, TRequest>) => boolean;
+
+  /** Callback to build the request options for the previous page */
   prevPageRequest?: (
     ctx: InfinitePrevContext<TData, TRequest>
   ) => Partial<TRequest>;
 };
 
+/**
+ * Result returned by `useInfiniteRead` hook.
+ *
+ * @template TData - The response data type for each page
+ * @template TError - The error type
+ * @template TItem - The item type after merging all responses
+ */
 export type BaseInfiniteReadResult<TData, TError, TItem> = {
+  /** Merged items from all fetched responses */
   data: TItem[] | undefined;
+
+  /** Array of all raw response data */
   allResponses: TData[] | undefined;
+
+  /** True during the initial load (no data yet) */
   loading: boolean;
+
+  /** True during any fetch operation */
   fetching: boolean;
+
+  /** True while fetching the next page */
   fetchingNext: boolean;
+
+  /** True while fetching the previous page */
   fetchingPrev: boolean;
+
+  /** Whether there's a next page available to fetch */
   canFetchNext: boolean;
+
+  /** Whether there's a previous page available to fetch */
   canFetchPrev: boolean;
+
+  /** Fetch the next page */
   fetchNext: () => Promise<void>;
+
+  /** Fetch the previous page */
   fetchPrev: () => Promise<void>;
+
+  /** Refetch all pages from the beginning */
   refetch: () => Promise<void>;
+
+  /** Abort the current fetch operation */
   abort: () => void;
+
+  /** Error from the last failed request */
   error: TError | undefined;
 };
 

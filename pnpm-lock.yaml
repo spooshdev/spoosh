@@ -75,6 +75,45 @@ importers:
       '@spoosh/hono':
         specifier: workspace:*
         version: link:../hono
+      '@spoosh/plugin-cache':
+        specifier: workspace:*
+        version: link:../plugin-cache
+      '@spoosh/plugin-debounce':
+        specifier: workspace:*
+        version: link:../plugin-debounce
+      '@spoosh/plugin-debug':
+        specifier: workspace:*
+        version: link:../plugin-debug
+      '@spoosh/plugin-deduplication':
+        specifier: workspace:*
+        version: link:../plugin-deduplication
+      '@spoosh/plugin-initial-data':
+        specifier: workspace:*
+        version: link:../plugin-initial-data
+      '@spoosh/plugin-invalidation':
+        specifier: workspace:*
+        version: link:../plugin-invalidation
+      '@spoosh/plugin-nextjs':
+        specifier: workspace:*
+        version: link:../plugin-nextjs
+      '@spoosh/plugin-optimistic':
+        specifier: workspace:*
+        version: link:../plugin-optimistic
+      '@spoosh/plugin-polling':
+        specifier: workspace:*
+        version: link:../plugin-polling
+      '@spoosh/plugin-prefetch':
+        specifier: workspace:*
+        version: link:../plugin-prefetch
+      '@spoosh/plugin-refetch':
+        specifier: workspace:*
+        version: link:../plugin-refetch
+      '@spoosh/plugin-retry':
+        specifier: workspace:*
+        version: link:../plugin-retry
+      '@spoosh/plugin-throttle':
+        specifier: workspace:*
+        version: link:../plugin-throttle
       '@spoosh/react':
         specifier: workspace:*
         version: link:../react
@@ -118,6 +157,91 @@ importers:
       typescript:
         specifier: ^5
         version: 5.9.2
+
+  packages/plugin-cache:
+    devDependencies:
+      '@spoosh/core':
+        specifier: workspace:*
+        version: link:../core
+
+  packages/plugin-debounce:
+    devDependencies:
+      '@spoosh/core':
+        specifier: workspace:*
+        version: link:../core
+
+  packages/plugin-debug:
+    devDependencies:
+      '@spoosh/core':
+        specifier: workspace:*
+        version: link:../core
+
+  packages/plugin-deduplication:
+    devDependencies:
+      '@spoosh/core':
+        specifier: workspace:*
+        version: link:../core
+
+  packages/plugin-initial-data:
+    devDependencies:
+      '@spoosh/core':
+        specifier: workspace:*
+        version: link:../core
+
+  packages/plugin-invalidation:
+    devDependencies:
+      '@spoosh/core':
+        specifier: workspace:*
+        version: link:../core
+
+  packages/plugin-nextjs:
+    dependencies:
+      next:
+        specifier: '>=13.0.0'
+        version: 16.0.7(@babel/core@7.28.5)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+    devDependencies:
+      '@spoosh/core':
+        specifier: workspace:*
+        version: link:../core
+
+  packages/plugin-optimistic:
+    devDependencies:
+      '@spoosh/core':
+        specifier: workspace:*
+        version: link:../core
+      '@spoosh/plugin-invalidation':
+        specifier: workspace:*
+        version: link:../plugin-invalidation
+
+  packages/plugin-polling:
+    devDependencies:
+      '@spoosh/core':
+        specifier: workspace:*
+        version: link:../core
+
+  packages/plugin-prefetch:
+    devDependencies:
+      '@spoosh/core':
+        specifier: workspace:*
+        version: link:../core
+
+  packages/plugin-refetch:
+    devDependencies:
+      '@spoosh/core':
+        specifier: workspace:*
+        version: link:../core
+
+  packages/plugin-retry:
+    devDependencies:
+      '@spoosh/core':
+        specifier: workspace:*
+        version: link:../core
+
+  packages/plugin-throttle:
+    devDependencies:
+      '@spoosh/core':
+        specifier: workspace:*
+        version: link:../core
 
   packages/react:
     dependencies:

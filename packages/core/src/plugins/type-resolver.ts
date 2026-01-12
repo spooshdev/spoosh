@@ -1,8 +1,3 @@
-import type { OptimisticCallbackFn } from "./built-in/optimistic/types";
-import type { InvalidateOption } from "./built-in/invalidation/types";
-import type { PollingInterval } from "./built-in/polling/types";
-import type { DebounceValue } from "./built-in/debounce/types";
-import type { PrefetchFn } from "./built-in/prefetch/types";
 import type {
   ResolverContext,
   PluginResolvers,
@@ -12,41 +7,25 @@ import type {
 } from "./types";
 
 /**
- * Built-in resolvers for core plugins.
- * These are merged with any 3rd party extensions via PluginResolvers.
- */
-type BuiltInResolvers<TContext extends ResolverContext> = {
-  optimistic: OptimisticCallbackFn<TContext["schema"]> | undefined;
-  invalidate: InvalidateOption<TContext["schema"]> | undefined;
-  pollingInterval:
-    | PollingInterval<TContext["data"], TContext["error"]>
-    | undefined;
-  initialData: TContext["data"] | undefined;
-  debounce:
-    | DebounceValue<
-        TContext["input"]["query"],
-        TContext["input"]["body"],
-        TContext["input"]["params"],
-        TContext["input"]["formData"]
-      >
-    | undefined;
-};
-
-/**
- * Combined resolvers: built-in + 3rd party extensions.
- */
-type AllResolvers<TContext extends ResolverContext> =
-  BuiltInResolvers<TContext> & PluginResolvers<TContext>;
-
-/**
  * Resolves plugin option types based on the full context.
  *
  * This is the single entry point for all type resolution. It receives
  * the full ResolverContext containing schema, data, error, and input types,
  * and resolves each option key accordingly.
  *
+ * Plugins extend PluginResolvers via declaration merging to add their own
+ * resolved option types.
+ *
  * @example
  * ```ts
+ * // In your plugin's types.ts:
+ * declare module "@spoosh/core" {
+ *   interface PluginResolvers<TContext> {
+ *     myOption: MyResolvedType<TContext["data"]> | undefined;
+ *   }
+ * }
+ *
+ * // Type resolution:
  * type ResolvedOptions = ResolveTypes<
  *   MergePluginOptions<TPlugins>["read"],
  *   {
@@ -59,8 +38,8 @@ type AllResolvers<TContext extends ResolverContext> =
  * ```
  */
 export type ResolveTypes<TOptions, TContext extends ResolverContext> = {
-  [K in keyof TOptions]: K extends keyof AllResolvers<TContext>
-    ? AllResolvers<TContext>[K]
+  [K in keyof TOptions]: K extends keyof PluginResolvers<TContext>
+    ? PluginResolvers<TContext>[K]
     : TOptions[K] extends
           | DataAwareCallback<infer R, unknown, unknown>
           | undefined
@@ -80,31 +59,25 @@ export type ResolveSchemaTypes<TOptions, TSchema> = ResolveTypes<
 >;
 
 /**
- * Built-in instance API resolvers for core plugins.
- * These are merged with 3rd party extensions via InstanceApiResolvers.
- */
-type BuiltInInstanceApiResolvers<TSchema, TReadOptions = object> = {
-  prefetch: PrefetchFn<TSchema, TReadOptions>;
-};
-
-/**
- * Combined instance API resolvers: built-in + 3rd party extensions.
- */
-type AllInstanceApiResolvers<
-  TSchema,
-  TReadOptions = object,
-> = BuiltInInstanceApiResolvers<TSchema, TReadOptions> &
-  InstanceApiResolvers<TSchema>;
-
-/**
  * Resolves instance API types with schema awareness.
  * Maps each key in TInstanceApi to its resolved type from resolvers.
+ *
+ * Plugins extend InstanceApiResolvers via declaration merging to add their own
+ * resolved instance API types.
+ *
+ * @example
+ * ```ts
+ * // In your plugin's types.ts:
+ * declare module "@spoosh/core" {
+ *   interface InstanceApiResolvers<TSchema> {
+ *     prefetch: PrefetchFn<TSchema>;
+ *   }
+ * }
+ * ```
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export type ResolveInstanceApi<TInstanceApi, TSchema, TReadOptions = object> = {
-  [K in keyof TInstanceApi]: K extends keyof AllInstanceApiResolvers<
-    TSchema,
-    TReadOptions
-  >
-    ? AllInstanceApiResolvers<TSchema, TReadOptions>[K]
+  [K in keyof TInstanceApi]: K extends keyof InstanceApiResolvers<TSchema>
+    ? InstanceApiResolvers<TSchema>[K]
     : TInstanceApi[K];
 };

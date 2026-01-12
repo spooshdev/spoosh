@@ -1,0 +1,36 @@
+{
+  "name": "@spoosh/plugin-invalidation",
+  "version": "0.1.0",
+  "description": "Cache invalidation plugin for Spoosh - auto-invalidates after mutations",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nxnom/spoosh.git",
+    "directory": "packages/plugin-invalidation"
+  },
+  "bugs": { "url": "https://github.com/nxnom/spoosh/issues" },
+  "homepage": "https://github.com/nxnom/spoosh/tree/main/packages/plugin-invalidation#readme",
+  "keywords": ["spoosh", "plugin", "invalidation", "cache", "api-client"],
+  "files": ["dist"],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "dev": "tsup --watch",
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --max-warnings 0",
+    "format": "prettier --write 'src/**/*.ts'",
+    "prepublishOnly": "npm run build && npm run typecheck && npm run lint"
+  },
+  "peerDependencies": {
+    "@spoosh/core": ">=0.1.0"
+  },
+  "devDependencies": {
+    "@spoosh/core": "workspace:*"
+  }
+}

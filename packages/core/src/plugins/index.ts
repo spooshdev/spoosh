@@ -3,4 +3,3 @@ export * from "./executor";
 export * from "./registry";
 export * from "./type-resolver";
 export * from "./schema-helper";
-export * from "./built-in";

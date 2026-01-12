@@ -1,6 +1,6 @@
 {
   "name": "@spoosh/hono",
-  "version": "0.0.1-beta.3",
+  "version": "0.1.0",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -30,7 +30,7 @@
     "prepublishOnly": "npm run build && npm run typecheck && npm run lint"
   },
   "peerDependencies": {
-    "@spoosh/core": ">=0.0.1-beta.1",
+    "@spoosh/core": ">=0.1.0",
     "hono": ">=4.0.0"
   },
   "devDependencies": {

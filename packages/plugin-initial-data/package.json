@@ -1,0 +1,36 @@
+{
+  "name": "@spoosh/plugin-initial-data",
+  "version": "0.1.0",
+  "description": "Initial data plugin for Spoosh - show data immediately before fetch completes",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nxnom/spoosh.git",
+    "directory": "packages/plugin-initial-data"
+  },
+  "bugs": { "url": "https://github.com/nxnom/spoosh/issues" },
+  "homepage": "https://github.com/nxnom/spoosh/tree/main/packages/plugin-initial-data#readme",
+  "keywords": ["spoosh", "plugin", "initial-data", "api-client", "prefetch"],
+  "files": ["dist"],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "dev": "tsup --watch",
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --max-warnings 0",
+    "format": "prettier --write 'src/**/*.ts'",
+    "prepublishOnly": "npm run build && npm run typecheck && npm run lint"
+  },
+  "peerDependencies": {
+    "@spoosh/core": ">=0.1.0"
+  },
+  "devDependencies": {
+    "@spoosh/core": "workspace:*"
+  }
+}
