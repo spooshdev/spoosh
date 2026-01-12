@@ -42,7 +42,8 @@ export function initialDataPlugin(): EnlacePlugin<{
   readResult: InitialDataReadResult;
   writeResult: InitialDataWriteResult;
 }> {
-  const initialDataAppliedFor = new Map<string, string>();
+  const initialDataAppliedFor = new Set<string>();
+  const mountCount = new Map<string, number>();
 
   return {
     name: "enlace:initialData",
@@ -66,24 +67,46 @@ export function initialDataPlugin(): EnlacePlugin<{
       }
 
       if (!context.hookId) {
-        return next();
+        const response = await next();
+
+        if (!response.error) {
+          context.stateManager.setPluginResult(context.queryKey, {
+            isInitialData: false,
+          });
+        }
+
+        return response;
       }
 
-      const originalQueryKey = initialDataAppliedFor.get(context.hookId);
+      if (initialDataAppliedFor.has(context.hookId)) {
+        const response = await next();
 
-      if (originalQueryKey && originalQueryKey !== context.queryKey) {
-        return next();
+        if (!response.error) {
+          context.stateManager.setPluginResult(context.queryKey, {
+            isInitialData: false,
+          });
+        }
+
+        return response;
       }
 
       const cached = context.stateManager.getCache(context.queryKey);
 
       if (cached?.state?.data !== undefined) {
-        return next();
+        initialDataAppliedFor.add(context.hookId);
+
+        const response = await next();
+
+        if (!response.error) {
+          context.stateManager.setPluginResult(context.queryKey, {
+            isInitialData: false,
+          });
+        }
+
+        return response;
       }
 
-      if (!originalQueryKey) {
-        initialDataAppliedFor.set(context.hookId, context.queryKey);
-      }
+      initialDataAppliedFor.add(context.hookId);
 
       context.stateManager.setCache(context.queryKey, {
         state: {
@@ -116,9 +139,28 @@ export function initialDataPlugin(): EnlacePlugin<{
     },
 
     lifecycle: {
+      onMount(context) {
+        if (!context.hookId) {
+          return;
+        }
+
+        const count = mountCount.get(context.hookId) ?? 0;
+        mountCount.set(context.hookId, count + 1);
+      },
+
       onUnmount(context) {
-        if (context.hookId) {
+        if (!context.hookId) {
+          return;
+        }
+
+        const count = mountCount.get(context.hookId) ?? 0;
+        const newCount = Math.max(0, count - 1);
+
+        if (newCount === 0) {
+          mountCount.delete(context.hookId);
           initialDataAppliedFor.delete(context.hookId);
+        } else {
+          mountCount.set(context.hookId, newCount);
         }
       },
     },
