@@ -6,6 +6,7 @@ import type {
   EnlaceResponse,
   MergePluginOptions,
   MergePluginResults,
+  MergePluginInstanceApi,
   ResolveTypes,
   ResolverContext,
   ResolveSchemaTypes,
@@ -143,7 +144,7 @@ export type EnlaceReactHooks<
   useRead: UseReadFn<TApi, TDefaultError, TSchema, TPlugins>;
   useWrite: UseWriteFn<TApi, TDefaultError, TSchema, TPlugins>;
   useInfiniteRead: UseInfiniteReadFn<TApi, TDefaultError, TSchema, TPlugins>;
-};
+} & MergePluginInstanceApi<TPlugins, TSchema>;
 
 type EnlaceInstanceShape<TApi, TSchema, TDefaultError, TPlugins> = {
   api: TApi;
@@ -192,9 +193,28 @@ export function createReactEnlace<
     pluginExecutor,
   });
 
+  const instanceApiContext = {
+    api,
+    stateManager,
+    eventEmitter,
+    pluginExecutor,
+  };
+  const plugins = pluginExecutor.getPlugins();
+
+  const instanceApis = plugins.reduce(
+    (acc, plugin) => {
+      if (plugin.instanceApi) {
+        return { ...acc, ...plugin.instanceApi(instanceApiContext) };
+      }
+      return acc;
+    },
+    {} as Record<string, unknown>
+  );
+
   return {
     useRead,
     useWrite,
     useInfiniteRead,
+    ...instanceApis,
   } as EnlaceReactHooks<TApi, TDefaultError, TSchema, TPlugins>;
 }

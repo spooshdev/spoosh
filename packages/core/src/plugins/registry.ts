@@ -1,4 +1,5 @@
 import type { EnlacePlugin, PluginTypeConfig } from "./types";
+import type { ResolveInstanceApi } from "./type-resolver";
 
 type ExtractReadOptions<T> =
   T extends EnlacePlugin<infer Types>
@@ -35,6 +36,13 @@ type ExtractWriteResult<T> =
       : object
     : object;
 
+type ExtractInstanceApi<T> =
+  T extends EnlacePlugin<infer Types>
+    ? Types extends { instanceApi: infer A }
+      ? A
+      : object
+    : object;
+
 type UnionToIntersection<U> = (
   U extends unknown ? (x: U) => void : never
 ) extends (x: infer I) => void
@@ -57,6 +65,15 @@ export type MergePluginResults<
   read: UnionToIntersection<ExtractReadResult<TPlugins[number]>>;
   write: UnionToIntersection<ExtractWriteResult<TPlugins[number]>>;
 };
+
+export type MergePluginInstanceApi<
+  TPlugins extends readonly EnlacePlugin<PluginTypeConfig>[],
+  TSchema = unknown,
+> = ResolveInstanceApi<
+  UnionToIntersection<ExtractInstanceApi<TPlugins[number]>>,
+  TSchema,
+  MergePluginOptions<TPlugins>["read"]
+>;
 
 export type PluginRegistry<TPlugins extends EnlacePlugin<PluginTypeConfig>[]> =
   {

@@ -149,6 +149,11 @@ export type PluginLifecycle<TData = unknown, TError = unknown> = {
  *   writeOptions: MyWriteOptions;
  *   readResult: MyReadResult;
  * }>
+ *
+ * // Plugin with instance-level API
+ * EnlacePlugin<{
+ *   instanceApi: { prefetch: (selector: Selector) => Promise<void> };
+ * }>
  * ```
  */
 export type PluginTypeConfig = {
@@ -157,6 +162,7 @@ export type PluginTypeConfig = {
   infiniteReadOptions?: object;
   readResult?: object;
   writeResult?: object;
+  instanceApi?: object;
 };
 
 /**
@@ -211,6 +217,22 @@ export interface EnlacePlugin<T extends PluginTypeConfig = PluginTypeConfig> {
 
   /** Expose functions/variables for other plugins to access via `context.plugins.get(name)` */
   exports?: (context: PluginContext) => object;
+
+  /**
+   * Expose functions/properties on the framework adapter return value (e.g., createReactEnlace).
+   * Unlike `exports`, these are accessible directly from the instance, not just within plugin context.
+   *
+   * @example
+   * ```ts
+   * instanceApi: ({ api, stateManager }) => ({
+   *   prefetch: async (selector) => { ... },
+   *   invalidateAll: () => { ... },
+   * })
+   * ```
+   */
+  instanceApi?: (
+    context: InstanceApiContext
+  ) => T extends { instanceApi: infer A } ? A : object;
 
   /** Declare plugin dependencies. These plugins must be registered before this one. */
   dependencies?: string[];
@@ -342,6 +364,25 @@ export interface PluginResolvers<TContext extends ResolverContext> {
 export interface PluginExportsRegistry {}
 
 /**
+ * Registry for instance API type resolution. Extend via declaration merging.
+ *
+ * Plugins that expose schema-aware instance APIs should extend this interface
+ * to get proper type inference when the API is used.
+ *
+ * @example
+ * ```ts
+ * // In your plugin's types file:
+ * declare module 'enlace' {
+ *   interface InstanceApiResolvers<TSchema> {
+ *     myFunction: MyFn<TSchema>;
+ *   }
+ * }
+ * ```
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type, @typescript-eslint/no-unused-vars
+export interface InstanceApiResolvers<TSchema> {}
+
+/**
  * Accessor for plugin exports with type-safe lookup.
  */
 export type PluginAccessor = {
@@ -360,4 +401,31 @@ export type PluginAccessor = {
 export type RefetchEvent = {
   queryKey: string;
   reason: "focus" | "reconnect" | "polling" | "invalidate";
+};
+
+/**
+ * Minimal PluginExecutor interface for InstanceApiContext.
+ * Avoids circular dependency with executor.ts.
+ */
+export type InstancePluginExecutor = {
+  executeMiddleware: <TData, TError>(
+    operationType: OperationType,
+    context: PluginContext<TData, TError>,
+    coreFetch: () => Promise<EnlaceResponse<TData, TError>>
+  ) => Promise<EnlaceResponse<TData, TError>>;
+
+  createContext: <TData, TError>(
+    input: PluginContextInput<TData, TError>
+  ) => PluginContext<TData, TError>;
+};
+
+/**
+ * Context provided to plugin's instanceApi function.
+ * Used for creating framework-agnostic APIs exposed on the Enlace instance.
+ */
+export type InstanceApiContext<TApi = unknown> = {
+  api: TApi;
+  stateManager: StateManager;
+  eventEmitter: EventEmitter;
+  pluginExecutor: InstancePluginExecutor;
 };

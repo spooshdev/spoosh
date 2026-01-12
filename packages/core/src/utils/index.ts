@@ -4,4 +4,4 @@ export { isJsonBody } from "./isJsonBody";
 export { mergeHeaders } from "./mergeHeaders";
 export { objectToFormData } from "./objectToFormData";
 export { sortObjectKeys } from "./sortObjectKeys";
-export { resolvePath, resolveTags } from "./path-utils";
+export { resolvePath, resolveTags, type TagOptions } from "./path-utils";

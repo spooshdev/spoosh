@@ -6,6 +6,7 @@ export * from "./initial-data";
 export * from "./invalidation";
 export * from "./optimistic";
 export * from "./polling";
+export * from "./prefetch";
 export * from "./refetch";
 export * from "./retry";
 export * from "./throttle";

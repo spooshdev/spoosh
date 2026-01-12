@@ -12,7 +12,9 @@ type ExtractEndpointRequestOptions<T> = {
   [K in Extract<keyof T, "query" | "body" | "params">]?: T[K];
 };
 
-type EndpointToMethod<T> = () => Promise<
+type EndpointToMethod<T> = (
+  options?: ExtractEndpointRequestOptions<T>
+) => Promise<
   EnlaceResponse<
     ExtractEndpointData<T>,
     unknown,

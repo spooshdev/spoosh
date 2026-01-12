@@ -2,9 +2,11 @@ import type { OptimisticCallbackFn } from "./built-in/optimistic/types";
 import type { InvalidateOption } from "./built-in/invalidation/types";
 import type { PollingInterval } from "./built-in/polling/types";
 import type { DebounceValue } from "./built-in/debounce/types";
+import type { PrefetchFn } from "./built-in/prefetch/types";
 import type {
   ResolverContext,
   PluginResolvers,
+  InstanceApiResolvers,
   DataAwareCallback,
   DataAwareTransform,
 } from "./types";
@@ -76,3 +78,33 @@ export type ResolveSchemaTypes<TOptions, TSchema> = ResolveTypes<
   TOptions,
   ResolverContext<TSchema>
 >;
+
+/**
+ * Built-in instance API resolvers for core plugins.
+ * These are merged with 3rd party extensions via InstanceApiResolvers.
+ */
+type BuiltInInstanceApiResolvers<TSchema, TReadOptions = object> = {
+  prefetch: PrefetchFn<TSchema, TReadOptions>;
+};
+
+/**
+ * Combined instance API resolvers: built-in + 3rd party extensions.
+ */
+type AllInstanceApiResolvers<
+  TSchema,
+  TReadOptions = object,
+> = BuiltInInstanceApiResolvers<TSchema, TReadOptions> &
+  InstanceApiResolvers<TSchema>;
+
+/**
+ * Resolves instance API types with schema awareness.
+ * Maps each key in TInstanceApi to its resolved type from resolvers.
+ */
+export type ResolveInstanceApi<TInstanceApi, TSchema, TReadOptions = object> = {
+  [K in keyof TInstanceApi]: K extends keyof AllInstanceApiResolvers<
+    TSchema,
+    TReadOptions
+  >
+    ? AllInstanceApiResolvers<TSchema, TReadOptions>[K]
+    : TInstanceApi[K];
+};

@@ -12,6 +12,7 @@ import type {
   ResolveTypes,
   ResolverContext,
   PluginTypeConfig,
+  TagOptions,
 } from "enlace";
 
 type QueryRequestOptions = CoreRequestOptionsBase;
@@ -37,10 +38,13 @@ export type PluginHooksConfig<
   plugins: TPlugins;
 };
 
-export type BaseReadOptions = {
+export type BaseReadOptions = TagOptions & {
+  /**
+   * Determines whether the read operation is enabled.
+   * When set to `false`, the read operation will not be executed on component mount.
+   * Defaults to `true`.
+   * */
   enabled?: boolean;
-  tags?: string[];
-  additionalTags?: string[];
 };
 
 export type { ResolveSchemaTypes, ResolveTypes, ResolverContext };
@@ -132,14 +136,14 @@ type ErrorResponse<T> = Extract<T, { error: unknown; data?: undefined }>;
 
 export type ExtractMethodData<T> = T extends (...args: never[]) => infer R
   ? SuccessResponse<Awaited<R>> extends { data: infer D }
-    ? D
-    : unknown
+  ? D
+  : unknown
   : unknown;
 
 export type ExtractMethodError<T> = T extends (...args: never[]) => infer R
   ? ErrorResponse<Awaited<R>> extends { error: infer E }
-    ? E
-    : unknown
+  ? E
+  : unknown
   : unknown;
 
 export type ExtractMethodOptions<T> = T extends (...args: infer A) => unknown
@@ -156,29 +160,29 @@ export type ExtractResponseQuery<T> =
   SuccessReturnType<T> extends {
     input: { query: infer Q };
   }
-    ? Q
-    : never;
+  ? Q
+  : never;
 
 export type ExtractResponseBody<T> =
   SuccessReturnType<T> extends {
     input: { body: infer B };
   }
-    ? B
-    : never;
+  ? B
+  : never;
 
 export type ExtractResponseFormData<T> =
   SuccessReturnType<T> extends {
     input: { formData: infer F };
   }
-    ? F
-    : never;
+  ? F
+  : never;
 
 export type ExtractResponseParamNames<T> =
   SuccessReturnType<T> extends { input: { params: Record<infer K, unknown> } }
-    ? K extends string
-      ? K
-      : never
-    : never;
+  ? K extends string
+  ? K
+  : never
+  : never;
 
 type QueryField<TQuery> = [TQuery] extends [never] ? object : { query: TQuery };
 
@@ -233,10 +237,8 @@ export type BaseInfiniteReadOptions<
   TData,
   TItem,
   TRequest = AnyInfiniteRequestOptions,
-> = {
+> = TagOptions & {
   enabled?: boolean;
-  tags?: string[];
-  additionalTags?: string[];
   canFetchNext: (ctx: InfiniteNextContext<TData, TRequest>) => boolean;
   nextPageRequest: (
     ctx: InfiniteNextContext<TData, TRequest>

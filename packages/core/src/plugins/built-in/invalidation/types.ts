@@ -13,7 +13,7 @@ export type AutoInvalidate = "all" | "self" | "none";
 type InvalidateCallbackFn<TSchema> = (
   api: QuerySchemaHelper<TSchema>
 ) => (
-  | ((...args: unknown[]) => Promise<EnlaceResponse<unknown, unknown>>)
+  | ((...args: never[]) => Promise<EnlaceResponse<unknown, unknown>>)
   | string
 )[];
 

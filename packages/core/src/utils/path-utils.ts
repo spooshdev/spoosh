@@ -1,7 +1,13 @@
 import { generateTags } from "./generateTags";
 
-type TagOptions = {
+/**
+ * Common tag options used across plugins and operations.
+ */
+export type TagOptions = {
+  /** Custom tags to use instead of auto-generated path-based tags */
   tags?: string[];
+
+  /** Additional tags to append to auto-generated or custom tags */
   additionalTags?: string[];
 };
 
