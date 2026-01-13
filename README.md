@@ -1,4 +1,12 @@
-# Spoosh
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://spoosh.dev/assets/logo-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="https://spoosh.dev/assets/logo-light.svg">
+    <img src="https://spoosh.dev/assets/logo-light.svg" alt="Spoosh Logo" width="50" height="44">
+  </picture>
+</p>
+
+<h1 align="center">Spoosh</h1>
 
 > Type-safe API client with composable plugins for TypeScript
 
