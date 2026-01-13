@@ -9,7 +9,8 @@
     "directory": "packages/plugin-invalidation"
   },
   "bugs": { "url": "https://github.com/nxnom/spoosh/issues" },
-  "homepage": "https://github.com/nxnom/spoosh/tree/main/packages/plugin-invalidation#readme",
+  "homepage": "https://spoosh.dev/docs/plugins/invalidation",
+  "publishConfig": { "access": "public" },
   "keywords": ["spoosh", "plugin", "invalidation", "cache", "api-client"],
   "files": ["dist"],
   "exports": {

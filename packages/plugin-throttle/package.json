@@ -9,7 +9,8 @@
     "directory": "packages/plugin-throttle"
   },
   "bugs": { "url": "https://github.com/nxnom/spoosh/issues" },
-  "homepage": "https://github.com/nxnom/spoosh/tree/main/packages/plugin-throttle#readme",
+  "homepage": "https://spoosh.dev/docs/plugins/throttle",
+  "publishConfig": { "access": "public" },
   "keywords": ["spoosh", "plugin", "throttle", "api-client", "rate-limit"],
   "files": ["dist"],
   "exports": {

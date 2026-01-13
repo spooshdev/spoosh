@@ -2,6 +2,16 @@
   "name": "@spoosh/core",
   "version": "0.1.0",
   "license": "MIT",
+  "description": "Type-safe API client with plugin middleware system",
+  "keywords": [
+    "spoosh",
+    "api-client",
+    "fetch",
+    "typescript",
+    "middleware",
+    "plugins",
+    "type-safe"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/nxnom/spoosh.git",
@@ -10,7 +20,10 @@
   "bugs": {
     "url": "https://github.com/nxnom/spoosh/issues"
   },
-  "homepage": "https://github.com/nxnom/spoosh#readme",
+  "homepage": "https://spoosh.dev/docs/core",
+  "publishConfig": {
+    "access": "public"
+  },
   "files": [
     "dist"
   ],

@@ -2,6 +2,8 @@
   "name": "@spoosh/openapi",
   "version": "0.1.0",
   "license": "MIT",
+  "description": "OpenAPI schema generator for Spoosh API definitions",
+  "keywords": ["spoosh", "openapi", "swagger", "schema", "api", "typescript"],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/nxnom/spoosh.git",
@@ -10,7 +12,10 @@
   "bugs": {
     "url": "https://github.com/nxnom/spoosh/issues"
   },
-  "homepage": "https://github.com/nxnom/spoosh/tree/main/packages/openapi#readme",
+  "homepage": "https://spoosh.dev/docs/integrations/openapi",
+  "publishConfig": {
+    "access": "public"
+  },
   "bin": {
     "spoosh-openapi": "./dist/cli.mjs"
   },

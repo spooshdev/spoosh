@@ -9,7 +9,8 @@
     "directory": "packages/plugin-polling"
   },
   "bugs": { "url": "https://github.com/nxnom/spoosh/issues" },
-  "homepage": "https://github.com/nxnom/spoosh/tree/main/packages/plugin-polling#readme",
+  "homepage": "https://spoosh.dev/docs/plugins/polling",
+  "publishConfig": { "access": "public" },
   "keywords": ["spoosh", "plugin", "polling", "interval", "auto-refresh", "api-client"],
   "files": ["dist"],
   "exports": {

@@ -9,7 +9,8 @@
     "directory": "packages/plugin-optimistic"
   },
   "bugs": { "url": "https://github.com/nxnom/spoosh/issues" },
-  "homepage": "https://github.com/nxnom/spoosh/tree/main/packages/plugin-optimistic#readme",
+  "homepage": "https://spoosh.dev/docs/plugins/optimistic",
+  "publishConfig": { "access": "public" },
   "keywords": ["spoosh", "plugin", "optimistic", "api-client", "mutations"],
   "files": ["dist"],
   "exports": {

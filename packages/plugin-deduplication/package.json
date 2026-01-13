@@ -9,7 +9,8 @@
     "directory": "packages/plugin-deduplication"
   },
   "bugs": { "url": "https://github.com/nxnom/spoosh/issues" },
-  "homepage": "https://github.com/nxnom/spoosh/tree/main/packages/plugin-deduplication#readme",
+  "homepage": "https://spoosh.dev/docs/plugins/deduplication",
+  "publishConfig": { "access": "public" },
   "keywords": ["spoosh", "plugin", "deduplication", "api-client", "dedupe"],
   "files": ["dist"],
   "exports": {

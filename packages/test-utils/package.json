@@ -3,6 +3,25 @@
   "version": "0.1.0",
   "description": "Test utilities for Spoosh plugins",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nxnom/spoosh.git",
+    "directory": "packages/test-utils"
+  },
+  "bugs": {
+    "url": "https://github.com/nxnom/spoosh/issues"
+  },
+  "homepage": "https://spoosh.dev",
+  "keywords": [
+    "spoosh",
+    "test-utils",
+    "testing",
+    "vitest",
+    "mock"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -19,7 +38,9 @@
       }
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup",
     "typecheck": "tsc --noEmit",

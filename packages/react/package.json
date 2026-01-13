@@ -2,6 +2,8 @@
   "name": "@spoosh/react",
   "version": "0.1.0",
   "license": "MIT",
+  "description": "React hooks for Spoosh API client",
+  "keywords": ["spoosh", "react", "hooks", "api-client", "useQuery", "useMutation"],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/nxnom/spoosh.git",
@@ -10,7 +12,10 @@
   "bugs": {
     "url": "https://github.com/nxnom/spoosh/issues"
   },
-  "homepage": "https://github.com/nxnom/spoosh/tree/main/packages/react#readme",
+  "homepage": "https://spoosh.dev/docs/integrations/react",
+  "publishConfig": {
+    "access": "public"
+  },
   "files": [
     "dist"
   ],

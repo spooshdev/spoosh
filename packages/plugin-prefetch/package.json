@@ -9,7 +9,8 @@
     "directory": "packages/plugin-prefetch"
   },
   "bugs": { "url": "https://github.com/nxnom/spoosh/issues" },
-  "homepage": "https://github.com/nxnom/spoosh/tree/main/packages/plugin-prefetch#readme",
+  "homepage": "https://spoosh.dev/docs/plugins/prefetch",
+  "publishConfig": { "access": "public" },
   "keywords": ["spoosh", "plugin", "prefetch", "api-client", "preload"],
   "files": ["dist"],
   "exports": {

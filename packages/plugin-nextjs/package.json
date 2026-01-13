@@ -11,7 +11,8 @@
   "bugs": {
     "url": "https://github.com/nxnom/spoosh/issues"
   },
-  "homepage": "https://github.com/nxnom/spoosh/tree/main/packages/plugin-nextjs#readme",
+  "homepage": "https://spoosh.dev/docs/plugins/nextjs",
+  "publishConfig": { "access": "public" },
   "keywords": ["spoosh", "plugin", "nextjs", "next.js", "revalidation", "api-client"],
   "files": [
     "dist"

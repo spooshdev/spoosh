@@ -9,7 +9,8 @@
     "directory": "packages/plugin-debug"
   },
   "bugs": { "url": "https://github.com/nxnom/spoosh/issues" },
-  "homepage": "https://github.com/nxnom/spoosh/tree/main/packages/plugin-debug#readme",
+  "homepage": "https://spoosh.dev/docs/plugins/debug",
+  "publishConfig": { "access": "public" },
   "keywords": ["spoosh", "plugin", "debug", "api-client", "logging"],
   "files": ["dist"],
   "exports": {
