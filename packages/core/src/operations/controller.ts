@@ -84,10 +84,8 @@ export function createOperationController<TData, TError>(
   let abortController: AbortController | null = null;
   const metadata = new Map<string, unknown>();
   let pluginOptions: unknown = undefined;
-  let cachedState: OperationState<TData, TError> = createInitialState<
-    TData,
-    TError
-  >();
+  const initialState = createInitialState<TData, TError>();
+  let cachedState: OperationState<TData, TError> = initialState;
   let currentRequestTimestamp: number = Date.now();
   let isFirstExecute = true;
 
@@ -211,10 +209,11 @@ export function createOperationController<TData, TError>(
 
     getState() {
       const cached = stateManager.getCache<TData, TError>(queryKey);
-      const newState = cached?.state;
 
-      if (newState) {
-        cachedState = newState;
+      if (cached) {
+        cachedState = cached.state;
+      } else {
+        cachedState = initialState;
       }
 
       return cachedState;
