@@ -1,6 +1,19 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Logo } from '@/components/logo';
 import { CodeBlock } from '@/components/code-block';
+
+export const metadata: Metadata = {
+  title: 'Spoosh - Type-Safe API Client',
+  description:
+    'A type-safe API client with a powerful plugin system. Features caching, invalidation, retry, polling, optimistic updates, and more.',
+  openGraph: {
+    title: 'Spoosh - Type-Safe API Client',
+    description:
+      'A type-safe API client with a powerful plugin system. Features caching, invalidation, retry, polling, optimistic updates, and more.',
+    images: ['/og'],
+  },
+};
 
 const GITHUB_URL = 'https://github.com/nxnom/spoosh';
 
