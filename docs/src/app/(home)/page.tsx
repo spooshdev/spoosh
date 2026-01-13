@@ -1,21 +1,21 @@
-import type { Metadata } from 'next';
-import Link from 'next/link';
-import { Logo } from '@/components/logo';
-import { CodeBlock } from '@/components/code-block';
+import type { Metadata } from "next";
+import Link from "next/link";
+import { Logo } from "@/components/logo";
+import { CodeBlock } from "@/components/code-block";
 
 export const metadata: Metadata = {
-  title: 'Spoosh - Type-Safe API Client',
+  title: "Spoosh - Type-Safe API Client",
   description:
-    'A type-safe API client with a powerful plugin system. Features caching, invalidation, retry, polling, optimistic updates, and more.',
+    "A type-safe API client with a powerful plugin system. Features caching, invalidation, retry, polling, optimistic updates, and more.",
   openGraph: {
-    title: 'Spoosh - Type-Safe API Client',
+    title: "Spoosh - Type-Safe API Client",
     description:
-      'A type-safe API client with a powerful plugin system. Features caching, invalidation, retry, polling, optimistic updates, and more.',
-    images: ['/og/home'],
+      "A type-safe API client with a powerful plugin system. Features caching, invalidation, retry, polling, optimistic updates, and more.",
+    images: ["/og/home"],
   },
 };
 
-const GITHUB_URL = 'https://github.com/nxnom/spoosh';
+const GITHUB_URL = "https://github.com/nxnom/spoosh";
 
 const heroCode = `import { createSpoosh } from "@spoosh/core";
 import { createReactSpoosh } from "@spoosh/react";
@@ -35,7 +35,7 @@ const spoosh = createSpoosh<ApiSchema>({
 export const { useRead, useWrite } = createReactSpoosh(spoosh);`;
 
 const exampleCode = `function UserList() {
-  const { data, loading, error, refetch } = useRead(
+  const { data, loading, error } = useRead(
     (api) => api.users.$get()
   );
 
@@ -98,8 +98,18 @@ export default function HomePage() {
               title="Type-Safe"
               description="Define your API schema once, get full TypeScript autocomplete and type checking everywhere."
               icon={
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
                 </svg>
               }
             />
@@ -108,28 +118,18 @@ export default function HomePage() {
               title="Plugin System"
               description="Extend functionality with plugins for caching, retry, polling, optimistic updates, and more."
               icon={
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14v6m-3-3h6M6 10h2a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v2a2 2 0 002 2zm10 0h2a2 2 0 002-2V6a2 2 0 00-2-2h-2a2 2 0 00-2 2v2a2 2 0 002 2zM6 20h2a2 2 0 002-2v-2a2 2 0 00-2-2H6a2 2 0 00-2 2v2a2 2 0 002 2z" />
-                </svg>
-              }
-            />
-
-            <FeatureCard
-              title="Framework Bindings"
-              description="useRead, useWrite, and useInfiniteRead hooks for seamless data fetching."
-              icon={
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-              }
-            />
-
-            <FeatureCard
-              title="Framework Adapters"
-              description="First-class support for Hono with automatic type inference from your server routes."
-              icon={
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 14v6m-3-3h6M6 10h2a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v2a2 2 0 002 2zm10 0h2a2 2 0 002-2V6a2 2 0 00-2-2h-2a2 2 0 00-2 2v2a2 2 0 002 2zM6 20h2a2 2 0 002-2v-2a2 2 0 00-2-2H6a2 2 0 00-2 2v2a2 2 0 002 2z"
+                  />
                 </svg>
               }
             />
@@ -138,8 +138,58 @@ export default function HomePage() {
               title="Smart Cache Invalidation"
               description="Automatic tag-based cache invalidation after mutations. Your queries stay fresh without manual refetching."
               icon={
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
+                </svg>
+              }
+            />
+
+            <FeatureCard
+              title="Middleware Pipeline"
+              description="Intercept, transform, or short-circuit any request. Full control over the request lifecycle."
+              icon={
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 10V3L4 14h7v7l9-11h-7z"
+                  />
+                </svg>
+              }
+            />
+
+            <FeatureCard
+              title="Framework Adapters"
+              description="First-class support for Hono with automatic type inference from your server routes."
+              icon={
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
                 </svg>
               }
             />
@@ -148,8 +198,18 @@ export default function HomePage() {
               title="Next.js Ready"
               description="Server-side cache revalidation with Next.js App Router and Server Actions."
               icon={
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"
+                  />
                 </svg>
               }
             />
@@ -164,7 +224,8 @@ export default function HomePage() {
             Simple & Powerful
           </h2>
           <p className="text-fd-muted-foreground text-center mb-8">
-            Fetch data with automatic caching, loading states, and error handling
+            Fetch data with automatic caching, loading states, and error
+            handling
           </p>
 
           <CodeBlock code={exampleCode} lang="tsx" />
@@ -180,7 +241,10 @@ export default function HomePage() {
           <p className="text-fd-muted-foreground mb-8">
             Install Spoosh and build type-safe API clients in minutes.
           </p>
-          <CodeBlock code="npm install @spoosh/core @spoosh/react" lang="bash" />
+          <CodeBlock
+            code="npm install @spoosh/core @spoosh/react"
+            lang="bash"
+          />
           <div className="mt-8">
             <Link
               href="/docs/getting-started"
@@ -207,8 +271,12 @@ function FeatureCard({
   highlight?: boolean;
 }) {
   return (
-    <div className={`p-6 bg-fd-card border rounded-lg ${highlight ? 'border-fd-primary ring-1 ring-fd-primary/20' : 'border-fd-border'}`}>
-      <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-4 ${highlight ? 'bg-fd-primary text-fd-primary-foreground' : 'bg-fd-primary/10 text-fd-primary'}`}>
+    <div
+      className={`p-6 bg-fd-card border rounded-lg ${highlight ? "border-fd-primary ring-1 ring-fd-primary/20" : "border-fd-border"}`}
+    >
+      <div
+        className={`w-10 h-10 rounded-lg flex items-center justify-center mb-4 ${highlight ? "bg-fd-primary text-fd-primary-foreground" : "bg-fd-primary/10 text-fd-primary"}`}
+      >
         {icon}
       </div>
       <h3 className="font-semibold mb-2">{title}</h3>
