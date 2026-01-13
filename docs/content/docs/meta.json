@@ -4,6 +4,7 @@
     "getting-started",
     "core",
     "plugins",
+    "integrations",
     "llm"
   ]
 }
