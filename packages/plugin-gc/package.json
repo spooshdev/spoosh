@@ -1,0 +1,38 @@
+{
+  "name": "@spoosh/plugin-gc",
+  "version": "0.1.0",
+  "description": "Garbage collection plugin for Spoosh cache with time and size-based cleanup",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nxnom/spoosh.git",
+    "directory": "packages/plugin-gc"
+  },
+  "bugs": { "url": "https://github.com/nxnom/spoosh/issues" },
+  "homepage": "https://spoosh.dev/docs/plugins/gc",
+  "publishConfig": { "access": "public" },
+  "keywords": ["spoosh", "plugin", "gc", "garbage-collection", "cache", "memory"],
+  "files": ["dist"],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "dev": "tsup --watch",
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --max-warnings 0",
+    "format": "prettier --write 'src/**/*.ts'",
+    "prepublishOnly": "npm run build && npm run typecheck && npm run lint"
+  },
+  "peerDependencies": {
+    "@spoosh/core": ">=0.1.0"
+  },
+  "devDependencies": {
+    "@spoosh/core": "workspace:*",
+    "@spoosh/test-utils": "workspace:*"
+  }
+}
