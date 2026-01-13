@@ -7,6 +7,13 @@ import type {
 export interface PrefetchPluginConfig {
   /** Default stale time for prefetched data in milliseconds */
   staleTime?: number;
+
+  /**
+   * Timeout in milliseconds after which stale promises are automatically cleared.
+   * Prevents memory leaks from requests that never settle.
+   * @default 30000 (30 seconds)
+   */
+  timeout?: number;
 }
 
 export interface PrefetchOptions extends TagOptions {

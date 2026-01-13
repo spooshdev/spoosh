@@ -48,9 +48,10 @@ await prefetch(
 
 ### Plugin Config
 
-| Option      | Type     | Default | Description                                 |
-| ----------- | -------- | ------- | ------------------------------------------- |
-| `staleTime` | `number` | -       | Default stale time for prefetched data (ms) |
+| Option           | Type     | Default | Description                                                       |
+| ---------------- | -------- | ------- | ----------------------------------------------------------------- |
+| `staleTime` | `number` | -       | Default stale time for prefetched data (ms)                       |
+| `timeout`   | `number` | `30000` | Timeout to auto-clear stale promises (ms). Prevents memory leaks. |
 
 ### Prefetch Options
 
@@ -60,3 +61,20 @@ The second argument to `prefetch()` accepts any plugin options (staleTime, retri
 | ---------------- | ---------- | ------------------------- |
 | `tags`           | `string[]` | Custom cache tags         |
 | `additionalTags` | `string[]` | Additional tags to append |
+
+## Features
+
+### In-Flight Deduplication (Built-in)
+
+Multiple calls to prefetch the same data will return the same promise, avoiding duplicate requests. This is built into the prefetch plugin - no deduplication plugin required.
+
+```typescript
+// These will only make ONE network request
+prefetch((api) => api.posts.$get());
+prefetch((api) => api.posts.$get());
+prefetch((api) => api.posts.$get());
+```
+
+### Memory Leak Prevention
+
+Prefetch automatically clears promise references after completion or after `promiseTimeout` (default 30s). This prevents memory leaks from requests that never settle.

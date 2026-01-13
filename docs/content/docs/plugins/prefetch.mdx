@@ -74,6 +74,17 @@ async function handleNavigation(postId: number) {
 }
 ```
 
+## In-Flight Deduplication
+
+Multiple calls to prefetch the same data will return the same promise, avoiding duplicate network requests. This is built into the prefetch plugin - no deduplication plugin required.
+
+```typescript
+// These will only make ONE network request
+prefetch((api) => api.posts.$get());
+prefetch((api) => api.posts.$get());
+prefetch((api) => api.posts.$get());
+```
+
 ## Options
 
 ### Plugin Config
@@ -81,6 +92,7 @@ async function handleNavigation(postId: number) {
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
 | `staleTime` | `number` | - | Default stale time for prefetched data (ms) |
+| `timeout` | `number` | `30000` | Timeout to auto-clear stale promises (ms). Prevents memory leaks from requests that never settle. |
 
 ### Prefetch Options
 

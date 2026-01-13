@@ -209,6 +209,7 @@ export function createOperationController<TData, TError>(
         })();
 
         stateManager.setCache(queryKey, { promise: fetchPromise, tags });
+
         fetchPromise.finally(() => {
           stateManager.setCache(queryKey, { promise: undefined });
         });

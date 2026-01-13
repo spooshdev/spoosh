@@ -103,7 +103,7 @@ export function createStateManager(): StateManager {
           existing.tags = entry.tags;
         }
 
-        if (entry.promise !== undefined) {
+        if ("promise" in entry) {
           existing.promise = entry.promise;
         }
 

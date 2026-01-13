@@ -9,6 +9,7 @@ import {
   resolvePath,
   resolveTags,
   createInitialState,
+  storePromiseInCache,
 } from "@spoosh/core";
 import type {
   PrefetchPluginConfig,
@@ -54,11 +55,12 @@ import type {
  * ```
  */
 export function prefetchPlugin(
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _config: PrefetchPluginConfig = {}
+  config: PrefetchPluginConfig = {}
 ): SpooshPlugin<{
   instanceApi: PrefetchInstanceApi;
 }> {
+  const { timeout } = config;
+
   return {
     name: "spoosh:prefetch",
     operations: [],
@@ -204,19 +206,25 @@ export function prefetchPlugin(
           }
         };
 
+        const existingCache = stateManager.getCache(queryKey);
+
+        if (existingCache?.promise) {
+          return existingCache.promise as Promise<
+            SpooshResponse<TData, TError>
+          >;
+        }
+
         const fetchPromise = pluginExecutor.executeMiddleware(
           "read",
           pluginContext,
           coreFetch
         );
 
-        stateManager.setCache(queryKey, {
-          promise: fetchPromise,
+        storePromiseInCache(fetchPromise, {
+          stateManager,
+          queryKey,
           tags: resolvedTags,
-        });
-
-        fetchPromise.finally(() => {
-          stateManager.setCache(queryKey, { promise: undefined });
+          timeout,
         });
 
         return fetchPromise;
