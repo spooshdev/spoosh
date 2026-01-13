@@ -45,65 +45,12 @@ describe("gcPlugin", () => {
   });
 
   describe("instanceApi initialization", () => {
-    it("should return gc control functions", () => {
+    it("should return runGc function", () => {
       const plugin = gcPlugin();
       const context = createMockInstanceApiContext();
       const exports = plugin.instanceApi!(context) as GcPluginExports;
 
       expect(exports.runGc).toBeInstanceOf(Function);
-      expect(exports.stop).toBeInstanceOf(Function);
-      expect(exports.start).toBeInstanceOf(Function);
-      expect(exports.isRunning).toBeInstanceOf(Function);
-    });
-
-    it("should start interval by default", () => {
-      const plugin = gcPlugin();
-      const context = createMockInstanceApiContext();
-      const exports = plugin.instanceApi!(context) as GcPluginExports;
-
-      expect(exports.isRunning()).toBe(true);
-    });
-
-    it("should run gc on init when runOnInit is true", () => {
-      const stateManager = createStateManager();
-
-      stateManager.setCache("key1", {
-        state: {
-          data: "old",
-          error: undefined,
-          timestamp: 0,
-        },
-        tags: [],
-      });
-
-      const plugin = gcPlugin({ maxAge: 1000, runOnInit: true });
-      const context = createMockInstanceApiContext(stateManager);
-
-      vi.setSystemTime(new Date(2000));
-      plugin.instanceApi!(context);
-
-      expect(stateManager.getCache("key1")).toBeUndefined();
-    });
-
-    it("should not run gc on init when runOnInit is false", () => {
-      const stateManager = createStateManager();
-
-      stateManager.setCache("key1", {
-        state: {
-          data: "old",
-          error: undefined,
-          timestamp: 0,
-        },
-        tags: [],
-      });
-
-      const plugin = gcPlugin({ maxAge: 1000, runOnInit: false });
-      const context = createMockInstanceApiContext(stateManager);
-
-      vi.setSystemTime(new Date(2000));
-      plugin.instanceApi!(context);
-
-      expect(stateManager.getCache("key1")).toBeDefined();
     });
   });
 
@@ -377,71 +324,6 @@ describe("gcPlugin", () => {
       vi.advanceTimersByTime(10000);
 
       expect(stateManager.getCache("entry")).toBeUndefined();
-    });
-
-    it("should stop interval when stop() is called", () => {
-      const stateManager = createStateManager();
-
-      vi.setSystemTime(new Date(0));
-      stateManager.setCache("entry", {
-        state: {
-          data: "data",
-          error: undefined,
-          timestamp: 0,
-        },
-        tags: [],
-      });
-
-      const plugin = gcPlugin({ maxAge: 5000, interval: 10000 });
-      const context = createMockInstanceApiContext(stateManager);
-      const exports = plugin.instanceApi!(context) as GcPluginExports;
-
-      exports.stop();
-      expect(exports.isRunning()).toBe(false);
-
-      vi.setSystemTime(new Date(6000));
-      vi.advanceTimersByTime(10000);
-
-      expect(stateManager.getCache("entry")).toBeDefined();
-    });
-
-    it("should restart interval when start() is called after stop()", () => {
-      const stateManager = createStateManager();
-
-      vi.setSystemTime(new Date(0));
-      stateManager.setCache("entry", {
-        state: {
-          data: "data",
-          error: undefined,
-          timestamp: 0,
-        },
-        tags: [],
-      });
-
-      const plugin = gcPlugin({ maxAge: 5000, interval: 10000 });
-      const context = createMockInstanceApiContext(stateManager);
-      const exports = plugin.instanceApi!(context) as GcPluginExports;
-
-      exports.stop();
-      exports.start();
-      expect(exports.isRunning()).toBe(true);
-
-      vi.setSystemTime(new Date(6000));
-      vi.advanceTimersByTime(10000);
-
-      expect(stateManager.getCache("entry")).toBeUndefined();
-    });
-
-    it("should not create duplicate intervals when start() is called multiple times", () => {
-      const plugin = gcPlugin({ interval: 10000 });
-      const context = createMockInstanceApiContext();
-      const exports = plugin.instanceApi!(context) as GcPluginExports;
-
-      exports.start();
-      exports.start();
-      exports.start();
-
-      expect(exports.isRunning()).toBe(true);
     });
 
     it("should use default interval of 60000ms", () => {

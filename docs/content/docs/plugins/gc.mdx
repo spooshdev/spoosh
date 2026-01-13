@@ -1,0 +1,111 @@
+---
+title: Garbage Collection
+description: Automatically clean up old cache entries to prevent memory leaks
+---
+
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
+
+## Installation
+
+<Tabs items={["npm", "pnpm", "yarn", "bun"]}>
+  <Tab value="npm">```bash npm install @spoosh/plugin-gc ```</Tab>
+  <Tab value="pnpm">```bash pnpm add @spoosh/plugin-gc ```</Tab>
+  <Tab value="yarn">```bash yarn add @spoosh/plugin-gc ```</Tab>
+  <Tab value="bun">```bash bun add @spoosh/plugin-gc ```</Tab>
+</Tabs>
+
+## Usage
+
+```typescript
+import { gcPlugin } from "@spoosh/plugin-gc";
+
+const api = createSpoosh({
+  // ...
+  plugins: [
+    cachePlugin({ staleTime: 5000 }),
+    gcPlugin({
+      maxAge: 30 * 60 * 1000, // Remove entries older than 30 minutes
+      maxEntries: 100, // Keep max 100 entries
+      interval: 60 * 1000, // Run GC every minute
+    }),
+  ],
+});
+```
+
+## Options
+
+| Option       | Type     | Default     | Description                                                                |
+| ------------ | -------- | ----------- | -------------------------------------------------------------------------- |
+| `maxAge`     | `number` | `undefined` | Maximum age in milliseconds. Entries older than this will be removed.      |
+| `maxEntries` | `number` | `undefined` | Maximum number of cache entries. Oldest entries are removed when exceeded. |
+| `interval`   | `number` | `60000`     | Interval in milliseconds between GC runs.                                  |
+
+## Instance API
+
+The plugin exposes a manual trigger function on the Spoosh instance:
+
+```typescript
+const { runGc } = createReactSpoosh(api);
+
+// Manually trigger garbage collection
+const removedCount = runGc();
+```
+
+## Examples
+
+### Time-based cleanup only
+
+Remove cache entries that haven't been updated in 10 minutes:
+
+```typescript
+gcPlugin({
+  maxAge: 10 * 60 * 1000,
+});
+```
+
+### Size-based cleanup only
+
+Keep only the 50 most recent entries:
+
+```typescript
+gcPlugin({
+  maxEntries: 50,
+});
+```
+
+### Combined cleanup
+
+Use both time and size limits for optimal memory management:
+
+```typescript
+gcPlugin({
+  maxAge: 30 * 60 * 1000, // 30 minutes
+  maxEntries: 100,
+  interval: 5 * 60 * 1000, // Check every 5 minutes
+});
+```
+
+### Aggressive cleanup for mobile
+
+More frequent cleanup with lower limits for memory-constrained devices:
+
+```typescript
+gcPlugin({
+  maxAge: 5 * 60 * 1000, // 5 minutes
+  maxEntries: 20,
+  interval: 30 * 1000, // Every 30 seconds
+});
+```
+
+## How It Works
+
+1. **Time-based cleanup**: Entries with `timestamp` older than `maxAge` are removed first
+2. **Size-based cleanup**: If cache still exceeds `maxEntries`, oldest entries (by timestamp) are removed
+3. **Interval execution**: GC runs automatically at the specified interval
+4. **Manual trigger**: Use `runGc()` to trigger cleanup on demand
+
+## Best Practices
+
+- Always use with `cachePlugin` - GC cleans up the same cache that `cachePlugin` manages
+- Set `maxAge` slightly higher than your longest `staleTime` to avoid removing useful cache
+- Monitor `runGc()` return value in development to tune your settings

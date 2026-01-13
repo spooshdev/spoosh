@@ -182,6 +182,15 @@ importers:
         specifier: workspace:*
         version: link:../test-utils
 
+  packages/plugin-gc:
+    devDependencies:
+      '@spoosh/core':
+        specifier: workspace:*
+        version: link:../core
+      '@spoosh/test-utils':
+        specifier: workspace:*
+        version: link:../test-utils
+
   packages/plugin-initial-data:
     devDependencies:
       '@spoosh/core':

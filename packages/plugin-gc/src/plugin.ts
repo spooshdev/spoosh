@@ -24,26 +24,11 @@ export type GcPluginOptions = {
    * @default 60000 (1 minute)
    */
   interval?: number;
-
-  /**
-   * Whether to run GC immediately on plugin initialization.
-   * @default false
-   */
-  runOnInit?: boolean;
 };
 
 export type GcPluginExports = {
   /** Manually trigger garbage collection. Returns number of entries removed. */
   runGc: () => number;
-
-  /** Stop the GC interval */
-  stop: () => void;
-
-  /** Start the GC interval (if stopped) */
-  start: () => void;
-
-  /** Check if GC interval is running */
-  isRunning: () => boolean;
 };
 
 function runGarbageCollection(
@@ -93,7 +78,7 @@ function runGarbageCollection(
 export function gcPlugin(
   options: GcPluginOptions = {}
 ): SpooshPlugin<{ instanceApi: GcPluginExports }> {
-  const { interval = 60000, runOnInit = false } = options;
+  const { interval = 60000 } = options;
 
   return {
     name: "spoosh:gc",
@@ -101,42 +86,17 @@ export function gcPlugin(
 
     instanceApi(context: InstanceApiContext) {
       const { stateManager } = context;
-      let intervalId: ReturnType<typeof setInterval> | undefined;
 
       const runGc = () => {
         return runGarbageCollection(stateManager, options);
       };
 
-      const stop = () => {
-        if (intervalId) {
-          clearInterval(intervalId);
-          intervalId = undefined;
-        }
-      };
-
-      const start = () => {
-        if (intervalId) return;
-
-        intervalId = setInterval(() => {
-          runGc();
-        }, interval);
-      };
-
-      const isRunning = () => {
-        return intervalId !== undefined;
-      };
-
-      if (runOnInit) {
+      setInterval(() => {
         runGc();
-      }
-
-      start();
+      }, interval);
 
       return {
         runGc,
-        stop,
-        start,
-        isRunning,
       };
     },
   };
