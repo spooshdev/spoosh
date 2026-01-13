@@ -115,6 +115,32 @@ function shallowMergeRequest(
   };
 }
 
+type PageData<TData> = {
+  allResponses: TData[];
+  allRequests: InfiniteRequestOptions[];
+};
+
+function collectPageData<TData>(
+  pageKeys: string[],
+  stateManager: StateManager,
+  pageRequests: Map<string, InfiniteRequestOptions>,
+  initialRequest: InfiniteRequestOptions
+): PageData<TData> {
+  const allResponses: TData[] = [];
+  const allRequests: InfiniteRequestOptions[] = [];
+
+  for (const key of pageKeys) {
+    const cached = stateManager.getCache(key);
+
+    if (cached?.state?.data !== undefined) {
+      allResponses.push(cached.state.data as TData);
+      allRequests.push(pageRequests.get(key) ?? initialRequest);
+    }
+  }
+
+  return { allResponses, allRequests };
+}
+
 function createInitialInfiniteState<TData, TItem, TError>(): InfiniteReadState<
   TData,
   TItem,
@@ -218,17 +244,12 @@ export function createInfiniteReadController<
       };
     }
 
-    const allResponses: TData[] = [];
-    const allRequests: InfiniteRequestOptions[] = [];
-
-    for (const key of pageKeys) {
-      const cached = stateManager.getCache(key);
-
-      if (cached?.state?.data !== undefined) {
-        allResponses.push(cached.state.data as TData);
-        allRequests.push(pageRequests.get(key) ?? initialRequest);
-      }
-    }
+    const { allResponses, allRequests } = collectPageData<TData>(
+      pageKeys,
+      stateManager,
+      pageRequests,
+      initialRequest
+    );
 
     if (allResponses.length === 0) {
       return {
@@ -445,17 +466,12 @@ export function createInfiniteReadController<
         return;
       }
 
-      const allResponses: TData[] = [];
-      const allRequests: InfiniteRequestOptions[] = [];
-
-      for (const key of pageKeys) {
-        const cached = stateManager.getCache(key);
-
-        if (cached?.state?.data !== undefined) {
-          allResponses.push(cached.state.data as TData);
-          allRequests.push(pageRequests.get(key) ?? initialRequest);
-        }
-      }
+      const { allResponses, allRequests } = collectPageData<TData>(
+        pageKeys,
+        stateManager,
+        pageRequests,
+        initialRequest
+      );
 
       if (allResponses.length === 0) return;
 
@@ -481,20 +497,14 @@ export function createInfiniteReadController<
 
     async fetchPrev() {
       if (!canFetchPrev || !prevPageRequest) return;
-
       if (pageKeys.length === 0) return;
 
-      const allResponses: TData[] = [];
-      const allRequests: InfiniteRequestOptions[] = [];
-
-      for (const key of pageKeys) {
-        const cached = stateManager.getCache(key);
-
-        if (cached?.state?.data !== undefined) {
-          allResponses.push(cached.state.data as TData);
-          allRequests.push(pageRequests.get(key) ?? initialRequest);
-        }
-      }
+      const { allResponses, allRequests } = collectPageData<TData>(
+        pageKeys,
+        stateManager,
+        pageRequests,
+        initialRequest
+      );
 
       if (allResponses.length === 0) return;
 
