@@ -13,6 +13,8 @@ import type {
  * Initial data is shown immediately on first mount, before any fetch completes.
  * By default, a background refetch is triggered to get fresh data.
  *
+ * @see {@link https://spoosh.dev/docs/plugins/initial-data | Initial Data Plugin Documentation}
+ *
  * @returns Initial data plugin instance
  *
  * @example

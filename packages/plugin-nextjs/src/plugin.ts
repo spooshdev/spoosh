@@ -14,6 +14,9 @@ import type {
  * Automatically revalidates Next.js cache tags and paths after successful mutations.
  *
  * @param config - Plugin configuration
+ *
+ * @see {@link https://spoosh.dev/docs/plugins/nextjs | Next.js Plugin Documentation}
+ *
  * @returns Next.js plugin instance
  *
  * @example

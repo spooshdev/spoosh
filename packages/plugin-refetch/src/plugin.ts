@@ -20,6 +20,9 @@ type HookListenerEntry = {
  * Enables automatic refetching on window focus and network reconnect.
  *
  * @param config - Plugin configuration
+ *
+ * @see {@link https://spoosh.dev/docs/plugins/refetch | Refetch Plugin Documentation}
+ *
  * @returns Refetch plugin instance
  *
  * @example

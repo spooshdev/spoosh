@@ -32,6 +32,29 @@ function resolveDebounceMs(
   return debounce(context);
 }
 
+/**
+ * Enables debouncing for read operations.
+ *
+ * Delays requests until input stops changing, useful for search inputs
+ * to avoid excessive API calls while typing.
+ *
+ * @see {@link https://spoosh.dev/docs/plugins/debounce | Debounce Plugin Documentation}
+ *
+ * @example
+ * ```ts
+ * const plugins = [debouncePlugin()];
+ *
+ * // Debounce search by 300ms
+ * useRead((api) => api.search.$get({ query: { q: searchTerm } }), {
+ *   debounce: 300,
+ * });
+ *
+ * // Dynamic debounce based on previous query
+ * useRead((api) => api.search.$get({ query: { q: searchTerm } }), {
+ *   debounce: ({ prevQuery }) => prevQuery?.q ? 300 : 0,
+ * });
+ * ```
+ */
 export function debouncePlugin(): SpooshPlugin<{
   readOptions: DebounceReadOptions;
   writeOptions: DebounceWriteOptions;

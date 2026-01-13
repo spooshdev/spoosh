@@ -23,6 +23,9 @@ type DebugPhase =
  * request options, cache entries, and state changes.
  *
  * @param config - Plugin configuration
+ *
+ * @see {@link https://spoosh.dev/docs/plugins/debug | Debug Plugin Documentation}
+ *
  * @returns Debug plugin instance
  *
  * @example

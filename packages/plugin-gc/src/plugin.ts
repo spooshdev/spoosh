@@ -75,6 +75,31 @@ function runGarbageCollection(
   return removedCount;
 }
 
+/**
+ * Garbage collection plugin for automatic cache cleanup.
+ *
+ * Removes stale cache entries based on age or total count
+ * to prevent memory bloat in long-running applications.
+ *
+ * @param options - Plugin options
+ *
+ * @see {@link https://spoosh.dev/docs/plugins/gc | GC Plugin Documentation}
+ *
+ * @example
+ * ```ts
+ * const plugins = [
+ *   gcPlugin({
+ *     maxAge: 60000,     // Remove entries older than 1 minute
+ *     maxEntries: 100,   // Keep max 100 entries
+ *     interval: 30000,   // Run GC every 30 seconds
+ *   }),
+ * ];
+ *
+ * // Manual GC trigger
+ * const { runGc } = createReactSpoosh(client);
+ * const removedCount = runGc();
+ * ```
+ */
 export function gcPlugin(
   options: GcPluginOptions = {}
 ): SpooshPlugin<{ instanceApi: GcPluginExports }> {

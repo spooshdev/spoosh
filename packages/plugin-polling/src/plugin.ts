@@ -8,6 +8,29 @@ import type {
   PollingWriteResult,
 } from "./types";
 
+/**
+ * Enables automatic polling for queries at configurable intervals.
+ *
+ * Automatically refetches data at specified intervals to keep it fresh.
+ * Supports dynamic intervals based on current data or error state.
+ *
+ * @see {@link https://spoosh.dev/docs/plugins/polling | Polling Plugin Documentation}
+ *
+ * @example
+ * ```ts
+ * const plugins = [pollingPlugin()];
+ *
+ * // Poll every 5 seconds
+ * useRead((api) => api.posts.$get(), {
+ *   pollingInterval: 5000,
+ * });
+ *
+ * // Dynamic interval based on data
+ * useRead((api) => api.posts.$get(), {
+ *   pollingInterval: (data, error) => error ? 10000 : 5000,
+ * });
+ * ```
+ */
 export function pollingPlugin(): SpooshPlugin<{
   readOptions: PollingReadOptions;
   writeOptions: PollingWriteOptions;

@@ -9,6 +9,26 @@ import type {
   CacheWriteResult,
 } from "./types";
 
+/**
+ * Enables caching for read operations with configurable stale time.
+ *
+ * Returns cached data immediately if available and not stale,
+ * avoiding unnecessary network requests.
+ *
+ * @param config - Plugin configuration
+ *
+ * @see {@link https://spoosh.dev/docs/plugins/cache | Cache Plugin Documentation}
+ *
+ * @example
+ * ```ts
+ * const plugins = [cachePlugin({ staleTime: 5000 })];
+ *
+ * // Per-query override
+ * useRead((api) => api.posts.$get(), {
+ *   staleTime: 10000, // Override default stale time
+ * });
+ * ```
+ */
 export function cachePlugin(config: CachePluginConfig = {}): SpooshPlugin<{
   readOptions: CacheReadOptions;
   writeOptions: CacheWriteOptions;

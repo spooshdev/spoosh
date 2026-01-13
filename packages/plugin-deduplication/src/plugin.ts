@@ -9,6 +9,26 @@ import type {
   DedupeMode,
 } from "./types";
 
+/**
+ * Prevents duplicate in-flight requests for the same query.
+ *
+ * When multiple components request the same data simultaneously,
+ * only one network request is made and all callers share the result.
+ *
+ * @param config - Plugin configuration
+ *
+ * @see {@link https://spoosh.dev/docs/plugins/deduplication | Deduplication Plugin Documentation}
+ *
+ * @example
+ * ```ts
+ * const plugins = [deduplicationPlugin({ read: "in-flight" })];
+ *
+ * // Per-query override
+ * useRead((api) => api.posts.$get(), {
+ *   dedupe: false, // Disable deduplication for this query
+ * });
+ * ```
+ */
 export function deduplicationPlugin(
   config?: DeduplicationConfig
 ): SpooshPlugin<{

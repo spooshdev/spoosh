@@ -190,6 +190,8 @@ function rollbackOptimistic(
  * unnecessary refetches that would override the optimistic data. You can override
  * this by explicitly setting `autoInvalidate` or using the `invalidate` option.
  *
+ * @see {@link https://spoosh.dev/docs/plugins/optimistic | Optimistic Plugin Documentation}
+ *
  * @returns Optimistic plugin instance
  *
  * @example

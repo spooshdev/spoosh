@@ -67,6 +67,27 @@ function resolveInvalidateTags(
   return [...new Set(tags)];
 }
 
+/**
+ * Enables automatic cache invalidation after mutations.
+ *
+ * Marks related cache entries as stale and triggers refetches
+ * based on tags or explicit invalidation targets.
+ *
+ * @param config - Plugin configuration
+ *
+ * @see {@link https://spoosh.dev/docs/plugins/invalidation | Invalidation Plugin Documentation}
+ *
+ * @example
+ * ```ts
+ * const plugins = [invalidationPlugin({ autoInvalidate: "all" })];
+ *
+ * // Per-mutation override
+ * trigger({
+ *   autoInvalidate: "self", // Only invalidate the same endpoint
+ *   invalidate: ["posts"], // Or explicit tags
+ * });
+ * ```
+ */
 export function invalidationPlugin(
   config: InvalidationPluginConfig = {}
 ): SpooshPlugin<{
