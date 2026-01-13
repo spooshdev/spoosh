@@ -2,8 +2,7 @@
 
 Request deduplication plugin for Spoosh - prevents duplicate in-flight requests.
 
-**Requirements:** TypeScript >= 5.0
-**Peer Dependencies:** `@spoosh/core`
+**[Documentation](https://spoosh.dev/docs/plugins/deduplication)** · **Requirements:** TypeScript >= 5.0 · **Peer Dependencies:** `@spoosh/core`
 
 ## Installation
 

@@ -4,6 +4,8 @@
 
 Spoosh is a lightweight, type-safe API client framework with a unique plugin architecture. Build exactly what you need by composing plugins together.
 
+**[Documentation](https://spoosh.dev)** · [Getting Started](https://spoosh.dev/docs/getting-started) · [Plugins](https://spoosh.dev/docs/plugins)
+
 ## Features
 
 **Type-Safe Routing** — Access your API with natural object syntax. Full autocomplete, zero magic strings.

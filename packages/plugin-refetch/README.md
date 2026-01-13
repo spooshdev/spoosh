@@ -2,8 +2,7 @@
 
 Auto-refetch plugin for Spoosh - refetch on window focus and network reconnect.
 
-**Requirements:** TypeScript >= 5.0
-**Peer Dependencies:** `@spoosh/core`
+**[Documentation](https://spoosh.dev/docs/plugins/refetch)** · **Requirements:** TypeScript >= 5.0 · **Peer Dependencies:** `@spoosh/core`
 
 ## Installation
 

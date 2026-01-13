@@ -2,8 +2,7 @@
 
 Cache invalidation plugin for Spoosh - auto-invalidates related queries after mutations.
 
-**Requirements:** TypeScript >= 5.0
-**Peer Dependencies:** `@spoosh/core`
+**[Documentation](https://spoosh.dev/docs/plugins/invalidation)** · **Requirements:** TypeScript >= 5.0 · **Peer Dependencies:** `@spoosh/core`
 
 ## Installation
 

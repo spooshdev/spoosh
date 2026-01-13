@@ -2,8 +2,7 @@
 
 Next.js integration plugin for Spoosh - server-side cache revalidation after mutations.
 
-**Requirements:** TypeScript >= 5.0, Next.js supporting server actions
-**Peer Dependencies:** `@spoosh/core`, `@spoosh/plugin-invalidation`
+**[Documentation](https://spoosh.dev/docs/plugins/nextjs)** · **Requirements:** TypeScript >= 5.0, Next.js supporting server actions · **Peer Dependencies:** `@spoosh/core`, `@spoosh/plugin-invalidation`
 
 ## Installation
 

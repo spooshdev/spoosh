@@ -2,8 +2,7 @@
 
 Debug plugin for Spoosh - logs detailed request lifecycle information.
 
-**Requirements:** TypeScript >= 5.0
-**Peer Dependencies:** `@spoosh/core`
+**[Documentation](https://spoosh.dev/docs/plugins/debug)** · **Requirements:** TypeScript >= 5.0 · **Peer Dependencies:** `@spoosh/core`
 
 ## Installation
 

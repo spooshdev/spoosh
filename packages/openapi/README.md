@@ -2,7 +2,7 @@
 
 Generate OpenAPI 3.0 specifications from TypeScript API schema types.
 
-**Requirements:** TypeScript >= 5.0
+**[Documentation](https://spoosh.dev/docs/integrations/openapi)** · **Requirements:** TypeScript >= 5.0
 
 ## Installation
 

@@ -2,7 +2,7 @@
 
 React hooks for Spoosh - `useRead`, `useWrite`, and `useInfiniteRead`.
 
-**Requirements:** TypeScript >= 5.0, React >= 18.0
+**[Documentation](https://spoosh.dev/docs/integrations/react)** · **Requirements:** TypeScript >= 5.0, React >= 18.0
 
 ## Installation
 
