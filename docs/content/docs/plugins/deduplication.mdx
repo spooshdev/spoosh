@@ -54,23 +54,23 @@ useRead((api) => api.posts.$get(), { dedupe: false });
 
 ### Plugin Config
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `read` | `"in-flight" \| false` | `"in-flight"` | Deduplication mode for reads |
-| `write` | `"in-flight" \| false` | `false` | Deduplication mode for writes |
+| Option  | Type                   | Default       | Description                   |
+| ------- | ---------------------- | ------------- | ----------------------------- |
+| `read`  | `"in-flight" \| false` | `"in-flight"` | Deduplication mode for reads  |
+| `write` | `"in-flight" \| false` | `false`       | Deduplication mode for writes |
 
 ### Per-Request Options
 
-| Option | Type | Description |
-| ------ | ---- | ----------- |
+| Option   | Type                   | Description                             |
+| -------- | ---------------------- | --------------------------------------- |
 | `dedupe` | `"in-flight" \| false` | Override deduplication for this request |
 
 ### Modes
 
-| Mode | Description |
-| ---- | ----------- |
+| Mode          | Description                                            |
+| ------------- | ------------------------------------------------------ |
 | `"in-flight"` | Reuse existing in-flight request promise if one exists |
-| `false` | Always make a new request |
+| `false`       | Always make a new request                              |
 
 ## Write Deduplication
 
@@ -80,4 +80,3 @@ By default, writes are not deduplicated to avoid unintended side effects. Enable
 // Enable deduplication for writes (use carefully)
 const plugins = [deduplicationPlugin({ write: "in-flight" })];
 ```
-

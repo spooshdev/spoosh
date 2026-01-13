@@ -1,9 +1,14 @@
-import { defineConfig, defineDocs, frontmatterSchema, metaSchema } from 'fumadocs-mdx/config';
-import { transformerTwoslash } from 'fumadocs-twoslash';
-import { rehypeCodeDefaultOptions } from 'fumadocs-core/mdx-plugins';
+import {
+  defineConfig,
+  defineDocs,
+  frontmatterSchema,
+  metaSchema,
+} from "fumadocs-mdx/config";
+import { transformerTwoslash } from "fumadocs-twoslash";
+import { rehypeCodeDefaultOptions } from "fumadocs-core/mdx-plugins";
 
 export const docs = defineDocs({
-  dir: 'content/docs',
+  dir: "content/docs",
   docs: {
     schema: frontmatterSchema,
     postprocess: {
@@ -19,14 +24,14 @@ export default defineConfig({
   mdxOptions: {
     rehypeCodeOptions: {
       themes: {
-        light: 'github-light',
-        dark: 'github-dark',
+        light: "github-light",
+        dark: "github-dark",
       },
       transformers: [
         ...(rehypeCodeDefaultOptions.transformers ?? []),
         transformerTwoslash(),
       ],
-      langs: ['js', 'jsx', 'ts', 'tsx', 'bash', 'json', 'md', 'mdx'],
+      langs: ["js", "jsx", "ts", "tsx", "bash", "json", "md", "mdx"],
     },
   },
 });

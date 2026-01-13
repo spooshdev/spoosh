@@ -9,19 +9,31 @@ All Spoosh API calls return a consistent `SpooshResponse` object. This makes err
 
 ```typescript
 type SpooshResponse<TData, TError> =
-  | { status: number; data: TData; error?: undefined; headers?: Headers; aborted?: false }
-  | { status: number; data?: undefined; error: TError; headers?: Headers; aborted?: boolean };
+  | {
+      status: number;
+      data: TData;
+      error?: undefined;
+      headers?: Headers;
+      aborted?: false;
+    }
+  | {
+      status: number;
+      data?: undefined;
+      error: TError;
+      headers?: Headers;
+      aborted?: boolean;
+    };
 ```
 
 Every response includes:
 
-| Field | Type | Description |
-| ----- | ---- | ----------- |
-| `status` | `number` | HTTP status code |
-| `data` | `TData \| undefined` | Response data (present on success) |
-| `error` | `TError \| undefined` | Error object (present on failure) |
-| `headers` | `Headers \| undefined` | Response headers |
-| `aborted` | `boolean \| undefined` | True if request was aborted |
+| Field     | Type                   | Description                        |
+| --------- | ---------------------- | ---------------------------------- |
+| `status`  | `number`               | HTTP status code                   |
+| `data`    | `TData \| undefined`   | Response data (present on success) |
+| `error`   | `TError \| undefined`  | Error object (present on failure)  |
+| `headers` | `Headers \| undefined` | Response headers                   |
+| `aborted` | `boolean \| undefined` | True if request was aborted        |
 
 ## Handling Responses
 

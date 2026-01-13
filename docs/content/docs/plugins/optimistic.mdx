@@ -100,19 +100,19 @@ trigger({
 
 ### Config Object
 
-| Property | Type | Default | Description |
-| -------- | ---- | ------- | ----------- |
-| `for` | `api.endpoint.$get` | required | The endpoint to update |
-| `updater` | `(data, response?) => data` | required | Function to update cached data |
-| `match` | `(request) => boolean` | - | Filter which cache entries to update |
-| `timing` | `"immediate" \| "onSuccess"` | `"immediate"` | When to apply the update |
-| `rollbackOnError` | `boolean` | `true` | Whether to rollback on error |
-| `onError` | `(error) => void` | - | Error callback |
+| Property          | Type                         | Default       | Description                          |
+| ----------------- | ---------------------------- | ------------- | ------------------------------------ |
+| `for`             | `api.endpoint.$get`          | required      | The endpoint to update               |
+| `updater`         | `(data, response?) => data`  | required      | Function to update cached data       |
+| `match`           | `(request) => boolean`       | -             | Filter which cache entries to update |
+| `timing`          | `"immediate" \| "onSuccess"` | `"immediate"` | When to apply the update             |
+| `rollbackOnError` | `boolean`                    | `true`        | Whether to rollback on error         |
+| `onError`         | `(error) => void`            | -             | Error callback                       |
 
 ### Timing Modes
 
-| Mode | Description |
-| ---- | ----------- |
+| Mode          | Description                                                         |
+| ------------- | ------------------------------------------------------------------- |
 | `"immediate"` | Update cache instantly before request completes. Rollback on error. |
 | `"onSuccess"` | Wait for successful response, then update cache with response data. |
 
@@ -120,8 +120,8 @@ trigger({
 
 The `useRead` hook returns an additional field when optimistic data is present:
 
-| Property | Type | Description |
-| -------- | ---- | ----------- |
+| Property       | Type      | Description                                         |
+| -------------- | --------- | --------------------------------------------------- |
 | `isOptimistic` | `boolean` | `true` if current data is from an optimistic update |
 
 ```typescript
@@ -150,26 +150,38 @@ If you want auto-invalidation to still happen, set it explicitly:
 ```typescript
 // Invalidate all related tags (full hierarchy)
 trigger({
-  optimistic: ($, api) => $({ /* ... */ }),
+  optimistic: ($, api) =>
+    $({
+      /* ... */
+    }),
   autoInvalidate: "all",
 });
 
 // Invalidate only the exact endpoint tag
 trigger({
-  optimistic: ($, api) => $({ /* ... */ }),
+  optimistic: ($, api) =>
+    $({
+      /* ... */
+    }),
   autoInvalidate: "self",
 });
 
 // Target specific endpoints or tags manually
 trigger({
-  optimistic: ($, api) => $({ /* ... */ }),
+  optimistic: ($, api) =>
+    $({
+      /* ... */
+    }),
   autoInvalidate: "none",
   invalidate: (api) => [api.posts.$get, api.stats.$get],
 });
 
 // Or use string tags
 trigger({
-  optimistic: ($, api) => $({ /* ... */ }),
+  optimistic: ($, api) =>
+    $({
+      /* ... */
+    }),
   invalidate: ["posts", "dashboard"],
 });
 ```

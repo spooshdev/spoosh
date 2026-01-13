@@ -39,36 +39,36 @@ const spoosh = createSpoosh<ApiSchema, Error, typeof plugins>({
 
 ### Essential
 
-| Plugin | Package | Description |
-| ------ | ------- | ----------- |
-| [Cache](/docs/plugins/cache) | `@spoosh/plugin-cache` | Response caching with configurable stale time |
-| [Invalidation](/docs/plugins/invalidation) | `@spoosh/plugin-invalidation` | Auto-invalidate queries after mutations |
-| [Deduplication](/docs/plugins/deduplication) | `@spoosh/plugin-deduplication` | Prevent duplicate concurrent requests |
-| [Retry](/docs/plugins/retry) | `@spoosh/plugin-retry` | Automatic retry on failure |
+| Plugin                                       | Package                        | Description                                   |
+| -------------------------------------------- | ------------------------------ | --------------------------------------------- |
+| [Cache](/docs/plugins/cache)                 | `@spoosh/plugin-cache`         | Response caching with configurable stale time |
+| [Invalidation](/docs/plugins/invalidation)   | `@spoosh/plugin-invalidation`  | Auto-invalidate queries after mutations       |
+| [Deduplication](/docs/plugins/deduplication) | `@spoosh/plugin-deduplication` | Prevent duplicate concurrent requests         |
+| [Retry](/docs/plugins/retry)                 | `@spoosh/plugin-retry`         | Automatic retry on failure                    |
 
 ### Data Management
 
-| Plugin | Package | Description |
-| ------ | ------- | ----------- |
-| [Optimistic](/docs/plugins/optimistic) | `@spoosh/plugin-optimistic` | Instant UI updates with automatic rollback |
-| [Initial Data](/docs/plugins/initial-data) | `@spoosh/plugin-initial-data` | Provide initial data for queries |
-| [Prefetch](/docs/plugins/prefetch) | `@spoosh/plugin-prefetch` | Preload data before it's needed |
+| Plugin                                     | Package                       | Description                                |
+| ------------------------------------------ | ----------------------------- | ------------------------------------------ |
+| [Optimistic](/docs/plugins/optimistic)     | `@spoosh/plugin-optimistic`   | Instant UI updates with automatic rollback |
+| [Initial Data](/docs/plugins/initial-data) | `@spoosh/plugin-initial-data` | Provide initial data for queries           |
+| [Prefetch](/docs/plugins/prefetch)         | `@spoosh/plugin-prefetch`     | Preload data before it's needed            |
 
 ### Request Control
 
-| Plugin | Package | Description |
-| ------ | ------- | ----------- |
-| [Polling](/docs/plugins/polling) | `@spoosh/plugin-polling` | Automatic periodic refetching |
-| [Refetch](/docs/plugins/refetch) | `@spoosh/plugin-refetch` | Refetch on window focus/network reconnect |
+| Plugin                             | Package                   | Description                               |
+| ---------------------------------- | ------------------------- | ----------------------------------------- |
+| [Polling](/docs/plugins/polling)   | `@spoosh/plugin-polling`  | Automatic periodic refetching             |
+| [Refetch](/docs/plugins/refetch)   | `@spoosh/plugin-refetch`  | Refetch on window focus/network reconnect |
 | [Debounce](/docs/plugins/debounce) | `@spoosh/plugin-debounce` | Delay requests until input stops changing |
-| [Throttle](/docs/plugins/throttle) | `@spoosh/plugin-throttle` | Limit request frequency |
+| [Throttle](/docs/plugins/throttle) | `@spoosh/plugin-throttle` | Limit request frequency                   |
 
 ### Framework Integration
 
-| Plugin | Package | Description |
-| ------ | ------- | ----------- |
+| Plugin                          | Package                 | Description                    |
+| ------------------------------- | ----------------------- | ------------------------------ |
 | [Next.js](/docs/plugins/nextjs) | `@spoosh/plugin-nextjs` | Server-side cache revalidation |
-| [Debug](/docs/plugins/debug) | `@spoosh/plugin-debug` | Development logging |
+| [Debug](/docs/plugins/debug)    | `@spoosh/plugin-debug`  | Development logging            |
 
 ## Recommended Setup
 
@@ -91,6 +91,7 @@ const plugins = [
 ```
 
 This gives you:
+
 - **Caching** - Avoid redundant network requests
 - **Deduplication** - Prevent duplicate requests when multiple queries invalidate at once
 - **Auto-invalidation** - Queries refresh automatically after mutations

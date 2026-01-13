@@ -51,13 +51,10 @@ Tags are hierarchical. Invalidating `"users"` will refetch all queries under `/u
 Override or extend auto-generated tags:
 
 ```typescript
-const { data } = useRead(
-  (api) => api.users.$get(),
-  {
-    tags: ["custom-users"], // overrides auto-generated tags
-    additionalTags: ["dashboard-data"], // adds to auto-generated tags
-  }
-);
+const { data } = useRead((api) => api.users.$get(), {
+  tags: ["custom-users"], // overrides auto-generated tags
+  additionalTags: ["dashboard-data"], // adds to auto-generated tags
+});
 ```
 
 ## Cache Invalidation
@@ -66,11 +63,11 @@ The `invalidationPlugin` automatically refetches stale queries after mutations.
 
 ### Auto Invalidation Modes
 
-| Mode | Description |
-| ---- | ----------- |
-| `"all"` | Invalidates all tags of the mutation path (default) |
-| `"self"` | Only invalidates the exact path |
-| `"none"` | No automatic invalidation |
+| Mode     | Description                                         |
+| -------- | --------------------------------------------------- |
+| `"all"`  | Invalidates all tags of the mutation path (default) |
+| `"self"` | Only invalidates the exact path                     |
+| `"none"` | No automatic invalidation                           |
 
 ```typescript
 const { trigger } = useWrite((api) => api.posts.$post);
@@ -113,16 +110,13 @@ The `deduplicationPlugin` prevents duplicate network requests when the same quer
 
 ### Deduplication Modes
 
-| Mode | Description |
-| ---- | ----------- |
+| Mode          | Description                                                            |
+| ------------- | ---------------------------------------------------------------------- |
 | `"in-flight"` | Reuse pending request if same query is in progress (default for reads) |
-| `false` | Disable deduplication |
+| `false`       | Disable deduplication                                                  |
 
 ```typescript
-const { data } = useRead(
-  (api) => api.users.$get(),
-  { dedupe: "in-flight" }
-);
+const { data } = useRead((api) => api.users.$get(), { dedupe: "in-flight" });
 ```
 
 When multiple components call the same query simultaneously, only one network request is made:
@@ -176,25 +170,25 @@ const { data, input } = useRead(
 
 ### Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `enabled` | `boolean` | `true` | Whether to fetch automatically |
-| `tags` | `string[]` | - | Override auto-generated cache tags |
-| `additionalTags` | `string[]` | - | Add extra cache tags |
-| `dedupe` | `"in-flight" \| false` | `"in-flight"` | Request deduplication mode |
-| + plugin options | - | - | Options from installed plugins |
+| Option           | Type                   | Default       | Description                        |
+| ---------------- | ---------------------- | ------------- | ---------------------------------- |
+| `enabled`        | `boolean`              | `true`        | Whether to fetch automatically     |
+| `tags`           | `string[]`             | -             | Override auto-generated cache tags |
+| `additionalTags` | `string[]`             | -             | Add extra cache tags               |
+| `dedupe`         | `"in-flight" \| false` | `"in-flight"` | Request deduplication mode         |
+| + plugin options | -                      | -             | Options from installed plugins     |
 
 ### Returns
 
-| Property | Type | Description |
-| -------- | ---- | ----------- |
-| `data` | `TData \| undefined` | Response data |
-| `error` | `TError \| undefined` | Error if request failed |
-| `loading` | `boolean` | True during initial load |
-| `fetching` | `boolean` | True during any fetch |
-| `refetch` | `() => Promise` | Manually trigger refetch |
-| `abort` | `() => void` | Abort current request |
-| `input` | `object` | The request input (query, body, params) |
+| Property   | Type                  | Description                             |
+| ---------- | --------------------- | --------------------------------------- |
+| `data`     | `TData \| undefined`  | Response data                           |
+| `error`    | `TError \| undefined` | Error if request failed                 |
+| `loading`  | `boolean`             | True during initial load                |
+| `fetching` | `boolean`             | True during any fetch                   |
+| `refetch`  | `() => Promise`       | Manually trigger refetch                |
+| `abort`    | `() => void`          | Abort current request                   |
+| `input`    | `object`              | The request input (query, body, params) |
 
 ## useWrite
 
@@ -238,26 +232,26 @@ await trigger({
 
 ### Returns
 
-| Property | Type | Description |
-| -------- | ---- | ----------- |
-| `trigger` | `(options) => Promise` | Execute the mutation |
-| `data` | `TData \| undefined` | Response data |
-| `error` | `TError \| undefined` | Error if request failed |
-| `loading` | `boolean` | True while mutation is in progress |
-| `reset` | `() => void` | Reset state |
-| `abort` | `() => void` | Abort current request |
-| `input` | `object \| undefined` | The last trigger input |
+| Property  | Type                   | Description                        |
+| --------- | ---------------------- | ---------------------------------- |
+| `trigger` | `(options) => Promise` | Execute the mutation               |
+| `data`    | `TData \| undefined`   | Response data                      |
+| `error`   | `TError \| undefined`  | Error if request failed            |
+| `loading` | `boolean`              | True while mutation is in progress |
+| `reset`   | `() => void`           | Reset state                        |
+| `abort`   | `() => void`           | Abort current request              |
+| `input`   | `object \| undefined`  | The last trigger input             |
 
 ### Trigger Options
 
-| Option | Type | Description |
-| ------ | ---- | ----------- |
-| `body` | `TBody` | Request body |
-| `query` | `TQuery` | Query parameters |
-| `params` | `Record<string, string \| number>` | Path parameters |
-| `autoInvalidate` | `"all" \| "self" \| "none"` | Auto invalidation mode |
-| `invalidate` | `(api) => Selector[] \| string[]` | Manual invalidation targets |
-| `dedupe` | `"in-flight" \| false` | Request deduplication mode |
+| Option           | Type                               | Description                 |
+| ---------------- | ---------------------------------- | --------------------------- |
+| `body`           | `TBody`                            | Request body                |
+| `query`          | `TQuery`                           | Query parameters            |
+| `params`         | `Record<string, string \| number>` | Path parameters             |
+| `autoInvalidate` | `"all" \| "self" \| "none"`        | Auto invalidation mode      |
+| `invalidate`     | `(api) => Selector[] \| string[]`  | Manual invalidation targets |
+| `dedupe`         | `"in-flight" \| false`             | Request deduplication mode  |
 
 ## useInfiniteRead
 
@@ -311,14 +305,14 @@ function PostList() {
 
 ### Options
 
-| Option | Type | Required | Description |
-| ------ | ---- | -------- | ----------- |
-| `canFetchNext` | `(ctx) => boolean` | Yes | Check if next page exists |
-| `nextPageRequest` | `(ctx) => Partial<TRequest>` | Yes | Build request for next page |
-| `merger` | `(allResponses) => TItem[]` | Yes | Merge all responses into items |
-| `canFetchPrev` | `(ctx) => boolean` | No | Check if previous page exists |
-| `prevPageRequest` | `(ctx) => Partial<TRequest>` | No | Build request for previous page |
-| `enabled` | `boolean` | No | Whether to fetch automatically |
+| Option            | Type                         | Required | Description                     |
+| ----------------- | ---------------------------- | -------- | ------------------------------- |
+| `canFetchNext`    | `(ctx) => boolean`           | Yes      | Check if next page exists       |
+| `nextPageRequest` | `(ctx) => Partial<TRequest>` | Yes      | Build request for next page     |
+| `merger`          | `(allResponses) => TItem[]`  | Yes      | Merge all responses into items  |
+| `canFetchPrev`    | `(ctx) => boolean`           | No       | Check if previous page exists   |
+| `prevPageRequest` | `(ctx) => Partial<TRequest>` | No       | Build request for previous page |
+| `enabled`         | `boolean`                    | No       | Whether to fetch automatically  |
 
 ### Context Object
 
@@ -332,18 +326,18 @@ type Context<TData, TRequest> = {
 
 ### Returns
 
-| Property | Type | Description |
-| -------- | ---- | ----------- |
-| `data` | `TItem[] \| undefined` | Merged items from all responses |
-| `allResponses` | `TData[] \| undefined` | Array of all raw responses |
-| `loading` | `boolean` | True during initial load |
-| `fetching` | `boolean` | True during any fetch |
-| `fetchingNext` | `boolean` | True while fetching next page |
-| `fetchingPrev` | `boolean` | True while fetching previous |
-| `canFetchNext` | `boolean` | Whether next page exists |
-| `canFetchPrev` | `boolean` | Whether previous page exists |
-| `fetchNext` | `() => Promise<void>` | Fetch the next page |
-| `fetchPrev` | `() => Promise<void>` | Fetch the previous page |
-| `refetch` | `() => Promise<void>` | Refetch all pages |
-| `abort` | `() => void` | Abort current request |
-| `error` | `TError \| undefined` | Error if request failed |
+| Property       | Type                   | Description                     |
+| -------------- | ---------------------- | ------------------------------- |
+| `data`         | `TItem[] \| undefined` | Merged items from all responses |
+| `allResponses` | `TData[] \| undefined` | Array of all raw responses      |
+| `loading`      | `boolean`              | True during initial load        |
+| `fetching`     | `boolean`              | True during any fetch           |
+| `fetchingNext` | `boolean`              | True while fetching next page   |
+| `fetchingPrev` | `boolean`              | True while fetching previous    |
+| `canFetchNext` | `boolean`              | Whether next page exists        |
+| `canFetchPrev` | `boolean`              | Whether previous page exists    |
+| `fetchNext`    | `() => Promise<void>`  | Fetch the next page             |
+| `fetchPrev`    | `() => Promise<void>`  | Fetch the previous page         |
+| `refetch`      | `() => Promise<void>`  | Refetch all pages               |
+| `abort`        | `() => void`           | Abort current request           |
+| `error`        | `TError \| undefined`  | Error if request failed         |

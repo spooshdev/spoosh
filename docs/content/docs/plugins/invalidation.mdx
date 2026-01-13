@@ -99,24 +99,24 @@ await trigger({
 
 ### Plugin Config
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
+| Option           | Type                        | Default | Description                        |
+| ---------------- | --------------------------- | ------- | ---------------------------------- |
 | `autoInvalidate` | `"all" \| "self" \| "none"` | `"all"` | Default auto-invalidation behavior |
 
 ### Per-Request Options
 
-| Option | Type | Description |
-| ------ | ---- | ----------- |
-| `autoInvalidate` | `"all" \| "self" \| "none"` | Override auto-invalidation behavior |
-| `invalidate` | `string[] \| ((api) => [...])` | Specific tags or endpoints to invalidate |
+| Option           | Type                           | Description                              |
+| ---------------- | ------------------------------ | ---------------------------------------- |
+| `autoInvalidate` | `"all" \| "self" \| "none"`    | Override auto-invalidation behavior      |
+| `invalidate`     | `string[] \| ((api) => [...])` | Specific tags or endpoints to invalidate |
 
 ## Auto-Invalidate Modes
 
-| Mode | Description |
-| ---- | ----------- |
-| `"all"` | Invalidate all tags from path hierarchy (default) |
-| `"self"` | Only invalidate the exact endpoint tag |
-| `"none"` | Disable auto-invalidation (manual only) |
+| Mode     | Description                                       |
+| -------- | ------------------------------------------------- |
+| `"all"`  | Invalidate all tags from path hierarchy (default) |
+| `"self"` | Only invalidate the exact endpoint tag            |
+| `"none"` | Disable auto-invalidation (manual only)           |
 
 ## Example
 

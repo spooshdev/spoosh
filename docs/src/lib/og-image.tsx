@@ -8,21 +8,22 @@ export function OGImage({
   return (
     <div
       style={{
-        height: '100%',
-        width: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        padding: '60px 80px',
-        background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4c1d95 100%)',
-        fontFamily: 'Inter, system-ui, sans-serif',
+        height: "100%",
+        width: "100%",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        padding: "60px 80px",
+        background:
+          "linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4c1d95 100%)",
+        fontFamily: "Inter, system-ui, sans-serif",
       }}
     >
       <div
         style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '16px',
+          display: "flex",
+          alignItems: "center",
+          gap: "16px",
         }}
       >
         <svg
@@ -51,9 +52,9 @@ export function OGImage({
         </svg>
         <span
           style={{
-            fontSize: '28px',
+            fontSize: "28px",
             fontWeight: 600,
-            color: '#a855f7',
+            color: "#a855f7",
           }}
         >
           Spoosh
@@ -62,16 +63,16 @@ export function OGImage({
 
       <div
         style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '20px',
+          display: "flex",
+          flexDirection: "column",
+          gap: "20px",
         }}
       >
         <h1
           style={{
-            fontSize: title.length > 30 ? '56px' : '64px',
+            fontSize: title.length > 30 ? "56px" : "64px",
             fontWeight: 700,
-            color: '#ffffff',
+            color: "#ffffff",
             margin: 0,
             lineHeight: 1.1,
           }}
@@ -82,11 +83,11 @@ export function OGImage({
         {description && (
           <p
             style={{
-              fontSize: '28px',
-              color: '#94a3b8',
+              fontSize: "28px",
+              color: "#94a3b8",
               margin: 0,
               lineHeight: 1.4,
-              maxWidth: '900px',
+              maxWidth: "900px",
             }}
           >
             {description}
@@ -96,15 +97,15 @@ export function OGImage({
 
       <div
         style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
         }}
       >
         <span
           style={{
-            fontSize: '20px',
-            color: '#64748b',
+            fontSize: "20px",
+            color: "#64748b",
           }}
         >
           spoosh.dev

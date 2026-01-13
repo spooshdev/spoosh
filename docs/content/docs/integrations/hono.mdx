@@ -6,7 +6,9 @@ description: Type-safe API client from your Hono server
 The `@spoosh/hono` package transforms your Hono app type into Spoosh's ApiSchema format, giving you end-to-end type safety.
 
 <Callout type="info">
-For proper type inference, your Hono routes must follow the [Hono RPC guide](https://hono.dev/docs/guides/rpc). Chain your routes directly on the app instance and export the app type.
+  For proper type inference, your Hono routes must follow the [Hono RPC
+  guide](https://hono.dev/docs/guides/rpc). Chain your routes directly on the
+  app instance and export the app type.
 </Callout>
 
 ## Installation
@@ -81,7 +83,7 @@ const { data: posts } = await api.posts.$get();
 
 // POST /api/posts
 const { data: newPost } = await api.posts.$post({
-  body: { title: "New Post" },  // body is typed
+  body: { title: "New Post" }, // body is typed
 });
 // newPost: { id: number; title: string }
 
@@ -95,13 +97,13 @@ await api.posts[1].$delete();
 
 ## Type Mapping
 
-| Hono | Spoosh |
-| ---- | ------ |
-| `c.json(data)` | Response data type |
-| `zValidator("json", schema)` | Request body type |
-| `zValidator("query", schema)` | Query params type |
-| `zValidator("form", schema)` | Form data type |
-| `/posts/:id` | `posts._` (dynamic segment) |
+| Hono                          | Spoosh                      |
+| ----------------------------- | --------------------------- |
+| `c.json(data)`                | Response data type          |
+| `zValidator("json", schema)`  | Request body type           |
+| `zValidator("query", schema)` | Query params type           |
+| `zValidator("form", schema)`  | Form data type              |
+| `/posts/:id`                  | `posts._` (dynamic segment) |
 
 ## Path Parameters
 

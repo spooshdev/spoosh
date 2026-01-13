@@ -13,9 +13,7 @@ Use `useRead` to fetch data:
 import { useRead } from "../api/client";
 
 function UserProfile({ userId }: { userId: number }) {
-  const { data, loading, error } = useRead(
-    (api) => api.users[userId].$get()
-  );
+  const { data, loading, error } = useRead((api) => api.users[userId].$get());
 
   if (loading) return <Spinner />;
   if (error) return <ErrorMessage error={error} />;
@@ -33,8 +31,8 @@ function UserProfile({ userId }: { userId: number }) {
 
 ```tsx
 function SearchUsers({ query }: { query: string }) {
-  const { data } = useRead(
-    (api) => api.search.$get({ query: { q: query, page: 1 } })
+  const { data } = useRead((api) =>
+    api.search.$get({ query: { q: query, page: 1 } })
   );
 
   return (
@@ -51,10 +49,9 @@ function SearchUsers({ query }: { query: string }) {
 
 ```tsx
 function UserProfile({ userId }: { userId: number | null }) {
-  const { data, loading } = useRead(
-    (api) => api.users[userId!].$get(),
-    { enabled: userId !== null }
-  );
+  const { data, loading } = useRead((api) => api.users[userId!].$get(), {
+    enabled: userId !== null,
+  });
 
   // ...
 }
@@ -68,9 +65,7 @@ Use `useWrite` for mutations (POST, PUT, DELETE):
 import { useWrite } from "../api/client";
 
 function CreateUserForm() {
-  const { trigger, loading, error } = useWrite(
-    (api) => api.users.$post
-  );
+  const { trigger, loading, error } = useWrite((api) => api.users.$post);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -105,13 +100,9 @@ function CreateUserForm() {
 
 ```tsx
 function UserActions({ userId }: { userId: number }) {
-  const { trigger: updateUser } = useWrite(
-    (api) => api.users[userId].$put
-  );
+  const { trigger: updateUser } = useWrite((api) => api.users[userId].$put);
 
-  const { trigger: deleteUser } = useWrite(
-    (api) => api.users[userId].$delete
-  );
+  const { trigger: deleteUser } = useWrite((api) => api.users[userId].$delete);
 
   const handleUpdate = async () => {
     await updateUser({ body: { name: "Updated Name" } });
@@ -139,8 +130,8 @@ Spoosh supports multiple syntaxes for dynamic path segments:
 const { data } = useRead((api) => api.users[123].$get());
 
 // Function syntax with typed params (recommended)
-const { data } = useRead(
-  (api) => api.users(":userId").$get({ params: { userId: "123" } })
+const { data } = useRead((api) =>
+  api.users(":userId").$get({ params: { userId: "123" } })
 );
 
 // Variable in brackets
@@ -156,11 +147,11 @@ All API calls return a `SpooshResponse`:
 
 ```typescript
 type SpooshResponse<TData, TError> = {
-  status: number;       // HTTP status code
-  data: TData | undefined;    // Response data (if successful)
-  error: TError | undefined;  // Error data (if failed)
-  headers?: Headers;    // Response headers
-  aborted?: boolean;    // True if request was aborted
+  status: number; // HTTP status code
+  data: TData | undefined; // Response data (if successful)
+  error: TError | undefined; // Error data (if failed)
+  headers?: Headers; // Response headers
+  aborted?: boolean; // True if request was aborted
 };
 ```
 

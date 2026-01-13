@@ -1,5 +1,5 @@
 const RAW_BASE =
-  'https://raw.githubusercontent.com/nxnom/spoosh/main/docs/content/docs';
+  "https://raw.githubusercontent.com/nxnom/spoosh/main/docs/content/docs";
 
 const content = `# Spoosh
 
@@ -57,7 +57,7 @@ export const revalidate = false;
 export function GET() {
   return new Response(content, {
     headers: {
-      'Content-Type': 'text/plain; charset=utf-8',
+      "Content-Type": "text/plain; charset=utf-8",
     },
   });
 }

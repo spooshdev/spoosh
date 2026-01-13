@@ -1,8 +1,5 @@
 {
   "title": "LLM",
   "defaultOpen": false,
-  "pages": [
-    "[Docs List](/llms)",
-    "[Full Docs](/llms-full)"
-  ]
+  "pages": ["[Docs List](/llms)", "[Full Docs](/llms-full)"]
 }

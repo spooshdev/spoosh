@@ -1,16 +1,16 @@
-import { codeToHtml } from 'shiki';
+import { codeToHtml } from "shiki";
 
 interface CodeBlockProps {
   code: string;
   lang?: string;
 }
 
-export async function CodeBlock({ code, lang = 'typescript' }: CodeBlockProps) {
+export async function CodeBlock({ code, lang = "typescript" }: CodeBlockProps) {
   const html = await codeToHtml(code, {
     lang,
     themes: {
-      light: 'github-light',
-      dark: 'github-dark',
+      light: "github-light",
+      dark: "github-dark",
     },
     defaultColor: false,
   });

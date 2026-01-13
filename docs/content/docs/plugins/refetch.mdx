@@ -25,6 +25,7 @@ const plugins = [
 ```
 
 When enabled, queries automatically refetch:
+
 - When the browser tab regains focus
 - When the network comes back online
 
@@ -45,14 +46,14 @@ useRead((api) => api.user.$get(), {
 
 ### Plugin Config
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `refetchOnFocus` | `boolean` | `false` | Refetch when window regains focus |
-| `refetchOnReconnect` | `boolean` | `false` | Refetch when network reconnects |
+| Option               | Type      | Default | Description                       |
+| -------------------- | --------- | ------- | --------------------------------- |
+| `refetchOnFocus`     | `boolean` | `false` | Refetch when window regains focus |
+| `refetchOnReconnect` | `boolean` | `false` | Refetch when network reconnects   |
 
 ### Per-Request Options
 
-| Option | Type | Description |
-| ------ | ---- | ----------- |
-| `refetchOnFocus` | `boolean` | Override focus refetch behavior |
+| Option               | Type      | Description                         |
+| -------------------- | --------- | ----------------------------------- |
+| `refetchOnFocus`     | `boolean` | Override focus refetch behavior     |
 | `refetchOnReconnect` | `boolean` | Override reconnect refetch behavior |

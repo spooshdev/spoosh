@@ -20,8 +20,8 @@ type User = {
 
 type ApiSchema = {
   users: {
-    $get: User[];  // Simple form - just the return type
-    $post: Endpoint<User, { name: string; email: string }>;  // With body
+    $get: User[]; // Simple form - just the return type
+    $post: Endpoint<User, { name: string; email: string }>; // With body
   };
 };
 ```
@@ -39,7 +39,7 @@ import { createClient } from "@spoosh/core";
 type User = { id: number; name: string; email: string };
 type ApiSchema = {
   users: {
-    $get: User[];  // Just the return type - no wrapper needed
+    $get: User[]; // Just the return type - no wrapper needed
   };
 };
 
@@ -183,10 +183,10 @@ type ApiSchema = {
 };
 
 // Usage
-const { data: users } = await api.users.$get();           // GET /users
-const { data: user } = await api.users[123].$get();       // GET /users/123
+const { data: users } = await api.users.$get(); // GET /users
+const { data: user } = await api.users[123].$get(); // GET /users/123
 const { data } = await api.users[123].$put({ body: {} }); // PUT /users/123
-await api.users[123].$delete();                           // DELETE /users/123
+await api.users[123].$delete(); // DELETE /users/123
 ```
 
 ### Nested Dynamic Segments
@@ -206,8 +206,8 @@ type ApiSchema = {
 };
 
 // Usage
-await api.users[1].posts.$get();        // GET /users/1/posts
-await api.users[1].posts[42].$get();    // GET /users/1/posts/42
+await api.users[1].posts.$get(); // GET /users/1/posts
+await api.users[1].posts[42].$get(); // GET /users/1/posts/42
 ```
 
 ### Typed Dynamic Params
@@ -228,12 +228,12 @@ const { data } = await api.users[userId].$get();
 
 Spoosh supports all common HTTP methods:
 
-| Method | Type | Description |
-| ------ | ---- | ----------- |
-| `$get` | `Endpoint` | GET request |
-| `$post` | `Endpoint` | POST request |
-| `$put` | `Endpoint` | PUT request |
-| `$patch` | `Endpoint` | PATCH request |
+| Method    | Type       | Description    |
+| --------- | ---------- | -------------- |
+| `$get`    | `Endpoint` | GET request    |
+| `$post`   | `Endpoint` | POST request   |
+| `$put`    | `Endpoint` | PUT request    |
+| `$patch`  | `Endpoint` | PATCH request  |
 | `$delete` | `Endpoint` | DELETE request |
 
 ## Schema Organization
@@ -289,12 +289,12 @@ See the [Hono Integration](/docs/integrations/hono) guide for details.
 
 ## Summary
 
-| Type | Description | Example |
-| ---- | ----------- | ------- |
-| `TData` | Simple data type (no body) | `$get: User[]` |
-| `Endpoint<TData>` | Explicit endpoint | `$get: Endpoint<User[]>` |
-| `Endpoint<TData, TBody>` | Endpoint with JSON body | `$post: Endpoint<User, CreateUserBody>` |
-| `EndpointWithQuery<TData, TQuery>` | Endpoint with query params | `$get: EndpointWithQuery<User[], { page: number }>` |
-| `EndpointWithFormData<TData, TForm>` | Endpoint with form data | `$post: EndpointWithFormData<Result, { file: File }>` |
-| `EndpointDefinition<T>` | Full endpoint definition | `$get: EndpointDefinition<{ data: User[]; query: { page: number } }>` |
-| `_` | Dynamic path segment | `users: { _: { $get: User } }` |
+| Type                                 | Description                | Example                                                               |
+| ------------------------------------ | -------------------------- | --------------------------------------------------------------------- |
+| `TData`                              | Simple data type (no body) | `$get: User[]`                                                        |
+| `Endpoint<TData>`                    | Explicit endpoint          | `$get: Endpoint<User[]>`                                              |
+| `Endpoint<TData, TBody>`             | Endpoint with JSON body    | `$post: Endpoint<User, CreateUserBody>`                               |
+| `EndpointWithQuery<TData, TQuery>`   | Endpoint with query params | `$get: EndpointWithQuery<User[], { page: number }>`                   |
+| `EndpointWithFormData<TData, TForm>` | Endpoint with form data    | `$post: EndpointWithFormData<Result, { file: File }>`                 |
+| `EndpointDefinition<T>`              | Full endpoint definition   | `$get: EndpointDefinition<{ data: User[]; query: { page: number } }>` |
+| `_`                                  | Dynamic path segment       | `users: { _: { $get: User } }`                                        |

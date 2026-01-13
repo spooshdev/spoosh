@@ -19,10 +19,9 @@ import { initialDataPlugin } from "@spoosh/plugin-initial-data";
 const plugins = [initialDataPlugin()];
 
 // Show prefetched data immediately, then refetch in background
-const { data, isInitialData } = useRead(
-  (api) => api.posts.$get(),
-  { initialData: prefetchedPosts }
-);
+const { data, isInitialData } = useRead((api) => api.posts.$get(), {
+  initialData: prefetchedPosts,
+});
 ```
 
 ## Without Background Refetch
@@ -30,28 +29,25 @@ const { data, isInitialData } = useRead(
 To skip the background refetch and just use the initial data:
 
 ```typescript
-const { data } = useRead(
-  (api) => api.posts.$get(),
-  {
-    initialData: prefetchedPosts,
-    refetchOnInitialData: false,
-  }
-);
+const { data } = useRead((api) => api.posts.$get(), {
+  initialData: prefetchedPosts,
+  refetchOnInitialData: false,
+});
 ```
 
 ## Options
 
 ### Per-Request Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `initialData` | `TData` | - | Data to show immediately on first mount |
-| `refetchOnInitialData` | `boolean` | `true` | Whether to refetch after showing initial data |
+| Option                 | Type      | Default | Description                                   |
+| ---------------------- | --------- | ------- | --------------------------------------------- |
+| `initialData`          | `TData`   | -       | Data to show immediately on first mount       |
+| `refetchOnInitialData` | `boolean` | `true`  | Whether to refetch after showing initial data |
 
 ### Result
 
-| Property | Type | Description |
-| -------- | ---- | ----------- |
+| Property        | Type      | Description                                                |
+| --------------- | --------- | ---------------------------------------------------------- |
 | `isInitialData` | `boolean` | `true` if currently showing initial data (not yet fetched) |
 
 ## Server-Side Rendering

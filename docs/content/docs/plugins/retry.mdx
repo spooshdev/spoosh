@@ -35,14 +35,14 @@ useRead((api) => api.health.$get(), { retries: false });
 
 ### Plugin Config
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `retries` | `number \| false` | `3` | Number of retry attempts. Set to `false` to disable. |
-| `retryDelay` | `number` | `1000` | Delay between retries in milliseconds |
+| Option       | Type              | Default | Description                                          |
+| ------------ | ----------------- | ------- | ---------------------------------------------------- |
+| `retries`    | `number \| false` | `3`     | Number of retry attempts. Set to `false` to disable. |
+| `retryDelay` | `number`          | `1000`  | Delay between retries in milliseconds                |
 
 ### Per-Request Options
 
-| Option | Type | Description |
-| ------ | ---- | ----------- |
-| `retries` | `number \| false` | Override retry attempts for this request |
-| `retryDelay` | `number` | Override retry delay for this request |
+| Option       | Type              | Description                              |
+| ------------ | ----------------- | ---------------------------------------- |
+| `retries`    | `number \| false` | Override retry attempts for this request |
+| `retryDelay` | `number`          | Override retry delay for this request    |

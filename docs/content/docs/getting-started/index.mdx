@@ -65,7 +65,7 @@ import type { ApiSchema } from "./schema";
 const plugins = [
   cachePlugin({ staleTime: 5000 }),
   deduplicationPlugin(), // Prevent duplicate requests during invalidation
-  invalidationPlugin(),  // Auto-refresh queries after mutations
+  invalidationPlugin(), // Auto-refresh queries after mutations
 ];
 
 const spoosh = createSpoosh<ApiSchema, Error, typeof plugins>({
@@ -77,6 +77,7 @@ export const { useRead, useWrite } = createReactSpoosh(spoosh);
 ```
 
 > **Why these plugins?**
+>
 > - `invalidationPlugin` automatically refreshes related queries after mutations
 > - `deduplicationPlugin` prevents duplicate network requests when multiple queries invalidate at once
 
@@ -88,9 +89,7 @@ Now you can use the hooks in your components:
 import { useRead } from "../api/client";
 
 export function UserList() {
-  const { data, loading, error, refetch } = useRead(
-    (api) => api.users.$get()
-  );
+  const { data, loading, error, refetch } = useRead((api) => api.users.$get());
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error.message}</div>;

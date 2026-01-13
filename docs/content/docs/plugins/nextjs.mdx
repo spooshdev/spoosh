@@ -76,17 +76,17 @@ await trigger({
 
 ### Plugin Config
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `serverRevalidator` | `(tags, paths) => void \| Promise` | - | Server action to revalidate cache |
-| `skipServerRevalidation` | `boolean` | `false` | Skip revalidation by default |
+| Option                   | Type                               | Default | Description                       |
+| ------------------------ | ---------------------------------- | ------- | --------------------------------- |
+| `serverRevalidator`      | `(tags, paths) => void \| Promise` | -       | Server action to revalidate cache |
+| `skipServerRevalidation` | `boolean`                          | `false` | Skip revalidation by default      |
 
 ### Per-Request Options
 
-| Option | Type | Description |
-| ------ | ---- | ----------- |
-| `revalidatePaths` | `string[]` | Additional paths to revalidate |
-| `serverRevalidate` | `boolean` | Override whether to trigger server revalidation |
+| Option             | Type       | Description                                     |
+| ------------------ | ---------- | ----------------------------------------------- |
+| `revalidatePaths`  | `string[]` | Additional paths to revalidate                  |
+| `serverRevalidate` | `boolean`  | Override whether to trigger server revalidation |
 
 ## Choosing the Default Behavior
 

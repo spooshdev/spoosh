@@ -22,27 +22,24 @@ const plugins = [
 ];
 
 // Max 1 request per second - extras return cached data
-const { data } = useRead(
-  (api) => api.expensive.$get(),
-  { throttle: 1000 }
-);
+const { data } = useRead((api) => api.expensive.$get(), { throttle: 1000 });
 ```
 
 ## Options
 
 ### Per-Request Options
 
-| Option | Type | Description |
-| ------ | ---- | ----------- |
+| Option     | Type     | Description                                                          |
+| ---------- | -------- | -------------------------------------------------------------------- |
 | `throttle` | `number` | Max 1 request per X milliseconds. Extra requests return cached data. |
 
 ## Throttle vs Debounce
 
-| | Throttle | Debounce |
-| --- | --- | --- |
-| First request | Executes immediately | Waits for delay |
-| Extra requests | Returns cached data | Resets the delay timer |
-| Use case | Rate-limiting expensive endpoints | Waiting for input to stop |
+|                | Throttle                          | Debounce                  |
+| -------------- | --------------------------------- | ------------------------- |
+| First request  | Executes immediately              | Waits for delay           |
+| Extra requests | Returns cached data               | Resets the delay timer    |
+| Use case       | Rate-limiting expensive endpoints | Waiting for input to stop |
 
 ## Plugin Order
 

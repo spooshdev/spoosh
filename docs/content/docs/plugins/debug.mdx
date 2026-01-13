@@ -49,24 +49,24 @@ const plugins = [
 
 ### Plugin Config
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `enabled` | `boolean` | `true` | Enable/disable logging |
-| `logCache` | `boolean` | `false` | Include cache entries in log output |
-| `logger` | `(entry: DebugLogEntry) => void` | - | Custom logger function |
+| Option     | Type                             | Default | Description                         |
+| ---------- | -------------------------------- | ------- | ----------------------------------- |
+| `enabled`  | `boolean`                        | `true`  | Enable/disable logging              |
+| `logCache` | `boolean`                        | `false` | Include cache entries in log output |
+| `logger`   | `(entry: DebugLogEntry) => void` | -       | Custom logger function              |
 
 ### DebugLogEntry
 
-| Property | Type | Description |
-| -------- | ---- | ----------- |
-| `phase` | `string` | Current phase (onMount, beforeFetch, etc.) |
-| `operationType` | `string` | "read", "write", or "infiniteRead" |
-| `method` | `string` | HTTP method |
-| `path` | `string` | Request path |
-| `queryKey` | `string` | Unique query key |
-| `requestTimestamp` | `number` | Request timestamp |
-| `tags` | `string[]` | Cache tags |
-| `requestOptions` | `unknown` | Request options |
-| `state` | `object` | Current state (loading, data, error, etc.) |
-| `response` | `object` | Response data (if available) |
-| `cacheEntries` | `array` | Cache entries (if logCache enabled) |
+| Property           | Type       | Description                                |
+| ------------------ | ---------- | ------------------------------------------ |
+| `phase`            | `string`   | Current phase (onMount, beforeFetch, etc.) |
+| `operationType`    | `string`   | "read", "write", or "infiniteRead"         |
+| `method`           | `string`   | HTTP method                                |
+| `path`             | `string`   | Request path                               |
+| `queryKey`         | `string`   | Unique query key                           |
+| `requestTimestamp` | `number`   | Request timestamp                          |
+| `tags`             | `string[]` | Cache tags                                 |
+| `requestOptions`   | `unknown`  | Request options                            |
+| `state`            | `object`   | Current state (loading, data, error, etc.) |
+| `response`         | `object`   | Response data (if available)               |
+| `cacheEntries`     | `array`    | Cache entries (if logCache enabled)        |

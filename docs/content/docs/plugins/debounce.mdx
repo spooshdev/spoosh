@@ -44,20 +44,20 @@ In this example, debounce is applied when the search query changes, but not when
 
 ### Per-Request Options
 
-| Option | Type | Description |
-| ------ | ---- | ----------- |
+| Option     | Type                            | Description                                                |
+| ---------- | ------------------------------- | ---------------------------------------------------------- |
 | `debounce` | `number \| (context) => number` | Milliseconds to wait, or function for conditional debounce |
 
 ### Debounce Function Context
 
 When using a function, you receive:
 
-| Property | Type | Description |
-| -------- | ---- | ----------- |
-| `prevQuery` | `object` | Previous query parameters |
-| `prevBody` | `unknown` | Previous request body |
-| `prevParams` | `object` | Previous path parameters |
-| `prevFormData` | `object` | Previous form data |
+| Property       | Type      | Description               |
+| -------------- | --------- | ------------------------- |
+| `prevQuery`    | `object`  | Previous query parameters |
+| `prevBody`     | `unknown` | Previous request body     |
+| `prevParams`   | `object`  | Previous path parameters  |
+| `prevFormData` | `object`  | Previous form data        |
 
 ## Example: Search Input
 
