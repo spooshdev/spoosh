@@ -5,8 +5,6 @@ function createState<TData = unknown, TError = unknown>(
   overrides: Partial<OperationState<TData, TError>> = {}
 ): OperationState<TData, TError> {
   return {
-    loading: false,
-    fetching: false,
     data: undefined,
     error: undefined,
     timestamp: 0,
@@ -19,8 +17,6 @@ describe("createInitialState", () => {
     const state = createInitialState();
 
     expect(state).toEqual({
-      loading: false,
-      fetching: false,
       data: undefined,
       error: undefined,
       timestamp: 0,
@@ -180,7 +176,7 @@ describe("createStateManager", () => {
     it("should set and get cache entries", () => {
       const manager = createStateManager();
       const key = "test-key";
-      const state = createState({ data: "test-data", loading: false });
+      const state = createState({ data: "test-data" });
 
       manager.setCache(key, { state });
 
@@ -200,15 +196,15 @@ describe("createStateManager", () => {
       const key = "test-key";
 
       manager.setCache(key, {
-        state: createState({ data: "initial", loading: true }),
+        state: createState({ data: "initial" }),
       });
       manager.setCache(key, {
-        state: { loading: false } as unknown as OperationState,
+        state: { error: new Error("test") } as unknown as OperationState,
       });
 
       const cached = manager.getCache(key);
       expect(cached?.state.data).toBe("initial");
-      expect(cached?.state.loading).toBe(false);
+      expect(cached?.state.error).toBeInstanceOf(Error);
     });
 
     it("should update tags on existing entry", () => {
@@ -235,46 +231,30 @@ describe("createStateManager", () => {
       expect(cached?.tags).toEqual([]);
     });
 
-    it("should update promise on existing entry", () => {
+    it("should set and get pending promise", () => {
       const manager = createStateManager();
       const key = "test-key";
       const promise = Promise.resolve("result");
 
-      manager.setCache(key, { state: createState({ data: "data" }) });
-      manager.setCache(key, { promise });
+      manager.setPendingPromise(key, promise);
 
-      const cached = manager.getCache(key);
-      expect(cached?.promise).toBe(promise);
+      expect(manager.getPendingPromise(key)).toBe(promise);
     });
 
-    it("should delete promise when data is set", () => {
+    it("should clear pending promise when set to undefined", () => {
       const manager = createStateManager();
       const key = "test-key";
 
-      manager.setCache(key, {
-        state: createState({ loading: true }),
-        promise: Promise.resolve("pending"),
-      });
-      manager.setCache(key, { state: createState({ data: "resolved" }) });
+      manager.setPendingPromise(key, Promise.resolve("pending"));
+      manager.setPendingPromise(key, undefined);
 
-      const cached = manager.getCache(key);
-      expect(cached?.promise).toBeUndefined();
+      expect(manager.getPendingPromise(key)).toBeUndefined();
     });
 
-    it("should delete promise when error is set", () => {
+    it("should return undefined for non-existent pending promise", () => {
       const manager = createStateManager();
-      const key = "test-key";
 
-      manager.setCache(key, {
-        state: createState({ loading: true }),
-        promise: Promise.resolve("pending"),
-      });
-      manager.setCache(key, {
-        state: createState({ error: new Error("failed") }),
-      });
-
-      const cached = manager.getCache(key);
-      expect(cached?.promise).toBeUndefined();
+      expect(manager.getPendingPromise("non-existent")).toBeUndefined();
     });
 
     it("should update previousData on existing entry", () => {
@@ -336,7 +316,7 @@ describe("createStateManager", () => {
       expect(callback).toHaveBeenCalledTimes(1);
     });
 
-    it("should create cache entry if it does not exist when subscribing", () => {
+    it("should NOT create cache entry when subscribing", () => {
       const manager = createStateManager();
       const key = "new-key";
       const callback = vi.fn();
@@ -344,8 +324,7 @@ describe("createStateManager", () => {
       manager.subscribeCache(key, callback);
 
       const cached = manager.getCache(key);
-      expect(cached).toBeDefined();
-      expect(cached?.state).toEqual(createInitialState());
+      expect(cached).toBeUndefined();
     });
 
     it("should return an unsubscribe function", () => {
@@ -455,7 +434,7 @@ describe("createStateManager", () => {
       const key = "test-key";
 
       manager.setCache(key, {
-        state: createState({ loading: true }),
+        state: createState(),
         tags: ["users"],
       });
 
@@ -519,7 +498,7 @@ describe("createStateManager", () => {
       const manager = createStateManager();
 
       manager.setCache("key1", {
-        state: createState({ loading: true }),
+        state: createState(),
         tags: ["users"],
       });
 

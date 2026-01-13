@@ -121,7 +121,7 @@ function createInitialInfiniteState<TData, TItem, TError>(): InfiniteReadState<
   TError
 > {
   return {
-    loading: false,
+    loading: true,
     fetching: false,
     fetchingNext: false,
     fetchingPrev: false,
@@ -167,6 +167,7 @@ export function createInfiniteReadController<
   const pendingFetches = new Set<string>();
   let pluginOptions: unknown = undefined;
   let fetchingDirection: FetchDirection | null = null;
+  let latestError: TError | undefined = undefined;
 
   let cachedState: InfiniteReadState<TData, TItem, TError> =
     createInitialInfiniteState();
@@ -194,8 +195,6 @@ export function createInfiniteReadController<
   const saveToTracker = (): void => {
     stateManager.setCache(trackerKey, {
       state: {
-        loading: false,
-        fetching: false,
         data: {
           pageKeys,
           pageRequests: Object.fromEntries(pageRequests),
@@ -215,19 +214,15 @@ export function createInfiniteReadController<
         fetching: fetchingDirection !== null,
         fetchingNext: fetchingDirection === "next",
         fetchingPrev: fetchingDirection === "prev",
+        error: latestError,
       };
     }
 
     const allResponses: TData[] = [];
     const allRequests: InfiniteRequestOptions[] = [];
-    let hasError: TError | undefined;
 
     for (const key of pageKeys) {
       const cached = stateManager.getCache(key);
-
-      if (cached?.state?.error) {
-        hasError = cached.state.error as TError;
-      }
 
       if (cached?.state?.data !== undefined) {
         allResponses.push(cached.state.data as TData);
@@ -246,7 +241,7 @@ export function createInfiniteReadController<
         allRequests: undefined,
         canFetchNext: false,
         canFetchPrev: false,
-        error: hasError,
+        error: latestError,
       };
     }
 
@@ -281,7 +276,7 @@ export function createInfiniteReadController<
       allRequests,
       canFetchNext: canNext,
       canFetchPrev: canPrev,
-      error: hasError,
+      error: latestError,
     };
   };
 
@@ -299,8 +294,6 @@ export function createInfiniteReadController<
 
   const createContext = (pageKey: string): PluginContext<TData, TError> => {
     const initialState: OperationState<TData, TError> = {
-      loading: true,
-      fetching: true,
       data: undefined,
       error: undefined,
       timestamp: 0,
@@ -336,9 +329,9 @@ export function createInfiniteReadController<
       mergedRequest
     );
 
-    const cached = stateManager.getCache(pageKey);
+    const pendingPromise = stateManager.getPendingPromise(pageKey);
 
-    if (cached?.promise || pendingFetches.has(pageKey)) {
+    if (pendingPromise || pendingFetches.has(pageKey)) {
       return;
     }
 
@@ -385,8 +378,6 @@ export function createInfiniteReadController<
 
             stateManager.setCache(pageKey, {
               state: {
-                loading: false,
-                fetching: false,
                 data: response.data,
                 error: undefined,
                 timestamp: Date.now(),
@@ -394,6 +385,12 @@ export function createInfiniteReadController<
               tags,
               stale: false,
             });
+          }
+
+          if (response.data !== undefined && !response.error) {
+            latestError = undefined;
+          } else if (response.error) {
+            latestError = response.error;
           }
 
           return response;
@@ -413,17 +410,18 @@ export function createInfiniteReadController<
           };
 
           context.response = errorResponse;
+          latestError = err as TError;
 
           return errorResponse;
         } finally {
           pendingFetches.delete(pageKey);
           fetchingDirection = null;
-          stateManager.setCache(pageKey, { promise: undefined });
+          stateManager.setPendingPromise(pageKey, undefined);
           notify();
         }
       })();
 
-      stateManager.setCache(pageKey, { promise: fetchPromise, tags });
+      stateManager.setPendingPromise(pageKey, fetchPromise);
 
       return fetchPromise;
     };
@@ -529,6 +527,7 @@ export function createInfiniteReadController<
       pageRequests.clear();
       pageSubscriptions.forEach((unsub) => unsub());
       pageSubscriptions = [];
+      latestError = undefined;
       saveToTracker();
 
       fetchingDirection = "next";

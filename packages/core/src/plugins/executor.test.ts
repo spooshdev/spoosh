@@ -624,8 +624,6 @@ describe("createPluginExecutor", () => {
         requestTimestamp: Date.now(),
         requestOptions: {},
         state: {
-          loading: false,
-          fetching: false,
           data: undefined,
           error: undefined,
           timestamp: 0,
@@ -654,8 +652,6 @@ describe("createPluginExecutor", () => {
         requestTimestamp: Date.now(),
         requestOptions: {},
         state: {
-          loading: false,
-          fetching: false,
           data: undefined,
           error: undefined,
           timestamp: 0,
@@ -683,8 +679,6 @@ describe("createPluginExecutor", () => {
         requestTimestamp: Date.now(),
         requestOptions: {},
         state: {
-          loading: false,
-          fetching: false,
           data: undefined,
           error: undefined,
           timestamp: 0,
@@ -712,8 +706,6 @@ describe("createPluginExecutor", () => {
         requestTimestamp: Date.now(),
         requestOptions: {},
         state: {
-          loading: false,
-          fetching: false,
           data: undefined,
           error: undefined,
           timestamp: 0,
@@ -747,8 +739,6 @@ describe("createPluginExecutor", () => {
         requestTimestamp: Date.now(),
         requestOptions: {},
         state: {
-          loading: false,
-          fetching: false,
           data: undefined,
           error: undefined,
           timestamp: 0,
@@ -784,8 +774,6 @@ describe("createPluginExecutor", () => {
         requestTimestamp: Date.now(),
         requestOptions: {},
         state: {
-          loading: false,
-          fetching: false,
           data: undefined,
           error: undefined,
           timestamp: 0,
@@ -817,8 +805,6 @@ describe("createPluginExecutor", () => {
         requestTimestamp: Date.now(),
         requestOptions: {},
         state: {
-          loading: false,
-          fetching: false,
           data: undefined,
           error: undefined,
           timestamp: 0,
@@ -847,8 +833,6 @@ describe("createPluginExecutor", () => {
         requestTimestamp: Date.now(),
         requestOptions: {},
         state: {
-          loading: false,
-          fetching: false,
           data: undefined,
           error: undefined,
           timestamp: 0,

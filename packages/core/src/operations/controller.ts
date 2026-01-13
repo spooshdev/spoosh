@@ -161,16 +161,8 @@ export function createOperationController<TData, TError>(
       context.requestOptions.headers = context.headers;
 
       const coreFetch = async (): Promise<SpooshResponse<TData, TError>> => {
-        const cached = stateManager.getCache<TData, TError>(queryKey);
-
         abortController = new AbortController();
         context.requestOptions.signal = abortController.signal;
-
-        updateState({
-          fetching: true,
-          loading:
-            operationType === "write" || cached?.state.data === undefined,
-        });
 
         const fetchPromise = (async (): Promise<
           SpooshResponse<TData, TError>
@@ -179,17 +171,8 @@ export function createOperationController<TData, TError>(
             const response = await fetchFn(context.requestOptions);
             context.response = response;
 
-            if (response.error) {
+            if (response.data !== undefined && !response.error) {
               updateState({
-                fetching: false,
-                loading: false,
-                error: response.error,
-                timestamp: Date.now(),
-              });
-            } else {
-              updateState({
-                fetching: false,
-                loading: false,
                 data: response.data,
                 error: undefined,
                 timestamp: Date.now(),
@@ -206,21 +189,14 @@ export function createOperationController<TData, TError>(
 
             context.response = errorResponse;
 
-            updateState({
-              fetching: false,
-              loading: false,
-              error: err as TError,
-              timestamp: Date.now(),
-            });
-
             return errorResponse;
           }
         })();
 
-        stateManager.setCache(queryKey, { promise: fetchPromise, tags });
+        stateManager.setPendingPromise(queryKey, fetchPromise);
 
         fetchPromise.finally(() => {
-          stateManager.setCache(queryKey, { promise: undefined });
+          stateManager.setPendingPromise(queryKey, undefined);
         });
 
         return fetchPromise;

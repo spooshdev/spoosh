@@ -13,8 +13,6 @@ export function createInitialState<TData, TError>(): OperationState<
   TError
 > {
   return {
-    loading: false,
-    fetching: false,
     data: undefined,
     error: undefined,
     timestamp: 0,
@@ -71,11 +69,24 @@ export type StateManager = {
   /** Get the number of cache entries */
   getSize: () => number;
 
+  /** Set a pending promise for a query key (for deduplication) */
+  setPendingPromise: (key: string, promise: Promise<unknown> | undefined) => void;
+
+  /** Get a pending promise for a query key */
+  getPendingPromise: (key: string) => Promise<unknown> | undefined;
+
   clear: () => void;
 };
 
 export function createStateManager(): StateManager {
   const cache = new Map<string, CacheEntry>();
+  const subscribers = new Map<string, Set<Subscriber>>();
+  const pendingPromises = new Map<string, Promise<unknown>>();
+
+  const notifySubscribers = (key: string): void => {
+    const subs = subscribers.get(key);
+    subs?.forEach((cb) => cb());
+  };
 
   return {
     createQueryKey({ path, method, options }) {
@@ -96,21 +107,10 @@ export function createStateManager(): StateManager {
       const existing = cache.get(key);
 
       if (existing) {
-        const hasData = entry.state && "data" in entry.state;
-        const hasError = entry.state && "error" in entry.state;
-
-        if (hasData || hasError) {
-          delete existing.promise;
-        }
-
         existing.state = { ...existing.state, ...entry.state };
 
         if (entry.tags) {
           existing.tags = entry.tags;
-        }
-
-        if ("promise" in entry) {
-          existing.promise = entry.promise;
         }
 
         if (entry.previousData !== undefined) {
@@ -121,19 +121,18 @@ export function createStateManager(): StateManager {
           existing.stale = entry.stale;
         }
 
-        existing.subscribers.forEach((cb) => cb());
+        notifySubscribers(key);
       } else {
         const newEntry: CacheEntry = {
           state: entry.state ?? createInitialState(),
           tags: entry.tags ?? [],
           pluginResult: new Map(),
           selfTag: generateSelfTagFromKey(key),
-          subscribers: new Set(),
-          promise: entry.promise,
           previousData: entry.previousData,
           stale: entry.stale,
         };
         cache.set(key, newEntry);
+        notifySubscribers(key);
       }
     },
 
@@ -142,23 +141,21 @@ export function createStateManager(): StateManager {
     },
 
     subscribeCache(key, callback) {
-      let entry = cache.get(key);
+      let subs = subscribers.get(key);
 
-      if (!entry) {
-        entry = {
-          state: createInitialState(),
-          tags: [],
-          pluginResult: new Map(),
-          selfTag: generateSelfTagFromKey(key),
-          subscribers: new Set(),
-        };
-        cache.set(key, entry);
+      if (!subs) {
+        subs = new Set();
+        subscribers.set(key, subs);
       }
 
-      entry.subscribers.add(callback);
+      subs.add(callback);
 
       return () => {
-        entry.subscribers.delete(callback);
+        subs.delete(callback);
+
+        if (subs.size === 0) {
+          subscribers.delete(key);
+        }
       };
     },
 
@@ -214,7 +211,7 @@ export function createStateManager(): StateManager {
           entry.pluginResult.set(name, value);
         }
 
-        entry.subscribers.forEach((cb) => cb());
+        notifySubscribers(key);
       }
     },
 
@@ -245,8 +242,22 @@ export function createStateManager(): StateManager {
       return cache.size;
     },
 
+    setPendingPromise(key, promise) {
+      if (promise === undefined) {
+        pendingPromises.delete(key);
+      } else {
+        pendingPromises.set(key, promise);
+      }
+    },
+
+    getPendingPromise(key) {
+      return pendingPromises.get(key);
+    },
+
     clear() {
       cache.clear();
+      subscribers.clear();
+      pendingPromises.clear();
     },
   };
 }

@@ -9,8 +9,6 @@ export type OperationType = "read" | "write" | "infiniteRead";
 export type LifecyclePhase = "onMount" | "onUnmount" | "onUpdate";
 
 export type OperationState<TData = unknown, TError = unknown> = {
-  loading: boolean;
-  fetching: boolean;
   data: TData | undefined;
   error: TError | undefined;
   timestamp: number;
@@ -25,8 +23,6 @@ export type CacheEntry<TData = unknown, TError = unknown> = {
 
   /** The original path-derived tag (e.g., "posts/1/comments"). Used for exact matching in cache */
   selfTag?: string;
-  subscribers: Set<() => void>;
-  promise?: Promise<unknown>;
   previousData?: TData;
 
   /** Cache was invalidated while no subscriber was listening. Triggers refetch on next mount. */
