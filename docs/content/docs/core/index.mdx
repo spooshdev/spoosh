@@ -1,0 +1,60 @@
+---
+title: Core Concepts
+description: Understanding the fundamentals of Spoosh
+---
+
+The `@spoosh/core` package provides the foundation for building type-safe API clients. This section covers the core concepts you need to understand.
+
+## Overview
+
+Spoosh is built around a few key concepts:
+
+1. **Schema Definition** - Define your API structure with TypeScript types
+2. **Client Creation** - Create a client instance with `createSpoosh`
+3. **Plugins** - Extend functionality with caching, retry, invalidation, and more
+4. **Response Format** - Consistent response structure across all requests
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                      Your App                           │
+├─────────────────────────────────────────────────────────┤
+│  useRead / useWrite / useInfiniteRead (@spoosh/react)   │
+├─────────────────────────────────────────────────────────┤
+│     Plugins (cache, invalidation, retry, etc.)          │
+├─────────────────────────────────────────────────────────┤
+│                createSpoosh (@spoosh/core)              │
+├─────────────────────────────────────────────────────────┤
+│                      fetch API                          │
+└─────────────────────────────────────────────────────────┘
+```
+
+## Creating a Client
+
+Use `createSpoosh` to create your API client with plugins:
+
+```typescript
+import { createSpoosh } from "@spoosh/core";
+import { cachePlugin } from "@spoosh/plugin-cache";
+import { invalidationPlugin } from "@spoosh/plugin-invalidation";
+
+const spoosh = createSpoosh<ApiSchema>({
+  baseUrl: "/api",
+  plugins: [
+    cachePlugin({ staleTime: 5000 }),
+    invalidationPlugin(),
+  ],
+});
+```
+
+> **Note:** There's also `createClient` for simple use cases without plugins, but `createSpoosh` is recommended for most applications.
+
+## Next Steps
+
+<Cards>
+  <Card title="Schema Definition" href="/docs/core/schema-definition" />
+  <Card title="Client API" href="/docs/core/client" />
+  <Card title="Response Format" href="/docs/core/response" />
+  <Card title="Plugins" href="/docs/plugins" />
+</Cards>
