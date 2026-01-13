@@ -1,0 +1,4 @@
+{
+  "title": "Core",
+  "pages": ["index", "schema-definition", "client", "response"]
+}
