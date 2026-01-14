@@ -22,6 +22,12 @@ const content = `# Spoosh
 - [Schema Definition](${RAW_BASE}/core/schema-definition.mdx): Define your API schema
 - [Response](${RAW_BASE}/core/response.mdx): Response format and handling
 
+## Integrations
+
+- [React](${RAW_BASE}/integrations/react.mdx): React hooks for data fetching
+- [Hono](${RAW_BASE}/integrations/hono.mdx): Hono server type adapter
+- [OpenAPI](${RAW_BASE}/integrations/openapi.mdx): Bidirectional OpenAPI conversion
+
 ## Plugins
 
 - [Overview](${RAW_BASE}/plugins/index.mdx): Plugin system overview
@@ -31,6 +37,7 @@ const content = `# Spoosh
 - [Deduplication](${RAW_BASE}/plugins/deduplication.mdx): Prevent duplicate concurrent requests
 - [Prefetch](${RAW_BASE}/plugins/prefetch.mdx): Preload data before navigation
 - [Initial Data](${RAW_BASE}/plugins/initial-data.mdx): SSR hydration support
+- [GC](${RAW_BASE}/plugins/gc.mdx): Garbage collection for cache management
 
 ### Mutations
 - [Invalidation](${RAW_BASE}/plugins/invalidation.mdx): Auto-refresh queries after mutations
@@ -44,6 +51,10 @@ const content = `# Spoosh
 ### Real-time
 - [Polling](${RAW_BASE}/plugins/polling.mdx): Periodic data refresh
 - [Refetch](${RAW_BASE}/plugins/refetch.mdx): Refetch on window focus or reconnect
+
+### Data Transformation
+- [Transform](${RAW_BASE}/plugins/transform.mdx): Transform request and response data
+- [QS](${RAW_BASE}/plugins/qs.mdx): Query string serialization for nested objects
 
 ### Framework Integration
 - [Next.js](${RAW_BASE}/plugins/nextjs.mdx): Server-side cache revalidation
