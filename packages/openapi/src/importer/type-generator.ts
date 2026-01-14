@@ -7,7 +7,11 @@ import type {
 } from "./types.js";
 import { convertPathsToSpooshStructure } from "./path-converter.js";
 import { detectEndpointType } from "./endpoint-detector.js";
-import { generateNamedType, sanitizeTypeName } from "./schema-to-type.js";
+import {
+  generateNamedType,
+  sanitizeTypeName,
+  ORIGINAL_NAMES,
+} from "./schema-to-type.js";
 
 /**
  * Generate TypeScript Spoosh schema from OpenAPI spec
@@ -19,6 +23,9 @@ export function generateSpooshSchema(
   spec: OpenAPISpec,
   options: ImportOptions = {}
 ): string {
+  // Clear the original names map at the start of each import
+  ORIGINAL_NAMES.clear();
+
   const ctx: ConversionContext = {
     namedTypes: new Map(),
     refs: new Set(),
@@ -151,6 +158,8 @@ function generateStructureBody(
   const indentStr = "  ".repeat(indent);
 
   for (const [key, value] of Object.entries(structure)) {
+    const quotedKey = quoteKeyIfNeeded(key);
+
     if (isEndpointTypeInfo(value)) {
       const endpointStr = generateEndpointType(value);
 
@@ -158,10 +167,10 @@ function generateStructureBody(
         entries.push(`${indentStr}/** ${value.description} */`);
       }
 
-      entries.push(`${indentStr}${key}: ${endpointStr};`);
+      entries.push(`${indentStr}${quotedKey}: ${endpointStr};`);
     } else {
       entries.push(
-        `${indentStr}${key}: ${generateStructureBody(value, ctx, indent + 1)};`
+        `${indentStr}${quotedKey}: ${generateStructureBody(value, ctx, indent + 1)};`
       );
     }
   }
@@ -220,4 +229,17 @@ function isEndpointTypeInfo(
   value: NestedEndpointStructure | EndpointTypeInfo
 ): value is EndpointTypeInfo {
   return "type" in value && "dataType" in value;
+}
+
+/**
+ * Quote property name if needed
+ * @param key Property name
+ * @returns Quoted or unquoted key
+ */
+function quoteKeyIfNeeded(key: string): string {
+  if (/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(key)) {
+    return key;
+  }
+
+  return JSON.stringify(key);
 }

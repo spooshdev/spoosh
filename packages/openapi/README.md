@@ -287,31 +287,6 @@ Multiple error schemas are automatically unioned:
 $post: Endpoint<User, Body, { error?: string } | { system_message?: string }>
 ```
 
-## Development
-
-### Round-Trip Testing
-
-To verify conversion quality, run the round-trip test:
-
-```bash
-# Test with TMDB API (default - 3MB, 150+ endpoints)
-npm run test:roundtrip
-
-# Test with any URL
-npm run test:roundtrip https://petstore3.swagger.io/api/v3/openapi.json
-
-# Test with a local file
-npm run test:roundtrip ./path/to/openapi.json
-```
-
-This test:
-- Loads an OpenAPI spec (from URL or local file)
-- Converts OpenAPI → TypeScript → OpenAPI → TypeScript
-- Compares the outputs to verify lossless conversion
-- Automatically cleans up temporary files
-
-**Note**: This is a manual test and does not run with `npm test`. URL tests require network access. Takes 10-20 seconds depending on spec size.
-
 ## License
 
 MIT

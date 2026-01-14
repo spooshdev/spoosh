@@ -51,15 +51,31 @@ const TS_KEYWORDS = new Set([
 ]);
 
 /**
+ * Map of sanitized names to original OpenAPI names
+ * Used to preserve original names with dots for round-trip conversion
+ */
+export const ORIGINAL_NAMES = new Map<string, string>();
+
+/**
  * Sanitize type name to avoid TypeScript keyword conflicts
  * @param name Type name
  * @returns Sanitized name
  */
 export function sanitizeTypeName(name: string): string {
   if (TS_KEYWORDS.has(name)) {
-    return `${name}Type`;
+    const sanitized = `${name}Type`;
+    ORIGINAL_NAMES.set(sanitized, name);
+    return sanitized;
   }
-  return name.replace(/[^a-zA-Z0-9_]/g, "_");
+
+  const sanitized = name.replace(/[^a-zA-Z0-9_]/g, "_");
+
+  // Store original name if it was changed
+  if (sanitized !== name) {
+    ORIGINAL_NAMES.set(sanitized, name);
+  }
+
+  return sanitized;
 }
 
 /**
@@ -90,6 +106,26 @@ export function extractTypeNameFromRef(ref: string): string {
 }
 
 /**
+ * Deduplicate types in a union string
+ * @param unionStr Union type string (e.g., "string | null | null")
+ * @returns Deduplicated union string (e.g., "string | null")
+ */
+function deduplicateUnion(unionStr: string): string {
+  const types = unionStr.split(" | ").map((t) => t.trim());
+  const seen = new Set<string>();
+  const unique: string[] = [];
+
+  for (const t of types) {
+    if (!seen.has(t)) {
+      seen.add(t);
+      unique.push(t);
+    }
+  }
+
+  return unique.join(" | ");
+}
+
+/**
  * Convert JSON Schema to TypeScript type string
  * @param schema JSON Schema
  * @param ctx Conversion context
@@ -108,16 +144,32 @@ export function schemaToTypeScript(
   if (schema.$ref) {
     const typeName = extractTypeNameFromRef(schema.$ref);
     ctx.refs.add(schema.$ref);
-    return typeName;
+    return schema.nullable ? `${typeName} | null` : typeName;
+  }
+
+  // Handle schema with ONLY nullable (no type specified) - OpenAPI 3.0
+  // Note: unknown already includes null semantically, so we use just unknown
+  // to avoid TypeScript normalizing "unknown | null" back to "unknown"
+  if (
+    schema.nullable &&
+    !schema.type &&
+    !schema.enum &&
+    !schema.oneOf &&
+    !schema.allOf &&
+    !schema.anyOf &&
+    !schema.properties &&
+    !schema.items
+  ) {
+    return "unknown";
   }
 
   let baseType = generateBaseType(schema, ctx, depth);
 
-  if (schema.nullable) {
+  if (schema.nullable && !baseType.includes(" | null")) {
     baseType = `${baseType} | null`;
   }
 
-  return baseType;
+  return deduplicateUnion(baseType);
 }
 
 /**
@@ -136,43 +188,61 @@ function generateBaseType(
     return JSON.stringify(schema.const);
   }
 
-  if (schema.enum) {
+  if (schema.enum && !Array.isArray(schema.type)) {
     const sortedEnum = [...schema.enum].sort((a, b) => {
       const aStr = JSON.stringify(a);
       const bStr = JSON.stringify(b);
-      return aStr.localeCompare(bStr);
+      return aStr < bStr ? -1 : aStr > bStr ? 1 : 0;
     });
     return sortedEnum.map((v) => JSON.stringify(v)).join(" | ");
   }
 
-  if (schema.oneOf) {
-    return schema.oneOf
+  if (schema.oneOf && schema.oneOf.length > 0) {
+    const types = schema.oneOf
       .map((s) => schemaToTypeScript(s, ctx, depth + 1))
-      .join(" | ");
+      .sort();
+    return types.join(" | ");
   }
 
-  if (schema.allOf) {
-    return schema.allOf
+  if (schema.allOf && schema.allOf.length > 0) {
+    const types = schema.allOf
       .map((s) => schemaToTypeScript(s, ctx, depth + 1))
-      .join(" & ");
+      .sort();
+    return types.join(" & ");
   }
 
-  if (schema.anyOf) {
-    return schema.anyOf
+  if (schema.anyOf && schema.anyOf.length > 0) {
+    const types = schema.anyOf
       .map((s) => schemaToTypeScript(s, ctx, depth + 1))
-      .join(" | ");
+      .sort();
+    return types.join(" | ");
   }
 
   // OpenAPI 3.1: Handle type arrays (e.g., ["string", "null"])
   if (Array.isArray(schema.type)) {
-    const types = schema.type
+    const hasNull = schema.type.includes("null");
+    const nonNullTypes = schema.type.filter((t) => t !== "null");
+
+    if (schema.enum && Array.isArray(schema.enum) && nonNullTypes.length > 0) {
+      const sortedEnum = [...schema.enum].sort((a, b) => {
+        const aStr = JSON.stringify(a);
+        const bStr = JSON.stringify(b);
+        return aStr < bStr ? -1 : aStr > bStr ? 1 : 0;
+      });
+      const enumType = sortedEnum
+        .map((v: unknown) => JSON.stringify(v))
+        .join(" | ");
+      return hasNull ? `${enumType} | null` : enumType;
+    }
+
+    const types = nonNullTypes
       .map((t) => {
         const singleTypeSchema = { ...schema, type: t };
+        delete singleTypeSchema.enum;
         return generateBaseType(singleTypeSchema, ctx, depth);
       })
-      .filter((t) => t !== "null");
+      .filter(Boolean);
 
-    const hasNull = schema.type.includes("null");
     const baseType = types.join(" | ") || "unknown";
     return hasNull ? `${baseType} | null` : baseType;
   }
@@ -225,6 +295,17 @@ function generateObjectType(
   const required = new Set(schema.required || []);
 
   if (Object.keys(properties).length === 0) {
+    if (
+      schema.additionalProperties &&
+      typeof schema.additionalProperties === "object"
+    ) {
+      const valueType = schemaToTypeScript(
+        schema.additionalProperties,
+        ctx,
+        depth + 1
+      );
+      return `Record<string, ${valueType}>`;
+    }
     return "Record<string, unknown>";
   }
 
@@ -274,7 +355,18 @@ export function generateNamedType(
   const typeString = schemaToTypeScript(schema, ctx, 0);
   const lines: string[] = [];
 
-  if (ctx.options.jsdoc && schema.description) {
+  // Always add @openapiName if the name was sanitized
+  const originalName = ORIGINAL_NAMES.get(sanitizedName);
+  if (originalName) {
+    if (ctx.options.jsdoc && schema.description) {
+      lines.push(`/**`);
+      lines.push(` * ${schema.description}`);
+      lines.push(` * @openapiName ${originalName}`);
+      lines.push(` */`);
+    } else {
+      lines.push(`/** @openapiName ${originalName} */`);
+    }
+  } else if (ctx.options.jsdoc && schema.description) {
     lines.push(`/** ${schema.description} */`);
   }
 

@@ -42,7 +42,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --max-warnings 0",
     "format": "prettier --write 'src/**/*.ts'",
-    "test:roundtrip": "npm run build && node scripts/test-roundtrip.mjs",
+    "test:import": "npm run build && node scripts/test-import.mjs",
     "prepublishOnly": "npm run build && npm run typecheck && npm run lint"
   },
   "dependencies": {

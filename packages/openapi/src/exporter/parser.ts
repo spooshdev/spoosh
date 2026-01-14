@@ -78,6 +78,9 @@ export function parseSchema(
 
   walkSchemaType(schemaType, "", [], ctx, endpoints, checker);
 
+  // Extract all type aliases from the source file to preserve component schemas
+  extractAllTypeAliases(sourceFile, checker, ctx);
+
   return {
     endpoints,
     schemas: ctx.schemas,
@@ -339,4 +342,91 @@ function formDataTypeToSchema(
   }
 
   return schema;
+}
+
+function extractAllTypeAliases(
+  sourceFile: ts.SourceFile,
+  checker: ts.TypeChecker,
+  ctx: SchemaContext
+): void {
+  const builtInTypes = new Set([
+    "Date",
+    "Record",
+    "Partial",
+    "Required",
+    "Pick",
+    "Omit",
+    "Readonly",
+    "Array",
+    "Map",
+    "Set",
+    "Promise",
+  ]);
+
+  ts.forEachChild(sourceFile, (node) => {
+    if (ts.isTypeAliasDeclaration(node)) {
+      const typeName = node.name.text;
+
+      // Skip built-in types and already-extracted types
+      if (builtInTypes.has(typeName) || ctx.schemas.has(typeName)) {
+        return;
+      }
+
+      // Skip main schema type (ApiSchema, TestSchema, etc.)
+      if (node.modifiers?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword)) {
+        return;
+      }
+
+      const originalName = getOriginalNameFromJSDoc(node);
+      const schemaName = originalName || typeName;
+
+      const typeNode = node.type;
+      if (ts.isTypeReferenceNode(typeNode)) {
+        const referencedType = checker.getTypeAtLocation(typeNode);
+        const referencedSymbol =
+          referencedType.aliasSymbol ?? referencedType.getSymbol();
+        const referencedName = referencedSymbol?.getName();
+
+        if (
+          referencedName &&
+          referencedName !== "__type" &&
+          !referencedName.startsWith("__") &&
+          !builtInTypes.has(referencedName) &&
+          referencedName !== typeName
+        ) {
+          const referencedDecl = referencedSymbol?.getDeclarations()?.[0];
+
+          if (referencedDecl && ts.isTypeAliasDeclaration(referencedDecl)) {
+            const refOriginalName = getOriginalNameFromJSDoc(referencedDecl);
+            const refSchemaName = refOriginalName || referencedName;
+            ctx.schemas.set(schemaName, {
+              $ref: `#/components/schemas/${refSchemaName}`,
+            });
+            return;
+          }
+        }
+      }
+
+      const type = checker.getTypeAtLocation(node);
+      const schema = typeToSchema(type, { ...ctx, depth: 0 });
+
+      if (Object.keys(schema).length > 0 && !schema.$ref) {
+        ctx.schemas.set(schemaName, schema);
+      }
+    }
+  });
+}
+
+function getOriginalNameFromJSDoc(
+  node: ts.TypeAliasDeclaration
+): string | undefined {
+  const jsDocTags = ts.getJSDocTags(node);
+  for (const tag of jsDocTags) {
+    if (tag.tagName.text === "openapiName" && tag.comment) {
+      return typeof tag.comment === "string"
+        ? tag.comment
+        : tag.comment.map((c) => c.text).join("");
+    }
+  }
+  return undefined;
 }

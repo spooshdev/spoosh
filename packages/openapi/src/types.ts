@@ -24,6 +24,9 @@ export type OpenAPIRequestBody = {
     "multipart/form-data"?: {
       schema: JSONSchema;
     };
+    "application/x-www-form-urlencoded"?: {
+      schema: JSONSchema;
+    };
   };
 };
 
@@ -89,7 +92,10 @@ export type ParsedEndpoint = {
   method: "get" | "post" | "put" | "patch" | "delete";
   responseSchema: JSONSchema;
   requestBodySchema?: JSONSchema;
-  requestBodyContentType?: "application/json" | "multipart/form-data";
+  requestBodyContentType?:
+    | "application/json"
+    | "multipart/form-data"
+    | "application/x-www-form-urlencoded";
   queryParams?: OpenAPIParameter[];
   errorSchema?: JSONSchema;
   pathParams: string[];

@@ -45,8 +45,12 @@ export function detectEndpointType(
     };
   }
 
-  if (hasRequestBody && contentType === "application/json") {
-    const bodyType = extractBodyType(operation, ctx);
+  if (
+    hasRequestBody &&
+    (contentType === "application/json" ||
+      contentType === "application/x-www-form-urlencoded")
+  ) {
+    const bodyType = extractBodyType(operation, ctx, contentType);
     return {
       type: "Endpoint",
       dataType,
@@ -165,23 +169,29 @@ function extractQueryType(
   return `{ ${props.join("; ")} }`;
 }
 
+type SupportedContentType =
+  | "application/json"
+  | "application/x-www-form-urlencoded";
+
 /**
  * Extract request body type from operation
  * @param operation OpenAPI operation
  * @param ctx Conversion context
+ * @param contentType Content type to extract from
  * @returns TypeScript body type string
  */
 function extractBodyType(
   operation: OpenAPIOperation,
-  ctx: ConversionContext
+  ctx: ConversionContext,
+  contentType: SupportedContentType = "application/json"
 ): string {
-  const jsonContent = operation.requestBody?.content?.["application/json"];
+  const content = operation.requestBody?.content?.[contentType];
 
-  if (!jsonContent?.schema) {
+  if (!content?.schema) {
     return "never";
   }
 
-  return schemaToTypeScript(jsonContent.schema, ctx);
+  return schemaToTypeScript(content.schema, ctx);
 }
 
 /**
