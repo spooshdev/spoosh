@@ -232,15 +232,15 @@ await trigger({
 
 ### Returns
 
-| Property  | Type                   | Description                        |
-| --------- | ---------------------- | ---------------------------------- |
-| `trigger` | `(options) => Promise` | Execute the mutation               |
-| `data`    | `TData \| undefined`   | Response data                      |
-| `error`   | `TError \| undefined`  | Error if request failed            |
-| `loading` | `boolean`              | True while mutation is in progress |
-| `reset`   | `() => void`           | Reset state                        |
-| `abort`   | `() => void`           | Abort current request              |
-| `input`   | `object \| undefined`  | The last trigger input             |
+| Property  | Type                   | Description                                            |
+| --------- | ---------------------- | ------------------------------------------------------ |
+| `trigger` | `(options) => Promise` | Execute the mutation                                   |
+| `data`    | `TData \| undefined`   | Response data                                          |
+| `error`   | `TError \| undefined`  | Error if request failed                                |
+| `loading` | `boolean`              | True while mutation is in progress                     |
+| `reset`   | `() => void`           | Clear mutation state (data, error, loading) to initial |
+| `abort`   | `() => void`           | Abort current request                                  |
+| `input`   | `object \| undefined`  | The last trigger input                                 |
 
 ### Trigger Options
 
@@ -252,6 +252,26 @@ await trigger({
 | `autoInvalidate` | `"all" \| "self" \| "none"`        | Auto invalidation mode      |
 | `invalidate`     | `(api) => Selector[] \| string[]`  | Manual invalidation targets |
 | `dedupe`         | `"in-flight" \| false`             | Request deduplication mode  |
+
+### Resetting Mutation State
+
+Use `reset()` to clear mutation state (useful for dismissing notifications):
+
+```typescript
+function CreatePost() {
+  const { trigger, data, error, reset } = useWrite((api) => api.posts.$post);
+
+  return (
+    <div>
+      {data && <SuccessAlert onClose={reset}>Post created!</SuccessAlert>}
+      {error && <ErrorAlert onClose={reset}>{error.message}</ErrorAlert>}
+      <button onClick={() => trigger({ body: { title: "New Post" } })}>
+        Create Post
+      </button>
+    </div>
+  );
+}
+```
 
 ## useInfiniteRead
 

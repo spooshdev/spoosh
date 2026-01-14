@@ -1,9 +1,6 @@
 import { useRef, useEffect, useSyncExternalStore, useId } from "react";
 import {
   type SpooshResponse,
-  type PluginExecutor,
-  type StateManager,
-  type EventEmitter,
   type MergePluginOptions,
   type MergePluginResults,
   type SpooshPlugin,
@@ -21,20 +18,19 @@ import type {
   BaseInfiniteReadResult,
   InfiniteReadApiClient,
   AnyInfiniteRequestOptions,
-} from "./types";
-
-export type CreateUseInfiniteReadOptions = {
-  api: unknown;
-  stateManager: StateManager;
-  eventEmitter: EventEmitter;
-  pluginExecutor: PluginExecutor;
-};
+} from "../types";
+import type { SpooshInstanceShape } from "../createReactSpoosh/types";
 
 export function createUseInfiniteRead<
   TSchema,
   TDefaultError,
   TPlugins extends readonly SpooshPlugin<PluginTypeConfig>[],
->(options: CreateUseInfiniteReadOptions) {
+>(
+  options: Omit<
+    SpooshInstanceShape<unknown, TSchema, TDefaultError, TPlugins>,
+    "_types"
+  >
+) {
   const { api, stateManager, eventEmitter, pluginExecutor } = options;
 
   type PluginOptions = MergePluginOptions<TPlugins>;
@@ -135,7 +131,6 @@ export function createUseInfiniteRead<
       queryKey: string;
     } | null>(null);
 
-    // Recreate controller when queryKey changes
     if (!controllerRef.current || controllerRef.current.queryKey !== queryKey) {
       controllerRef.current = {
         controller: createInfiniteReadController<
@@ -214,7 +209,6 @@ export function createUseInfiniteRead<
       prevContext: null,
     });
 
-    // Unmount effect - runs on unmount (including StrictMode simulated unmount)
     useEffect(() => {
       return () => {
         controllerRef.current?.controller.unmount();
@@ -222,7 +216,6 @@ export function createUseInfiniteRead<
       };
     }, []);
 
-    // Mount effect - runs once on first mount
     useEffect(() => {
       controller.mount();
       lifecycleRef.current.initialized = true;

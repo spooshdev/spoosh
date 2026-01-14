@@ -7,9 +7,6 @@ import {
 } from "react";
 import {
   type SpooshResponse,
-  type PluginExecutor,
-  type StateManager,
-  type EventEmitter,
   type MergePluginOptions,
   type MergePluginResults,
   type SpooshPlugin,
@@ -32,20 +29,19 @@ import type {
   ExtractResponseFormData,
   ExtractResponseParamNames,
   WriteResponseInputFields,
-} from "./types";
-
-export type CreateUseWriteOptions = {
-  api: unknown;
-  stateManager: StateManager;
-  eventEmitter: EventEmitter;
-  pluginExecutor: PluginExecutor;
-};
+} from "../types";
+import type { SpooshInstanceShape } from "../createReactSpoosh/types";
 
 export function createUseWrite<
   TSchema,
   TDefaultError,
   TPlugins extends readonly SpooshPlugin<PluginTypeConfig>[],
->(options: CreateUseWriteOptions) {
+>(
+  options: Omit<
+    SpooshInstanceShape<unknown, TSchema, TDefaultError, TPlugins>,
+    "_types"
+  >
+) {
   const { api, stateManager, pluginExecutor, eventEmitter } = options;
 
   type PluginOptions = MergePluginOptions<TPlugins>;
@@ -110,7 +106,6 @@ export function createUseWrite<
       queryKey: string;
     } | null>(null);
 
-    // Recreate controller when path changes (e.g., api.posts[postId].$delete)
     if (!controllerRef.current || controllerRef.current.queryKey !== queryKey) {
       controllerRef.current = {
         controller: createOperationController<TData, TError>({
@@ -161,7 +156,6 @@ export function createUseWrite<
       TOptions | undefined
     >(undefined);
 
-    // Local request state - tracks pending status and errors (not cached)
     const [requestState, setRequestState] = useState<{
       isPending: boolean;
       error: TError | undefined;
@@ -240,7 +234,6 @@ export function createUseWrite<
     const inputField =
       Object.keys(inputInner).length > 0 ? { input: inputInner } : {};
 
-    // Compute loading from local request state
     const loading = requestState.isPending;
 
     const result = {

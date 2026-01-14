@@ -7,20 +7,15 @@ import type {
   MergePluginOptions,
   MergePluginResults,
   MergePluginInstanceApi,
-  ResolveTypes,
   ResolverContext,
   ResolveSchemaTypes,
 } from "@spoosh/core";
-import { createUseRead } from "./useRead";
-import { createUseWrite } from "./useWrite";
-import { createUseInfiniteRead } from "./useInfiniteRead";
 import type {
   BaseReadOptions,
   BaseReadResult,
   BaseWriteResult,
   BaseInfiniteReadOptions,
   BaseInfiniteReadResult,
-  AnyInfiniteRequestOptions,
   ExtractResponseQuery,
   ExtractResponseBody,
   ExtractResponseFormData,
@@ -29,7 +24,8 @@ import type {
   WriteResponseInputFields,
   ExtractMethodData,
   ExtractMethodError,
-} from "./types";
+  AnyInfiniteRequestOptions,
+} from "../types";
 
 type InferError<T, TDefaultError> = [T] extends [unknown] ? TDefaultError : T;
 
@@ -53,7 +49,7 @@ type ResolvedReadOptions<
   TPlugins extends PluginArray,
   TReadFn,
   TDefaultError,
-> = ResolveTypes<
+> = import("@spoosh/core").ResolveTypes<
   MergePluginOptions<TPlugins>["read"],
   ReadResolverContext<TSchema, TReadFn, TDefaultError>
 >;
@@ -113,7 +109,7 @@ type ResolvedInfiniteReadOptions<
   TData,
   TError,
   TRequest,
-> = ResolveTypes<
+> = import("@spoosh/core").ResolveTypes<
   MergePluginOptions<TPlugins>["infiniteRead"],
   InfiniteReadResolverContext<TSchema, TData, TError, TRequest>
 >;
@@ -135,86 +131,99 @@ type UseInfiniteReadFn<
 ) => BaseInfiniteReadResult<TData, TError, TItem> &
   MergePluginResults<TPlugins>["read"];
 
+/**
+ * Spoosh React hooks interface containing useRead, useWrite, and useInfiniteRead.
+ *
+ * @template TApi - The API client type
+ * @template TDefaultError - The default error type
+ * @template TSchema - The API schema type
+ * @template TPlugins - The plugins array type
+ */
 export type SpooshReactHooks<
   TApi,
   TDefaultError,
   TSchema,
   TPlugins extends PluginArray,
 > = {
+  /**
+   * React hook for fetching data from an API endpoint with automatic caching and revalidation.
+   *
+   * @param readFn - Function that selects the API endpoint to call (e.g., `(api) => api.posts.$get()`)
+   * @param readOptions - Optional configuration including `enabled`, `tags`, and plugin-specific options
+   * @returns Object containing `data`, `error`, `loading`, `fetching`, `refetch`, and `abort`
+   *
+   * @example
+   * ```tsx
+   * const { data, loading, error } = useRead((api) => api.posts.$get());
+   *
+   * const { data: post } = useRead(
+   *   (api) => api.posts[postId].$get(),
+   *   { enabled: !!postId }
+   * );
+   * ```
+   */
   useRead: UseReadFn<TApi, TDefaultError, TSchema, TPlugins>;
+
+  /**
+   * React hook for mutations (POST, PUT, PATCH, DELETE) with manual triggering.
+   *
+   * @param writeFn - Function that selects the API endpoint (e.g., `(api) => api.posts.$post`)
+   * @returns Object containing `trigger`, `data`, `error`, `loading`, `reset`, and `abort`
+   *
+   * @example
+   * ```tsx
+   * const { trigger, loading, data } = useWrite((api) => api.posts.$post);
+   *
+   * const handleSubmit = async (formData) => {
+   *   const { data, error } = await trigger({ body: formData });
+   *   if (data) console.log('Created:', data);
+   * };
+   * ```
+   */
   useWrite: UseWriteFn<TApi, TDefaultError, TSchema, TPlugins>;
+
+  /**
+   * React hook for infinite/paginated data fetching with automatic pagination control.
+   *
+   * @param readFn - Function that selects the API endpoint to call
+   * @param readOptions - Configuration including `canFetchNext`, `nextPageRequest`, `merger`, and optional `canFetchPrev`/`prevPageRequest`
+   * @returns Object containing `data`, `allResponses`, `fetchNext`, `fetchPrev`, `canFetchNext`, `canFetchPrev`, `loading`, `fetching`, and pagination states
+   *
+   * @example
+   * ```tsx
+   * const { data, fetchNext, canFetchNext, loading } = useInfiniteRead(
+   *   (api) => api.posts.$get(),
+   *   {
+   *     canFetchNext: ({ response }) => !!response?.nextCursor,
+   *     nextPageRequest: ({ response }) => ({ query: { cursor: response?.nextCursor } }),
+   *     merger: (responses) => responses.flatMap(r => r.items)
+   *   }
+   * );
+   * ```
+   */
   useInfiniteRead: UseInfiniteReadFn<TApi, TDefaultError, TSchema, TPlugins>;
 } & MergePluginInstanceApi<TPlugins, TSchema>;
 
-type SpooshInstanceShape<TApi, TSchema, TDefaultError, TPlugins> = {
+/**
+ * Shape of a Spoosh instance required for creating React hooks.
+ */
+export type SpooshInstanceShape<TApi, TSchema, TDefaultError, TPlugins> = {
+  /** The API client instance */
   api: TApi;
+
+  /** State manager for caching and state */
   stateManager: StateManager;
+
+  /** Event emitter for refetch and invalidation events */
   eventEmitter: EventEmitter;
+
+  /** Plugin executor for running plugins */
   pluginExecutor: PluginExecutor;
+
+  /** Type information (not used at runtime) */
   _types: {
     schema: TSchema;
     defaultError: TDefaultError;
     plugins: TPlugins;
   };
 };
-
-export function createReactSpoosh<
-  TSchema,
-  TDefaultError,
-  TPlugins extends PluginArray,
-  TApi,
->(
-  instance: SpooshInstanceShape<TApi, TSchema, TDefaultError, TPlugins>
-): SpooshReactHooks<TApi, TDefaultError, TSchema, TPlugins> {
-  const { api, stateManager, eventEmitter, pluginExecutor } = instance;
-
-  const useRead = createUseRead<TSchema, TDefaultError, TPlugins>({
-    api,
-    stateManager,
-    eventEmitter,
-    pluginExecutor,
-  });
-
-  const useWrite = createUseWrite<TSchema, TDefaultError, TPlugins>({
-    api,
-    stateManager,
-    eventEmitter,
-    pluginExecutor,
-  });
-
-  const useInfiniteRead = createUseInfiniteRead<
-    TSchema,
-    TDefaultError,
-    TPlugins
-  >({
-    api,
-    stateManager,
-    eventEmitter,
-    pluginExecutor,
-  });
-
-  const instanceApiContext = {
-    api,
-    stateManager,
-    eventEmitter,
-    pluginExecutor,
-  };
-  const plugins = pluginExecutor.getPlugins();
-
-  const instanceApis = plugins.reduce(
-    (acc, plugin) => {
-      if (plugin.instanceApi) {
-        return { ...acc, ...plugin.instanceApi(instanceApiContext) };
-      }
-      return acc;
-    },
-    {} as Record<string, unknown>
-  );
-
-  return {
-    useRead,
-    useWrite,
-    useInfiniteRead,
-    ...instanceApis,
-  } as SpooshReactHooks<TApi, TDefaultError, TSchema, TPlugins>;
-}

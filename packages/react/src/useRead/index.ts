@@ -8,9 +8,6 @@ import {
 } from "react";
 import {
   type SpooshResponse,
-  type PluginExecutor,
-  type StateManager,
-  type EventEmitter,
   type MergePluginOptions,
   type MergePluginResults,
   type SpooshPlugin,
@@ -31,20 +28,19 @@ import type {
   ExtractResponseFormData,
   ExtractResponseParamNames,
   ResponseInputFields,
-} from "./types";
-
-export type CreateUseReadOptions = {
-  api: unknown;
-  stateManager: StateManager;
-  eventEmitter: EventEmitter;
-  pluginExecutor: PluginExecutor;
-};
+} from "../types";
+import type { SpooshInstanceShape } from "../createReactSpoosh/types";
 
 export function createUseRead<
   TSchema,
   TDefaultError,
   TPlugins extends readonly SpooshPlugin<PluginTypeConfig>[],
->(options: CreateUseReadOptions) {
+>(
+  options: Omit<
+    SpooshInstanceShape<unknown, TSchema, TDefaultError, TPlugins>,
+    "_types"
+  >
+) {
   const { api, stateManager, eventEmitter, pluginExecutor } = options;
 
   type PluginOptions = MergePluginOptions<TPlugins>;
@@ -135,13 +131,11 @@ export function createUseRead<
       prevContext: null,
     });
 
-    // Store previous context before creating new controller
     if (controllerRef.current && controllerRef.current.queryKey !== queryKey) {
       lifecycleRef.current.prevContext =
         controllerRef.current.controller.getContext();
     }
 
-    // Recreate controller when queryKey changes
     if (!controllerRef.current || controllerRef.current.queryKey !== queryKey) {
       const controller = createOperationController<TData, TError>({
         operationType: "read",
@@ -183,7 +177,6 @@ export function createUseRead<
       controller.getState
     );
 
-    // Local request state - tracks pending status and errors (not cached)
     const [requestState, setRequestState] = useState<{
       isPending: boolean;
       error: TError | undefined;
@@ -194,7 +187,6 @@ export function createUseRead<
 
     const pluginOptsKey = JSON.stringify(pluginOpts);
 
-    // Helper to execute with request state tracking
     const executeWithTracking = useCallback(
       async (force = false) => {
         setRequestState((prev) => ({ ...prev, isPending: true }));
@@ -217,7 +209,6 @@ export function createUseRead<
       [controller]
     );
 
-    // Unmount effect - runs on unmount (including StrictMode simulated unmount)
     useEffect(() => {
       return () => {
         controllerRef.current?.controller.unmount();
@@ -225,7 +216,6 @@ export function createUseRead<
       };
     }, []);
 
-    // Main lifecycle effect
     useEffect(() => {
       if (!enabled) return;
 
@@ -266,7 +256,6 @@ export function createUseRead<
       };
     }, [queryKey, enabled]);
 
-    // Plugin options change effect
     useEffect(() => {
       if (!enabled || !lifecycleRef.current.initialized) return;
 
@@ -309,7 +298,6 @@ export function createUseRead<
     const inputField =
       Object.keys(inputInner).length > 0 ? { input: inputInner } : {};
 
-    // Compute loading/fetching from local request state
     const hasData = state.data !== undefined;
     const loading = requestState.isPending && !hasData;
     const fetching = requestState.isPending;
