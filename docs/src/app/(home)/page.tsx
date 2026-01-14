@@ -155,8 +155,8 @@ export default function HomePage() {
             />
 
             <FeatureCard
-              title="Middleware Pipeline"
-              description="Intercept, transform, or short-circuit any request. Full control over the request lifecycle."
+              title="Your API is Your Code"
+              description='API paths become TypeScript code. Define /posts/:id once, call it as api.posts(":id").$get. Zero runtime overhead, pure compile-time magic.'
               icon={
                 <svg
                   className="w-6 h-6"
@@ -168,7 +168,7 @@ export default function HomePage() {
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={2}
-                    d="M13 10V3L4 14h7v7l9-11h-7z"
+                    d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
                   />
                 </svg>
               }
@@ -195,8 +195,8 @@ export default function HomePage() {
             />
 
             <FeatureCard
-              title="Next.js Ready"
-              description="Server-side cache revalidation with Next.js App Router and Server Actions."
+              title="OpenAPI Conversion"
+              description="Bidirectional conversion between TypeScript schemas and OpenAPI 3.0/3.1 specs. Import existing APIs or export for documentation."
               icon={
                 <svg
                   className="w-6 h-6"
@@ -208,7 +208,7 @@ export default function HomePage() {
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={2}
-                    d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"
+                    d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
                   />
                 </svg>
               }

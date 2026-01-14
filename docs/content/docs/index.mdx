@@ -12,7 +12,7 @@ description: A type-safe API client with a powerful plugin system
 - **Framework Bindings** - Hooks for React, with more frameworks coming soon
 - **Server Adapters** - First-class support for Hono with automatic type inference
 - **Cache Invalidation** - Automatic tag-based cache invalidation after mutations
-- **Next.js Integration** - Server-side cache revalidation with App Router
+- **OpenAPI Conversion** - Bidirectional conversion between TypeScript and OpenAPI 3.0/3.1 specs
 
 ## Quick Example
 
@@ -68,7 +68,7 @@ function UserList() {
 | `@spoosh/core`    | Core client and plugin system                             |
 | `@spoosh/react`   | React bindings (`useRead`, `useWrite`, `useInfiniteRead`) |
 | `@spoosh/hono`    | Hono type adapter                                         |
-| `@spoosh/openapi` | OpenAPI spec generator                                    |
+| `@spoosh/openapi` | Bidirectional OpenAPI converter (import/export)           |
 
 ### Plugins
 
@@ -85,6 +85,9 @@ function UserList() {
 | `@spoosh/plugin-prefetch`         | Preload data before needed                             |
 | `@spoosh/plugin-refetch`          | Refetch on focus/reconnect                             |
 | `@spoosh/plugin-initial-data`     | Show data before fetch completes                       |
+| `@spoosh/plugin-gc`               | Garbage collection for cache management                |
+| `@spoosh/plugin-transform`        | Transform request and response data                    |
+| `@spoosh/plugin-qs`               | Query string serialization for nested objects          |
 | `@spoosh/plugin-nextjs`           | Next.js server revalidation                            |
 | `@spoosh/plugin-debug`            | Debug logging                                          |
 

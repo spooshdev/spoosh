@@ -1,18 +1,18 @@
 ---
 title: OpenAPI
-description: Bidirectional conversion between Spoosh schemas and OpenAPI 3.0/3.1 specs
+description: Generate type-safe TypeScript clients from OpenAPI specs, or export your schemas as OpenAPI documentation
 ---
 
-The `@spoosh/openapi` package provides bidirectional conversion between TypeScript Spoosh schemas and OpenAPI 3.0/3.1 specifications.
+The `@spoosh/openapi` package provides bidirectional conversion between OpenAPI 3.0/3.1 specifications and TypeScript Spoosh schemas.
 
 ## Features
 
+- **Import**: Generate TypeScript Spoosh schemas from OpenAPI 3.0/3.1 specs (JSON & YAML)
 - **Export**: Generate OpenAPI 3.0 or 3.1 specs from TypeScript Spoosh schemas
-- **Import**: Generate TypeScript Spoosh schemas from OpenAPI 3.0/3.1 specs
-- **JSON & YAML**: Support for both JSON and YAML OpenAPI formats
-- **Type-safe**: Automatic detection of endpoint types
-- **Error Types**: Extract error types from 4xx/5xx responses
+- **Type-safe**: Automatic detection of endpoint types, query params, request bodies, and responses
+- **Error Types**: Extract error types from 4xx/5xx responses with automatic union types
 - **JSDoc Preservation**: Convert OpenAPI descriptions to TypeScript comments
+- **File Upload Detection**: Automatic conversion of binary formats to File type
 
 ## Installation
 
@@ -20,108 +20,9 @@ The `@spoosh/openapi` package provides bidirectional conversion between TypeScri
 @spoosh/openapi
 ```
 
-## Export: Spoosh → OpenAPI
-
-Generate OpenAPI specifications from your TypeScript Spoosh schema.
-
-### CLI Usage
-
-```bash
-# Basic usage
-npx spoosh-openapi export -s ./src/schema.ts -o openapi.json
-
-# With custom options
-npx spoosh-openapi export \
-  --schema ./src/api-schema.ts \
-  --type MyApiSchema \
-  --output ./docs/openapi.json \
-  --title "My API" \
-  --version "2.0.0" \
-  --base-url "https://api.example.com"
-```
-
-### Schema File
-
-```typescript title="src/schema.ts"
-import type { Endpoint } from "@spoosh/core";
-
-interface User {
-  id: number;
-  name: string;
-  email: string;
-}
-
-interface CreateUserBody {
-  name: string;
-  email: string;
-}
-
-export type ApiSchema = {
-  users: {
-    $get: Endpoint<{ data: User[]; query: { page?: number; limit?: number } }>;
-    $post: Endpoint<{ data: User; body: CreateUserBody }>;
-    _: {
-      $get: User;
-      $put: Endpoint<{ data: User; body: Partial<CreateUserBody> }>;
-      $delete: void;
-    };
-  };
-  health: {
-    $get: { status: string };
-  };
-};
-```
-
-### Generated Output
-
-```json
-{
-  "openapi": "3.0.0",
-  "info": {
-    "title": "My API",
-    "version": "2.0.0"
-  },
-  "servers": [{ "url": "https://api.example.com" }],
-  "paths": {
-    "/users": {
-      "get": {
-        "parameters": [
-          { "name": "page", "in": "query", "schema": { "type": "number" } },
-          { "name": "limit", "in": "query", "schema": { "type": "number" } }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": { "$ref": "#/components/schemas/User" }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-}
-```
-
-### Export CLI Options
-
-| Option              | Alias | Required | Default     | Description                               |
-| ------------------- | ----- | -------- | ----------- | ----------------------------------------- |
-| `--schema`          | `-s`  | Yes      | -           | Path to TypeScript file containing schema |
-| `--type`            | `-t`  | No       | `ApiSchema` | Name of the schema type to use            |
-| `--output`          | `-o`  | No       | stdout      | Output file path                          |
-| `--title`           | -     | No       | -           | API title for OpenAPI info                |
-| `--version`         | -     | No       | `1.0.0`     | API version for OpenAPI info              |
-| `--base-url`        | -     | No       | -           | Base URL for servers array                |
-| `--openapi-version` | -     | No       | `3.1.0`     | OpenAPI spec version (3.0.0 or 3.1.0)     |
-
 ## Import: OpenAPI → Spoosh
 
-Generate TypeScript Spoosh schemas from existing OpenAPI specifications.
+Generate TypeScript Spoosh schemas from existing OpenAPI specifications. Perfect for integrating with third-party APIs or migrating from OpenAPI-based tools.
 
 ### CLI Usage
 
@@ -383,23 +284,106 @@ Generated:
 $post: Endpoint<{ data: Response; formData: { file: File; title: string } }>;
 ```
 
-## Programmatic Usage
+## Export: Spoosh → OpenAPI
 
-### Export API
+Generate OpenAPI specifications from your TypeScript Spoosh schema for documentation or API contract sharing.
 
-```typescript
-import { parseSchema, generateOpenAPISpec } from "@spoosh/openapi";
+### CLI Usage
 
-const { endpoints, schemas } = parseSchema("./src/schema.ts", "ApiSchema");
+```bash
+# Basic usage
+npx spoosh-openapi export -s ./src/schema.ts -o openapi.json
 
-const spec = generateOpenAPISpec(endpoints, schemas, {
-  title: "My API",
-  version: "1.0.0",
-  baseUrl: "https://api.example.com",
-});
-
-console.log(JSON.stringify(spec, null, 2));
+# With custom options
+npx spoosh-openapi export \
+  --schema ./src/api-schema.ts \
+  --type MyApiSchema \
+  --output ./docs/openapi.json \
+  --title "My API" \
+  --version "2.0.0" \
+  --base-url "https://api.example.com"
 ```
+
+### Schema File
+
+```typescript title="src/schema.ts"
+import type { Endpoint } from "@spoosh/core";
+
+interface User {
+  id: number;
+  name: string;
+  email: string;
+}
+
+interface CreateUserBody {
+  name: string;
+  email: string;
+}
+
+export type ApiSchema = {
+  users: {
+    $get: Endpoint<{ data: User[]; query: { page?: number; limit?: number } }>;
+    $post: Endpoint<{ data: User; body: CreateUserBody }>;
+    _: {
+      $get: User;
+      $put: Endpoint<{ data: User; body: Partial<CreateUserBody> }>;
+      $delete: void;
+    };
+  };
+  health: {
+    $get: { status: string };
+  };
+};
+```
+
+### Generated Output
+
+```json
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "My API",
+    "version": "2.0.0"
+  },
+  "servers": [{ "url": "https://api.example.com" }],
+  "paths": {
+    "/users": {
+      "get": {
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "number" } },
+          { "name": "limit", "in": "query", "schema": { "type": "number" } }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/User" }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+### Export CLI Options
+
+| Option              | Alias | Required | Default     | Description                               |
+| ------------------- | ----- | -------- | ----------- | ----------------------------------------- |
+| `--schema`          | `-s`  | Yes      | -           | Path to TypeScript file containing schema |
+| `--type`            | `-t`  | No       | `ApiSchema` | Name of the schema type to use            |
+| `--output`          | `-o`  | No       | stdout      | Output file path                          |
+| `--title`           | -     | No       | -           | API title for OpenAPI info                |
+| `--version`         | -     | No       | `1.0.0`     | API version for OpenAPI info              |
+| `--base-url`        | -     | No       | -           | Base URL for servers array                |
+| `--openapi-version` | -     | No       | `3.1.0`     | OpenAPI spec version (3.0.0 or 3.1.0)     |
+
+## Programmatic Usage
 
 ### Import API
 
@@ -427,41 +411,37 @@ const schema = generateSpooshSchema(spec, {
 console.log(schema);
 ```
 
-## Use Cases
+### Export API
 
-### 1. Generate Documentation
+```typescript
+import { parseSchema, generateOpenAPISpec } from "@spoosh/openapi";
 
-Export your Spoosh schema to OpenAPI for use with documentation tools like Swagger UI or Redoc:
+const { endpoints, schemas } = parseSchema("./src/schema.ts", "ApiSchema");
 
-```bash
-npx spoosh-openapi export -s ./src/schema.ts -o ./docs/openapi.json
+const spec = generateOpenAPISpec(endpoints, schemas, {
+  title: "My API",
+  version: "1.0.0",
+  baseUrl: "https://api.example.com",
+});
+
+console.log(JSON.stringify(spec, null, 2));
 ```
 
-### 2. Import Existing APIs
+## Use Cases
+
+### 1. Import Existing APIs
 
 Generate type-safe Spoosh clients from existing API documentation:
 
 ```bash
-npx spoosh-openapi import https://api.example.com/openapi.json -o ./src/api-schema.ts
+# Import from public API
+npx spoosh-openapi import https://api.example.com/openapi.json -o ./src/api-schema.ts --include-imports
+
+# Import from local file
+npx spoosh-openapi import ./docs/openapi.json -o ./src/schema.ts --include-imports --jsdoc
 ```
 
-### 3. Contract Testing
-
-Ensure your implementation matches your OpenAPI contract:
-
-```typescript
-import { parseSchema, generateOpenAPISpec } from "@spoosh/openapi";
-import fs from "fs";
-
-const { endpoints, schemas } = parseSchema("./src/schema.ts", "ApiSchema");
-const generated = generateOpenAPISpec(endpoints, schemas);
-const contract = JSON.parse(fs.readFileSync("./openapi.json", "utf-8"));
-
-// Compare and validate
-expect(generated.paths).toEqual(contract.paths);
-```
-
-### 4. Migration from OpenAPI
+### 2. Migration from OpenAPI
 
 Migrate from OpenAPI-based tools to Spoosh while preserving types:
 
@@ -476,4 +456,28 @@ import type { ApiSchema } from "./schema";
 const client = createSpoosh<ApiSchema>({
   baseUrl: "https://api.example.com"
 });
+```
+
+### 3. Generate Documentation
+
+Export your Spoosh schema to OpenAPI for use with documentation tools like Swagger UI or Redoc:
+
+```bash
+npx spoosh-openapi export -s ./src/schema.ts -o ./docs/openapi.json --title "My API" --version "1.0.0"
+```
+
+### 4. Contract Testing
+
+Ensure your implementation matches your OpenAPI contract:
+
+```typescript
+import { parseSchema, generateOpenAPISpec } from "@spoosh/openapi";
+import fs from "fs";
+
+const { endpoints, schemas } = parseSchema("./src/schema.ts", "ApiSchema");
+const generated = generateOpenAPISpec(endpoints, schemas);
+const contract = JSON.parse(fs.readFileSync("./openapi.json", "utf-8"));
+
+// Compare and validate
+expect(generated.paths).toEqual(contract.paths);
 ```
