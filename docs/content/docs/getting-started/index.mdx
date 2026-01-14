@@ -21,7 +21,7 @@ This guide will help you set up Spoosh and make your first type-safe API call.
 Create a file to define your API types:
 
 ```typescript title="src/api/schema.ts"
-import type { Endpoint, EndpointWithQuery } from "@spoosh/core";
+import type { Endpoint } from "@spoosh/core";
 
 type User = {
   id: number;
@@ -36,16 +36,16 @@ type CreateUserBody = {
 
 export type ApiSchema = {
   users: {
-    $get: Endpoint<User[]>;
-    $post: Endpoint<User, CreateUserBody>;
+    $get: Endpoint<{ data: User[] }>;
+    $post: Endpoint<{ data: User; body: CreateUserBody }>;
     _: {
-      $get: Endpoint<User>;
-      $put: Endpoint<User, Partial<CreateUserBody>>;
-      $delete: Endpoint<void>;
+      $get: Endpoint<{ data: User }>;
+      $put: Endpoint<{ data: User; body: Partial<CreateUserBody> }>;
+      $delete: void;
     };
   };
   search: {
-    $get: EndpointWithQuery<User[], { q: string; page?: number }>;
+    $get: Endpoint<{ data: User[]; query: { q: string; page?: number } }>;
   };
 };
 ```

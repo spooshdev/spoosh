@@ -15,7 +15,7 @@ npm install @spoosh/openapi
 - **Export**: Generate OpenAPI 3.0 or 3.1 specs from TypeScript Spoosh schemas
 - **Import**: Generate TypeScript Spoosh schemas from OpenAPI 3.0/3.1 specs
 - **JSON & YAML**: Support for both JSON and YAML OpenAPI formats
-- **Type-safe**: Automatic detection of endpoint types (Endpoint, EndpointWithQuery, EndpointWithFormData, EndpointWithUrlEncoded)
+- **Type-safe**: Unified `Endpoint<{ data; body?; query?; formData?; urlEncoded?; error? }>` type
 - **Error Types**: Extract error types from 4xx/5xx responses
 - **JSDoc Preservation**: Convert OpenAPI descriptions to TypeScript JSDoc comments
 - **File Uploads**: Automatic File type detection for binary formats
@@ -44,7 +44,7 @@ npx spoosh-openapi export \
 
 ```typescript
 // src/schema.ts
-import type { Endpoint, EndpointWithQuery } from "@spoosh/core";
+import type { Endpoint } from "@spoosh/core";
 
 interface User {
   id: number;
@@ -59,11 +59,11 @@ interface CreateUserBody {
 
 export type ApiSchema = {
   users: {
-    $get: EndpointWithQuery<User[], { page?: number; limit?: number }>;
-    $post: Endpoint<User, CreateUserBody>;
+    $get: Endpoint<{ data: User[]; query: { page?: number; limit?: number } }>;
+    $post: Endpoint<{ data: User; body: CreateUserBody }>;
     _: {
-      $get: Endpoint<User>;
-      $put: Endpoint<User, Partial<CreateUserBody>>;
+      $get: User;
+      $put: Endpoint<{ data: User; body: Partial<CreateUserBody> }>;
       $delete: void;
     };
   };
@@ -139,7 +139,7 @@ npx spoosh-openapi import \
 #### Generated Output
 
 ```typescript
-import type { EndpointWithQuery } from "@spoosh/core";
+import type { Endpoint } from "@spoosh/core";
 
 type Post = {
   id: number;
@@ -150,7 +150,7 @@ type Post = {
 type ApiSchema = {
   posts: {
     /** Retrieve all posts */
-    $get: EndpointWithQuery<Post[], { userId?: number }>;
+    $get: Endpoint<{ data: Post[]; query: { userId?: number } }>;
   };
 };
 ```
@@ -229,14 +229,14 @@ console.log(schema);
 
 ## Type Detection
 
-The import feature automatically detects the appropriate Spoosh endpoint type:
+The import feature generates the unified `Endpoint` type with appropriate fields:
 
 | OpenAPI Pattern | Spoosh Type |
 | --------------- | ----------- |
-| Query parameters | `EndpointWithQuery<TData, TQuery, TError>` |
-| `multipart/form-data` request body | `EndpointWithFormData<TData, TFormData, TError>` |
-| `application/json` request body | `Endpoint<TData, TBody, TError>` |
-| `application/x-www-form-urlencoded` request body | `EndpointWithUrlEncoded<TData, TBody, TError>` |
+| Query parameters | `Endpoint<{ data: TData; query: TQuery }>` |
+| `multipart/form-data` request body | `Endpoint<{ data: TData; formData: TFormData }>` |
+| `application/json` request body | `Endpoint<{ data: TData; body: TBody }>` |
+| `application/x-www-form-urlencoded` request body | `Endpoint<{ data: TData; urlEncoded: TBody }>` |
 | No response body (204) | `void` |
 | Simple response only | `TData` |
 
@@ -276,7 +276,7 @@ Error types are automatically extracted from 4xx and 5xx response schemas. If a 
 Generated types:
 ```typescript
 // Only 500 has a schema, so only that is included
-$post: Endpoint<User, CreateUserBody, { system_message?: string }>
+$post: Endpoint<{ data: User; body: CreateUserBody; error: { system_message?: string } }>
 
 // If no error responses have schemas, no error type is added
 $get: User
@@ -285,7 +285,7 @@ $get: User
 Multiple error schemas are automatically unioned:
 ```typescript
 // 400 and 500 both have schemas
-$post: Endpoint<User, Body, { error?: string } | { system_message?: string }>
+$post: Endpoint<{ data: User; body: Body; error: { error?: string } | { system_message?: string } }>
 ```
 
 ## License

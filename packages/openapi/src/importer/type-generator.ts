@@ -78,26 +78,15 @@ export function generateSpooshSchema(
 function generateImports(
   endpointInfoMap: Map<string, EndpointTypeInfo>
 ): string {
-  const imports = new Set<string>();
+  const hasEndpoint = Array.from(endpointInfoMap.values()).some(
+    (info) => !info.isVoid
+  );
 
-  for (const info of endpointInfoMap.values()) {
-    if (info.type === "Endpoint") {
-      imports.add("Endpoint");
-    } else if (info.type === "EndpointWithQuery") {
-      imports.add("EndpointWithQuery");
-    } else if (info.type === "EndpointWithFormData") {
-      imports.add("EndpointWithFormData");
-    } else if (info.type === "EndpointWithUrlEncoded") {
-      imports.add("EndpointWithUrlEncoded");
-    }
-  }
-
-  if (imports.size === 0) {
+  if (!hasEndpoint) {
     return "";
   }
 
-  const importList = Array.from(imports).sort().join(", ");
-  return `import type { ${importList} } from "@spoosh/core";`;
+  return `import type { Endpoint } from "@spoosh/core";`;
 }
 
 /**
@@ -190,43 +179,33 @@ function generateStructureBody(
  * @returns TypeScript type expression
  */
 function generateEndpointType(info: EndpointTypeInfo): string {
-  if (info.type === "void") {
+  if (info.isVoid) {
     return "void";
   }
 
-  if (info.type === "simple") {
-    return info.dataType;
+  const fields: string[] = [`data: ${info.dataType}`];
+
+  if (info.bodyType) {
+    fields.push(`body: ${info.bodyType}`);
   }
 
-  if (info.type === "Endpoint") {
-    if (info.errorType) {
-      return `Endpoint<${info.dataType}, ${info.bodyType || "never"}, ${info.errorType}>`;
-    }
-    return `Endpoint<${info.dataType}, ${info.bodyType || "never"}>`;
+  if (info.queryType) {
+    fields.push(`query: ${info.queryType}`);
   }
 
-  if (info.type === "EndpointWithQuery") {
-    if (info.errorType) {
-      return `EndpointWithQuery<${info.dataType}, ${info.queryType || "never"}, ${info.errorType}>`;
-    }
-    return `EndpointWithQuery<${info.dataType}, ${info.queryType || "never"}>`;
+  if (info.formDataType) {
+    fields.push(`formData: ${info.formDataType}`);
   }
 
-  if (info.type === "EndpointWithFormData") {
-    if (info.errorType) {
-      return `EndpointWithFormData<${info.dataType}, ${info.formDataType || "FormData"}, ${info.errorType}>`;
-    }
-    return `EndpointWithFormData<${info.dataType}, ${info.formDataType || "FormData"}>`;
+  if (info.urlEncodedType) {
+    fields.push(`urlEncoded: ${info.urlEncodedType}`);
   }
 
-  if (info.type === "EndpointWithUrlEncoded") {
-    if (info.errorType) {
-      return `EndpointWithUrlEncoded<${info.dataType}, ${info.urlEncodedType || "never"}, ${info.errorType}>`;
-    }
-    return `EndpointWithUrlEncoded<${info.dataType}, ${info.urlEncodedType || "never"}>`;
+  if (info.errorType) {
+    fields.push(`error: ${info.errorType}`);
   }
 
-  return info.dataType;
+  return `Endpoint<{ ${fields.join("; ")} }>`;
 }
 
 /**

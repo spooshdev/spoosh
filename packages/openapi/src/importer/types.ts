@@ -29,28 +29,19 @@ export type ConversionContext = {
 
 /** Information about an endpoint's type */
 export type EndpointTypeInfo = {
-  /** Which endpoint type to use */
-  type:
-    | "Endpoint"
-    | "EndpointWithQuery"
-    | "EndpointWithFormData"
-    | "EndpointWithUrlEncoded"
-    | "void"
-    | "simple";
-
   /** Data type (response) */
   dataType: string;
 
-  /** Body type (for Endpoint with JSON body) */
+  /** Body type (JSON body) */
   bodyType?: string;
 
-  /** Query type (for EndpointWithQuery) */
+  /** Query type */
   queryType?: string;
 
-  /** FormData type (for EndpointWithFormData) */
+  /** FormData type */
   formDataType?: string;
 
-  /** URL-encoded type (for EndpointWithUrlEncoded) */
+  /** URL-encoded type */
   urlEncodedType?: string;
 
   /** Error type */
@@ -58,6 +49,9 @@ export type EndpointTypeInfo = {
 
   /** Description from OpenAPI */
   description?: string;
+
+  /** Is void response (204 No Content) */
+  isVoid?: boolean;
 };
 
 /** Parsed path segment */

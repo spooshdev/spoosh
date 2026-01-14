@@ -2,35 +2,34 @@ import type { SchemaMethod } from "./common.types";
 
 declare const EndpointBrand: unique symbol;
 
-export type Endpoint<TData, TBody = never, TError = never> = {
-  [EndpointBrand]: true;
-} & ([TBody] extends [never]
-  ? [TError] extends [never]
-    ? { data: TData }
-    : { data: TData; error: TError }
-  : [TError] extends [never]
-    ? { data: TData; body: TBody }
-    : { data: TData; error: TError; body: TBody });
-
-export type EndpointWithQuery<TData, TQuery, TError = never> = {
-  [EndpointBrand]: true;
-} & ([TError] extends [never]
-  ? { data: TData; query: TQuery }
-  : { data: TData; query: TQuery; error: TError });
-
-export type EndpointWithFormData<TData, TFormData, TError = never> = {
-  [EndpointBrand]: true;
-} & ([TError] extends [never]
-  ? { data: TData; formData: TFormData }
-  : { data: TData; formData: TFormData; error: TError });
-
-export type EndpointWithUrlEncoded<TData, TUrlEncoded, TError = never> = {
-  [EndpointBrand]: true;
-} & ([TError] extends [never]
-  ? { data: TData; urlEncoded: TUrlEncoded }
-  : { data: TData; urlEncoded: TUrlEncoded; error: TError });
-
-export type EndpointDefinition<
+/**
+ * Define an API endpoint with its data, request options, and error types.
+ *
+ * @example
+ * ```typescript
+ * // Simple GET endpoint
+ * $get: Endpoint<{ data: User[] }>
+ *
+ * // GET with query parameters
+ * $get: Endpoint<{ data: User[]; query: { page: number; limit: number } }>
+ *
+ * // POST with JSON body
+ * $post: Endpoint<{ data: User; body: CreateUserBody }>
+ *
+ * // POST with form data (file upload)
+ * $post: Endpoint<{ data: UploadResult; formData: { file: File; name: string } }>
+ *
+ * // POST with URL-encoded body (Stripe-style)
+ * $post: Endpoint<{ data: Payment; urlEncoded: { amount: number; currency: string } }>
+ *
+ * // With error type
+ * $get: Endpoint<{ data: User; error: ApiError }>
+ *
+ * // Complex: query + body + error
+ * $post: Endpoint<{ data: User; body: CreateUserBody; query: { notify?: boolean }; error: ApiError }>
+ * ```
+ */
+export type Endpoint<
   T extends {
     data: unknown;
     body?: unknown;

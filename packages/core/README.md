@@ -15,33 +15,28 @@ npm install @spoosh/core
 ### Define API Schema
 
 ```typescript
-import type {
-  Endpoint,
-  EndpointWithQuery,
-  EndpointWithFormData,
-  EndpointWithUrlEncoded,
-} from "@spoosh/core";
+import type { Endpoint } from "@spoosh/core";
 
 type User = { id: number; name: string; email: string };
 
 type ApiSchema = {
   users: {
-    $get: User[]; // Simple form - just the return type
-    $post: Endpoint<User, { name: string; email: string }>; // With body
+    $get: Endpoint<{ data: User[] }>;
+    $post: Endpoint<{ data: User; body: { name: string; email: string } }>;
     _: {
-      $get: User;
-      $put: Endpoint<User, Partial<User>>;
+      $get: Endpoint<{ data: User }>;
+      $put: Endpoint<{ data: User; body: Partial<User> }>;
       $delete: void;
     };
   };
   search: {
-    $get: EndpointWithQuery<User[], { q: string; page?: number }>;
+    $get: Endpoint<{ data: User[]; query: { q: string; page?: number } }>;
   };
   upload: {
-    $post: EndpointWithFormData<{ url: string }, { file: File }>;
+    $post: Endpoint<{ data: { url: string }; formData: { file: File } }>;
   };
   payments: {
-    $post: EndpointWithUrlEncoded<{ id: string }, { amount: number; currency: string }>;
+    $post: Endpoint<{ data: { id: string }; urlEncoded: { amount: number; currency: string } }>;
   };
 };
 ```
@@ -183,14 +178,14 @@ const updatedContext = await applyMiddlewares(context, middlewares, "before");
 
 | Type                                    | Description                   | Example                                                               |
 | --------------------------------------- | ----------------------------- | --------------------------------------------------------------------- |
-| `TData`                                 | Simple data type (no body)    | `$get: User[]`                                                        |
-| `Endpoint<TData>`                       | Explicit endpoint             | `$get: Endpoint<User[]>`                                              |
-| `Endpoint<TData, TBody>`                | Endpoint with JSON body       | `$post: Endpoint<User, CreateUserBody>`                               |
-| `EndpointWithQuery<TData, TQuery>`      | Endpoint with query params    | `$get: EndpointWithQuery<User[], { page: number }>`                   |
-| `EndpointWithFormData<TData, TForm>`    | Endpoint with multipart form  | `$post: EndpointWithFormData<Result, { file: File }>`                 |
-| `EndpointWithUrlEncoded<TData, TBody>`  | Endpoint with URL-encoded body| `$post: EndpointWithUrlEncoded<Result, { amount: number }>`           |
-| `EndpointDefinition<T>`                 | Full endpoint definition      | `$get: EndpointDefinition<{ data: User[]; query: { page: number } }>` |
-| `_`                                     | Dynamic path segment          | `users: { _: { $get: User } }`                                        |
+| `Endpoint<{ data }>`                    | Endpoint with data only       | `$get: Endpoint<{ data: User[] }>`                                    |
+| `Endpoint<{ data; body }>`              | Endpoint with JSON body       | `$post: Endpoint<{ data: User; body: CreateUserBody }>`               |
+| `Endpoint<{ data; query }>`             | Endpoint with query params    | `$get: Endpoint<{ data: User[]; query: { page: number } }>`           |
+| `Endpoint<{ data; formData }>`          | Endpoint with multipart form  | `$post: Endpoint<{ data: Result; formData: { file: File } }>`         |
+| `Endpoint<{ data; urlEncoded }>`        | Endpoint with URL-encoded     | `$post: Endpoint<{ data: Result; urlEncoded: { amount: number } }>`   |
+| `Endpoint<{ data; error }>`             | Endpoint with typed error     | `$get: Endpoint<{ data: User; error: ApiError }>`                     |
+| `void`                                  | No response body              | `$delete: void`                                                       |
+| `_`                                     | Dynamic path segment          | `users: { _: { $get: Endpoint<{ data: User }> } }`                    |
 
 ## API Reference
 

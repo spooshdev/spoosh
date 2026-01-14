@@ -43,7 +43,7 @@ npx spoosh-openapi export \
 ### Schema File
 
 ```typescript title="src/schema.ts"
-import type { Endpoint, EndpointWithQuery } from "@spoosh/core";
+import type { Endpoint } from "@spoosh/core";
 
 interface User {
   id: number;
@@ -58,11 +58,11 @@ interface CreateUserBody {
 
 export type ApiSchema = {
   users: {
-    $get: EndpointWithQuery<User[], { page?: number; limit?: number }>;
-    $post: Endpoint<User, CreateUserBody>;
+    $get: Endpoint<{ data: User[]; query: { page?: number; limit?: number } }>;
+    $post: Endpoint<{ data: User; body: CreateUserBody }>;
     _: {
-      $get: Endpoint<User>;
-      $put: Endpoint<User, Partial<CreateUserBody>>;
+      $get: User;
+      $put: Endpoint<{ data: User; body: Partial<CreateUserBody> }>;
       $delete: void;
     };
   };
@@ -238,7 +238,7 @@ npx spoosh-openapi import \
 ### Generated Output
 
 ```typescript title="src/schema.ts"
-import type { Endpoint, EndpointWithQuery } from "@spoosh/core";
+import type { Endpoint } from "@spoosh/core";
 
 /** Unique identifier */
 type Post = {
@@ -256,8 +256,12 @@ type CreatePostBody = {
 type ApiSchema = {
   posts: {
     /** Retrieve all posts */
-    $get: EndpointWithQuery<Post[], { userId?: number }, { error: string }>;
-    $post: Endpoint<Post, CreatePostBody>;
+    $get: Endpoint<{
+      data: Post[];
+      query: { userId?: number };
+      error: { error?: string };
+    }>;
+    $post: Endpoint<{ data: Post; body: CreatePostBody }>;
     _: {
       $get: Post;
     };
@@ -277,13 +281,13 @@ type ApiSchema = {
 
 ## Type Detection
 
-The import feature automatically detects the appropriate Spoosh endpoint type based on the OpenAPI operation:
+The import feature generates the unified `Endpoint` type with appropriate fields:
 
 | OpenAPI Pattern                    | Spoosh Type                                      | Example                     |
 | ---------------------------------- | ------------------------------------------------ | --------------------------- |
-| Query parameters                   | `EndpointWithQuery<TData, TQuery, TError>`       | GET with `?page=1&limit=10` |
-| `multipart/form-data` request body | `EndpointWithFormData<TData, TFormData, TError>` | POST with file upload       |
-| `application/json` request body    | `Endpoint<TData, TBody, TError>`                 | POST/PUT with JSON          |
+| Query parameters                   | `Endpoint<{ data: TData; query: TQuery }>`       | GET with `?page=1&limit=10` |
+| `multipart/form-data` request body | `Endpoint<{ data: TData; formData: TFormData }>` | POST with file upload       |
+| `application/json` request body    | `Endpoint<{ data: TData; body: TBody }>`         | POST/PUT with JSON          |
 | No response body (204)             | `void`                                           | DELETE operation            |
 | Simple response only               | `TData`                                          | Simple GET returning data   |
 
@@ -334,9 +338,9 @@ Generated:
 
 ```typescript
 // Only 500 has a schema, so only that is included
-$post: Endpoint<Data, Body, { system_message?: string }>;
+$post: Endpoint<{ data: Data; body: Body; error: { system_message?: string } }>;
 
-// If no error responses have schemas, no error type parameter is added
+// If no error responses have schemas, no error field is added
 $get: Data;
 ```
 
@@ -344,7 +348,11 @@ Multiple error schemas are automatically unioned:
 
 ```typescript
 // Both 400 and 500 have schemas
-$post: Endpoint<Data, Body, { error?: string } | { system_message?: string }>;
+$post: Endpoint<{
+  data: Data;
+  body: Body;
+  error: { error?: string } | { system_message?: string };
+}>;
 ```
 
 ### File Upload Detection
@@ -372,7 +380,7 @@ Binary formats are automatically converted to `File` type:
 Generated:
 
 ```typescript
-$post: EndpointWithFormData<Response, { file: File; title: string }>;
+$post: Endpoint<{ data: Response; formData: { file: File; title: string } }>;
 ```
 
 ## Programmatic Usage

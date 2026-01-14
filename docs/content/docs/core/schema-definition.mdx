@@ -20,37 +20,17 @@ type User = {
 
 type ApiSchema = {
   users: {
-    $get: User[]; // Simple form - just the return type
-    $post: Endpoint<User, { name: string; email: string }>; // With body
+    $get: Endpoint<{ data: User[] }>;
+    $post: Endpoint<{ data: User; body: { name: string; email: string } }>;
   };
 };
 ```
 
 ## Endpoint Types
 
-### Simple Data Type
+### Endpoint\<\{ data \}\>
 
-For endpoints that only return data (no body, query, or formData), you can use the type directly:
-
-```ts twoslash
-// @noErrors
-import { createClient } from "@spoosh/core";
-
-type User = { id: number; name: string; email: string };
-type ApiSchema = {
-  users: {
-    $get: User[]; // Just the return type - no wrapper needed
-  };
-};
-
-const api = createClient<ApiSchema>({ baseUrl: "/api" });
-// ---cut---
-const { data } = await api.users.$get();
-```
-
-### Endpoint\<TData\>
-
-For more explicit typing, use the `Endpoint` wrapper:
+For endpoints that only return data:
 
 ```ts twoslash
 // @noErrors
@@ -60,7 +40,7 @@ import { createClient } from "@spoosh/core";
 type User = { id: number; name: string; email: string };
 type ApiSchema = {
   users: {
-    $get: Endpoint<User[]>;
+    $get: Endpoint<{ data: User[] }>;
   };
 };
 
@@ -69,7 +49,7 @@ const api = createClient<ApiSchema>({ baseUrl: "/api" });
 const { data } = await api.users.$get();
 ```
 
-### Endpoint\<TData, TBody\>
+### Endpoint\<\{ data; body \}\>
 
 Endpoint with a request body:
 
@@ -81,7 +61,7 @@ import { createClient } from "@spoosh/core";
 type User = { id: number; name: string; email: string };
 type ApiSchema = {
   users: {
-    $post: Endpoint<User, { name: string; email: string }>;
+    $post: Endpoint<{ data: User; body: { name: string; email: string } }>;
   };
 };
 
@@ -92,19 +72,19 @@ const { data } = await api.users.$post({
 });
 ```
 
-### EndpointWithQuery\<TData, TQuery\>
+### Endpoint\<\{ data; query \}\>
 
 Endpoint with query parameters:
 
 ```ts twoslash
 // @noErrors
-import type { Endpoint, EndpointWithQuery } from "@spoosh/core";
+import type { Endpoint } from "@spoosh/core";
 import { createClient } from "@spoosh/core";
 
 type User = { id: number; name: string; email: string };
 type ApiSchema = {
   users: {
-    $get: EndpointWithQuery<User[], { page?: number; limit?: number }>;
+    $get: Endpoint<{ data: User[]; query: { page?: number; limit?: number } }>;
   };
 };
 
@@ -115,19 +95,19 @@ const { data } = await api.users.$get({
 });
 ```
 
-### EndpointWithFormData\<TData, TFormData\>
+### Endpoint\<\{ data; formData \}\>
 
 Endpoint that accepts form data:
 
 ```ts twoslash
 // @noErrors
-import type { EndpointWithFormData } from "@spoosh/core";
+import type { Endpoint } from "@spoosh/core";
 import { createClient } from "@spoosh/core";
 
 type ApiSchema = {
   users: {
     avatar: {
-      $post: EndpointWithFormData<{ url: string }, { file: File }>;
+      $post: Endpoint<{ data: { url: string }; formData: { file: File } }>;
     };
   };
 };
@@ -140,29 +120,28 @@ const { data } = await api.users.avatar.$post({
 });
 ```
 
-### EndpointDefinition\<T\>
+### Endpoint\<\{ data; urlEncoded \}\>
 
-For full control over all endpoint properties:
+Endpoint with URL-encoded body:
 
 ```ts twoslash
 // @noErrors
-import type { EndpointDefinition } from "@spoosh/core";
+import type { Endpoint } from "@spoosh/core";
 import { createClient } from "@spoosh/core";
 
-type User = { id: number; name: string; email: string };
 type ApiSchema = {
-  users: {
-    $get: EndpointDefinition<{
-      data: User[];
-      query: { page?: number; limit?: number };
+  payments: {
+    $post: Endpoint<{
+      data: { id: string };
+      urlEncoded: { amount: number; currency: string };
     }>;
   };
 };
 
 const api = createClient<ApiSchema>({ baseUrl: "/api" });
 // ---cut---
-const { data } = await api.users.$get({
-  query: { page: 1, limit: 10 },
+const { data } = await api.payments.$post({
+  urlEncoded: { amount: 1000, currency: "usd" },
 });
 ```
 
@@ -173,11 +152,11 @@ Use `_` to define dynamic path segments:
 ```typescript
 type ApiSchema = {
   users: {
-    $get: Endpoint<User[]>;
+    $get: Endpoint<{ data: User[] }>;
     _: {
-      $get: Endpoint<User>;
-      $put: Endpoint<User, Partial<User>>;
-      $delete: Endpoint<void>;
+      $get: Endpoint<{ data: User }>;
+      $put: Endpoint<{ data: User; body: Partial<User> }>;
+      $delete: void;
     };
   };
 };
@@ -196,9 +175,9 @@ type ApiSchema = {
   users: {
     _: {
       posts: {
-        $get: Endpoint<Post[]>;
+        $get: Endpoint<{ data: Post[] }>;
         _: {
-          $get: Endpoint<Post>;
+          $get: Endpoint<{ data: Post }>;
         };
       };
     };
@@ -241,16 +220,16 @@ Spoosh supports all common HTTP methods:
 For larger APIs, organize your schema into separate files:
 
 ```typescript title="src/api/schema/users.ts"
-import type { Endpoint, EndpointWithQuery } from "@spoosh/core";
+import type { Endpoint } from "@spoosh/core";
 
 export type UsersSchema = {
   users: {
-    $get: EndpointWithQuery<User[], { page?: number }>;
-    $post: Endpoint<User, CreateUserBody>;
+    $get: Endpoint<{ data: User[]; query: { page?: number } }>;
+    $post: Endpoint<{ data: User; body: CreateUserBody }>;
     _: {
-      $get: Endpoint<User>;
-      $put: Endpoint<User, UpdateUserBody>;
-      $delete: Endpoint<void>;
+      $get: User;
+      $put: Endpoint<{ data: User; body: UpdateUserBody }>;
+      $delete: void;
     };
   };
 };
@@ -261,8 +240,8 @@ import type { Endpoint } from "@spoosh/core";
 
 export type PostsSchema = {
   posts: {
-    $get: Endpoint<Post[]>;
-    $post: Endpoint<Post, CreatePostBody>;
+    $get: Endpoint<{ data: Post[] }>;
+    $post: Endpoint<{ data: Post; body: CreatePostBody }>;
   };
 };
 ```
@@ -289,12 +268,13 @@ See the [Hono Integration](/docs/integrations/hono) guide for details.
 
 ## Summary
 
-| Type                                 | Description                | Example                                                               |
-| ------------------------------------ | -------------------------- | --------------------------------------------------------------------- |
-| `TData`                              | Simple data type (no body) | `$get: User[]`                                                        |
-| `Endpoint<TData>`                    | Explicit endpoint          | `$get: Endpoint<User[]>`                                              |
-| `Endpoint<TData, TBody>`             | Endpoint with JSON body    | `$post: Endpoint<User, CreateUserBody>`                               |
-| `EndpointWithQuery<TData, TQuery>`   | Endpoint with query params | `$get: EndpointWithQuery<User[], { page: number }>`                   |
-| `EndpointWithFormData<TData, TForm>` | Endpoint with form data    | `$post: EndpointWithFormData<Result, { file: File }>`                 |
-| `EndpointDefinition<T>`              | Full endpoint definition   | `$get: EndpointDefinition<{ data: User[]; query: { page: number } }>` |
-| `_`                                  | Dynamic path segment       | `users: { _: { $get: User } }`                                        |
+| Type                             | Description                | Example                                                             |
+| -------------------------------- | -------------------------- | ------------------------------------------------------------------- |
+| `Endpoint<{ data }>`             | Endpoint with data only    | `$get: Endpoint<{ data: User[] }>`                                  |
+| `Endpoint<{ data; body }>`       | Endpoint with JSON body    | `$post: Endpoint<{ data: User; body: CreateUserBody }>`             |
+| `Endpoint<{ data; query }>`      | Endpoint with query params | `$get: Endpoint<{ data: User[]; query: { page: number } }>`         |
+| `Endpoint<{ data; formData }>`   | Endpoint with form data    | `$post: Endpoint<{ data: Result; formData: { file: File } }>`       |
+| `Endpoint<{ data; urlEncoded }>` | Endpoint with URL-encoded  | `$post: Endpoint<{ data: Result; urlEncoded: { amount: number } }>` |
+| `Endpoint<{ data; error }>`      | Endpoint with typed error  | `$get: Endpoint<{ data: User; error: ApiError }>`                   |
+| `void`                           | No response body           | `$delete: void`                                                     |
+| `_`                              | Dynamic path segment       | `users: { _: { $get: Endpoint<{ data: User }> } }`                  |

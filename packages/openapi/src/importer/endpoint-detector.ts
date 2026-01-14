@@ -23,69 +23,33 @@ export function detectEndpointType(
   const errorType = extractErrorType(operation, ctx);
   const description = operation.summary || operation.description;
 
+  const info: EndpointTypeInfo = {
+    dataType,
+    errorType,
+    description,
+    isVoid: dataType === "void",
+  };
+
+  if (hasQuery) {
+    info.queryType = extractQueryType(operation, ctx);
+  }
+
   if (contentType === "multipart/form-data") {
-    const formDataType = extractFormDataType(operation, ctx);
-    return {
-      type: "EndpointWithFormData",
-      dataType,
-      formDataType,
-      errorType,
-      description,
-    };
-  }
-
-  if (hasQuery && !hasRequestBody) {
-    const queryType = extractQueryType(operation, ctx);
-    return {
-      type: "EndpointWithQuery",
-      dataType,
-      queryType,
-      errorType,
-      description,
-    };
-  }
-
-  if (hasRequestBody && contentType === "application/json") {
-    const bodyType = extractBodyType(operation, ctx, "application/json");
-    return {
-      type: "Endpoint",
-      dataType,
-      bodyType,
-      errorType,
-      description,
-    };
-  }
-
-  if (hasRequestBody && contentType === "application/x-www-form-urlencoded") {
-    const urlEncodedType = extractBodyType(
+    info.formDataType = extractFormDataType(operation, ctx);
+  } else if (hasRequestBody && contentType === "application/json") {
+    info.bodyType = extractBodyType(operation, ctx, "application/json");
+  } else if (
+    hasRequestBody &&
+    contentType === "application/x-www-form-urlencoded"
+  ) {
+    info.urlEncodedType = extractBodyType(
       operation,
       ctx,
       "application/x-www-form-urlencoded"
     );
-    return {
-      type: "EndpointWithUrlEncoded",
-      dataType,
-      urlEncodedType,
-      errorType,
-      description,
-    };
   }
 
-  if (dataType === "void") {
-    return {
-      type: "void",
-      dataType: "void",
-      errorType,
-      description,
-    };
-  }
-
-  return {
-    type: "simple",
-    dataType,
-    errorType,
-    description,
-  };
+  return info;
 }
 
 /**

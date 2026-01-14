@@ -96,7 +96,7 @@ type TypedParamsOption<TParamNames extends string> = [TParamNames] extends [
   never,
 ]
   ? object
-  : { params: Record<TParamNames, string | number> };
+  : { params?: Record<TParamNames, string | number> };
 
 export type ComputeRequestOptions<
   TRequestOptionsBase,

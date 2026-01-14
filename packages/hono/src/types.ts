@@ -1,9 +1,4 @@
-import type {
-  Endpoint,
-  EndpointWithQuery,
-  EndpointWithFormData,
-  EndpointDefinition,
-} from "@spoosh/core";
+import type { Endpoint } from "@spoosh/core";
 import type { Hono } from "hono";
 import type { HonoBase } from "hono/hono-base";
 
@@ -31,20 +26,26 @@ type ExtractHonoFormData<T> = T extends { input: { form: infer F } }
     : F
   : never;
 
-type HonoEndpointToSpoosh<T> =
-  IsNever<ExtractHonoFormData<T>> extends false
-    ? EndpointWithFormData<ExtractHonoOutput<T>, ExtractHonoFormData<T>>
-    : IsNever<ExtractHonoQuery<T>> extends false
-      ? IsNever<ExtractHonoBody<T>> extends false
-        ? EndpointDefinition<{
-            data: ExtractHonoOutput<T>;
-            body: ExtractHonoBody<T>;
-            query: ExtractHonoQuery<T>;
-          }>
-        : EndpointWithQuery<ExtractHonoOutput<T>, ExtractHonoQuery<T>>
-      : IsNever<ExtractHonoBody<T>> extends false
-        ? Endpoint<ExtractHonoOutput<T>, ExtractHonoBody<T>>
-        : ExtractHonoOutput<T>;
+type BodyField<T> =
+  IsNever<ExtractHonoBody<T>> extends true
+    ? object
+    : { body: ExtractHonoBody<T> };
+
+type QueryField<T> =
+  IsNever<ExtractHonoQuery<T>> extends true
+    ? object
+    : { query: ExtractHonoQuery<T> };
+
+type FormDataField<T> =
+  IsNever<ExtractHonoFormData<T>> extends true
+    ? object
+    : { formData: ExtractHonoFormData<T> };
+
+type HonoEndpointToSpoosh<T> = Endpoint<
+  { data: ExtractHonoOutput<T> } & BodyField<T> &
+    QueryField<T> &
+    FormDataField<T>
+>;
 
 type TransformMethods<T> = {
   [K in keyof T as K extends HonoSchemaMethod
