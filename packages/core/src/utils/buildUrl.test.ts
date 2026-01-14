@@ -79,7 +79,7 @@ describe("buildUrl", () => {
         limit: 10,
         active: true,
       });
-      expect(result).toBe("/api/users?active=true&limit=10&page=1");
+      expect(result).toBe("/api/users?page=1&limit=10&active=true");
     });
 
     it("should handle query parameters with absolute URL", () => {
@@ -113,7 +113,7 @@ describe("buildUrl", () => {
         filter: undefined,
         active: true,
       });
-      expect(result).toBe("/api/users?active=true&page=1");
+      expect(result).toBe("/api/users?page=1&active=true");
     });
 
     it("should skip undefined query values with absolute URL", () => {
@@ -165,7 +165,7 @@ describe("buildUrl", () => {
   });
 
   describe("URL encoding of special characters", () => {
-    it("should encode special characters in query values", () => {
+    it("should encode spaces in query values", () => {
       const result = buildUrl("api", ["users"], { name: "john doe" });
       expect(result).toBe("/api/users?name=john%20doe");
     });
@@ -187,10 +187,39 @@ describe("buildUrl", () => {
       expect(result).toBe("https://example.com/api?search=hello%20world");
     });
 
-    it("should handle unicode characters in query values", () => {
+    it("should encode unicode characters in query values", () => {
       const result = buildUrl("api", ["users"], { name: "日本語" });
-      expect(result).toContain("name=");
-      expect(result).toMatch(/%[A-F0-9]{2}/i);
+      expect(result).toBe("/api/users?name=%E6%97%A5%E6%9C%AC%E8%AA%9E");
+    });
+
+    it("should encode question mark in query values", () => {
+      const result = buildUrl("api", ["search"], { q: "what?" });
+      expect(result).toBe("/api/search?q=what%3F");
+    });
+
+    it("should encode hash in query values", () => {
+      const result = buildUrl("api", ["tags"], { tag: "#trending" });
+      expect(result).toBe("/api/tags?tag=%23trending");
+    });
+
+    it("should encode slash in query values", () => {
+      const result = buildUrl("api", ["files"], { path: "foo/bar" });
+      expect(result).toBe("/api/files?path=foo%2Fbar");
+    });
+
+    it("should encode special characters in query keys", () => {
+      const result = buildUrl("api", ["data"], { "user name": "john" });
+      expect(result).toBe("/api/data?user%20name=john");
+    });
+
+    it("should encode multiple special characters", () => {
+      const result = buildUrl("api", ["search"], { q: "a & b = c" });
+      expect(result).toBe("/api/search?q=a%20%26%20b%20%3D%20c");
+    });
+
+    it("should encode percent sign in query values", () => {
+      const result = buildUrl("api", ["stats"], { rate: "50%" });
+      expect(result).toBe("/api/stats?rate=50%25");
     });
   });
 });

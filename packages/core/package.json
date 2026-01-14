@@ -41,8 +41,5 @@
     "lint": "eslint src --max-warnings 0",
     "format": "prettier --write 'src/**/*.ts'",
     "prepublishOnly": "npm run build && npm run typecheck && npm run lint"
-  },
-  "dependencies": {
-    "query-string": "^9.3.1"
   }
 }
