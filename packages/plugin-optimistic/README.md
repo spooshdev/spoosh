@@ -21,7 +21,7 @@ Note: This plugin requires `@spoosh/plugin-invalidation` as a peer dependency.
 import { optimisticPlugin } from "@spoosh/plugin-optimistic";
 import { invalidationPlugin } from "@spoosh/plugin-invalidation";
 
-const plugins = [invalidationPlugin(), optimisticPlugin()];
+const plugins = [invalidationPlugin(), optimisticPlugin()] as const;
 
 const { trigger } = useWrite((api) => api.posts[id].$delete);
 

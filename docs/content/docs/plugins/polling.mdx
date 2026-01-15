@@ -16,7 +16,7 @@ The polling plugin automatically refetches data at specified intervals.
 ```typescript
 import { pollingPlugin } from "@spoosh/plugin-polling";
 
-const plugins = [pollingPlugin()];
+const plugins = [pollingPlugin()] as const;
 
 // Poll every 5 seconds
 useRead((api) => api.notifications.$get(), { pollingInterval: 5000 });

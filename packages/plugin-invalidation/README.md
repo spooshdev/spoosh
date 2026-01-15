@@ -42,7 +42,7 @@ await trigger({ body: { title: "New Post" } });
 ```typescript
 import { invalidationPlugin } from "@spoosh/plugin-invalidation";
 
-const plugins = [invalidationPlugin()];
+const plugins = [invalidationPlugin()] as const;
 
 // Auto-invalidates all related queries after mutation (default)
 const { trigger } = useWrite((api) => api.posts.$post);

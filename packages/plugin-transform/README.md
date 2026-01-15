@@ -17,7 +17,7 @@ npm install @spoosh/plugin-transform
 ```typescript
 import { transformPlugin } from "@spoosh/plugin-transform";
 
-const plugins = [transformPlugin()];
+const plugins = [transformPlugin()] as const;
 
 // Transform query parameters
 const { data } = useRead((api) => api.posts.$get({ query: { page: 1 } }), {

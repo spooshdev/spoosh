@@ -40,7 +40,7 @@ const plugins = [
   deduplicationPlugin(),
   invalidationPlugin(),
   nextjsPlugin({ serverRevalidator: revalidateAction }),
-];
+] as const;
 ```
 
 ## Usage
@@ -100,7 +100,7 @@ const plugins = [
     serverRevalidator: revalidateAction,
     skipServerRevalidation: true, // Skip by default
   }),
-];
+] as const;
 
 // Opt-in when mutation affects server-rendered pages
 await trigger({
@@ -119,7 +119,7 @@ const plugins = [
     serverRevalidator: revalidateAction,
     // skipServerRevalidation: false (default)
   }),
-];
+] as const;
 
 // Opt-out for client-only state changes
 await trigger({

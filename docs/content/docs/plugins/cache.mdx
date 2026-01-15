@@ -18,7 +18,7 @@ import { cachePlugin } from "@spoosh/plugin-cache";
 
 const plugins = [
   cachePlugin({ staleTime: 5000 }), // 5 second stale time
-];
+] as const;
 ```
 
 Data is considered "fresh" for the duration of `staleTime`. During this period, subsequent requests return cached data without making a network request.
@@ -65,7 +65,7 @@ import { invalidationPlugin } from "@spoosh/plugin-invalidation";
 const plugins = [
   cachePlugin({ staleTime: 5000 }),
   invalidationPlugin(), // Auto-invalidates related caches after mutations
-];
+] as const;
 ```
 
 When a mutation succeeds, related cached queries are automatically refreshed.

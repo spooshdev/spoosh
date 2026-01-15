@@ -48,7 +48,7 @@ await trigger({ body: { title: "New Post" } });
 import { cachePlugin } from "@spoosh/plugin-cache";
 import { retryPlugin } from "@spoosh/plugin-retry";
 
-const plugins = [cachePlugin({ staleTime: 5000 }), retryPlugin({ retries: 3 })];
+const plugins = [cachePlugin({ staleTime: 5000 }), retryPlugin({ retries: 3 })] as const;
 ```
 
 **Zero Boilerplate** — Define your schema once, get a fully typed client. No code generation required.
@@ -96,7 +96,7 @@ type ApiSchema = {
   };
 };
 
-const plugins = [cachePlugin({ staleTime: 5000 })];
+const plugins = [cachePlugin({ staleTime: 5000 })] as const;
 
 const client = createSpoosh<ApiSchema, Error, typeof plugins>({
   baseUrl: "/api",
@@ -165,7 +165,7 @@ const plugins = [
   cachePlugin({ staleTime: 5000 }),
   retryPlugin({ retries: 3, retryDelay: 1000 }),
   deduplicationPlugin(),
-];
+] as const;
 
 const client = createSpoosh<ApiSchema, Error, typeof plugins>({
   baseUrl: "/api",

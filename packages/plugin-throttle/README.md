@@ -18,7 +18,7 @@ import { throttlePlugin } from "@spoosh/plugin-throttle";
 const plugins = [
   // ...otherPlugins,
   throttlePlugin(), // register at end to block even force fetches
-];
+] as const;
 
 // Max 1 request per second - extras return cached data
 const { data } = useRead((api) => api.expensive.$get(), { throttle: 1000 });

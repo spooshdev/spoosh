@@ -17,7 +17,7 @@ import { qsPlugin } from "@spoosh/plugin-qs";
 
 const plugins = [
   qsPlugin({ arrayFormat: "brackets" }), // default
-];
+] as const;
 
 // Query object
 const query = {

@@ -17,7 +17,7 @@ import { retryPlugin } from "@spoosh/plugin-retry";
 
 const plugins = [
   retryPlugin({ retries: 3, retryDelay: 1000 }), // 3 retries with 1 second delay
-];
+] as const;
 
 // Per-query override
 useRead((api) => api.posts.$get(), { retries: 5, retryDelay: 2000 });

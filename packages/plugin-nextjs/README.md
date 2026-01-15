@@ -32,7 +32,7 @@ import { invalidationPlugin } from "@spoosh/plugin-invalidation";
 const plugins = [
   invalidationPlugin(),
   nextjsPlugin({ serverRevalidator: revalidateAction }),
-];
+] as const;
 
 // After a successful mutation, cache tags are automatically revalidated
 const { trigger } = useWrite((api) => api.posts.$post);
@@ -74,7 +74,7 @@ const plugins = [
     serverRevalidator: revalidate,
     skipServerRevalidation: true, // Skip by default
   }),
-];
+] as const;
 
 // Most mutations don't need server revalidation
 await trigger({ body: data });
@@ -96,7 +96,7 @@ const plugins = [
     serverRevalidator: revalidate,
     // skipServerRevalidation: false (default)
   }),
-];
+] as const;
 
 // Server cache is revalidated by default
 await trigger({ body: data });

@@ -20,7 +20,7 @@ const plugins = [
     refetchOnFocus: true,
     refetchOnReconnect: true,
   }),
-];
+] as const;
 
 // Uses plugin defaults
 useRead((api) => api.posts.$get());

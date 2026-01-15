@@ -19,7 +19,7 @@ import { createSpoosh } from "@spoosh/core";
 import { createReactSpoosh } from "@spoosh/react";
 import { cachePlugin } from "@spoosh/plugin-cache";
 
-const plugins = [cachePlugin({ staleTime: 5000 })];
+const plugins = [cachePlugin({ staleTime: 5000 })] as const;
 
 const client = createSpoosh<ApiSchema, Error, typeof plugins>({
   baseUrl: "/api",

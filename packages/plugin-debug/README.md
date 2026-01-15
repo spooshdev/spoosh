@@ -16,10 +16,10 @@ npm install @spoosh/plugin-debug
 import { debugPlugin } from "@spoosh/plugin-debug";
 
 // Basic usage - logs all phases
-const plugins = [debugPlugin()];
+const plugins = [debugPlugin()] as const;
 
 // With cache logging
-const plugins = [debugPlugin({ logCache: true })];
+const plugins = [debugPlugin({ logCache: true })] as const;
 
 // Custom logger with object shape
 const plugins = [
@@ -28,12 +28,12 @@ const plugins = [
       console.log(entry.phase, entry.path, entry.state.data);
     },
   }),
-];
+] as const;
 
 // Disable in production
 const plugins = [
   debugPlugin({ enabled: process.env.NODE_ENV === "development" }),
-];
+] as const;
 ```
 
 ## Options

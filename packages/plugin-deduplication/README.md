@@ -16,12 +16,12 @@ npm install @spoosh/plugin-deduplication
 import { deduplicationPlugin } from "@spoosh/plugin-deduplication";
 
 // Default: dedupe reads, not writes
-const plugins = [deduplicationPlugin()];
+const plugins = [deduplicationPlugin()] as const;
 
 // Enable deduplication for writes too
 // Extreme caution: may cause unintended side effects
 // **Avoid using it unless you fully understand the implications**
-const plugins = [deduplicationPlugin({ write: "in-flight" })];
+const plugins = [deduplicationPlugin({ write: "in-flight" })] as const;
 
 // Per-request override
 useRead((api) => api.posts.$get(), { dedupe: false });

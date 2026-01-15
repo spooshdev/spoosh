@@ -16,7 +16,7 @@ npm install @spoosh/plugin-prefetch
 import { prefetchPlugin } from "@spoosh/plugin-prefetch";
 
 // Setup - prefetch is returned from createReactSpoosh
-const plugins = [prefetchPlugin(), cachePlugin(), retryPlugin()];
+const plugins = [prefetchPlugin(), cachePlugin(), retryPlugin()] as const;
 const spoosh = createSpoosh<ApiSchema, Error, typeof plugins>({ baseUrl: "/api", plugins });
 const { useRead, useWrite, prefetch } = createReactSpoosh(spoosh);
 

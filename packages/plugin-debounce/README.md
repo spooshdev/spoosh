@@ -15,7 +15,7 @@ npm install @spoosh/plugin-debounce
 ```typescript
 import { debouncePlugin } from "@spoosh/plugin-debounce";
 
-const plugins = [debouncePlugin()];
+const plugins = [debouncePlugin()] as const;
 
 // Wait 300ms after typing stops before fetching
 const { data } = useRead(

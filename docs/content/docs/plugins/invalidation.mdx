@@ -20,7 +20,7 @@ const plugins = [
   cachePlugin({ staleTime: 5000 }),
   deduplicationPlugin(),
   invalidationPlugin(), // Auto-refresh queries after mutations
-];
+] as const;
 ```
 
 ## Default Configuration
@@ -140,5 +140,5 @@ const plugins = [
   cachePlugin({ staleTime: 5000 }),
   deduplicationPlugin(), // Prevents duplicate requests during invalidation
   invalidationPlugin(),
-];
+] as const;
 ```

@@ -66,7 +66,7 @@ const plugins = [
   cachePlugin({ staleTime: 5000 }),
   deduplicationPlugin(), // Prevent duplicate requests during invalidation
   invalidationPlugin(), // Auto-refresh queries after mutations
-];
+] as const;
 
 const spoosh = createSpoosh<ApiSchema, Error, typeof plugins>({
   baseUrl: "/api",

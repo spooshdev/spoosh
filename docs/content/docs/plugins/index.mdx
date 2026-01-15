@@ -27,7 +27,7 @@ const plugins = [
   cachePlugin({ staleTime: 5000 }),
   invalidationPlugin(), // Auto-refresh queries after mutations
   retryPlugin({ retries: 3 }),
-];
+] as const;
 
 const spoosh = createSpoosh<ApiSchema, Error, typeof plugins>({
   baseUrl: "/api",
@@ -94,7 +94,7 @@ const plugins = [
   invalidationPlugin(),
   retryPlugin({ retries: 3 }),
   refetchPlugin({ refetchOnFocus: true }),
-];
+] as const;
 ```
 
 This gives you:
@@ -119,7 +119,7 @@ const plugins = [
   invalidationPlugin(),
   retryPlugin(),
   throttlePlugin(), // Last - blocks everything
-];
+] as const;
 ```
 
 > **Tip:** The `deduplicationPlugin` is especially useful with `invalidationPlugin`. When a mutation invalidates multiple queries with overlapping tags, deduplication ensures only one network request is made per unique endpoint.

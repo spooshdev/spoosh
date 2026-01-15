@@ -17,7 +17,7 @@ import { cachePlugin } from "@spoosh/plugin-cache";
 
 const plugins = [
   cachePlugin({ staleTime: 5000 }), // 5 second stale time
-];
+] as const;
 
 // Per-query override
 useRead((api) => api.posts.$get(), { staleTime: 10000 });

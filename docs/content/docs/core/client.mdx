@@ -12,7 +12,10 @@ import { createSpoosh } from "@spoosh/core";
 import { cachePlugin } from "@spoosh/plugin-cache";
 import { invalidationPlugin } from "@spoosh/plugin-invalidation";
 
-const plugins = [cachePlugin({ staleTime: 5000 }), invalidationPlugin()];
+const plugins = [
+  cachePlugin({ staleTime: 5000 }),
+  invalidationPlugin(),
+] as const;
 
 const spoosh = createSpoosh<ApiSchema, Error, typeof plugins>({
   baseUrl: "/api",
@@ -49,7 +52,10 @@ import { cachePlugin } from "@spoosh/plugin-cache";
 import { invalidationPlugin } from "@spoosh/plugin-invalidation";
 import type { ApiSchema } from "./schema";
 
-const plugins = [cachePlugin({ staleTime: 5000 }), invalidationPlugin()];
+const plugins = [
+  cachePlugin({ staleTime: 5000 }),
+  invalidationPlugin(),
+] as const;
 
 const spoosh = createSpoosh<ApiSchema, Error, typeof plugins>({
   baseUrl: "/api",
