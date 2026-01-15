@@ -1,6 +1,6 @@
 {
   "name": "@spoosh/openapi",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "license": "MIT",
   "description": "OpenAPI schema generator for Spoosh API definitions",
   "keywords": [
@@ -42,8 +42,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --max-warnings 0",
     "format": "prettier --write 'src/**/*.ts'",
-    "test:import": "npm run build && node scripts/test-import.mjs",
-    "prepublishOnly": "npm run build && npm run typecheck && npm run lint"
+    "test:import": "npm run build && node scripts/test-import.mjs"
   },
   "dependencies": {
     "commander": "^12.1.0",

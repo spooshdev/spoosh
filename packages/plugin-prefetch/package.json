@@ -1,6 +1,6 @@
 {
   "name": "@spoosh/plugin-prefetch",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Prefetch plugin for Spoosh - preload data before it's needed",
   "license": "MIT",
   "repository": {
@@ -8,11 +8,23 @@
     "url": "git+https://github.com/nxnom/spoosh.git",
     "directory": "packages/plugin-prefetch"
   },
-  "bugs": { "url": "https://github.com/nxnom/spoosh/issues" },
+  "bugs": {
+    "url": "https://github.com/nxnom/spoosh/issues"
+  },
   "homepage": "https://spoosh.dev/docs/plugins/prefetch",
-  "publishConfig": { "access": "public" },
-  "keywords": ["spoosh", "plugin", "prefetch", "api-client", "preload"],
-  "files": ["dist"],
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "spoosh",
+    "plugin",
+    "prefetch",
+    "api-client",
+    "preload"
+  ],
+  "files": [
+    "dist"
+  ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -25,11 +37,10 @@
     "build": "tsup",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --max-warnings 0",
-    "format": "prettier --write 'src/**/*.ts'",
-    "prepublishOnly": "npm run build && npm run typecheck && npm run lint"
+    "format": "prettier --write 'src/**/*.ts'"
   },
   "peerDependencies": {
-    "@spoosh/core": ">=0.1.0"
+    "@spoosh/core": ">=0.2.0"
   },
   "devDependencies": {
     "@spoosh/core": "workspace:*",

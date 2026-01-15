@@ -1,6 +1,6 @@
 {
   "name": "@spoosh/plugin-nextjs",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Next.js integration plugin for Spoosh - server revalidation after mutations",
   "license": "MIT",
   "repository": {
@@ -12,8 +12,17 @@
     "url": "https://github.com/nxnom/spoosh/issues"
   },
   "homepage": "https://spoosh.dev/docs/plugins/nextjs",
-  "publishConfig": { "access": "public" },
-  "keywords": ["spoosh", "plugin", "nextjs", "next.js", "revalidation", "api-client"],
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "spoosh",
+    "plugin",
+    "nextjs",
+    "next.js",
+    "revalidation",
+    "api-client"
+  ],
   "files": [
     "dist"
   ],
@@ -29,11 +38,10 @@
     "build": "tsup",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --max-warnings 0",
-    "format": "prettier --write 'src/**/*.ts'",
-    "prepublishOnly": "npm run build && npm run typecheck && npm run lint"
+    "format": "prettier --write 'src/**/*.ts'"
   },
   "peerDependencies": {
-    "@spoosh/core": ">=0.1.0",
+    "@spoosh/core": ">=0.2.0",
     "next": ">=13.0.0"
   },
   "devDependencies": {

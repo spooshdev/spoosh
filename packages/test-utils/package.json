@@ -1,6 +1,6 @@
 {
   "name": "@spoosh/test-utils",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Test utilities for Spoosh plugins",
   "license": "MIT",
   "repository": {

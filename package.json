@@ -14,7 +14,7 @@
     "lint": "pnpm -r lint",
     "format": "pnpm -r format",
     "changeset": "changeset",
-    "version": "changeset version",
+    "bump": "changeset version",
     "release": "pnpm build && changeset publish"
   },
   "devDependencies": {

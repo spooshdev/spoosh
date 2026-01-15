@@ -1,6 +1,6 @@
 {
   "name": "@spoosh/core",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "license": "MIT",
   "description": "Type-safe API client with plugin middleware system",
   "keywords": [
@@ -39,7 +39,6 @@
     "build": "tsup",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --max-warnings 0",
-    "format": "prettier --write 'src/**/*.ts'",
-    "prepublishOnly": "npm run build && npm run typecheck && npm run lint"
+    "format": "prettier --write 'src/**/*.ts'"
   }
 }

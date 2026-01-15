@@ -6,6 +6,6 @@
   "linked": [],
   "access": "public",
   "baseBranch": "develop",
-  "updateInternalDependencies": "patch",
-  "ignore": ["@spoosh/docs", "@spoosh/playground"]
+  "updateInternalDependencies": "minor",
+  "ignore": ["@spoosh/docs"]
 }

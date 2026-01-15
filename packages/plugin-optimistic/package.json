@@ -1,6 +1,6 @@
 {
   "name": "@spoosh/plugin-optimistic",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Optimistic updates plugin for Spoosh - instant UI updates with automatic rollback",
   "license": "MIT",
   "repository": {
@@ -8,11 +8,23 @@
     "url": "git+https://github.com/nxnom/spoosh.git",
     "directory": "packages/plugin-optimistic"
   },
-  "bugs": { "url": "https://github.com/nxnom/spoosh/issues" },
+  "bugs": {
+    "url": "https://github.com/nxnom/spoosh/issues"
+  },
   "homepage": "https://spoosh.dev/docs/plugins/optimistic",
-  "publishConfig": { "access": "public" },
-  "keywords": ["spoosh", "plugin", "optimistic", "api-client", "mutations"],
-  "files": ["dist"],
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "spoosh",
+    "plugin",
+    "optimistic",
+    "api-client",
+    "mutations"
+  ],
+  "files": [
+    "dist"
+  ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -25,11 +37,10 @@
     "build": "tsup",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --max-warnings 0",
-    "format": "prettier --write 'src/**/*.ts'",
-    "prepublishOnly": "npm run build && npm run typecheck && npm run lint"
+    "format": "prettier --write 'src/**/*.ts'"
   },
   "peerDependencies": {
-    "@spoosh/core": ">=0.1.0",
+    "@spoosh/core": ">=0.2.0",
     "@spoosh/plugin-invalidation": ">=0.1.0"
   },
   "devDependencies": {

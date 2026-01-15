@@ -1,6 +1,6 @@
 {
   "name": "@spoosh/plugin-refetch",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Auto-refetch plugin for Spoosh - refetch on focus and reconnect",
   "license": "MIT",
   "repository": {
@@ -8,11 +8,24 @@
     "url": "git+https://github.com/nxnom/spoosh.git",
     "directory": "packages/plugin-refetch"
   },
-  "bugs": { "url": "https://github.com/nxnom/spoosh/issues" },
+  "bugs": {
+    "url": "https://github.com/nxnom/spoosh/issues"
+  },
   "homepage": "https://spoosh.dev/docs/plugins/refetch",
-  "publishConfig": { "access": "public" },
-  "keywords": ["spoosh", "plugin", "refetch", "api-client", "focus", "reconnect"],
-  "files": ["dist"],
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "spoosh",
+    "plugin",
+    "refetch",
+    "api-client",
+    "focus",
+    "reconnect"
+  ],
+  "files": [
+    "dist"
+  ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -25,11 +38,10 @@
     "build": "tsup",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --max-warnings 0",
-    "format": "prettier --write 'src/**/*.ts'",
-    "prepublishOnly": "npm run build && npm run typecheck && npm run lint"
+    "format": "prettier --write 'src/**/*.ts'"
   },
   "peerDependencies": {
-    "@spoosh/core": ">=0.1.0"
+    "@spoosh/core": ">=0.2.0"
   },
   "devDependencies": {
     "@spoosh/core": "workspace:*",
