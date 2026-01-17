@@ -1,5 +1,11 @@
 # @spoosh/react
 
+## 0.1.3
+
+### Patch Changes
+
+- Fix initial loading state false in infinite queries.
+
 ## 0.1.2
 
 ### Patch Changes

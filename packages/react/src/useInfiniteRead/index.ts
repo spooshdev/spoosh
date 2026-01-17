@@ -1,4 +1,10 @@
-import { useRef, useEffect, useSyncExternalStore, useId } from "react";
+import {
+  useRef,
+  useEffect,
+  useSyncExternalStore,
+  useId,
+  useState,
+} from "react";
 import {
   type SpooshResponse,
   type MergePluginOptions,
@@ -203,11 +209,16 @@ export function createUseInfiniteRead<
       controller.getState
     );
 
+    const [isPending, setIsPending] = useState(() => {
+      return enabled && state.data === undefined;
+    });
+
     const fetchingDirection = controller.getFetchingDirection();
     const fetching = fetchingDirection !== null;
     const fetchingNext = fetchingDirection === "next";
     const fetchingPrev = fetchingDirection === "prev";
-    const loading = fetching && state.data === undefined;
+    const hasData = state.data !== undefined;
+    const loading = (isPending || fetching) && !hasData;
 
     const lifecycleRef = useRef<{
       initialized: boolean;
@@ -236,7 +247,8 @@ export function createUseInfiniteRead<
           );
 
           if (hasMatch) {
-            controller.refetch();
+            setIsPending(true);
+            controller.refetch().finally(() => setIsPending(false));
           }
         }
       );
@@ -254,7 +266,8 @@ export function createUseInfiniteRead<
         const isFetching = controller.getFetchingDirection() !== null;
 
         if (currentState.data === undefined && !isFetching) {
-          controller.fetchNext();
+          setIsPending(true);
+          controller.fetchNext().finally(() => setIsPending(false));
         }
       }
     }, [enabled]);
