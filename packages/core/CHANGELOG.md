@@ -1,5 +1,11 @@
 # @spoosh/core
 
+## 0.2.1
+
+### Patch Changes
+
+- Catch errors in onResponse from plugins
+
 ## 0.2.0
 
 ### Breaking Changes

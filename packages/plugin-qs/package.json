@@ -44,7 +44,7 @@
     "qs": "^6.13.0"
   },
   "peerDependencies": {
-    "@spoosh/core": ">=0.2.0"
+    "@spoosh/core": ">=0.2.1"
   },
   "devDependencies": {
     "@spoosh/core": "workspace:*",
