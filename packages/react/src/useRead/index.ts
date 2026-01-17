@@ -183,7 +183,11 @@ export function createUseRead<
     const [requestState, setRequestState] = useState<{
       isPending: boolean;
       error: TError | undefined;
-    }>({ isPending: false, error: undefined });
+    }>(() => {
+      const cachedEntry = stateManager.getCache(queryKey);
+      const hasCachedData = cachedEntry?.state?.data !== undefined;
+      return { isPending: enabled && !hasCachedData, error: undefined };
+    });
 
     const abortRef = useRef(controller.abort);
     abortRef.current = controller.abort;
