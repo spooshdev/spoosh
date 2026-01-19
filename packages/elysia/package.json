@@ -1,0 +1,54 @@
+{
+  "name": "@spoosh/elysia",
+  "version": "0.1.0",
+  "license": "MIT",
+  "description": "Elysia server adapter for Spoosh API definitions",
+  "keywords": [
+    "spoosh",
+    "elysia",
+    "eden",
+    "server",
+    "api",
+    "adapter",
+    "typescript"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nxnom/spoosh.git",
+    "directory": "packages/elysia"
+  },
+  "bugs": {
+    "url": "https://github.com/nxnom/spoosh/issues"
+  },
+  "homepage": "https://spoosh.dev/docs/integrations/elysia",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "dev": "tsup --watch",
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --max-warnings 0",
+    "format": "prettier --write 'src/**/*.ts'"
+  },
+  "peerDependencies": {
+    "@elysiajs/eden": ">=1.0.0",
+    "@spoosh/core": ">=0.2.1",
+    "elysia": ">=1.0.0"
+  },
+  "devDependencies": {
+    "@elysiajs/eden": "^1.4.6",
+    "@spoosh/core": "workspace:*",
+    "elysia": "^1.4.22"
+  }
+}
