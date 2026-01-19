@@ -1,123 +1,161 @@
 import type { Endpoint } from "@spoosh/core";
-import type { Hono } from "hono";
-import type { HonoBase } from "hono/hono-base";
+import type { ClientRequest } from "hono/client";
+
+type Simplify<T> = { [K in keyof T]: T[K] } & {};
 
 type IsNever<T> = [T] extends [never] ? true : false;
 
 type HonoSchemaMethod = "$get" | "$post" | "$put" | "$patch" | "$delete";
 
-type ExtractHonoOutput<T> = T extends { output: infer O } ? O : never;
+type ExtractClientOutput<T> = T extends { output: infer O } ? O : never;
 
-type ExtractHonoBody<T> = T extends { input: { json: infer B } }
+type ExtractClientBody<T> = T extends { input: { json: infer B } }
   ? IsNever<B> extends true
     ? never
     : B
   : never;
 
-type ExtractHonoQuery<T> = T extends { input: { query: infer Q } }
+type ExtractClientQuery<T> = T extends { input: { query: infer Q } }
   ? IsNever<Q> extends true
     ? never
     : Q
   : never;
 
-type ExtractHonoFormData<T> = T extends { input: { form: infer F } }
+type ExtractClientFormData<T> = T extends { input: { form: infer F } }
   ? IsNever<F> extends true
     ? never
     : F
   : never;
 
 type BodyField<T> =
-  IsNever<ExtractHonoBody<T>> extends true
+  IsNever<ExtractClientBody<T>> extends true
     ? object
-    : { body: ExtractHonoBody<T> };
+    : { body: ExtractClientBody<T> };
 
 type QueryField<T> =
-  IsNever<ExtractHonoQuery<T>> extends true
+  IsNever<ExtractClientQuery<T>> extends true
     ? object
-    : { query: ExtractHonoQuery<T> };
+    : { query: ExtractClientQuery<T> };
 
 type FormDataField<T> =
-  IsNever<ExtractHonoFormData<T>> extends true
+  IsNever<ExtractClientFormData<T>> extends true
     ? object
-    : { formData: ExtractHonoFormData<T> };
+    : { formData: ExtractClientFormData<T> };
 
-type HonoEndpointToSpoosh<T> = Endpoint<
-  { data: ExtractHonoOutput<T> } & BodyField<T> &
-    QueryField<T> &
-    FormDataField<T>
+type ClientEndpointToSpoosh<T> = Endpoint<
+  Simplify<
+    { data: ExtractClientOutput<T> } & BodyField<T> &
+      QueryField<T> &
+      FormDataField<T>
+  >
 >;
 
-type TransformMethods<T> = {
-  [K in keyof T as K extends HonoSchemaMethod
-    ? K
-    : never]: HonoEndpointToSpoosh<T[K]>;
-};
-
-type TransformSegment<S extends string> = S extends `:${string}` ? "_" : S;
-
-type PathToSpoosh<
-  Path extends string,
-  S,
-  Original extends string = Path,
-> = Path extends `/${infer P}`
-  ? PathToSpoosh<P, S, Original>
-  : Path extends `${infer Head}/${infer Rest}`
-    ? {
-        [K in TransformSegment<Head>]: PathToSpoosh<Rest, S, Original>;
-      }
-    : {
-        [K in TransformSegment<
-          Path extends "" ? "index" : Path
-        >]: TransformMethods<S extends Record<Original, infer V> ? V : never>;
-      };
-
-type UnionToIntersection<U> = (
-  U extends unknown ? (k: U) => void : never
-) extends (k: infer I) => void
-  ? I
-  : unknown;
-
-// Extract schema from HonoBase (4 type params) or Hono (3 type params)
-
-type ExtractSchemaFromHono<T> =
+// Extract endpoint schema from hc client method function signature
+type ExtractEndpointFromClientMethod<T> = T extends (
+  args: infer Input,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  T extends HonoBase<any, infer S, any, any>
-    ? S
-    : // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      T extends Hono<any, infer S, any>
-      ? S
-      : never;
-
-type SchemaToSpoosh<S> =
-  S extends Record<infer K, unknown>
-    ? K extends string
-      ? PathToSpoosh<K, S>
-      : never
+  options?: any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+) => Promise<any>
+  ? {
+      input: Input;
+      output: Awaited<ReturnType<T>> extends { json(): Promise<infer O> }
+        ? O
+        : never;
+    }
+  : T extends { output: unknown }
+    ? T
     : never;
 
+type TransformClientMethods<T> = {
+  [K in keyof T as K extends HonoSchemaMethod
+    ? K
+    : never]: ClientEndpointToSpoosh<ExtractEndpointFromClientMethod<T[K]>>;
+};
+
+// Transform `:paramName` keys to `_` for Spoosh compatibility
+type TransformClientKey<K> = K extends `:${string}` ? "_" : K;
+
+// Extract schema from ClientRequest (handles intersection of ClientRequest & nested routes)
+type ExtractClientSchema<T> =
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  T extends ClientRequest<any, any, infer S> ? S : never;
+
+// Check if T has HTTP method keys (either from ClientRequest or direct function methods)
+type HasMethodKey<T, K extends HonoSchemaMethod> = K extends keyof T
+  ? true
+  : false;
+
+type HasAnyMethod<T> =
+  | HasMethodKey<T, "$get">
+  | HasMethodKey<T, "$post">
+  | HasMethodKey<T, "$put">
+  | HasMethodKey<T, "$patch">
+  | HasMethodKey<T, "$delete"> extends false
+  ? false
+  : true;
+
+// Check if T has ClientRequest methods OR direct function methods
+type HasClientMethods<T> =
+  ExtractClientSchema<T> extends never ? HasAnyMethod<T> : true;
+
+// Get methods either from ClientRequest schema or directly from T
+type GetMethodSchema<T> =
+  ExtractClientSchema<T> extends never ? T : ExtractClientSchema<T>;
+
+// Get only non-method nested properties (not $get, $post, etc. and not $url)
+type NonMethodKeys<T> = {
+  [K in keyof T]: K extends HonoSchemaMethod | "$url" ? never : K;
+}[keyof T];
+
+// Transform: extract methods from ClientRequest AND recursively transform nested routes
+type TransformClientRequest<T> = (HasClientMethods<T> extends true
+  ? TransformClientMethods<GetMethodSchema<T>>
+  : object) &
+  (NonMethodKeys<T> extends never
+    ? object
+    : {
+        [K in NonMethodKeys<T> as TransformClientKey<K>]: TransformClientRequest<
+          T[K]
+        >;
+      });
+
+type FlattenIndex<T> = T extends { index: infer I } ? Omit<T, "index"> & I : T;
+
 /**
- * Transforms Hono's AppType (from `typeof app`) into Spoosh's ApiSchema format.
+ * Transforms `hc` client type into Spoosh schema format.
  *
  * @example
  * ```typescript
- * // Server (Hono)
- * const app = new Hono()
- *   .basePath('/api')
- *   .get('/posts', (c) => c.json([{ id: 1, title: 'Hello' }]))
- *   .post('/posts', zValidator('json', schema), (c) => c.json({ id: 1 }))
- *   .get('/posts/:id', (c) => c.json({ id: c.req.param('id') }));
- *
- * export type AppType = typeof app;
- *
- * // Client (Spoosh)
+ * import { hc } from 'hono/client';
  * import type { HonoToSpoosh } from '@spoosh/hono';
- * type ApiSchema = HonoToSpoosh<AppType>;
+ * import type { AppType } from './server';
  *
- * const client = spoosh<ApiSchema['api']>('http://localhost:3000/api');
- * const posts = await client.posts.get();       // typed as { id, title }[]
- * const post = await client.posts['123'].get(); // typed as { id }
+ * type Client = ReturnType<typeof hc<AppType>>;
+ * type ApiSchema = HonoToSpoosh<Client>['api'];
  * ```
  */
-export type HonoToSpoosh<T> = UnionToIntersection<
-  SchemaToSpoosh<ExtractSchemaFromHono<T>>
->;
+export type HonoToSpoosh<T> = Simplify<TransformClientRequest<T>>;
+
+/**
+ * Transforms a sub-client (single route group) into Spoosh schema format.
+ * Use this for the split-app pattern to avoid TS2589 errors in large apps.
+ *
+ * @example
+ * ```typescript
+ * import { hc } from 'hono/client';
+ * import type { HonoRouteToSpoosh } from '@spoosh/hono';
+ *
+ * // Split by route group to avoid TS2589
+ * import type { usersRoutes } from './routes/users';
+ * import type { postsRoutes } from './routes/posts';
+ *
+ * export type APISchema = {
+ *   users: HonoRouteToSpoosh<ReturnType<typeof hc<typeof usersRoutes>>>;
+ *   posts: HonoRouteToSpoosh<ReturnType<typeof hc<typeof postsRoutes>>>;
+ * };
+ *
+ * // Usage: api.users.$get(), api.posts.$post(), etc.
+ * ```
+ */
+export type HonoRouteToSpoosh<T> = FlattenIndex<HonoToSpoosh<T>>;

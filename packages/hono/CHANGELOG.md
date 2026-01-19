@@ -1,5 +1,12 @@
 # @spoosh/hono
 
+## 0.2.0
+
+## Breaking Changes
+
+- Use `hc` return type of Hono handlers to support multiple hono versions
+- Create `HonoRouteToSpoosh` type transformer for converting individual Hono route types to Spoosh schema
+
 ## 0.1.1
 
 ### Patch Changes

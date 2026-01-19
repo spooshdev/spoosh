@@ -54,15 +54,16 @@ export type AppType = typeof app;
 
 ### Client (Spoosh)
 
-Use `HonoToSpoosh` to convert the Hono type:
+Use `HonoToSpoosh` with the `hc` client type to convert the Hono type:
 
 ```typescript title="client.ts"
 import { Spoosh } from "@spoosh/core";
 import { createReactSpoosh } from "@spoosh/react";
 import type { HonoToSpoosh } from "@spoosh/hono";
+import type { hc } from "hono/client";
 import type { AppType } from "./server";
 
-type ApiSchema = HonoToSpoosh<AppType>;
+type ApiSchema = HonoToSpoosh<ReturnType<typeof hc<AppType>>>;
 
 const spoosh = new Spoosh<ApiSchema, Error>("http://localhost:3000/api");
 
@@ -110,3 +111,133 @@ Dynamic segments (`:id`, `:slug`, etc.) are converted to `_` in the schema:
 // Hono route: /users/:userId/posts/:postId
 // Spoosh path: api.users[userId].posts[postId].$get()
 ```
+
+## Handling Large Apps (TS2589)
+
+When your Hono app has many routes (20+), you may encounter TypeScript error TS2589:
+
+```
+Type instantiation is excessively deep and possibly infinite.
+```
+
+<Callout type="warn">
+  This is a known TypeScript limitation with deeply nested type transformations.
+  The solution is to split your routes and transform them separately.
+</Callout>
+
+### Solution: Split-App Pattern
+
+Instead of using `HonoToSpoosh` with your entire app type, split your routes into separate groups and use `HonoRouteToSpoosh` with the `hc` client type.
+
+#### Step 1: Organize routes into separate files
+
+```typescript title="routes/users.ts"
+import { Hono } from "hono";
+
+export const usersRoutes = new Hono()
+  .get("/", (c) => c.json([]))
+  .post("/", (c) => c.json({}))
+  .get("/:id", (c) => c.json({}));
+```
+
+```typescript title="routes/posts.ts"
+import { Hono } from "hono";
+
+export const postsRoutes = new Hono()
+  .get("/", (c) => c.json([]))
+  .post("/", (c) => c.json({}));
+```
+
+#### Step 2: Mount routes in your main app
+
+```typescript title="app.ts"
+import { Hono } from "hono";
+import { usersRoutes } from "./routes/users";
+import { postsRoutes } from "./routes/posts";
+
+const app = new Hono()
+  .basePath("/api")
+  .route("/users", usersRoutes)
+  .route("/posts", postsRoutes);
+
+export default app;
+```
+
+#### Step 3: Define schema using `HonoRouteToSpoosh`
+
+```typescript title="client.ts"
+import { Spoosh } from "@spoosh/core";
+import { createReactSpoosh } from "@spoosh/react";
+import type { HonoRouteToSpoosh } from "@spoosh/hono";
+import type { hc } from "hono/client";
+import type { usersRoutes } from "./routes/users";
+import type { postsRoutes } from "./routes/posts";
+
+// Pre-compute each route type separately (helps TypeScript caching)
+type UsersSchema = HonoRouteToSpoosh<ReturnType<typeof hc<typeof usersRoutes>>>;
+type PostsSchema = HonoRouteToSpoosh<ReturnType<typeof hc<typeof postsRoutes>>>;
+
+type ApiSchema = {
+  users: UsersSchema;
+  posts: PostsSchema;
+};
+
+const spoosh = new Spoosh<ApiSchema, Error>("/api");
+
+export const { useRead, useWrite } = createReactSpoosh(spoosh);
+```
+
+### Why use `hc` client types?
+
+Using `typeof hc<typeof routes>` instead of `typeof app` is recommended because:
+
+| Benefit                     | Description                                                          |
+| --------------------------- | -------------------------------------------------------------------- |
+| **Version stability**       | The `hc` client type structure is more stable across Hono versions   |
+| **Isolated transformation** | Each route group is transformed independently, reducing type depth   |
+| **Better caching**          | TypeScript can cache intermediate type computations more effectively |
+
+### Splitting Complex Route Groups
+
+If a single route group is still causing TS2589, split it further by route pattern:
+
+```typescript title="routes/bookings.ts"
+// Root-level routes
+export const bookingsRootRoutes = new Hono()
+  .get("/", (c) => c.json([]))
+  .post("/", (c) => c.json({}))
+  .post("/summary", (c) => c.json({}));
+
+// Routes with :id parameter
+export const bookingByIdRoutes = new Hono()
+  .get("/:id", (c) => c.json({}))
+  .patch("/:id", (c) => c.json({}))
+  .post("/:id/confirm", (c) => c.json({}));
+```
+
+```typescript title="app.ts"
+// Mount both on the same path
+const app = new Hono()
+  .route("/bookings", bookingsRootRoutes)
+  .route("/bookings", bookingByIdRoutes);
+```
+
+```typescript title="client.ts"
+// Merge the types with intersection
+type BookingsRoot = HonoRouteToSpoosh<
+  ReturnType<typeof hc<typeof bookingsRootRoutes>>
+>;
+type BookingById = HonoRouteToSpoosh<
+  ReturnType<typeof hc<typeof bookingByIdRoutes>>
+>;
+
+type ApiSchema = {
+  bookings: BookingsRoot & BookingById;
+};
+```
+
+<Callout type="tip">
+  Pre-computing types as separate type aliases (like `BookingsRoot` and
+  `BookingById`) helps TypeScript's type caching, which can prevent the deep
+  instantiation issue even when combining them with intersection.
+</Callout>
