@@ -210,3 +210,14 @@ type ApiSchema = {
   bookings: BookingsRoot & BookingById;
 };
 ```
+
+### Last Resort: `@ts-expect-error`
+
+In rare cases, even after splitting routes, certain endpoints may still trigger TS2589. When this happens, you can use `@ts-expect-error` as a targeted workaround:
+
+```typescript
+// @ts-expect-error TS2589 - complex endpoint type
+const { trigger } = useWrite((api) => api.bookings(":id").confirm.$post);
+```
+
+> **Note:** Only use `@ts-expect-error` for specific problematic endpoints, not as a blanket solution. The type safety still works at runtime—this just suppresses the compile-time error for that particular usage.
