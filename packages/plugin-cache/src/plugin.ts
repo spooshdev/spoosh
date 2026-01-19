@@ -21,11 +21,17 @@ import type {
  *
  * @example
  * ```ts
- * const plugins = [cachePlugin({ staleTime: 5000 })];
+ * import { Spoosh } from "@spoosh/core";
+ *
+ * const client = new Spoosh<ApiSchema, Error>("/api")
+ *   .use([
+ *     // ... other plugins
+ *     cachePlugin({ staleTime: 5000 }),
+ *   ]);
  *
  * // Per-query override
  * useRead((api) => api.posts.$get(), {
- *   staleTime: 10000, // Override default stale time
+ *   staleTime: 10000,
  * });
  * ```
  */

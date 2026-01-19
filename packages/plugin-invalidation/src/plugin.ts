@@ -79,7 +79,12 @@ function resolveInvalidateTags(
  *
  * @example
  * ```ts
- * const plugins = [invalidationPlugin({ autoInvalidate: "all" })];
+ * import { Spoosh } from "@spoosh/core";
+ *
+ * const client = new Spoosh<ApiSchema, Error>("/api")
+ *   .use([
+ *     invalidationPlugin({ autoInvalidate: "all" }),
+ *   ]);
  *
  * // Per-mutation override
  * trigger({

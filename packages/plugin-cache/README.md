@@ -13,11 +13,13 @@ npm install @spoosh/plugin-cache
 ## Usage
 
 ```typescript
+import { Spoosh } from "@spoosh/core";
 import { cachePlugin } from "@spoosh/plugin-cache";
 
-const plugins = [
-  cachePlugin({ staleTime: 5000 }), // 5 second stale time
-] as const;
+const client = new Spoosh<ApiSchema, Error>("/api")
+  .use([
+    cachePlugin({ staleTime: 5000 }),
+  ]);
 
 // Per-query override
 useRead((api) => api.posts.$get(), { staleTime: 10000 });

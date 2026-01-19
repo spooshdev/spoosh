@@ -31,9 +31,17 @@ import { storePromiseInCache } from "./promise-cache";
  *
  * @example
  * ```ts
- * // Setup
- * const plugins = [prefetchPlugin(), cachePlugin(), retryPlugin()];
- * const { prefetch } = createReactSpoosh(spoosh);
+ * import { Spoosh } from "@spoosh/core";
+ *
+ * const client = new Spoosh<ApiSchema, Error>("/api")
+ *   .use([
+ *     // ... other plugins
+ *     prefetchPlugin(),
+ *     cachePlugin(),
+ *     retryPlugin(),
+ *   ]);
+ *
+ * const { prefetch } = createReactSpoosh(client);
  *
  * // Basic prefetch
  * await prefetch((api) => api.posts.$get());

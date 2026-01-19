@@ -31,16 +31,17 @@ export async function revalidateAction(tags: string[], paths: string[]) {
 Then configure the plugin:
 
 ```typescript title="src/api/client.ts"
+import { Spoosh } from "@spoosh/core";
 import { nextjsPlugin } from "@spoosh/plugin-nextjs";
 import { invalidationPlugin } from "@spoosh/plugin-invalidation";
 import { revalidateAction } from "@/app/actions";
 
-const plugins = [
+const client = new Spoosh<ApiSchema, Error>("/api").use([
   cachePlugin({ staleTime: 5000 }),
   deduplicationPlugin(),
   invalidationPlugin(),
   nextjsPlugin({ serverRevalidator: revalidateAction }),
-] as const;
+]);
 ```
 
 ## Usage
@@ -95,12 +96,12 @@ await trigger({
 For apps that primarily fetch data on the client, skip revalidation by default:
 
 ```typescript
-const plugins = [
+const client = new Spoosh<ApiSchema, Error>("/api").use([
   nextjsPlugin({
     serverRevalidator: revalidateAction,
     skipServerRevalidation: true, // Skip by default
   }),
-] as const;
+]);
 
 // Opt-in when mutation affects server-rendered pages
 await trigger({
@@ -114,12 +115,12 @@ await trigger({
 For apps that rely heavily on server rendering, keep the default behavior:
 
 ```typescript
-const plugins = [
+const client = new Spoosh<ApiSchema, Error>("/api").use([
   nextjsPlugin({
     serverRevalidator: revalidateAction,
     // skipServerRevalidation: false (default)
   }),
-] as const;
+]);
 
 // Opt-out for client-only state changes
 await trigger({

@@ -21,11 +21,17 @@ import type {
  *
  * @example
  * ```ts
- * const plugins = [deduplicationPlugin({ read: "in-flight" })];
+ * import { Spoosh } from "@spoosh/core";
+ *
+ * const client = new Spoosh<ApiSchema, Error>("/api")
+ *   .use([
+ *     // ... other plugins
+ *     deduplicationPlugin({ read: "in-flight" }),
+ *   ]);
  *
  * // Per-query override
  * useRead((api) => api.posts.$get(), {
- *   dedupe: false, // Disable deduplication for this query
+ *   dedupe: false,
  * });
  * ```
  */

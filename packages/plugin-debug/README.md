@@ -13,27 +13,36 @@ npm install @spoosh/plugin-debug
 ## Usage
 
 ```typescript
+import { Spoosh } from "@spoosh/core";
 import { debugPlugin } from "@spoosh/plugin-debug";
 
 // Basic usage - logs all phases
-const plugins = [debugPlugin()] as const;
+const client = new Spoosh<ApiSchema, Error>("/api")
+  .use([
+    debugPlugin(),
+  ]);
 
 // With cache logging
-const plugins = [debugPlugin({ logCache: true })] as const;
+const client = new Spoosh<ApiSchema, Error>("/api")
+  .use([
+    debugPlugin({ logCache: true }),
+  ]);
 
 // Custom logger with object shape
-const plugins = [
-  debugPlugin({
-    logger: (entry) => {
-      console.log(entry.phase, entry.path, entry.state.data);
-    },
-  }),
-] as const;
+const client = new Spoosh<ApiSchema, Error>("/api")
+  .use([
+    debugPlugin({
+      logger: (entry) => {
+        console.log(entry.phase, entry.path, entry.state.data);
+      },
+    }),
+  ]);
 
 // Disable in production
-const plugins = [
-  debugPlugin({ enabled: process.env.NODE_ENV === "development" }),
-] as const;
+const client = new Spoosh<ApiSchema, Error>("/api")
+  .use([
+    debugPlugin({ enabled: process.env.NODE_ENV === "development" }),
+  ]);
 ```
 
 ## Options

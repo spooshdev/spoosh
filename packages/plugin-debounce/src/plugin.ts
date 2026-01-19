@@ -42,7 +42,13 @@ function resolveDebounceMs(
  *
  * @example
  * ```ts
- * const plugins = [debouncePlugin()];
+ * import { Spoosh } from "@spoosh/core";
+ *
+ * const client = new Spoosh<ApiSchema, Error>("/api")
+ *   .use([
+ *     // ... other plugins
+ *     debouncePlugin(),
+ *   ]);
  *
  * // Debounce search by 300ms
  * useRead((api) => api.search.$get({ query: { q: searchTerm } }), {

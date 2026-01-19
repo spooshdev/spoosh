@@ -18,7 +18,13 @@ import type {
  *
  * @example
  * ```ts
- * const plugins = [pollingPlugin()];
+ * import { Spoosh } from "@spoosh/core";
+ *
+ * const client = new Spoosh<ApiSchema, Error>("/api")
+ *   .use([
+ *     // ... other plugins
+ *     pollingPlugin(),
+ *   ]);
  *
  * // Poll every 5 seconds
  * useRead((api) => api.posts.$get(), {

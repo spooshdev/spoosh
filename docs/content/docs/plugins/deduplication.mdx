@@ -16,13 +16,16 @@ This is especially important when using `invalidationPlugin` - when a mutation i
 ## Usage
 
 ```typescript
+import { Spoosh } from "@spoosh/core";
+import { cachePlugin } from "@spoosh/plugin-cache";
 import { deduplicationPlugin } from "@spoosh/plugin-deduplication";
+import { invalidationPlugin } from "@spoosh/plugin-invalidation";
 
-const plugins = [
+const client = new Spoosh<ApiSchema, Error>("/api").use([
   cachePlugin({ staleTime: 5000 }),
   deduplicationPlugin(),
   invalidationPlugin(),
-] as const;
+]);
 ```
 
 ## Why It Matters
@@ -77,6 +80,10 @@ useRead((api) => api.posts.$get(), { dedupe: false });
 By default, writes are not deduplicated to avoid unintended side effects. Enable with caution:
 
 ```typescript
-// Enable deduplication for writes (use carefully)
-const plugins = [deduplicationPlugin({ write: "in-flight" })] as const;
+import { Spoosh } from "@spoosh/core";
+import { deduplicationPlugin } from "@spoosh/plugin-deduplication";
+
+const client = new Spoosh<ApiSchema, Error>("/api").use([
+  deduplicationPlugin({ write: "in-flight" }),
+]);
 ```

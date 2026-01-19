@@ -22,7 +22,13 @@ import type {
  *
  * @example
  * ```ts
- * const plugins = [qsPlugin({ arrayFormat: "brackets" })];
+ * import { Spoosh } from "@spoosh/core";
+ *
+ * const client = new Spoosh<ApiSchema, Error>("/api")
+ *   .use([
+ *     // ... other plugins
+ *     qsPlugin({ arrayFormat: "brackets" }),
+ *   ]);
  *
  * // Query: { filters: { status: "active", tags: ["a", "b"] } }
  * // Result: filters[status]=active&filters[tags][]=a&filters[tags][]=b

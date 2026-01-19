@@ -13,16 +13,18 @@ npm install @spoosh/plugin-initial-data
 ## Usage
 
 ```typescript
+import { Spoosh } from "@spoosh/core";
 import { initialDataPlugin } from "@spoosh/plugin-initial-data";
 
-const plugins = [initialDataPlugin()] as const;
+const client = new Spoosh<ApiSchema, Error>("/api")
+  .use([
+    initialDataPlugin(),
+  ]);
 
-// Show prefetched data immediately, then refetch in background
 const { data, isInitialData } = useRead((api) => api.posts.$get(), {
   initialData: prefetchedPosts,
 });
 
-// Show initial data without background refetch
 const { data } = useRead((api) => api.posts.$get(), {
   initialData: prefetchedPosts,
   refetchOnInitialData: false,

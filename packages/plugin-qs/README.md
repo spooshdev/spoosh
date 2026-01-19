@@ -13,13 +13,14 @@ npm install @spoosh/plugin-qs
 ## Usage
 
 ```typescript
+import { Spoosh } from "@spoosh/core";
 import { qsPlugin } from "@spoosh/plugin-qs";
 
-const plugins = [
-  qsPlugin({ arrayFormat: "brackets" }), // default
-] as const;
+const client = new Spoosh<ApiSchema, Error>("/api")
+  .use([
+    qsPlugin({ arrayFormat: "brackets" }),
+  ]);
 
-// Query object
 const query = {
   pagination: { limit: 10, offset: 0 },
   filters: { status: "active", tags: ["a", "b"] },

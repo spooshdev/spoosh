@@ -14,13 +14,16 @@ The prefetch plugin lets you load data ahead of time, so it's ready when the use
 ## Usage
 
 ```typescript
+import { Spoosh } from "@spoosh/core";
 import { prefetchPlugin } from "@spoosh/plugin-prefetch";
 import { cachePlugin } from "@spoosh/plugin-cache";
 
-const plugins = [prefetchPlugin(), cachePlugin({ staleTime: 5000 })] as const;
+const client = new Spoosh<ApiSchema, Error>("/api").use([
+  prefetchPlugin(),
+  cachePlugin({ staleTime: 5000 }),
+]);
 
-// prefetch is returned from createReactSpoosh
-const { useRead, useWrite, prefetch } = createReactSpoosh(spoosh);
+const { useRead, useWrite, prefetch } = createReactSpoosh(client);
 ```
 
 ## Basic Prefetch

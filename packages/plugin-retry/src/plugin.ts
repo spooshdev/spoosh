@@ -20,7 +20,13 @@ import type {
  *
  * @example
  * ```ts
- * const plugins = [retryPlugin({ retries: 3, retryDelay: 1000 })];
+ * import { Spoosh } from "@spoosh/core";
+ *
+ * const client = new Spoosh<ApiSchema, Error>("/api")
+ *   .use([
+ *     // ... other plugins
+ *     retryPlugin({ retries: 3, retryDelay: 1000 }),
+ *   ]);
  *
  * // Per-query override
  * useRead((api) => api.posts.$get(), {

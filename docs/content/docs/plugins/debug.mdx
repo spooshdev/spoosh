@@ -14,35 +14,47 @@ The debug plugin logs detailed request lifecycle information during development.
 ## Usage
 
 ```typescript
+import { Spoosh } from "@spoosh/core";
 import { debugPlugin } from "@spoosh/plugin-debug";
 
-const plugins = [debugPlugin()] as const;
+const client = new Spoosh<ApiSchema, Error>("/api").use([debugPlugin()]);
 ```
 
 ## Disable in Production
 
 ```typescript
-const plugins = [
+import { Spoosh } from "@spoosh/core";
+import { debugPlugin } from "@spoosh/plugin-debug";
+
+const client = new Spoosh<ApiSchema, Error>("/api").use([
   debugPlugin({ enabled: process.env.NODE_ENV === "development" }),
-] as const;
+]);
 ```
 
 ## Log Cache State
 
 ```typescript
-const plugins = [debugPlugin({ logCache: true })] as const;
+import { Spoosh } from "@spoosh/core";
+import { debugPlugin } from "@spoosh/plugin-debug";
+
+const client = new Spoosh<ApiSchema, Error>("/api").use([
+  debugPlugin({ logCache: true }),
+]);
 ```
 
 ## Custom Logger
 
 ```typescript
-const plugins = [
+import { Spoosh } from "@spoosh/core";
+import { debugPlugin } from "@spoosh/plugin-debug";
+
+const client = new Spoosh<ApiSchema, Error>("/api").use([
   debugPlugin({
     logger: (entry) => {
       console.log(entry.phase, entry.path, entry.state.data);
     },
   }),
-] as const;
+]);
 ```
 
 ## Options

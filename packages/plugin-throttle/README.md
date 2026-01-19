@@ -13,14 +13,15 @@ npm install @spoosh/plugin-throttle
 ## Usage
 
 ```typescript
+import { Spoosh } from "@spoosh/core";
 import { throttlePlugin } from "@spoosh/plugin-throttle";
 
-const plugins = [
-  // ...otherPlugins,
-  throttlePlugin(), // register at end to block even force fetches
-] as const;
+const client = new Spoosh<ApiSchema, Error>("/api")
+  .use([
+    // ...otherPlugins,
+    throttlePlugin(),
+  ]);
 
-// Max 1 request per second - extras return cached data
 const { data } = useRead((api) => api.expensive.$get(), { throttle: 1000 });
 ```
 

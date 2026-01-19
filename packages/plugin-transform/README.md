@@ -15,11 +15,14 @@ npm install @spoosh/plugin-transform
 ### Request Transforms
 
 ```typescript
+import { Spoosh } from "@spoosh/core";
 import { transformPlugin } from "@spoosh/plugin-transform";
 
-const plugins = [transformPlugin()] as const;
+const client = new Spoosh<ApiSchema, Error>("/api")
+  .use([
+    transformPlugin(),
+  ]);
 
-// Transform query parameters
 const { data } = useRead((api) => api.posts.$get({ query: { page: 1 } }), {
   transform: {
     query: (q) => ({ ...q, limit: 10 }),

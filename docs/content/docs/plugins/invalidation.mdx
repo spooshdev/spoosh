@@ -14,13 +14,16 @@ The invalidation plugin automatically refreshes related queries after mutations 
 ## Usage
 
 ```typescript
+import { Spoosh } from "@spoosh/core";
+import { cachePlugin } from "@spoosh/plugin-cache";
+import { deduplicationPlugin } from "@spoosh/plugin-deduplication";
 import { invalidationPlugin } from "@spoosh/plugin-invalidation";
 
-const plugins = [
+const client = new Spoosh<ApiSchema, Error>("/api").use([
   cachePlugin({ staleTime: 5000 }),
   deduplicationPlugin(),
-  invalidationPlugin(), // Auto-refresh queries after mutations
-] as const;
+  invalidationPlugin(),
+]);
 ```
 
 ## Default Configuration
@@ -132,13 +135,14 @@ await trigger({
 When invalidation triggers multiple queries to refetch, some may share the same endpoint. Use `deduplicationPlugin` to prevent duplicate network requests:
 
 ```typescript
+import { Spoosh } from "@spoosh/core";
 import { cachePlugin } from "@spoosh/plugin-cache";
 import { deduplicationPlugin } from "@spoosh/plugin-deduplication";
 import { invalidationPlugin } from "@spoosh/plugin-invalidation";
 
-const plugins = [
+const client = new Spoosh<ApiSchema, Error>("/api").use([
   cachePlugin({ staleTime: 5000 }),
-  deduplicationPlugin(), // Prevents duplicate requests during invalidation
+  deduplicationPlugin(),
   invalidationPlugin(),
-] as const;
+]);
 ```

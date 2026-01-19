@@ -18,10 +18,15 @@ Note: This plugin requires `@spoosh/plugin-invalidation` as a peer dependency.
 ## Usage
 
 ```typescript
+import { Spoosh } from "@spoosh/core";
 import { optimisticPlugin } from "@spoosh/plugin-optimistic";
 import { invalidationPlugin } from "@spoosh/plugin-invalidation";
 
-const plugins = [invalidationPlugin(), optimisticPlugin()] as const;
+const client = new Spoosh<ApiSchema, Error>("/api")
+  .use([
+    invalidationPlugin(),
+    optimisticPlugin(),
+  ]);
 
 const { trigger } = useWrite((api) => api.posts[id].$delete);
 

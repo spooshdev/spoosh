@@ -27,13 +27,17 @@ type HookListenerEntry = {
  *
  * @example
  * ```ts
- * const plugins = [
- *   refetchPlugin({ refetchOnFocus: true, refetchOnReconnect: true }),
- * ];
+ * import { Spoosh } from "@spoosh/core";
+ *
+ * const client = new Spoosh<ApiSchema, Error>("/api")
+ *   .use([
+ *     // ... other plugins
+ *     refetchPlugin({ refetchOnFocus: true, refetchOnReconnect: true }),
+ *   ]);
  *
  * // Per-query override
  * useRead((api) => api.posts.$get(), {
- *   refetchOnFocus: false, // Disable for this query
+ *   refetchOnFocus: false,
  * });
  * ```
  */

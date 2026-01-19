@@ -14,11 +14,12 @@ The cache plugin stores API responses and serves them instantly on subsequent re
 ## Usage
 
 ```typescript
+import { Spoosh } from "@spoosh/core";
 import { cachePlugin } from "@spoosh/plugin-cache";
 
-const plugins = [
-  cachePlugin({ staleTime: 5000 }), // 5 second stale time
-] as const;
+const client = new Spoosh<ApiSchema, Error>("/api").use([
+  cachePlugin({ staleTime: 5000 }),
+]);
 ```
 
 Data is considered "fresh" for the duration of `staleTime`. During this period, subsequent requests return cached data without making a network request.
@@ -59,13 +60,14 @@ useRead((api) => api.live.$get(), { staleTime: 0 });
 For automatic cache updates after mutations, combine with `invalidationPlugin`:
 
 ```typescript
+import { Spoosh } from "@spoosh/core";
 import { cachePlugin } from "@spoosh/plugin-cache";
 import { invalidationPlugin } from "@spoosh/plugin-invalidation";
 
-const plugins = [
+const client = new Spoosh<ApiSchema, Error>("/api").use([
   cachePlugin({ staleTime: 5000 }),
-  invalidationPlugin(), // Auto-invalidates related caches after mutations
-] as const;
+  invalidationPlugin(),
+]);
 ```
 
 When a mutation succeeds, related cached queries are automatically refreshed.

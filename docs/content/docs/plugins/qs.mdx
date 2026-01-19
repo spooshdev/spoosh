@@ -14,9 +14,12 @@ The QS plugin serializes nested objects in query parameters using bracket notati
 ## Usage
 
 ```typescript
+import { Spoosh } from "@spoosh/core";
 import { qsPlugin } from "@spoosh/plugin-qs";
 
-const plugins = [qsPlugin({ arrayFormat: "brackets" })] as const;
+const client = new Spoosh<ApiSchema, Error>("/api").use([
+  qsPlugin({ arrayFormat: "brackets" }),
+]);
 ```
 
 ## Example

@@ -14,14 +14,15 @@ The refetch plugin automatically refetches queries when the user returns to your
 ## Usage
 
 ```typescript
+import { Spoosh } from "@spoosh/core";
 import { refetchPlugin } from "@spoosh/plugin-refetch";
 
-const plugins = [
+const client = new Spoosh<ApiSchema, Error>("/api").use([
   refetchPlugin({
     refetchOnFocus: true,
     refetchOnReconnect: true,
   }),
-] as const;
+]);
 ```
 
 When enabled, queries automatically refetch:

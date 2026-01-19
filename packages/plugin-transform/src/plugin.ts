@@ -33,6 +33,14 @@ function deepClone<T>(value: T): T {
  *
  * @example
  * ```ts
+ * import { Spoosh } from "@spoosh/core";
+ *
+ * const client = new Spoosh<ApiSchema, Error>("/api")
+ *   .use([
+ *     // ... other plugins
+ *     transformPlugin(),
+ *   ]);
+ *
  * // Per-request transforms with full type inference
  * const { data, transformedData } = useRead(
  *   (api) => api.posts.$get(),
@@ -46,8 +54,6 @@ function deepClone<T>(value: T): T {
  *     },
  *   }
  * );
- * // data = original posts array (preserved)
- * // transformedData = { count: number, hasMore: boolean }
  *
  * // useWrite with body transform
  * trigger({

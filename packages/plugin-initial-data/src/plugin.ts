@@ -19,10 +19,13 @@ import type {
  *
  * @example
  * ```ts
- * const plugins = [
- *   initialDataPlugin(),
- *   cachePlugin({ staleTime: 5000 }),
- * ];
+ * import { Spoosh } from "@spoosh/core";
+ *
+ * const client = new Spoosh<ApiSchema, Error>("/api")
+ *   .use([
+ *     initialDataPlugin(),
+ *     cachePlugin({ staleTime: 5000 }),
+ *   ]);
  *
  * // Basic usage - shows initialData, refetches in background
  * const { data, isInitialData } = useRead(

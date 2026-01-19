@@ -18,7 +18,13 @@ import type {
  *
  * @example
  * ```ts
- * const plugins = [throttlePlugin()];
+ * import { Spoosh } from "@spoosh/core";
+ *
+ * const client = new Spoosh<ApiSchema, Error>("/api")
+ *   .use([
+ *     // ... other plugins
+ *     throttlePlugin(),
+ *   ]);
  *
  * // Throttle to max once per second
  * useRead((api) => api.posts.$get(), {

@@ -26,13 +26,15 @@ export async function revalidateAction(tags: string[], paths: string[]) {
 ```
 
 ```typescript
+import { Spoosh } from "@spoosh/core";
 import { nextjsPlugin } from "@spoosh/plugin-nextjs";
 import { invalidationPlugin } from "@spoosh/plugin-invalidation";
 
-const plugins = [
-  invalidationPlugin(),
-  nextjsPlugin({ serverRevalidator: revalidateAction }),
-] as const;
+const client = new Spoosh<ApiSchema, Error>("/api")
+  .use([
+    invalidationPlugin(),
+    nextjsPlugin({ serverRevalidator: revalidateAction }),
+  ]);
 
 // After a successful mutation, cache tags are automatically revalidated
 const { trigger } = useWrite((api) => api.posts.$post);
@@ -69,12 +71,16 @@ await trigger({
 For apps that primarily fetch data on the client side, set `skipServerRevalidation: true` by default and opt-in for specific mutations that affect server-rendered content:
 
 ```typescript
-const plugins = [
-  nextjsPlugin({
-    serverRevalidator: revalidate,
-    skipServerRevalidation: true, // Skip by default
-  }),
-] as const;
+import { Spoosh } from "@spoosh/core";
+import { nextjsPlugin } from "@spoosh/plugin-nextjs";
+
+const client = new Spoosh<ApiSchema, Error>("/api")
+  .use([
+    nextjsPlugin({
+      serverRevalidator: revalidate,
+      skipServerRevalidation: true,
+    }),
+  ]);
 
 // Most mutations don't need server revalidation
 await trigger({ body: data });
@@ -82,7 +88,7 @@ await trigger({ body: data });
 // Opt-in when mutation affects server-rendered pages
 await trigger({
   body: data,
-  serverRevalidate: true, // Explicitly enable
+  serverRevalidate: true,
 });
 ```
 
@@ -91,12 +97,15 @@ await trigger({
 For apps that rely heavily on server-side rendering or React Server Components, keep the default behavior (revalidate on every mutation) and opt-out when needed:
 
 ```typescript
-const plugins = [
-  nextjsPlugin({
-    serverRevalidator: revalidate,
-    // skipServerRevalidation: false (default)
-  }),
-] as const;
+import { Spoosh } from "@spoosh/core";
+import { nextjsPlugin } from "@spoosh/plugin-nextjs";
+
+const client = new Spoosh<ApiSchema, Error>("/api")
+  .use([
+    nextjsPlugin({
+      serverRevalidator: revalidate,
+    }),
+  ]);
 
 // Server cache is revalidated by default
 await trigger({ body: data });
@@ -104,7 +113,7 @@ await trigger({ body: data });
 // Skip for mutations that don't affect server content
 await trigger({
   body: { theme: "dark" },
-  serverRevalidate: false, // Skip for client-only state
+  serverRevalidate: false,
 });
 ```
 

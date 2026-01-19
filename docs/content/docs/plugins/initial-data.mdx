@@ -14,11 +14,15 @@ The initial data plugin lets you show data immediately before the fetch complete
 ## Usage
 
 ```typescript
+import { Spoosh } from "@spoosh/core";
 import { initialDataPlugin } from "@spoosh/plugin-initial-data";
 
-const plugins = [initialDataPlugin()] as const;
+const client = new Spoosh<ApiSchema, Error>("/api").use([initialDataPlugin()]);
+```
 
-// Show prefetched data immediately, then refetch in background
+Show prefetched data immediately, then refetch in background:
+
+```typescript
 const { data, isInitialData } = useRead((api) => api.posts.$get(), {
   initialData: prefetchedPosts,
 });

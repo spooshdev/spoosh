@@ -30,21 +30,39 @@ type DebugPhase =
  *
  * @example
  * ```ts
+ * import { Spoosh } from "@spoosh/core";
+ *
  * // Basic usage - logs all phases
- * const plugins = [debugPlugin()];
+ * const client = new Spoosh<ApiSchema, Error>("/api")
+ *   .use([
+ *     // ... other plugins
+ *     debugPlugin(),
+ *   ]);
  *
  * // With cache logging
- * const plugins = [debugPlugin({ logCache: true })];
+ * const client = new Spoosh<ApiSchema, Error>("/api")
+ *   .use([
+ *     // ... other plugins
+ *     debugPlugin({ logCache: true }),
+ *   ]);
  *
  * // Custom logger with object shape
- * const plugins = [debugPlugin({
- *   logger: (entry) => {
- *     console.log(entry.phase, entry.path, entry.state.data);
- *   },
- * })];
+ * const client = new Spoosh<ApiSchema, Error>("/api")
+ *   .use([
+ *     // ... other plugins
+ *     debugPlugin({
+ *       logger: (entry) => {
+ *         console.log(entry.phase, entry.path, entry.state.data);
+ *       },
+ *     }),
+ *   ]);
  *
  * // Disable in production
- * const plugins = [debugPlugin({ enabled: process.env.NODE_ENV === 'development' })];
+ * const client = new Spoosh<ApiSchema, Error>("/api")
+ *   .use([
+ *     // ... other plugins
+ *     debugPlugin({ enabled: process.env.NODE_ENV === 'development' }),
+ *   ]);
  * ```
  */
 export function debugPlugin(config: DebugPluginConfig = {}): SpooshPlugin<{

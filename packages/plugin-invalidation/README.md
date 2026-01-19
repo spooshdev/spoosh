@@ -40,11 +40,14 @@ await trigger({ body: { title: "New Post" } });
 ## Usage
 
 ```typescript
+import { Spoosh } from "@spoosh/core";
 import { invalidationPlugin } from "@spoosh/plugin-invalidation";
 
-const plugins = [invalidationPlugin()] as const;
+const client = new Spoosh<ApiSchema, Error>("/api")
+  .use([
+    invalidationPlugin(),
+  ]);
 
-// Auto-invalidates all related queries after mutation (default)
 const { trigger } = useWrite((api) => api.posts.$post);
 await trigger({ body: { title: "New Post" } });
 ```

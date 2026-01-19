@@ -196,7 +196,13 @@ function rollbackOptimistic(
  *
  * @example
  * ```ts
- * const plugins = [optimisticPlugin()];
+ * import { Spoosh } from "@spoosh/core";
+ *
+ * const client = new Spoosh<ApiSchema, Error>("/api")
+ *   .use([
+ *     // ... other plugins
+ *     optimisticPlugin(),
+ *   ]);
  *
  * // In useWrite - autoInvalidate defaults to "none" when optimistic is used
  * trigger({

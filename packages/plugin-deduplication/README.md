@@ -13,17 +13,19 @@ npm install @spoosh/plugin-deduplication
 ## Usage
 
 ```typescript
+import { Spoosh } from "@spoosh/core";
 import { deduplicationPlugin } from "@spoosh/plugin-deduplication";
 
-// Default: dedupe reads, not writes
-const plugins = [deduplicationPlugin()] as const;
+const client = new Spoosh<ApiSchema, Error>("/api")
+  .use([
+    deduplicationPlugin(),
+  ]);
 
-// Enable deduplication for writes too
-// Extreme caution: may cause unintended side effects
-// **Avoid using it unless you fully understand the implications**
-const plugins = [deduplicationPlugin({ write: "in-flight" })] as const;
+const client = new Spoosh<ApiSchema, Error>("/api")
+  .use([
+    deduplicationPlugin({ write: "in-flight" }),
+  ]);
 
-// Per-request override
 useRead((api) => api.posts.$get(), { dedupe: false });
 ```
 

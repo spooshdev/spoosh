@@ -87,13 +87,16 @@ function runGarbageCollection(
  *
  * @example
  * ```ts
- * const plugins = [
- *   gcPlugin({
- *     maxAge: 60000,     // Remove entries older than 1 minute
- *     maxEntries: 100,   // Keep max 100 entries
- *     interval: 30000,   // Run GC every 30 seconds
- *   }),
- * ];
+ * import { Spoosh } from "@spoosh/core";
+ *
+ * const client = new Spoosh<ApiSchema, Error>("/api")
+ *   .use([
+ *     gcPlugin({
+ *       maxAge: 60000,     // Remove entries older than 1 minute
+ *       maxEntries: 100,   // Keep max 100 entries
+ *       interval: 30000,   // Run GC every 30 seconds
+ *     }),
+ *   ]);
  *
  * // Manual GC trigger
  * const { runGc } = createReactSpoosh(client);

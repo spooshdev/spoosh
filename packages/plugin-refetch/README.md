@@ -13,14 +13,16 @@ npm install @spoosh/plugin-refetch
 ## Usage
 
 ```typescript
+import { Spoosh } from "@spoosh/core";
 import { refetchPlugin } from "@spoosh/plugin-refetch";
 
-const plugins = [
-  refetchPlugin({
-    refetchOnFocus: true,
-    refetchOnReconnect: true,
-  }),
-] as const;
+const client = new Spoosh<ApiSchema, Error>("/api")
+  .use([
+    refetchPlugin({
+      refetchOnFocus: true,
+      refetchOnReconnect: true,
+    }),
+  ]);
 
 // Uses plugin defaults
 useRead((api) => api.posts.$get());

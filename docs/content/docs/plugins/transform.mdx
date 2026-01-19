@@ -14,9 +14,10 @@ The Transform plugin enables per-request transformation of query, body, formData
 ## Setup
 
 ```typescript
+import { Spoosh } from "@spoosh/core";
 import { transformPlugin } from "@spoosh/plugin-transform";
 
-const plugins = [transformPlugin()] as const;
+const client = new Spoosh<ApiSchema, Error>("/api").use([transformPlugin()]);
 ```
 
 ## Usage

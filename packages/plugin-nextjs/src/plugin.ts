@@ -21,18 +21,20 @@ import type {
  *
  * @example
  * ```ts
+ * import { Spoosh } from "@spoosh/core";
  * import { nextjsPlugin } from "@spoosh/plugin-nextjs";
  *
- * const plugins = [
- *   nextjsPlugin({
- *     serverRevalidator: async (tags, paths) => {
- *       "use server";
- *       const { revalidateTag, revalidatePath } = await import("next/cache");
- *       tags.forEach((tag) => revalidateTag(tag));
- *       paths.forEach((path) => revalidatePath(path));
- *     },
- *   }),
- * ];
+ * const client = new Spoosh<ApiSchema, Error>("/api")
+ *   .use([
+ *     nextjsPlugin({
+ *       serverRevalidator: async (tags, paths) => {
+ *         "use server";
+ *         const { revalidateTag, revalidatePath } = await import("next/cache");
+ *         tags.forEach((tag) => revalidateTag(tag));
+ *         paths.forEach((path) => revalidatePath(path));
+ *       },
+ *     }),
+ *   ]);
  * ```
  */
 export function nextjsPlugin(config: NextjsPluginConfig = {}): SpooshPlugin<{
