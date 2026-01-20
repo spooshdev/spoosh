@@ -84,7 +84,7 @@ export default function HomePage() {
       </section>
 
       {/* Features Section */}
-      <section className="px-6 py-16 bg-fd-card/50">
+      <section className="px-6 py-16 bg-fd-muted">
         <div className="max-w-5xl mx-auto">
           <h2 className="text-2xl md:text-3xl font-bold text-center mb-12">
             Why Spoosh?
@@ -230,7 +230,7 @@ export default function HomePage() {
       </section>
 
       {/* CTA Section */}
-      <section className="px-6 py-16 bg-fd-card/50">
+      <section className="px-6 py-16 bg-fd-muted">
         <div className="max-w-2xl mx-auto text-center">
           <h2 className="text-2xl md:text-3xl font-bold mb-4">
             Ready to get started?
