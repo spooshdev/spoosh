@@ -55,6 +55,22 @@ useRead((api) => api.users[123].posts.$get());
 // → tags: ["users", "users/123", "users/123/posts"]
 ```
 
+### Custom Tags on Queries
+
+You can override or extend auto-generated tags:
+
+```typescript
+// Override auto-generated tags
+const { data } = useRead((api) => api.users.$get(), {
+  tags: ["custom-users"], // replaces auto-generated tags
+});
+
+// Extend auto-generated tags
+const { data } = useRead((api) => api.users.$get(), {
+  additionalTags: ["dashboard-data"], // adds to auto-generated tags
+});
+```
+
 When a mutation succeeds, related queries are automatically invalidated:
 
 ```typescript

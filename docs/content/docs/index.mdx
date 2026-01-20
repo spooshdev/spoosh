@@ -1,62 +1,174 @@
 ---
 title: Introduction
-description: A type-safe API client with a powerful plugin system
+description: A type-safe API client with automatic cache invalidation and zero boilerplate
 ---
 
-**Spoosh** is a lightweight, type-safe API client with a powerful plugin system. It provides a clean, intuitive way to define API schemas and make HTTP requests with full TypeScript support.
+**Spoosh** is a type-safe API client with automatic cache management. Define your API schema once, then get type-safe requests with automatic cache invalidation based on URL hierarchy.
 
-## Key Features
+## What Makes Spoosh Different
 
-- **Type-Safe Schema Definition** - Define your API once, get autocomplete and type checking everywhere
-- **Plugin System** - Extend functionality with caching, retry, polling, optimistic updates, and more
-- **Framework Bindings** - Hooks for React, with more frameworks coming soon
-- **Server Adapters** - First-class support for Hono and Elysia with automatic type inference
-- **Cache Invalidation** - Automatic tag-based cache invalidation after mutations
-- **OpenAPI Conversion** - Bidirectional conversion between TypeScript and OpenAPI 3.0/3.1 specs
+### Hierarchical Cache Invalidation
+
+Spoosh uses a tag-based caching system. Each query is automatically tagged based on its URL path hierarchy:
+
+```typescript
+// Query tags are automatically generated from the path:
+useRead((api) => api.users.$get());
+// → tags: ["users"]
+
+useRead((api) => api.users(123).$get());
+// → tags: ["users", "users/123"]
+
+useRead((api) => api.users(123).posts.$get());
+// → tags: ["users", "users/123", "users/123/posts"]
+```
+
+When you mutate data, Spoosh automatically invalidates related queries based on these tags. Create a post for user 123? Every query that depends on that user's data refreshes automatically.
+
+```typescript
+// This mutation automatically invalidates:
+// - users
+// - users/123
+// - users/123/posts
+await client.api.users(123).posts.$post({ body: newPost });
+```
+
+### Type-Safe Routing with Zero Strings
+
+Define your API schema once, then use a proxy-based API that gives you autocomplete for every endpoint, parameter, and response.
+
+```typescript
+// Fully typed, no string URLs
+const user = await client.api.users(123).$get();
+const posts = await client.api.users(123).posts.$get({ query: { page: 1 } });
+```
+
+TypeScript knows every endpoint exists, every parameter is correct, and every response type matches your schema.
+
+### Automatic Cache Key Generation
+
+Paths become cache keys automatically. The API path you call becomes the cache identifier.
+
+```tsx
+// The path IS the cache key
+const { data } = useRead((api) => api.users(123).posts.$get());
+```
 
 ## Quick Example
 
-```typescript
+```typescript title="api/client.ts"
 import { Spoosh } from "@spoosh/core";
 import { createReactSpoosh } from "@spoosh/react";
 import { cachePlugin } from "@spoosh/plugin-cache";
 import { invalidationPlugin } from "@spoosh/plugin-invalidation";
+import type { Endpoint } from "@spoosh/core";
 
-// Define your API schema
 type ApiSchema = {
   users: {
-    $get: Endpoint<User[]>;
-    $post: Endpoint<User, CreateUserBody>;
+    $get: Endpoint<{ data: User[] }>;
+    $post: Endpoint<{ data: User; body: CreateUserBody }>;
+    _: {
+      posts: {
+        $get: Endpoint<{ data: Post[] }>;
+        $post: Endpoint<{ data: Post; body: CreatePostBody }>;
+      };
+    };
   };
 };
 
-// Create the client with plugins
 const spoosh = new Spoosh<ApiSchema, Error>("/api").use([
   cachePlugin({ staleTime: 5000 }),
-  invalidationPlugin(), // Auto-refresh queries after mutations
+  invalidationPlugin(),
 ]);
 
-// Export hooks
 export const { useRead, useWrite } = createReactSpoosh(spoosh);
 ```
 
-```tsx
-// Use in your components
-function UserList() {
-  const { data, loading, error } = useRead((api) => api.users.$get());
+```tsx title="components/CreatePost.tsx"
+import { useWrite } from "@/api/client";
 
-  if (loading) return <Spinner />;
-  if (error) return <Error message={error.message} />;
+function CreatePostButton({ userId }: { userId: number }) {
+  const { trigger, loading } = useWrite((api) => api.users(userId).posts.$post);
+
+  const handleCreate = async () => {
+    await trigger({
+      body: { title: "New Post", content: "..." },
+    });
+  };
 
   return (
-    <ul>
-      {data?.map((user) => (
-        <li key={user.id}>{user.name}</li>
-      ))}
-    </ul>
+    <button onClick={handleCreate} disabled={loading}>
+      {loading ? "Creating..." : "Create Post"}
+    </button>
   );
 }
 ```
+
+When this mutation succeeds, Spoosh automatically refreshes all related queries:
+
+```tsx
+// These queries automatically refetch:
+useRead((api) => api.users.$get()); // All users
+useRead((api) => api.users(userId).$get()); // Specific user
+useRead((api) => api.users(userId).posts.$get()); // User's posts
+```
+
+Cache invalidation is handled automatically based on the URL hierarchy.
+
+You can also specify custom tags manually:
+
+```typescript
+// Override auto-generated tags
+const { data } = useRead((api) => api.users.$get(), {
+  tags: ["custom-users"], // replaces auto-generated tags
+});
+
+// Or extend auto-generated tags
+const { data } = useRead((api) => api.users.$get(), {
+  additionalTags: ["dashboard-data"], // adds to auto-generated tags
+});
+
+// On mutations, specify which tags to invalidate
+await trigger({
+  body: { title: "New Post" },
+  invalidate: (api) => [api.posts.$get, api.stats.$get, "custom-tag"],
+});
+```
+
+## Composable Plugin System
+
+Spoosh has a rich plugin ecosystem with 14+ official plugins. Each plugin adds specific functionality, and TypeScript knows exactly what options are available based on which plugins you install.
+
+```typescript
+import { Spoosh } from "@spoosh/core";
+import { cachePlugin } from "@spoosh/plugin-cache";
+import { retryPlugin } from "@spoosh/plugin-retry";
+import { pollingPlugin } from "@spoosh/plugin-polling";
+
+const spoosh = new Spoosh<API, Error>("/api").use([
+  cachePlugin({ staleTime: 5000 }),
+  retryPlugin({ retries: 3 }),
+  pollingPlugin({ interval: 30000 }),
+]);
+
+// Options are typed based on installed plugins
+useRead((api) => api.users.$get(), {
+  staleTime: 10000, // ✓ Known from cachePlugin
+  retries: 5, // ✓ Known from retryPlugin
+  interval: 60000, // ✓ Known from pollingPlugin
+  // randomOption: true  // ✗ Type error
+});
+```
+
+## Works with Any REST API
+
+Spoosh works with any REST API. Use it with Express, Hono, Elysia, or any backend framework you prefer.
+
+With Hono and Elysia adapters, you get automatic type inference from your server routes with zero configuration.
+
+## Lightweight & Fast
+
+At ~10KB gzipped for the core, Spoosh keeps your bundle size minimal. Add only the plugins you need to extend functionality.
 
 ## Packages
 
