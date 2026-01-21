@@ -179,13 +179,13 @@ npx spoosh-openapi export [options]
 npx spoosh-openapi import <input> [options]
 ```
 
-| Option              | Alias | Required | Default     | Description                          |
-| ------------------- | ----- | -------- | ----------- | ------------------------------------ |
-| `<input>`           | -     | Yes      | -           | Path to OpenAPI spec (JSON or YAML)  |
-| `--output`          | `-o`  | Yes      | -           | Output TypeScript file path          |
-| `--type-name`       | `-t`  | No       | `ApiSchema` | Schema type name                     |
-| `--include-imports` | -     | No       | `false`     | Include Spoosh type imports          |
-| `--jsdoc`           | -     | No       | `false`     | Include JSDoc comments from OpenAPI descriptions and summaries|
+| Option              | Alias | Required | Default     | Description                                                    |
+| ------------------- | ----- | -------- | ----------- | -------------------------------------------------------------- |
+| `<input>`           | -     | Yes      | -           | Path to OpenAPI spec (JSON or YAML)                            |
+| `--output`          | `-o`  | Yes      | -           | Output TypeScript file path                                    |
+| `--type-name`       | `-t`  | No       | `ApiSchema` | Schema type name                                               |
+| `--include-imports` | -     | No       | `false`     | Include Spoosh type imports                                    |
+| `--jsdoc`           | -     | No       | `false`     | Include JSDoc comments from OpenAPI descriptions and summaries |
 
 ## Programmatic Usage
 
@@ -208,7 +208,11 @@ console.log(JSON.stringify(spec, null, 2));
 ### Import API
 
 ```typescript
-import { importOpenAPISpec, loadOpenAPISpec, generateSpooshSchema } from "@spoosh/openapi";
+import {
+  importOpenAPISpec,
+  loadOpenAPISpec,
+  generateSpooshSchema,
+} from "@spoosh/openapi";
 
 // High-level API (load + generate)
 const tsCode = importOpenAPISpec("./openapi.json", {
@@ -231,14 +235,14 @@ console.log(schema);
 
 The import feature generates the unified `Endpoint` type with appropriate fields:
 
-| OpenAPI Pattern | Spoosh Type |
-| --------------- | ----------- |
-| Query parameters | `Endpoint<{ data: TData; query: TQuery }>` |
-| `multipart/form-data` request body | `Endpoint<{ data: TData; formData: TFormData }>` |
-| `application/json` request body | `Endpoint<{ data: TData; body: TBody }>` |
-| `application/x-www-form-urlencoded` request body | `Endpoint<{ data: TData; urlEncoded: TBody }>` |
-| No response body (204) | `void` |
-| Simple response only | `TData` |
+| OpenAPI Pattern                                  | Spoosh Type                                      |
+| ------------------------------------------------ | ------------------------------------------------ |
+| Query parameters                                 | `Endpoint<{ data: TData; query: TQuery }>`       |
+| `multipart/form-data` request body               | `Endpoint<{ data: TData; formData: TFormData }>` |
+| `application/json` request body                  | `Endpoint<{ data: TData; body: TBody }>`         |
+| `application/x-www-form-urlencoded` request body | `Endpoint<{ data: TData; urlEncoded: TBody }>`   |
+| No response body (204)                           | `void`                                           |
+| Simple response only                             | `TData`                                          |
 
 ### Error Type Extraction
 
@@ -274,18 +278,28 @@ Error types are automatically extracted from 4xx and 5xx response schemas. If a 
 ```
 
 Generated types:
+
 ```typescript
 // Only 500 has a schema, so only that is included
-$post: Endpoint<{ data: User; body: CreateUserBody; error: { system_message?: string } }>
+$post: Endpoint<{
+  data: User;
+  body: CreateUserBody;
+  error: { system_message?: string };
+}>;
 
 // If no error responses have schemas, no error type is added
-$get: User
+$get: User;
 ```
 
 Multiple error schemas are automatically unioned:
+
 ```typescript
 // 400 and 500 both have schemas
-$post: Endpoint<{ data: User; body: Body; error: { error?: string } | { system_message?: string } }>
+$post: Endpoint<{
+  data: User;
+  body: Body;
+  error: { error?: string } | { system_message?: string };
+}>;
 ```
 
 ## License

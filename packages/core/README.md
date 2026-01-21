@@ -36,7 +36,10 @@ type ApiSchema = {
     $post: Endpoint<{ data: { url: string }; formData: { file: File } }>;
   };
   payments: {
-    $post: Endpoint<{ data: { id: string }; urlEncoded: { amount: number; currency: string } }>;
+    $post: Endpoint<{
+      data: { id: string };
+      urlEncoded: { amount: number; currency: string };
+    }>;
   };
 };
 ```
@@ -173,16 +176,16 @@ const updatedContext = await applyMiddlewares(context, middlewares, "before");
 
 ## Schema Types
 
-| Type                                    | Description                   | Example                                                               |
-| --------------------------------------- | ----------------------------- | --------------------------------------------------------------------- |
-| `Endpoint<{ data }>`                    | Endpoint with data only       | `$get: Endpoint<{ data: User[] }>`                                    |
-| `Endpoint<{ data; body }>`              | Endpoint with JSON body       | `$post: Endpoint<{ data: User; body: CreateUserBody }>`               |
-| `Endpoint<{ data; query }>`             | Endpoint with query params    | `$get: Endpoint<{ data: User[]; query: { page: number } }>`           |
-| `Endpoint<{ data; formData }>`          | Endpoint with multipart form  | `$post: Endpoint<{ data: Result; formData: { file: File } }>`         |
-| `Endpoint<{ data; urlEncoded }>`        | Endpoint with URL-encoded     | `$post: Endpoint<{ data: Result; urlEncoded: { amount: number } }>`   |
-| `Endpoint<{ data; error }>`             | Endpoint with typed error     | `$get: Endpoint<{ data: User; error: ApiError }>`                     |
-| `void`                                  | No response body              | `$delete: void`                                                       |
-| `_`                                     | Dynamic path segment          | `users: { _: { $get: Endpoint<{ data: User }> } }`                    |
+| Type                             | Description                  | Example                                                             |
+| -------------------------------- | ---------------------------- | ------------------------------------------------------------------- |
+| `Endpoint<{ data }>`             | Endpoint with data only      | `$get: Endpoint<{ data: User[] }>`                                  |
+| `Endpoint<{ data; body }>`       | Endpoint with JSON body      | `$post: Endpoint<{ data: User; body: CreateUserBody }>`             |
+| `Endpoint<{ data; query }>`      | Endpoint with query params   | `$get: Endpoint<{ data: User[]; query: { page: number } }>`         |
+| `Endpoint<{ data; formData }>`   | Endpoint with multipart form | `$post: Endpoint<{ data: Result; formData: { file: File } }>`       |
+| `Endpoint<{ data; urlEncoded }>` | Endpoint with URL-encoded    | `$post: Endpoint<{ data: Result; urlEncoded: { amount: number } }>` |
+| `Endpoint<{ data; error }>`      | Endpoint with typed error    | `$get: Endpoint<{ data: User; error: ApiError }>`                   |
+| `void`                           | No response body             | `$delete: void`                                                     |
+| `_`                              | Dynamic path segment         | `users: { _: { $get: Endpoint<{ data: User }> } }`                  |
 
 ## API Reference
 
@@ -206,11 +209,8 @@ import { cachePlugin } from "@spoosh/plugin-cache";
 import { retryPlugin } from "@spoosh/plugin-retry";
 
 const client = new Spoosh<ApiSchema, Error>("/api", {
-  headers: { Authorization: "Bearer token" }
-}).use([
-  cachePlugin({ staleTime: 5000 }),
-  retryPlugin({ retries: 3 })
-]);
+  headers: { Authorization: "Bearer token" },
+}).use([cachePlugin({ staleTime: 5000 }), retryPlugin({ retries: 3 })]);
 
 const { api } = client;
 const { data } = await api.users.$get();
@@ -218,26 +218,25 @@ const { data } = await api.users.$get();
 
 **Constructor Parameters:**
 
-| Parameter        | Type            | Description                             |
-| ---------------- | --------------- | --------------------------------------- |
-| `baseUrl`        | `string`        | Base URL for all API requests           |
-| `defaultOptions` | `RequestInit`   | (Optional) Default fetch options        |
+| Parameter        | Type          | Description                      |
+| ---------------- | ------------- | -------------------------------- |
+| `baseUrl`        | `string`      | Base URL for all API requests    |
+| `defaultOptions` | `RequestInit` | (Optional) Default fetch options |
 
 **Methods:**
 
-| Method | Description |
-| ------ | ----------- |
+| Method          | Description                                                           |
+| --------------- | --------------------------------------------------------------------- |
 | `.use(plugins)` | Add plugins to the client. Returns a new instance with updated types. |
 
 **Properties:**
 
-| Property | Description |
-| -------- | ----------- |
-| `.api` | Type-safe API client for making requests |
-| `.stateManager` | Cache and state management |
-| `.eventEmitter` | Event system for refetch/invalidation |
-| `.pluginExecutor` | Plugin lifecycle management |
-
+| Property          | Description                              |
+| ----------------- | ---------------------------------------- |
+| `.api`            | Type-safe API client for making requests |
+| `.stateManager`   | Cache and state management               |
+| `.eventEmitter`   | Event system for refetch/invalidation    |
+| `.pluginExecutor` | Plugin lifecycle management              |
 
 ## Creating Plugins
 

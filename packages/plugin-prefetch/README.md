@@ -55,8 +55,8 @@ await prefetch(
 
 ### Plugin Config
 
-| Option           | Type     | Default | Description                                                       |
-| ---------------- | -------- | ------- | ----------------------------------------------------------------- |
+| Option      | Type     | Default | Description                                                       |
+| ----------- | -------- | ------- | ----------------------------------------------------------------- |
 | `staleTime` | `number` | -       | Default stale time for prefetched data (ms)                       |
 | `timeout`   | `number` | `30000` | Timeout to auto-clear stale promises (ms). Prevents memory leaks. |
 

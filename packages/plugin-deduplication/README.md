@@ -16,15 +16,13 @@ npm install @spoosh/plugin-deduplication
 import { Spoosh } from "@spoosh/core";
 import { deduplicationPlugin } from "@spoosh/plugin-deduplication";
 
-const client = new Spoosh<ApiSchema, Error>("/api")
-  .use([
-    deduplicationPlugin(),
-  ]);
+const client = new Spoosh<ApiSchema, Error>("/api").use([
+  deduplicationPlugin(),
+]);
 
-const client = new Spoosh<ApiSchema, Error>("/api")
-  .use([
-    deduplicationPlugin({ write: "in-flight" }),
-  ]);
+const client = new Spoosh<ApiSchema, Error>("/api").use([
+  deduplicationPlugin({ write: "in-flight" }),
+]);
 
 useRead((api) => api.posts.$get(), { dedupe: false });
 ```

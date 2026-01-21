@@ -17,32 +17,26 @@ import { Spoosh } from "@spoosh/core";
 import { debugPlugin } from "@spoosh/plugin-debug";
 
 // Basic usage - logs all phases
-const client = new Spoosh<ApiSchema, Error>("/api")
-  .use([
-    debugPlugin(),
-  ]);
+const client = new Spoosh<ApiSchema, Error>("/api").use([debugPlugin()]);
 
 // With cache logging
-const client = new Spoosh<ApiSchema, Error>("/api")
-  .use([
-    debugPlugin({ logCache: true }),
-  ]);
+const client = new Spoosh<ApiSchema, Error>("/api").use([
+  debugPlugin({ logCache: true }),
+]);
 
 // Custom logger with object shape
-const client = new Spoosh<ApiSchema, Error>("/api")
-  .use([
-    debugPlugin({
-      logger: (entry) => {
-        console.log(entry.phase, entry.path, entry.state.data);
-      },
-    }),
-  ]);
+const client = new Spoosh<ApiSchema, Error>("/api").use([
+  debugPlugin({
+    logger: (entry) => {
+      console.log(entry.phase, entry.path, entry.state.data);
+    },
+  }),
+]);
 
 // Disable in production
-const client = new Spoosh<ApiSchema, Error>("/api")
-  .use([
-    debugPlugin({ enabled: process.env.NODE_ENV === "development" }),
-  ]);
+const client = new Spoosh<ApiSchema, Error>("/api").use([
+  debugPlugin({ enabled: process.env.NODE_ENV === "development" }),
+]);
 ```
 
 ## Options

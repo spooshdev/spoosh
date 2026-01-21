@@ -24,12 +24,30 @@ const TMP_DIR = path.join(ROOT, ".tmp-import");
 
 const APIS = [
   { name: "Petstore", url: "https://petstore3.swagger.io/api/v3/openapi.json" },
-  { name: "TMDB", url: "https://developer.themoviedb.org/openapi/tmdb-api.json" },
-  { name: "Stripe", url: "https://raw.githubusercontent.com/stripe/openapi/master/openapi/spec3.json" },
-  { name: "GitHub", url: "https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.json" },
-  { name: "Discord", url: "https://raw.githubusercontent.com/discord/discord-api-spec/main/specs/openapi.json" },
-  { name: "Twilio", url: "https://raw.githubusercontent.com/twilio/twilio-oai/main/spec/json/twilio_api_v2010.json" },
-  { name: "Cloudflare", url: "https://raw.githubusercontent.com/cloudflare/api-schemas/main/openapi.json" },
+  {
+    name: "TMDB",
+    url: "https://developer.themoviedb.org/openapi/tmdb-api.json",
+  },
+  {
+    name: "Stripe",
+    url: "https://raw.githubusercontent.com/stripe/openapi/master/openapi/spec3.json",
+  },
+  {
+    name: "GitHub",
+    url: "https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.json",
+  },
+  {
+    name: "Discord",
+    url: "https://raw.githubusercontent.com/discord/discord-api-spec/main/specs/openapi.json",
+  },
+  {
+    name: "Twilio",
+    url: "https://raw.githubusercontent.com/twilio/twilio-oai/main/spec/json/twilio_api_v2010.json",
+  },
+  {
+    name: "Cloudflare",
+    url: "https://raw.githubusercontent.com/cloudflare/api-schemas/main/openapi.json",
+  },
 ];
 
 const colors = {
@@ -120,8 +138,14 @@ async function main() {
     }
   } else {
     log("\nUsage:", "yellow");
-    log("  node scripts/test-import.mjs --all           # Test all APIs", "dim");
-    log("  node scripts/test-import.mjs <url>           # Test single URL", "dim");
+    log(
+      "  node scripts/test-import.mjs --all           # Test all APIs",
+      "dim"
+    );
+    log(
+      "  node scripts/test-import.mjs <url>           # Test single URL",
+      "dim"
+    );
     process.exit(0);
   }
 

@@ -9,6 +9,7 @@ This directory contains manual testing and utility scripts for the `@spoosh/open
 **Purpose**: Tests the round-trip conversion reliability by verifying the conversion is lossless.
 
 **What it does**:
+
 1. Loads an OpenAPI specification (from URL or local file)
 2. Converts OpenAPI → TypeScript
 3. Converts TypeScript → OpenAPI
@@ -17,6 +18,7 @@ This directory contains manual testing and utility scripts for the `@spoosh/open
 6. Reports any differences
 
 **Usage**:
+
 ```bash
 # Default: Uses TMDB API (3MB, 150+ endpoints)
 npm run test:roundtrip
@@ -30,6 +32,7 @@ npm run test:roundtrip ../path/to/spec.yaml
 ```
 
 **Why manual?**
+
 - Downloads a large external file (3MB)
 - Takes 10-20 seconds to run
 - Network-dependent
@@ -37,11 +40,13 @@ npm run test:roundtrip ../path/to/spec.yaml
 - Should be run before major releases to verify conversion quality
 
 **Expected outcome**:
+
 - Perfect round-trip: Files are identical ✅
 - Mostly successful: 1-5 lines differ (acceptable variations) ✅
 - Failed: More than 5 lines differ ❌
 
 **Note**: Some OpenAPI specs may not achieve perfect round-trip conversion due to:
+
 - Unsupported OpenAPI features (e.g., `additionalProperties`, `discriminator`)
 - Schema references that can't be fully preserved
 - Complex nested structures

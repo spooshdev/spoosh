@@ -16,10 +16,9 @@ npm install @spoosh/plugin-retry
 import { Spoosh } from "@spoosh/core";
 import { retryPlugin } from "@spoosh/plugin-retry";
 
-const client = new Spoosh<ApiSchema, Error>("/api")
-  .use([
-    retryPlugin({ retries: 3, retryDelay: 1000 }),
-  ]);
+const client = new Spoosh<ApiSchema, Error>("/api").use([
+  retryPlugin({ retries: 3, retryDelay: 1000 }),
+]);
 
 // Per-query override
 useRead((api) => api.posts.$get(), { retries: 5, retryDelay: 2000 });

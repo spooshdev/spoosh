@@ -16,10 +16,7 @@ npm install @spoosh/plugin-polling
 import { Spoosh } from "@spoosh/core";
 import { pollingPlugin } from "@spoosh/plugin-polling";
 
-const client = new Spoosh<ApiSchema, Error>("/api")
-  .use([
-    pollingPlugin(),
-  ]);
+const client = new Spoosh<ApiSchema, Error>("/api").use([pollingPlugin()]);
 
 // Static polling interval (5 seconds)
 useRead((api) => api.posts.$get(), { pollingInterval: 5000 });

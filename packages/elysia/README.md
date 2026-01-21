@@ -124,9 +124,12 @@ const postId = 456;
 spoosh.users(userId).posts(postId).$get();
 
 // Typed params (advanced - explicit param names)
-spoosh.users(":userId").posts(":postId").$get({
-  params: { userId: 123, postId: 456 },
-});
+spoosh
+  .users(":userId")
+  .posts(":postId")
+  .$get({
+    params: { userId: 123, postId: 456 },
+  });
 ```
 
 ## Split Routes
@@ -146,9 +149,7 @@ export const postsRoutes = new Elysia({ prefix: "/posts" })
   .post("/", ({ body }) => body, { body: t.Object({ title: t.String() }) });
 
 // app.ts
-const app = new Elysia({ prefix: "/api" })
-  .use(usersRoutes)
-  .use(postsRoutes);
+const app = new Elysia({ prefix: "/api" }).use(usersRoutes).use(postsRoutes);
 
 export type App = typeof app;
 

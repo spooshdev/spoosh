@@ -122,9 +122,12 @@ const postId = 456;
 spoosh.api.users(userId).posts(postId).$get();
 
 // Typed params (advanced - explicit param names)
-spoosh.api.users(":userId").posts(":postId").$get({
-  params: { userId: 123, postId: 456 },
-});
+spoosh.api
+  .users(":userId")
+  .posts(":postId")
+  .$get({
+    params: { userId: 123, postId: 456 },
+  });
 ```
 
 ### HonoRouteToSpoosh<T>
@@ -222,8 +225,12 @@ const bookingByIdRoutes = new Hono()
   .delete("/:id", (c) => c.json({}));
 
 // In your schema, merge the types
-type BookingsRoot = HonoRouteToSpoosh<ReturnType<typeof hc<typeof bookingsRootRoutes>>>;
-type BookingById = HonoRouteToSpoosh<ReturnType<typeof hc<typeof bookingByIdRoutes>>>;
+type BookingsRoot = HonoRouteToSpoosh<
+  ReturnType<typeof hc<typeof bookingsRootRoutes>>
+>;
+type BookingById = HonoRouteToSpoosh<
+  ReturnType<typeof hc<typeof bookingByIdRoutes>>
+>;
 
 type ApiSchema = {
   bookings: BookingsRoot & BookingById;

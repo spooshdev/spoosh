@@ -18,10 +18,7 @@ npm install @spoosh/plugin-transform
 import { Spoosh } from "@spoosh/core";
 import { transformPlugin } from "@spoosh/plugin-transform";
 
-const client = new Spoosh<ApiSchema, Error>("/api")
-  .use([
-    transformPlugin(),
-  ]);
+const client = new Spoosh<ApiSchema, Error>("/api").use([transformPlugin()]);
 
 const { data } = useRead((api) => api.posts.$get({ query: { page: 1 } }), {
   transform: {

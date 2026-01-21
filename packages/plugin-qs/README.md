@@ -16,10 +16,9 @@ npm install @spoosh/plugin-qs
 import { Spoosh } from "@spoosh/core";
 import { qsPlugin } from "@spoosh/plugin-qs";
 
-const client = new Spoosh<ApiSchema, Error>("/api")
-  .use([
-    qsPlugin({ arrayFormat: "brackets" }),
-  ]);
+const client = new Spoosh<ApiSchema, Error>("/api").use([
+  qsPlugin({ arrayFormat: "brackets" }),
+]);
 
 const query = {
   pagination: { limit: 10, offset: 0 },
@@ -68,28 +67,36 @@ useRead((api) => api.data.$get({ query }), { skipNulls: false });
 ### brackets (default)
 
 ```typescript
-{ tags: ["a", "b"] }
+{
+  tags: ["a", "b"];
+}
 // tags[]=a&tags[]=b
 ```
 
 ### indices
 
 ```typescript
-{ tags: ["a", "b"] }
+{
+  tags: ["a", "b"];
+}
 // tags[0]=a&tags[1]=b
 ```
 
 ### repeat
 
 ```typescript
-{ tags: ["a", "b"] }
+{
+  tags: ["a", "b"];
+}
 // tags=a&tags=b
 ```
 
 ### comma
 
 ```typescript
-{ tags: ["a", "b"] }
+{
+  tags: ["a", "b"];
+}
 // tags=a,b
 ```
 
@@ -97,10 +104,18 @@ useRead((api) => api.data.$get({ query }), { skipNulls: false });
 
 ```typescript
 // allowDots: false (default)
-{ filters: { status: "active" } }
+{
+  filters: {
+    status: "active";
+  }
+}
 // filters[status]=active
 
 // allowDots: true
-{ filters: { status: "active" } }
+{
+  filters: {
+    status: "active";
+  }
+}
 // filters.status=active
 ```

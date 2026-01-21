@@ -16,10 +16,7 @@ npm install @spoosh/plugin-debounce
 import { Spoosh } from "@spoosh/core";
 import { debouncePlugin } from "@spoosh/plugin-debounce";
 
-const client = new Spoosh<ApiSchema, Error>("/api")
-  .use([
-    debouncePlugin(),
-  ]);
+const client = new Spoosh<ApiSchema, Error>("/api").use([debouncePlugin()]);
 
 // Wait 300ms after typing stops before fetching
 const { data } = useRead(

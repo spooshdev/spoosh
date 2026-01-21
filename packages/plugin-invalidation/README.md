@@ -43,10 +43,7 @@ await trigger({ body: { title: "New Post" } });
 import { Spoosh } from "@spoosh/core";
 import { invalidationPlugin } from "@spoosh/plugin-invalidation";
 
-const client = new Spoosh<ApiSchema, Error>("/api")
-  .use([
-    invalidationPlugin(),
-  ]);
+const client = new Spoosh<ApiSchema, Error>("/api").use([invalidationPlugin()]);
 
 const { trigger } = useWrite((api) => api.posts.$post);
 await trigger({ body: { title: "New Post" } });

@@ -30,11 +30,10 @@ import { Spoosh } from "@spoosh/core";
 import { nextjsPlugin } from "@spoosh/plugin-nextjs";
 import { invalidationPlugin } from "@spoosh/plugin-invalidation";
 
-const client = new Spoosh<ApiSchema, Error>("/api")
-  .use([
-    invalidationPlugin(),
-    nextjsPlugin({ serverRevalidator: revalidateAction }),
-  ]);
+const client = new Spoosh<ApiSchema, Error>("/api").use([
+  invalidationPlugin(),
+  nextjsPlugin({ serverRevalidator: revalidateAction }),
+]);
 
 // After a successful mutation, cache tags are automatically revalidated
 const { trigger } = useWrite((api) => api.posts.$post);
@@ -74,13 +73,12 @@ For apps that primarily fetch data on the client side, set `skipServerRevalidati
 import { Spoosh } from "@spoosh/core";
 import { nextjsPlugin } from "@spoosh/plugin-nextjs";
 
-const client = new Spoosh<ApiSchema, Error>("/api")
-  .use([
-    nextjsPlugin({
-      serverRevalidator: revalidate,
-      skipServerRevalidation: true,
-    }),
-  ]);
+const client = new Spoosh<ApiSchema, Error>("/api").use([
+  nextjsPlugin({
+    serverRevalidator: revalidate,
+    skipServerRevalidation: true,
+  }),
+]);
 
 // Most mutations don't need server revalidation
 await trigger({ body: data });
@@ -100,12 +98,11 @@ For apps that rely heavily on server-side rendering or React Server Components, 
 import { Spoosh } from "@spoosh/core";
 import { nextjsPlugin } from "@spoosh/plugin-nextjs";
 
-const client = new Spoosh<ApiSchema, Error>("/api")
-  .use([
-    nextjsPlugin({
-      serverRevalidator: revalidate,
-    }),
-  ]);
+const client = new Spoosh<ApiSchema, Error>("/api").use([
+  nextjsPlugin({
+    serverRevalidator: revalidate,
+  }),
+]);
 
 // Server cache is revalidated by default
 await trigger({ body: data });

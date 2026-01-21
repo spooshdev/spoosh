@@ -23,7 +23,8 @@ const spoosh = new Spoosh<ApiSchema, Error>("/api").use([
   cachePlugin({ staleTime: 5000 }),
 ]);
 
-export const { injectRead, injectWrite, injectInfiniteRead } = createAngularSpoosh(spoosh);
+export const { injectRead, injectWrite, injectInfiniteRead } =
+  createAngularSpoosh(spoosh);
 ```
 
 ### injectRead
@@ -79,13 +80,13 @@ Trigger mutations with loading and error states.
     <form (ngSubmit)="handleSubmit()">
       <input [(ngModel)]="title" />
       <button [disabled]="createUser.loading()">
-        {{ createUser.loading() ? 'Creating...' : 'Create User' }}
+        {{ createUser.loading() ? "Creating..." : "Create User" }}
       </button>
     </form>
   `,
 })
 export class CreateUserComponent {
-  title = signal('');
+  title = signal("");
 
   createUser = injectWrite((api) => api.users.$post);
 
@@ -110,7 +111,7 @@ Bidirectional paginated data fetching with infinite scroll support.
   template: `
     @if (posts.canFetchPrev()) {
       <button (click)="posts.fetchPrev()" [disabled]="posts.fetchingPrev()">
-        {{ posts.fetchingPrev() ? 'Loading...' : 'Load Previous' }}
+        {{ posts.fetchingPrev() ? "Loading..." : "Load Previous" }}
       </button>
     }
 
@@ -120,35 +121,32 @@ Bidirectional paginated data fetching with infinite scroll support.
 
     @if (posts.canFetchNext()) {
       <button (click)="posts.fetchNext()" [disabled]="posts.fetchingNext()">
-        {{ posts.fetchingNext() ? 'Loading...' : 'Load More' }}
+        {{ posts.fetchingNext() ? "Loading..." : "Load More" }}
       </button>
     }
   `,
 })
 export class PostListComponent {
-  posts = injectInfiniteRead(
-    (api) => api.posts.$get({ query: { page: 1 } }),
-    {
-      // Required: Check if next page exists
-      canFetchNext: ({ response }) => response?.meta.hasMore ?? false,
+  posts = injectInfiniteRead((api) => api.posts.$get({ query: { page: 1 } }), {
+    // Required: Check if next page exists
+    canFetchNext: ({ response }) => response?.meta.hasMore ?? false,
 
-      // Required: Build request for next page
-      nextPageRequest: ({ response, request }) => ({
-        query: { ...request.query, page: (response?.meta.page ?? 0) + 1 },
-      }),
+    // Required: Build request for next page
+    nextPageRequest: ({ response, request }) => ({
+      query: { ...request.query, page: (response?.meta.page ?? 0) + 1 },
+    }),
 
-      // Required: Merge all responses into items
-      merger: (allResponses) => allResponses.flatMap((r) => r.items),
+    // Required: Merge all responses into items
+    merger: (allResponses) => allResponses.flatMap((r) => r.items),
 
-      // Optional: Check if previous page exists
-      canFetchPrev: ({ response }) => (response?.meta.page ?? 1) > 1,
+    // Optional: Check if previous page exists
+    canFetchPrev: ({ response }) => (response?.meta.page ?? 1) > 1,
 
-      // Optional: Build request for previous page
-      prevPageRequest: ({ response, request }) => ({
-        query: { ...request.query, page: (response?.meta.page ?? 2) - 1 },
-      }),
-    }
-  );
+    // Optional: Build request for previous page
+    prevPageRequest: ({ response, request }) => ({
+      query: { ...request.query, page: (response?.meta.page ?? 2) - 1 },
+    }),
+  });
 }
 ```
 
@@ -156,49 +154,49 @@ export class PostListComponent {
 
 ### injectRead(readFn, options?)
 
-| Option           | Type                                    | Default | Description                          |
-| ---------------- | --------------------------------------- | ------- | ------------------------------------ |
+| Option           | Type                                          | Default | Description                          |
+| ---------------- | --------------------------------------------- | ------- | ------------------------------------ |
 | `enabled`        | `boolean \| Signal<boolean> \| () => boolean` | `true`  | Whether to fetch automatically       |
-| `staleTime`      | `number`               | -       | Cache stale time (from plugin-cache) |
-| `retries`        | `number`               | -       | Retry attempts (from plugin-retry)   |
-| + plugin options | -                      | -       | Options from installed plugins       |
+| `staleTime`      | `number`                                      | -       | Cache stale time (from plugin-cache) |
+| `retries`        | `number`                                      | -       | Retry attempts (from plugin-retry)   |
+| + plugin options | -                                             | -       | Options from installed plugins       |
 
 **Returns:**
 
-| Property   | Type                        | Description              |
-| ---------- | --------------------------- | ------------------------ |
-| `data`     | `Signal<TData \| undefined>`  | Response data            |
-| `error`    | `Signal<TError \| undefined>` | Error if request failed  |
-| `loading`  | `Signal<boolean>`             | True during initial load |
-| `fetching` | `Signal<boolean>`             | True during any fetch    |
+| Property   | Type                          | Description                               |
+| ---------- | ----------------------------- | ----------------------------------------- |
+| `data`     | `Signal<TData \| undefined>`  | Response data                             |
+| `error`    | `Signal<TError \| undefined>` | Error if request failed                   |
+| `loading`  | `Signal<boolean>`             | True during initial load                  |
+| `fetching` | `Signal<boolean>`             | True during any fetch                     |
 | `meta`     | `Signal<PluginResults>`       | Plugin metadata (e.g., `transformedData`) |
-| `refetch`  | `() => Promise`             | Manually trigger refetch |
-| `abort`    | `() => void`                | Abort current request    |
+| `refetch`  | `() => Promise`               | Manually trigger refetch                  |
+| `abort`    | `() => void`                  | Abort current request                     |
 
 ### injectWrite(writeFn)
 
 **Returns:**
 
-| Property  | Type                        | Description                        |
-| --------- | --------------------------- | ---------------------------------- |
-| `trigger` | `(options) => Promise`      | Execute the mutation               |
+| Property  | Type                          | Description                        |
+| --------- | ----------------------------- | ---------------------------------- |
+| `trigger` | `(options) => Promise`        | Execute the mutation               |
 | `data`    | `Signal<TData \| undefined>`  | Response data                      |
 | `error`   | `Signal<TError \| undefined>` | Error if request failed            |
 | `loading` | `Signal<boolean>`             | True while mutation is in progress |
 | `meta`    | `Signal<PluginResults>`       | Plugin metadata                    |
 | `input`   | `TriggerOptions \| undefined` | Last trigger input                 |
-| `reset`   | `() => void`                | Reset state                        |
-| `abort`   | `() => void`                | Abort current request              |
+| `reset`   | `() => void`                  | Reset state                        |
+| `abort`   | `() => void`                  | Abort current request              |
 
 ### injectInfiniteRead(readFn, options)
 
-| Option            | Type                         | Required | Description                     |
-| ----------------- | ---------------------------- | -------- | ------------------------------- |
-| `canFetchNext`    | `(ctx) => boolean`           | Yes      | Check if next page exists       |
-| `nextPageRequest` | `(ctx) => Partial<TRequest>` | Yes      | Build request for next page     |
-| `merger`          | `(allResponses) => TItem[]`  | Yes      | Merge all responses into items  |
-| `canFetchPrev`    | `(ctx) => boolean`           | No       | Check if previous page exists   |
-| `prevPageRequest` | `(ctx) => Partial<TRequest>` | No       | Build request for previous page |
+| Option            | Type                                          | Required | Description                     |
+| ----------------- | --------------------------------------------- | -------- | ------------------------------- |
+| `canFetchNext`    | `(ctx) => boolean`                            | Yes      | Check if next page exists       |
+| `nextPageRequest` | `(ctx) => Partial<TRequest>`                  | Yes      | Build request for next page     |
+| `merger`          | `(allResponses) => TItem[]`                   | Yes      | Merge all responses into items  |
+| `canFetchPrev`    | `(ctx) => boolean`                            | No       | Check if previous page exists   |
+| `prevPageRequest` | `(ctx) => Partial<TRequest>`                  | No       | Build request for previous page |
 | `enabled`         | `boolean \| Signal<boolean> \| () => boolean` | No       | Whether to fetch automatically  |
 
 **Context object passed to callbacks:**
@@ -213,19 +211,19 @@ type Context<TData, TRequest> = {
 
 **Returns:**
 
-| Property       | Type                        | Description                     |
-| -------------- | --------------------------- | ------------------------------- |
+| Property       | Type                           | Description                     |
+| -------------- | ------------------------------ | ------------------------------- |
 | `data`         | `Signal<TItem[] \| undefined>` | Merged items from all responses |
 | `allResponses` | `Signal<TData[] \| undefined>` | Array of all raw responses      |
-| `loading`      | `Signal<boolean>`             | True during initial load        |
-| `fetching`     | `Signal<boolean>`             | True during any fetch           |
-| `fetchingNext` | `Signal<boolean>`             | True while fetching next page   |
-| `fetchingPrev` | `Signal<boolean>`             | True while fetching previous    |
-| `canFetchNext` | `Signal<boolean>`             | Whether next page exists        |
-| `canFetchPrev` | `Signal<boolean>`             | Whether previous page exists    |
-| `meta`         | `Signal<PluginResults>`       | Plugin metadata                 |
-| `fetchNext`    | `() => Promise<void>`       | Fetch the next page             |
-| `fetchPrev`    | `() => Promise<void>`       | Fetch the previous page         |
-| `refetch`      | `() => Promise<void>`       | Refetch all pages               |
-| `abort`        | `() => void`                | Abort current request           |
-| `error`        | `Signal<TError \| undefined>` | Error if request failed         |
+| `loading`      | `Signal<boolean>`              | True during initial load        |
+| `fetching`     | `Signal<boolean>`              | True during any fetch           |
+| `fetchingNext` | `Signal<boolean>`              | True while fetching next page   |
+| `fetchingPrev` | `Signal<boolean>`              | True while fetching previous    |
+| `canFetchNext` | `Signal<boolean>`              | Whether next page exists        |
+| `canFetchPrev` | `Signal<boolean>`              | Whether previous page exists    |
+| `meta`         | `Signal<PluginResults>`        | Plugin metadata                 |
+| `fetchNext`    | `() => Promise<void>`          | Fetch the next page             |
+| `fetchPrev`    | `() => Promise<void>`          | Fetch the previous page         |
+| `refetch`      | `() => Promise<void>`          | Refetch all pages               |
+| `abort`        | `() => void`                   | Abort current request           |
+| `error`        | `Signal<TError \| undefined>`  | Error if request failed         |

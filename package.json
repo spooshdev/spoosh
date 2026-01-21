@@ -12,7 +12,7 @@
     "build:docs": "pnpm --filter @spoosh/docs build",
     "typecheck": "pnpm -r typecheck",
     "lint": "pnpm -r lint",
-    "format": "pnpm -r format",
+    "format": "pnpm -r format .",
     "changeset": "changeset",
     "bump": "changeset version",
     "release": "pnpm build && changeset publish"
