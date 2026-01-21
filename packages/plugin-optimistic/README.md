@@ -27,7 +27,7 @@ const client = new Spoosh<ApiSchema, Error>("/api").use([
   optimisticPlugin(),
 ]);
 
-const { trigger } = useWrite((api) => api.posts[id].$delete);
+const { trigger } = useWrite((api) => api.posts(id).$delete);
 
 trigger({
   // Optimistic delete - instantly remove item from list

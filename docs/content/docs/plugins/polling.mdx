@@ -31,7 +31,7 @@ useRead((api) => api.posts.$get(), { pollingInterval: false });
 The polling interval can be a function that adjusts based on the response:
 
 ```typescript
-useRead((api) => api.jobs[jobId].$get(), {
+useRead((api) => api.jobs(jobId).$get(), {
   pollingInterval: (data, error) => {
     // Stop polling when job is complete
     if (data?.status === "completed") return false;

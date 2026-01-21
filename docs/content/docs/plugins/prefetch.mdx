@@ -41,7 +41,7 @@ await prefetch((api) => api.posts.$get({ query: { page: 1, limit: 10 } }));
 Pass plugin options as the second argument:
 
 ```typescript
-await prefetch((api) => api.users[userId].$get(), {
+await prefetch((api) => api.users(userId).$get(), {
   staleTime: 60000,
   retries: 3,
 });
@@ -54,7 +54,7 @@ A common pattern is prefetching when the user hovers over a link:
 ```typescript
 <Link
   href="/posts/1"
-  onMouseEnter={() => prefetch((api) => api.posts[1].$get())}
+  onMouseEnter={() => prefetch((api) => api.posts(1).$get())}
 >
   View Post
 </Link>
@@ -66,7 +66,7 @@ Prefetch data before navigating:
 
 ```typescript
 async function handleNavigation(postId: number) {
-  await prefetch((api) => api.posts[postId].$get());
+  await prefetch((api) => api.posts(postId).$get());
   router.push(`/posts/${postId}`);
 }
 ```

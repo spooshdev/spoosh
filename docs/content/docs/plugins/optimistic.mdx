@@ -31,7 +31,7 @@ const client = new Spoosh<ApiSchema, Error>("/api").use([
 ## Basic Optimistic Update
 
 ```typescript
-const { trigger } = useWrite((api) => api.posts[id].$delete);
+const { trigger } = useWrite((api) => api.posts(id).$delete);
 
 trigger({
   optimistic: ($, api) =>

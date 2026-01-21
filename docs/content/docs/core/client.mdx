@@ -139,7 +139,7 @@ const api = createClient<ApiSchema>({ baseUrl: process.env.API_URL! });
 await api.posts.$get();
 
 // Auto-generates: next: { tags: ['users', 'users/123', 'users/123/posts'] }
-await api.users[123].posts.$get();
+await api.users(123).posts.$get();
 ```
 
 This enables automatic cache invalidation with `revalidateTag()` when using the [Next.js plugin](/docs/plugins/nextjs).

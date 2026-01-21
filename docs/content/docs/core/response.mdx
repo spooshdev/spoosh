@@ -41,7 +41,7 @@ The hooks automatically parse the response and provide separate `data` and `erro
 
 ```typescript
 function UserProfile() {
-  const { data, error, loading } = useRead((api) => api.users[1].$get());
+  const { data, error, loading } = useRead((api) => api.users(1).$get());
 
   if (loading) return <Spinner />;
   if (error) return <Error message={error.message} />;

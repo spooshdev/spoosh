@@ -41,7 +41,7 @@ export type SpooshClientConfig = {
  *
  * // Type-safe API calls
  * const { data } = await api.posts.$get();
- * const { data: post } = await api.posts[123].$get();
+ * const { data: post } = await api.posts(123).$get();
  * ```
  */
 export function createClient<TSchema, TDefaultError = unknown>(

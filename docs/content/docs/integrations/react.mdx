@@ -35,8 +35,8 @@ Spoosh automatically generates cache tags from API paths. These tags enable prec
 
 ```typescript
 // api.users.$get()        → tags: ["users"]
-// api.users[1].$get()     → tags: ["users", "users/1"]
-// api.posts[5].comments.$get() → tags: ["posts", "posts/5", "posts/5/comments"]
+// api.users(1).$get()     → tags: ["users", "users/1"]
+// api.posts(5).comments.$get() → tags: ["posts", "posts/5", "posts/5/comments"]
 ```
 
 Tags are hierarchical. Invalidating `"users"` will refetch all queries under `/users/*`, while invalidating `"users/1"` only affects that specific user.
@@ -85,7 +85,7 @@ await trigger({
   autoInvalidate: "none",
   invalidate: (api) => [
     api.posts.$get, // invalidates "posts"
-    api.users[userId].stats.$get, // invalidates "users/{userId}/stats"
+    api.users(userId).stats.$get, // invalidates "users/{userId}/stats"
   ],
 });
 ```

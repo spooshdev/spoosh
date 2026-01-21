@@ -44,9 +44,9 @@ export type ProxyHandlerConfig<TOptions = SpooshOptions> = {
  * await api.posts.$get();
  *
  * // Dynamic segments via function call:
- * // api.posts[123].$get() or api.posts('123').$get()
+ * // api.posts(123).$get() or api.posts('123').$get()
  * // Executes: GET /api/posts/123
- * await api.posts[123].$get();
+ * await api.posts(123).$get();
  * ```
  */
 export function createProxyHandler<
@@ -87,11 +87,9 @@ export function createProxyHandler<
       });
     },
 
-    // Handles function call syntax for dynamic segments: api.posts("123"), api.users(userId)
-    // Q. Why allow this syntax?
-    // A. To support dynamic type inference in frameworks where property access with variables is not possible.
-    //    Eg. api.posts[":id"].$get() <-- TypeScript sees this as bracket notation with a string literal, can't infer param types
-    //    But api.posts(":id").$get() <-- TypeScript can capture ":id" as a template literal type, enabling params: { id: string } inference
+    // Handles function call syntax for dynamic segments: api.posts(123), api.posts(":id"), api.users(userId)
+    // This is the only way to access dynamic segments in Spoosh.
+    // The function call syntax allows TypeScript to capture the literal type, enabling params: { id: string } inference.
     apply(_target, _thisArg, args: [string]) {
       const [segment] = args;
 

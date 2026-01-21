@@ -25,7 +25,7 @@ useRead((api) => api.posts.$get(), { pollingInterval: 5000 });
 useRead((api) => api.posts.$get(), { pollingInterval: false });
 
 // Dynamic polling interval based on data/error
-useRead((api) => api.booking[123].$get(), {
+useRead((api) => api.booking(123).$get(), {
   pollingInterval: (data, error) => {
     if (error) return 10000; // Slower polling on error
     if (data?.status === "pending") return 1000; // Fast polling for pending

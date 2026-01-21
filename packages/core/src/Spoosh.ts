@@ -179,7 +179,7 @@ export class Spoosh<
    * const { data } = await api.posts.$post({ body: { title: 'Hello' } });
    *
    * // Dynamic path parameters
-   * const { data } = await api.posts[postId].$get();
+   * const { data } = await api.posts(postId).$get();
    * ```
    */
   get api() {

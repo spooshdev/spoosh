@@ -35,7 +35,7 @@ await prefetch((api) => api.posts.$get({ query: { page: 1, limit: 10 } }));
 
 // Prefetch with plugin options (staleTime, retries, etc.)
 await prefetch(
-  (api) => api.users[userId].$get(),
+  (api) => api.users(userId).$get(),
   {
     staleTime: 60000,
     retries: 3,
@@ -45,7 +45,7 @@ await prefetch(
 // Prefetch on hover
 <Link
   href="/posts/1"
-  onMouseEnter={() => prefetch((api) => api.posts[1].$get())}
+  onMouseEnter={() => prefetch((api) => api.posts(1).$get())}
 >
   View Post
 </Link>

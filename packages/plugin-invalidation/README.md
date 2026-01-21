@@ -19,10 +19,10 @@ Tags are automatically generated from the API path hierarchy:
 useRead((api) => api.users.$get());
 // → tags: ["users"]
 
-useRead((api) => api.users[123].$get());
+useRead((api) => api.users(123).$get());
 // → tags: ["users", "users/123"]
 
-useRead((api) => api.users[123].posts.$get());
+useRead((api) => api.users(123).posts.$get());
 // → tags: ["users", "users/123", "users/123/posts"]
 ```
 
@@ -30,7 +30,7 @@ When a mutation succeeds, related queries are automatically invalidated:
 
 ```typescript
 // Creating a post at users/123/posts invalidates:
-const { trigger } = useWrite((api) => api.users[123].posts.$post);
+const { trigger } = useWrite((api) => api.users(123).posts.$post);
 await trigger({ body: { title: "New Post" } });
 
 // ✓ Invalidates: "users", "users/123", "users/123/posts"

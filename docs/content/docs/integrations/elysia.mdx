@@ -93,11 +93,11 @@ const { data: newPost } = await api.posts.$post({
 // newPost: { id: number; title: string }
 
 // GET /api/posts/1
-const { data: post } = await api.posts[1].$get();
+const { data: post } = await api.posts(1).$get();
 // post: { id: number; title: string }
 
 // DELETE /api/posts/1
-await api.posts[1].$delete();
+await api.posts(1).$delete();
 ```
 
 ## Type Mapping

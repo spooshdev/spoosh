@@ -4,18 +4,29 @@ import { createStateManager, createEventEmitter } from "@spoosh/test-utils";
 import { prefetchPlugin } from "./plugin";
 
 function createMockApi() {
+  const user1 = {
+    $get: vi
+      .fn()
+      .mockResolvedValue({ data: { id: 1, name: "User" }, status: 200 }),
+  };
+
+  const usersFunc: ((id: string) => typeof user1) & {
+    $get: ReturnType<typeof vi.fn>;
+    "1": typeof user1;
+  } = Object.assign(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    (id: string) => user1,
+    {
+      $get: vi.fn().mockResolvedValue({ data: { users: [] }, status: 200 }),
+      "1": user1,
+    }
+  );
+
   return {
     posts: {
       $get: vi.fn().mockResolvedValue({ data: { posts: [] }, status: 200 }),
     },
-    users: {
-      $get: vi.fn().mockResolvedValue({ data: { users: [] }, status: 200 }),
-      "1": {
-        $get: vi
-          .fn()
-          .mockResolvedValue({ data: { id: 1, name: "User" }, status: 200 }),
-      },
-    },
+    users: usersFunc,
   };
 }
 
@@ -209,7 +220,7 @@ describe("prefetchPlugin", () => {
       const pluginExecutor = createMockPluginExecutor();
       const api = createMockApi();
 
-      api.users["1"].$get.mockResolvedValue({
+      api.users("1").$get.mockResolvedValue({
         data: { id: 1, name: "John" },
         status: 200,
       });
@@ -221,9 +232,9 @@ describe("prefetchPlugin", () => {
         pluginExecutor,
       });
 
-      await prefetch((apiProxy) => (apiProxy as typeof api).users["1"].$get());
+      await prefetch((apiProxy) => (apiProxy as typeof api).users("1").$get());
 
-      expect(api.users["1"].$get).toHaveBeenCalled();
+      expect(api.users("1").$get).toHaveBeenCalled();
 
       const queryKey = stateManager.createQueryKey({
         path: ["users", "1"],

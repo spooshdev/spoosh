@@ -58,7 +58,7 @@ type EndpointToMethod<T> = (
  * trigger({
  *   myCallback: (api) => [
  *     api.posts.$get,           // ✓ Valid
- *     api.users[1].$get,        // ✓ Dynamic segment
+ *     api.users(1).$get,        // ✓ Dynamic segment
  *     api.nonexistent.$get,     // ✗ Type error
  *   ],
  * });
@@ -77,7 +77,7 @@ export type QuerySchemaHelper<TSchema> = {
 } & (TSchema extends { _: infer D }
     ? HasQueryMethods<D> extends true
       ? {
-          [key: number]: QuerySchemaHelper<D>;
+          <TKey extends string | number>(key: TKey): QuerySchemaHelper<D>;
         }
       : object
     : object);

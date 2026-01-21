@@ -196,7 +196,7 @@ export type SpooshReactHooks<
    * const { data, loading, error } = useRead((api) => api.posts.$get());
    *
    * const { data: post } = useRead(
-   *   (api) => api.posts[postId].$get(),
+   *   (api) => api.posts(postId).$get(),
    *   { enabled: !!postId }
    * );
    * ```
