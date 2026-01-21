@@ -182,7 +182,6 @@ export function createInjectWrite<
 
     destroyRef.onDestroy(() => {
       subscription();
-      controller.unmount();
     });
 
     const reset = () => {

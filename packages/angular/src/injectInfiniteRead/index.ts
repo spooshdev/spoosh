@@ -1,9 +1,9 @@
 import {
   signal,
+  computed,
   effect,
   DestroyRef,
   inject,
-  untracked,
   type Signal,
 } from "@angular/core";
 import {
@@ -226,60 +226,49 @@ export function createInjectInfiniteRead<
     const fetchingNextSignal = signal(false);
     const fetchingPrevSignal = signal(false);
 
-    let initialized = false;
     let prevContext: PluginContext<TData, TError> | null = null;
 
+    controller.mount();
+
     if (enabled) {
+      const currentState = controller.getState();
+
+      if (currentState.data === undefined) {
+        loadingSignal.set(true);
+        fetchingNextSignal.set(true);
+        controller.fetchNext().finally(() => {
+          loadingSignal.set(false);
+          fetchingNextSignal.set(false);
+        });
+      }
+
       effect(
         () => {
-          if (!initialized) {
-            controller.mount();
-            initialized = true;
-
-            const unsubInvalidate = eventEmitter.on(
-              "invalidate",
-              (invalidatedTags: string[]) => {
-                const hasMatch = invalidatedTags.some((tag: string) =>
-                  resolvedTags.includes(tag)
-                );
-
-                if (hasMatch) {
-                  untracked(() => {
-                    loadingSignal.set(true);
-                    controller
-                      .refetch()
-                      .finally(() => loadingSignal.set(false));
-                  });
-                }
-              }
-            );
-
-            destroyRef.onDestroy(() => {
-              unsubInvalidate();
-            });
-          }
-
           if (prevContext) {
             controller.update(prevContext);
             prevContext = null;
           }
-
-          untracked(() => {
-            const currentState = controller.getState();
-            const isFetching = controller.getFetchingDirection() !== null;
-
-            if (currentState.data === undefined && !isFetching) {
-              loadingSignal.set(true);
-              fetchingNextSignal.set(true);
-              controller.fetchNext().finally(() => {
-                loadingSignal.set(false);
-                fetchingNextSignal.set(false);
-              });
-            }
-          });
         },
         { allowSignalWrites: true }
       );
+
+      const unsubInvalidate = eventEmitter.on(
+        "invalidate",
+        (invalidatedTags: string[]) => {
+          const hasMatch = invalidatedTags.some((tag: string) =>
+            resolvedTags.includes(tag)
+          );
+
+          if (hasMatch) {
+            loadingSignal.set(true);
+            controller.refetch().finally(() => loadingSignal.set(false));
+          }
+        }
+      );
+
+      destroyRef.onDestroy(() => {
+        unsubInvalidate();
+      });
     }
 
     destroyRef.onDestroy(() => {
@@ -321,17 +310,16 @@ export function createInjectInfiniteRead<
       controller.abort();
     };
 
-    const fetchingDirection = controller.getFetchingDirection();
-    const fetching = fetchingDirection !== null;
-    const hasData = dataSignal() !== undefined;
-    const loading = (loadingSignal() || fetching) && !hasData;
+    const fetchingSignal = computed(
+      () => fetchingNextSignal() || fetchingPrevSignal()
+    );
 
     const result = {
       data: dataSignal as Signal<TItem[] | undefined>,
       allResponses: allResponsesSignal as Signal<TData[] | undefined>,
       error: errorSignal as Signal<TError | undefined>,
-      loading: signal(loading),
-      fetching: signal(fetching),
+      loading: loadingSignal,
+      fetching: fetchingSignal,
       fetchingNext: fetchingNextSignal,
       fetchingPrev: fetchingPrevSignal,
       canFetchNext: canFetchNextSignal,
