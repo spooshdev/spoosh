@@ -1,27 +1,28 @@
 {
-  "name": "@spoosh/plugin-throttle",
-  "version": "0.1.3",
-  "description": "Request throttling plugin for Spoosh - limits request frequency",
+  "name": "@spoosh/angular",
+  "version": "0.1.0",
   "license": "MIT",
+  "description": "Angular signals integration for Spoosh API client",
+  "keywords": [
+    "spoosh",
+    "angular",
+    "signals",
+    "api-client",
+    "injectRead",
+    "injectWrite"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/nxnom/spoosh.git",
-    "directory": "packages/plugin-throttle"
+    "directory": "packages/angular"
   },
   "bugs": {
     "url": "https://github.com/nxnom/spoosh/issues"
   },
-  "homepage": "https://spoosh.dev/docs/plugins/throttle",
+  "homepage": "https://spoosh.dev/docs/integrations/angular",
   "publishConfig": {
     "access": "public"
   },
-  "keywords": [
-    "spoosh",
-    "plugin",
-    "throttle",
-    "api-client",
-    "rate-limit"
-  ],
   "files": [
     "dist"
   ],
@@ -40,10 +41,10 @@
     "format": "prettier --write 'src/**/*.ts'"
   },
   "peerDependencies": {
-    "@spoosh/core": ">=0.3.0"
+    "@spoosh/core": ">=0.3.0",
+    "@angular/core": ">=16.0.0"
   },
   "devDependencies": {
-    "@spoosh/core": "workspace:*",
-    "@spoosh/test-utils": "workspace:*"
+    "@spoosh/core": "workspace:*"
   }
 }

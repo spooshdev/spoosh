@@ -16,11 +16,10 @@ npm install @spoosh/plugin-throttle
 import { Spoosh } from "@spoosh/core";
 import { throttlePlugin } from "@spoosh/plugin-throttle";
 
-const client = new Spoosh<ApiSchema, Error>("/api")
-  .use([
-    // ...otherPlugins,
-    throttlePlugin(),
-  ]);
+const client = new Spoosh<ApiSchema, Error>("/api").use([
+  // ...otherPlugins,
+  throttlePlugin(),
+]);
 
 const { data } = useRead((api) => api.expensive.$get(), { throttle: 1000 });
 ```

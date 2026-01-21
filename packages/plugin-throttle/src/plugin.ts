@@ -55,30 +55,19 @@ export function throttlePlugin(): SpooshPlugin<{
         return next();
       }
 
-      const { queryKey } = context;
+      const { path, method } = context;
+      const stableKey = `${path.join("/")}:${method}`;
       const now = Date.now();
-      const lastTime = lastFetchTime.get(queryKey) ?? 0;
+      const lastTime = lastFetchTime.get(stableKey) ?? 0;
       const elapsed = now - lastTime;
 
       if (elapsed < throttleMs) {
-        const cached = context.stateManager.getCache(queryKey);
-
-        if (cached?.state?.data !== undefined) {
-          return { data: cached.state.data, status: 200 };
-        }
-
         return { data: undefined, status: 0 };
       }
 
-      lastFetchTime.set(queryKey, now);
+      lastFetchTime.set(stableKey, now);
 
       return next();
-    },
-
-    lifecycle: {
-      onUnmount(context) {
-        lastFetchTime.delete(context.queryKey);
-      },
     },
   };
 }
