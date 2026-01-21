@@ -16,7 +16,6 @@ import {
   type InfiniteRequestOptions,
   type SelectorResult,
   type ResolveTypes,
-  type ResolveResultTypes,
   type ResolverContext,
   type PluginContext,
   createInfiniteReadController,
@@ -66,45 +65,35 @@ export function createInjectInfiniteRead<
 
   type InferError<T> = [T] extends [unknown] ? TDefaultError : T;
 
-  type ExtractMergerItem<T> = T extends {
-    merger: (...args: never[]) => (infer I)[];
-  }
-    ? I
-    : unknown;
-
-  type ResolvedInfiniteReadOptions<TReadFn, TRequest> = BaseInfiniteReadOptions<
-    ExtractData<TReadFn>,
-    unknown,
-    TRequest
-  > &
-    ResolveTypes<
-      PluginOptions["read"],
-      ResolverContext<
-        TSchema,
-        ExtractData<TReadFn>,
-        InferError<ExtractError<TReadFn>>
-      >
-    >;
-
   return function injectInfiniteRead<
     TReadFn extends (
       api: ReadApiClient<TSchema, TDefaultError>
     ) => Promise<SpooshResponse<unknown, unknown>>,
     TRequest extends AnyInfiniteRequestOptions = AnyInfiniteRequestOptions,
-    TReadOpts extends ResolvedInfiniteReadOptions<TReadFn, TRequest> =
-      ResolvedInfiniteReadOptions<TReadFn, TRequest>,
+    TItem = unknown,
   >(
     readFn: TReadFn,
-    readOptions: TReadOpts
+    readOptions: BaseInfiniteReadOptions<
+      ExtractData<TReadFn>,
+      TItem,
+      TRequest
+    > &
+      ResolveTypes<
+        PluginOptions["read"],
+        ResolverContext<
+          TSchema,
+          ExtractData<TReadFn>,
+          InferError<ExtractError<TReadFn>>
+        >
+      >
   ): BaseInfiniteReadResult<
     ExtractData<TReadFn>,
     InferError<ExtractError<TReadFn>>,
-    ExtractMergerItem<TReadOpts>,
-    ResolveResultTypes<PluginResults["read"], TReadOpts>
+    TItem,
+    PluginResults["read"]
   > {
     type TData = ExtractData<TReadFn>;
     type TError = InferError<ExtractError<TReadFn>>;
-    type TItem = ExtractMergerItem<TReadOpts>;
 
     const destroyRef = inject(DestroyRef);
 
@@ -414,9 +403,7 @@ export function createInjectInfiniteRead<
     );
 
     const result = {
-      meta: metaSignal as unknown as Signal<
-        ResolveResultTypes<PluginResults["read"], TReadOpts>
-      >,
+      meta: metaSignal as unknown as Signal<PluginResults["read"]>,
       data: dataSignal as Signal<TItem[] | undefined>,
       allResponses: allResponsesSignal as Signal<TData[] | undefined>,
       error: errorSignal as Signal<TError | undefined>,
@@ -436,7 +423,7 @@ export function createInjectInfiniteRead<
       TData,
       TError,
       TItem,
-      ResolveResultTypes<PluginResults["read"], TReadOpts>
+      PluginResults["read"]
     >;
   };
 }
