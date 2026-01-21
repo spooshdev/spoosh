@@ -87,11 +87,14 @@ export function createInjectRead<
     type TError = InferError<ExtractError<TReadFn>>;
 
     const {
-      enabled = true,
+      enabled: enabledOption = true,
       tags = undefined,
       additionalTags = undefined,
       ...pluginOpts
     } = (readOptions ?? {}) as BaseReadOptions & Record<string, unknown>;
+
+    const getEnabled = (): boolean =>
+      typeof enabledOption === "function" ? enabledOption() : enabledOption;
 
     const dataSignal = signal<TData | undefined>(undefined);
     const errorSignal = signal<TError | undefined>(undefined);
@@ -156,246 +159,175 @@ export function createInjectRead<
       }
     };
 
-    if (enabled) {
-      effect(
-        () => {
-          const selectorResult = captureSelector();
-          const capturedCall = selectorResult.call;
+    let wasEnabled = false;
 
-          if (!capturedCall) {
-            throw new Error(
-              "injectRead requires calling an HTTP method ($get). " +
-                "Example: injectRead((api) => api.posts.$get())"
-            );
+    effect(
+      () => {
+        const isEnabled = getEnabled();
+        const selectorResult = captureSelector();
+        const capturedCall = selectorResult.call;
+
+        if (!capturedCall) {
+          throw new Error(
+            "injectRead requires calling an HTTP method ($get). " +
+              "Example: injectRead((api) => api.posts.$get())"
+          );
+        }
+
+        const requestOptions = capturedCall.options as
+          | { params?: Record<string, string | number> }
+          | undefined;
+
+        const resolvedPath = resolvePath(
+          capturedCall.path,
+          requestOptions?.params
+        );
+        const resolvedTags = resolveTags(
+          { tags, additionalTags },
+          resolvedPath
+        );
+
+        const queryKey = stateManager.createQueryKey({
+          path: capturedCall.path,
+          method: capturedCall.method,
+          options: capturedCall.options,
+        });
+
+        const opts = capturedCall.options as
+          | Record<string, unknown>
+          | undefined;
+        const inputInner: Record<string, unknown> = {};
+
+        if (opts?.query !== undefined) {
+          inputInner.query = opts.query;
+        }
+
+        if (opts?.body !== undefined) {
+          inputInner.body = opts.body;
+        }
+
+        if (opts?.formData !== undefined) {
+          inputInner.formData = opts.formData;
+        }
+
+        if (opts?.params !== undefined) {
+          inputInner.params = opts.params;
+        }
+
+        inputSignal.set(inputInner);
+
+        const queryKeyChanged = queryKey !== currentQueryKey;
+        const enabledChanged = isEnabled !== wasEnabled;
+        wasEnabled = isEnabled;
+
+        if (queryKeyChanged) {
+          if (currentController && initialized) {
+            prevContext = currentController.getContext();
+            currentController.unmount();
           }
 
-          const requestOptions = capturedCall.options as
-            | { params?: Record<string, string | number> }
-            | undefined;
+          if (currentSubscription) {
+            currentSubscription();
+          }
 
-          const resolvedPath = resolvePath(
-            capturedCall.path,
-            requestOptions?.params
-          );
-          const resolvedTags = resolveTags(
-            { tags, additionalTags },
-            resolvedPath
-          );
-
-          const queryKey = stateManager.createQueryKey({
+          const controller = createOperationController<TData, TError>({
+            operationType: "read",
             path: capturedCall.path,
-            method: capturedCall.method,
-            options: capturedCall.options,
+            method: capturedCall.method as "GET",
+            tags: resolvedTags,
+            requestOptions: capturedCall.options as
+              | Record<string, unknown>
+              | undefined,
+            stateManager,
+            eventEmitter,
+            pluginExecutor,
+            hookId: `angular-${Math.random().toString(36).slice(2)}`,
+            fetchFn: async (fetchOpts: unknown) => {
+              let current: unknown = api;
+
+              for (const segment of resolvedPath) {
+                current = (current as Record<string, unknown>)[segment];
+              }
+
+              const method = (current as Record<string, unknown>)[
+                capturedCall.method
+              ] as (o?: unknown) => Promise<SpooshResponse<TData, TError>>;
+
+              return method(fetchOpts);
+            },
           });
 
-          const opts = capturedCall.options as
-            | Record<string, unknown>
-            | undefined;
-          const inputInner: Record<string, unknown> = {};
+          controller.setPluginOptions(pluginOpts);
 
-          if (opts?.query !== undefined) {
-            inputInner.query = opts.query;
+          currentSubscription = controller.subscribe(() => {
+            const state = controller.getState();
+            dataSignal.set(state.data as TData | undefined);
+            errorSignal.set(state.error as TError | undefined);
+          });
+
+          currentController = controller;
+          currentQueryKey = queryKey;
+
+          controller.mount();
+
+          if (!initialized) {
+            initialized = true;
+          } else if (prevContext) {
+            controller.update(prevContext);
+            prevContext = null;
           }
 
-          if (opts?.body !== undefined) {
-            inputInner.body = opts.body;
-          }
-
-          if (opts?.formData !== undefined) {
-            inputInner.formData = opts.formData;
-          }
-
-          if (opts?.params !== undefined) {
-            inputInner.params = opts.params;
-          }
-
-          inputSignal.set(inputInner);
-
-          const queryKeyChanged = queryKey !== currentQueryKey;
-
-          if (queryKeyChanged) {
-            if (currentController && initialized) {
-              prevContext = currentController.getContext();
-              currentController.unmount();
-            }
-
-            if (currentSubscription) {
-              currentSubscription();
-            }
-
-            const controller = createOperationController<TData, TError>({
-              operationType: "read",
-              path: capturedCall.path,
-              method: capturedCall.method as "GET",
-              tags: resolvedTags,
-              requestOptions: capturedCall.options as
-                | Record<string, unknown>
-                | undefined,
-              stateManager,
-              eventEmitter,
-              pluginExecutor,
-              hookId: `angular-${Math.random().toString(36).slice(2)}`,
-              fetchFn: async (fetchOpts: unknown) => {
-                let current: unknown = api;
-
-                for (const segment of resolvedPath) {
-                  current = (current as Record<string, unknown>)[segment];
-                }
-
-                const method = (current as Record<string, unknown>)[
-                  capturedCall.method
-                ] as (o?: unknown) => Promise<SpooshResponse<TData, TError>>;
-
-                return method(fetchOpts);
-              },
-            });
-
-            controller.setPluginOptions(pluginOpts);
-
-            currentSubscription = controller.subscribe(() => {
-              const state = controller.getState();
-              dataSignal.set(state.data as TData | undefined);
-              errorSignal.set(state.error as TError | undefined);
-            });
-
-            currentController = controller;
-            currentQueryKey = queryKey;
-
-            controller.mount();
-
-            if (!initialized) {
-              initialized = true;
-            } else if (prevContext) {
-              controller.update(prevContext);
-              prevContext = null;
-            }
-
+          if (isEnabled) {
             untracked(() => {
               executeWithTracking(controller, false);
             });
+          } else {
+            loadingSignal.set(false);
           }
+        } else if (enabledChanged && isEnabled && currentController) {
+          untracked(() => {
+            executeWithTracking(currentController!, false);
+          });
+        }
 
-          const unsubRefetch = eventEmitter.on(
-            "refetch",
-            (event: { queryKey: string }) => {
-              if (event.queryKey === currentQueryKey && currentController) {
-                untracked(() => {
-                  executeWithTracking(currentController!, true);
-                });
-              }
+        if (!isEnabled) {
+          loadingSignal.set(false);
+          return;
+        }
+
+        const unsubRefetch = eventEmitter.on(
+          "refetch",
+          (event: { queryKey: string }) => {
+            if (event.queryKey === currentQueryKey && currentController) {
+              untracked(() => {
+                executeWithTracking(currentController!, true);
+              });
             }
-          );
-
-          const unsubInvalidate = eventEmitter.on(
-            "invalidate",
-            (invalidatedTags: string[]) => {
-              const hasMatch = invalidatedTags.some((tag: string) =>
-                resolvedTags.includes(tag)
-              );
-
-              if (hasMatch && currentController) {
-                untracked(() => {
-                  executeWithTracking(currentController!, true);
-                });
-              }
-            }
-          );
-
-          return () => {
-            unsubRefetch();
-            unsubInvalidate();
-          };
-        },
-        { allowSignalWrites: true }
-      );
-    } else {
-      const selectorResult = captureSelector();
-      const capturedCall = selectorResult.call;
-
-      if (!capturedCall) {
-        throw new Error(
-          "injectRead requires calling an HTTP method ($get). " +
-            "Example: injectRead((api) => api.posts.$get())"
+          }
         );
-      }
 
-      const requestOptions = capturedCall.options as
-        | { params?: Record<string, string | number> }
-        | undefined;
+        const unsubInvalidate = eventEmitter.on(
+          "invalidate",
+          (invalidatedTags: string[]) => {
+            const hasMatch = invalidatedTags.some((tag: string) =>
+              resolvedTags.includes(tag)
+            );
 
-      const resolvedPath = resolvePath(
-        capturedCall.path,
-        requestOptions?.params
-      );
-      const resolvedTags = resolveTags({ tags, additionalTags }, resolvedPath);
-
-      const queryKey = stateManager.createQueryKey({
-        path: capturedCall.path,
-        method: capturedCall.method,
-        options: capturedCall.options,
-      });
-
-      currentQueryKey = queryKey;
-
-      const controller = createOperationController<TData, TError>({
-        operationType: "read",
-        path: capturedCall.path,
-        method: capturedCall.method as "GET",
-        tags: resolvedTags,
-        requestOptions: capturedCall.options as
-          | Record<string, unknown>
-          | undefined,
-        stateManager,
-        eventEmitter,
-        pluginExecutor,
-        hookId: `angular-${Math.random().toString(36).slice(2)}`,
-        fetchFn: async (fetchOpts: unknown) => {
-          let current: unknown = api;
-
-          for (const segment of resolvedPath) {
-            current = (current as Record<string, unknown>)[segment];
+            if (hasMatch && currentController) {
+              untracked(() => {
+                executeWithTracking(currentController!, true);
+              });
+            }
           }
+        );
 
-          const method = (current as Record<string, unknown>)[
-            capturedCall.method
-          ] as (o?: unknown) => Promise<SpooshResponse<TData, TError>>;
-
-          return method(fetchOpts);
-        },
-      });
-
-      controller.setPluginOptions(pluginOpts);
-
-      currentSubscription = controller.subscribe(() => {
-        const state = controller.getState();
-        dataSignal.set(state.data as TData | undefined);
-        errorSignal.set(state.error as TError | undefined);
-      });
-
-      currentController = controller;
-      loadingSignal.set(false);
-
-      const opts = capturedCall.options as Record<string, unknown> | undefined;
-      const inputInner: Record<string, unknown> = {};
-
-      if (opts?.query !== undefined) {
-        inputInner.query = opts.query;
-      }
-
-      if (opts?.body !== undefined) {
-        inputInner.body = opts.body;
-      }
-
-      if (opts?.formData !== undefined) {
-        inputInner.formData = opts.formData;
-      }
-
-      if (opts?.params !== undefined) {
-        inputInner.params = opts.params;
-      }
-
-      inputSignal.set(inputInner);
-    }
+        return () => {
+          unsubRefetch();
+          unsubInvalidate();
+        };
+      },
+      { allowSignalWrites: true }
+    );
 
     destroyRef.onDestroy(() => {
       if (currentSubscription) {

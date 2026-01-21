@@ -28,8 +28,10 @@ export interface SpooshInstanceShape<
   };
 }
 
+export type EnabledOption = boolean | (() => boolean);
+
 export interface BaseReadOptions {
-  enabled?: boolean;
+  enabled?: EnabledOption;
   tags?: string[];
   additionalTags?: string[];
 }

@@ -4,6 +4,7 @@ import {
   effect,
   DestroyRef,
   inject,
+  untracked,
   type Signal,
 } from "@angular/core";
 import {
@@ -26,6 +27,7 @@ import type {
   BaseInfiniteReadResult,
   ReadApiClient,
   SpooshInstanceShape,
+  PageContext,
 } from "../types";
 
 export type AnyInfiniteRequestOptions = InfiniteRequestOptions;
@@ -100,7 +102,7 @@ export function createInjectInfiniteRead<
     const destroyRef = inject(DestroyRef);
 
     const {
-      enabled = true,
+      enabled: enabledOption = true,
       tags,
       additionalTags,
       canFetchNext,
@@ -110,6 +112,17 @@ export function createInjectInfiniteRead<
       prevPageRequest,
       ...pluginOpts
     } = readOptions;
+
+    const getEnabled = (): boolean =>
+      typeof enabledOption === "function" ? enabledOption() : enabledOption;
+
+    const callbackRefs = {
+      canFetchNext,
+      canFetchPrev,
+      nextPageRequest,
+      prevPageRequest,
+      merger,
+    };
 
     const selectorResult: SelectorResult = {
       call: null,
@@ -169,16 +182,27 @@ export function createInjectInfiniteRead<
       tags: resolvedTags,
       initialRequest,
       baseOptionsForKey,
-      canFetchNext,
-      canFetchPrev,
-      nextPageRequest,
-      prevPageRequest,
-      merger: merger as (responses: TData[]) => TItem[],
+      canFetchNext: (ctx: PageContext<TData, TRequest>) =>
+        callbackRefs.canFetchNext(ctx),
+      canFetchPrev: canFetchPrev
+        ? (ctx: PageContext<TData, TRequest>) =>
+            callbackRefs.canFetchPrev?.(ctx) ?? false
+        : undefined,
+      nextPageRequest: (ctx: PageContext<TData, TRequest>) =>
+        callbackRefs.nextPageRequest(ctx),
+      prevPageRequest: prevPageRequest
+        ? (ctx: PageContext<TData, TRequest>) =>
+            callbackRefs.prevPageRequest?.(ctx) ?? {}
+        : undefined,
+      merger: (responses: TData[]) => callbackRefs.merger(responses) as TItem[],
       stateManager,
       eventEmitter,
       pluginExecutor,
       hookId: `angular-${Math.random().toString(36).slice(2)}`,
-      fetchFn: async (opts: InfiniteRequestOptions, signal: AbortSignal) => {
+      fetchFn: async (
+        opts: InfiniteRequestOptions,
+        abortSignal: AbortSignal
+      ) => {
         const fetchPath = resolvePath(capturedCall.path, opts.params);
 
         let current: unknown = api;
@@ -196,7 +220,7 @@ export function createInjectInfiniteRead<
           query: opts.query,
           params: opts.params,
           body: opts.body,
-          signal,
+          signal: abortSignal,
         };
 
         return method(fetchOptions);
@@ -205,12 +229,11 @@ export function createInjectInfiniteRead<
 
     controller.setPluginOptions(pluginOpts);
 
+    const initialEnabled = getEnabled();
     const dataSignal = signal<TItem[] | undefined>(undefined);
     const allResponsesSignal = signal<TData[] | undefined>(undefined);
     const errorSignal = signal<TError | undefined>(undefined);
-    const loadingSignal = signal(
-      enabled && controller.getState().data === undefined
-    );
+    const loadingSignal = signal(false);
     const canFetchNextSignal = signal(false);
     const canFetchPrevSignal = signal(false);
 
@@ -227,49 +250,85 @@ export function createInjectInfiniteRead<
     const fetchingPrevSignal = signal(false);
 
     let prevContext: PluginContext<TData, TError> | null = null;
+    let hasDoneInitialFetch = false;
 
-    controller.mount();
+    const updateSignalsFromState = () => {
+      const state = controller.getState();
+      dataSignal.set(state.data);
+      allResponsesSignal.set(state.allResponses);
+      errorSignal.set(state.error);
+      canFetchNextSignal.set(state.canFetchNext);
+      canFetchPrevSignal.set(state.canFetchPrev);
+    };
 
-    if (enabled) {
+    const triggerFetch = () => {
       const currentState = controller.getState();
+      const isFetching = untracked(
+        () => fetchingNextSignal() || fetchingPrevSignal()
+      );
 
-      if (currentState.data === undefined) {
+      if (currentState.data === undefined && !isFetching) {
         loadingSignal.set(true);
         fetchingNextSignal.set(true);
         controller.fetchNext().finally(() => {
+          updateSignalsFromState();
           loadingSignal.set(false);
           fetchingNextSignal.set(false);
         });
+      } else if (currentState.data !== undefined) {
+        updateSignalsFromState();
       }
+    };
 
-      effect(
-        () => {
-          if (prevContext) {
-            controller.update(prevContext);
-            prevContext = null;
-          }
-        },
-        { allowSignalWrites: true }
-      );
+    controller.mount();
 
-      const unsubInvalidate = eventEmitter.on(
-        "invalidate",
-        (invalidatedTags: string[]) => {
-          const hasMatch = invalidatedTags.some((tag: string) =>
-            resolvedTags.includes(tag)
-          );
+    const unsubInvalidate = eventEmitter.on(
+      "invalidate",
+      (invalidatedTags: string[]) => {
+        if (!getEnabled()) return;
 
-          if (hasMatch) {
-            loadingSignal.set(true);
-            controller.refetch().finally(() => loadingSignal.set(false));
-          }
+        const hasMatch = invalidatedTags.some((tag: string) =>
+          resolvedTags.includes(tag)
+        );
+
+        if (hasMatch) {
+          loadingSignal.set(true);
+          controller.refetch().finally(() => {
+            updateSignalsFromState();
+            loadingSignal.set(false);
+          });
         }
-      );
+      }
+    );
 
-      destroyRef.onDestroy(() => {
-        unsubInvalidate();
-      });
-    }
+    effect(
+      () => {
+        const isEnabled = getEnabled();
+
+        if (!isEnabled) {
+          return;
+        }
+
+        if (!hasDoneInitialFetch) {
+          hasDoneInitialFetch = true;
+          untracked(() => {
+            triggerFetch();
+          });
+        }
+
+        if (prevContext) {
+          untracked(() => {
+            controller.update(prevContext!);
+            prevContext = null;
+          });
+        }
+      },
+      { allowSignalWrites: true }
+    );
+
+    destroyRef.onDestroy(() => {
+      unsubInvalidate();
+    });
 
     destroyRef.onDestroy(() => {
       subscription();
@@ -277,30 +336,39 @@ export function createInjectInfiniteRead<
     });
 
     const fetchNext = async () => {
+      if (!getEnabled()) return;
+
       fetchingNextSignal.set(true);
 
       try {
         await controller.fetchNext();
+        updateSignalsFromState();
       } finally {
         fetchingNextSignal.set(false);
       }
     };
 
     const fetchPrev = async () => {
+      if (!getEnabled()) return;
+
       fetchingPrevSignal.set(true);
 
       try {
         await controller.fetchPrev();
+        updateSignalsFromState();
       } finally {
         fetchingPrevSignal.set(false);
       }
     };
 
     const refetch = async () => {
+      if (!getEnabled()) return;
+
       loadingSignal.set(true);
 
       try {
         await controller.refetch();
+        updateSignalsFromState();
       } finally {
         loadingSignal.set(false);
       }
