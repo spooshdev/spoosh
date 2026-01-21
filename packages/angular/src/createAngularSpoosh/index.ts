@@ -1,24 +1,17 @@
-import type { PluginArray } from "@spoosh/core";
+import type { PluginArray, PluginExecutor } from "@spoosh/core";
 import { createInjectRead } from "../injectRead";
 import { createInjectWrite } from "../injectWrite";
 import { createInjectInfiniteRead } from "../injectInfiniteRead";
-import type { SpooshAngularFunctions } from "./types";
+import type { SpooshAngularFunctions, SpooshInstanceShape } from "./types";
 
 export function createAngularSpoosh<
   TSchema,
   TDefaultError,
   TPlugins extends PluginArray,
->(instance: {
-  readonly api: unknown;
-  readonly stateManager: unknown;
-  readonly eventEmitter: unknown;
-  readonly pluginExecutor: unknown;
-  readonly _types: {
-    schema: TSchema;
-    defaultError: TDefaultError;
-    plugins: TPlugins;
-  };
-}): SpooshAngularFunctions<TDefaultError, TSchema, TPlugins> {
+  TApi,
+>(
+  instance: SpooshInstanceShape<TApi, TSchema, TDefaultError, TPlugins>
+): SpooshAngularFunctions<TDefaultError, TSchema, TPlugins> {
   const { api, stateManager, eventEmitter, pluginExecutor } = instance;
 
   const injectRead = createInjectRead<TSchema, TDefaultError, TPlugins>({
@@ -52,11 +45,32 @@ export function createAngularSpoosh<
     typeof createInjectInfiniteRead<TSchema, TDefaultError, TPlugins>
   >[0]);
 
+  const instanceApiContext = {
+    api,
+    stateManager,
+    eventEmitter,
+    pluginExecutor,
+  };
+
+  const plugins = (pluginExecutor as PluginExecutor).getPlugins();
+
+  const instanceApis = plugins.reduce(
+    (acc, plugin) => {
+      if (plugin.instanceApi) {
+        return { ...acc, ...plugin.instanceApi(instanceApiContext) };
+      }
+
+      return acc;
+    },
+    {} as Record<string, unknown>
+  );
+
   return {
     injectRead,
     injectWrite,
     injectInfiniteRead,
-  };
+    ...instanceApis,
+  } as SpooshAngularFunctions<TDefaultError, TSchema, TPlugins>;
 }
 
 export * from "./types";
