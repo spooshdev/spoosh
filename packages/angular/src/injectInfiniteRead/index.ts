@@ -270,6 +270,7 @@ export function createInjectInfiniteRead<
 
     let prevContext: PluginContext<TData, TError> | null = null;
     let hasDoneInitialFetch = false;
+    let isMounted = false;
 
     const updateSignalsFromState = () => {
       const state = controller.getState();
@@ -299,8 +300,6 @@ export function createInjectInfiniteRead<
       }
     };
 
-    controller.mount();
-
     const unsubInvalidate = eventEmitter.on(
       "invalidate",
       (invalidatedTags: string[]) => {
@@ -325,7 +324,17 @@ export function createInjectInfiniteRead<
         const isEnabled = getEnabled();
 
         if (!isEnabled) {
+          if (isMounted) {
+            controller.unmount();
+            isMounted = false;
+          }
+
           return;
+        }
+
+        if (!isMounted) {
+          controller.mount();
+          isMounted = true;
         }
 
         if (!hasDoneInitialFetch) {
@@ -351,7 +360,10 @@ export function createInjectInfiniteRead<
 
     destroyRef.onDestroy(() => {
       subscription();
-      controller.unmount();
+
+      if (isMounted) {
+        controller.unmount();
+      }
     });
 
     const fetchNext = async () => {

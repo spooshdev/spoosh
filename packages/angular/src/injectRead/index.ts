@@ -125,6 +125,7 @@ export function createInjectRead<
     let currentSubscription: (() => void) | null = null;
     let prevContext: PluginContext<TData, TError> | null = null;
     let initialized = false;
+    let isMounted = false;
 
     const captureSelector = () => {
       const selectorResult: SelectorResult = {
@@ -289,8 +290,6 @@ export function createInjectRead<
           currentController = controller;
           currentQueryKey = queryKey;
 
-          controller.mount();
-
           if (!initialized) {
             initialized = true;
           } else if (prevContext) {
@@ -299,16 +298,27 @@ export function createInjectRead<
           }
 
           if (isEnabled) {
+            controller.mount();
+            isMounted = true;
+
             untracked(() => {
               executeWithTracking(controller, false);
             });
           } else {
             loadingSignal.set(false);
           }
-        } else if (enabledChanged && isEnabled && currentController) {
-          untracked(() => {
-            executeWithTracking(currentController!, false);
-          });
+        } else if (enabledChanged && currentController) {
+          if (isEnabled && !isMounted) {
+            currentController.mount();
+            isMounted = true;
+
+            untracked(() => {
+              executeWithTracking(currentController!, false);
+            });
+          } else if (!isEnabled && isMounted) {
+            currentController.unmount();
+            isMounted = false;
+          }
         }
 
         if (!isEnabled) {
@@ -355,7 +365,7 @@ export function createInjectRead<
         currentSubscription();
       }
 
-      if (currentController) {
+      if (currentController && isMounted) {
         currentController.unmount();
       }
     });
