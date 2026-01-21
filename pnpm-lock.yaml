@@ -327,12 +327,13 @@ importers:
 
   packages/react:
     dependencies:
-      '@spoosh/core':
-        specifier: workspace:*
-        version: link:../core
       react:
         specifier: ^18 || ^19
         version: 19.2.0
+    devDependencies:
+      '@spoosh/core':
+        specifier: workspace:*
+        version: link:../core
 
   packages/test-utils:
     dependencies:
