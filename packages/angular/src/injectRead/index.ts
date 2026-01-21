@@ -142,6 +142,10 @@ export function createInjectRead<
           errorSignal.set(undefined);
         }
 
+        if (response.data !== undefined) {
+          dataSignal.set(response.data as TData);
+        }
+
         return response;
       } catch (err) {
         errorSignal.set(err as TError);
