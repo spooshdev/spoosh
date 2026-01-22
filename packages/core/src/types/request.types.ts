@@ -52,6 +52,9 @@ export type AnyRequestOptions = BaseRequestOptions & {
   urlEncoded?: Record<string, unknown>;
   params?: Record<string, string | number>;
   signal?: AbortSignal;
+
+  /** @internal Path transformer function. Set by plugins like path-case. */
+  _pathTransformer?: (path: string[]) => string[];
 } & Partial<RetryConfig>;
 
 type DynamicParamsOption = {

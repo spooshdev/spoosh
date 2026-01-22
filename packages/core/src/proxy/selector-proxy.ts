@@ -120,10 +120,10 @@ export function createSelectorProxy<TSchema>(
       },
 
       // Handles function call syntax for dynamic segments: api.posts("123"), api.users(userId)
-      apply(_, __, args: [string]) {
+      apply(_, __, args: [string | number]) {
         const [segment] = args;
 
-        return createProxy([...path, segment]);
+        return createProxy([...path, String(segment)]);
       },
     });
   };

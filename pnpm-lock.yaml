@@ -255,6 +255,15 @@ importers:
         specifier: workspace:*
         version: link:../test-utils
 
+  packages/plugin-path-case:
+    devDependencies:
+      '@spoosh/core':
+        specifier: workspace:*
+        version: link:../core
+      '@spoosh/test-utils':
+        specifier: workspace:*
+        version: link:../test-utils
+
   packages/plugin-polling:
     devDependencies:
       '@spoosh/core':
