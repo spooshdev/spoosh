@@ -1,5 +1,15 @@
 # @spoosh/core
 
+## 0.4.1
+
+### Patch Changes
+
+- Added internal \_pathTransformer to allow params paths modification
+
+### Bug Fixes
+
+- Fixed createSelectorProxy to convert numeric segments to strings
+
 ## 0.4.0
 
 ### Breaking Changes

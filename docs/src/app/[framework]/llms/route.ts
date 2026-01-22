@@ -64,6 +64,7 @@ const reactContent = `# Spoosh React
 - [Refetch](${REACT_RAW_BASE}/plugins/refetch.mdx): Refetch on window focus or reconnect
 
 ### Data Transformation
+- [Path Case](${REACT_RAW_BASE}/plugins/path-case.mdx): Write camelCase in TypeScript, send kebab-case to API
 - [Transform](${REACT_RAW_BASE}/plugins/transform.mdx): Transform request and response data
 - [QS](${REACT_RAW_BASE}/plugins/qs.mdx): Query string serialization for nested objects
 
@@ -133,6 +134,7 @@ const angularContent = `# Spoosh Angular
 - [Refetch](${ANGULAR_RAW_BASE}/plugins/refetch.mdx): Refetch on window focus or reconnect
 
 ### Data Transformation
+- [Path Case](${ANGULAR_RAW_BASE}/plugins/path-case.mdx): Write camelCase in TypeScript, send kebab-case to API
 - [Transform](${ANGULAR_RAW_BASE}/plugins/transform.mdx): Transform request and response data
 - [QS](${ANGULAR_RAW_BASE}/plugins/qs.mdx): Query string serialization for nested objects
 

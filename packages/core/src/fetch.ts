@@ -137,7 +137,8 @@ async function executeCoreFetch<TData, TError>(
   const baseDelay = requestOptions?.retryDelay ?? 1000;
   const retryCount = maxRetries === false ? 0 : maxRetries;
 
-  const url = buildUrl(baseUrl, path, requestOptions?.query);
+  const finalPath = requestOptions?._pathTransformer?.(path) ?? path;
+  const url = buildUrl(baseUrl, finalPath, requestOptions?.query);
 
   let headers = await mergeHeaders(defaultHeaders, requestOptions?.headers);
 

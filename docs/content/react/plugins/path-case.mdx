@@ -1,0 +1,189 @@
+---
+title: Path Case
+description: Write camelCase in TypeScript, send kebab-case to your API
+---
+
+The path case plugin transforms API path segments from camelCase to your API's preferred case format (kebab-case, snake_case, etc.) at runtime, while letting you write clean camelCase in your TypeScript code.
+
+## The Problem
+
+When your API uses kebab-case or snake_case URLs, you're forced to write ugly bracket notation:
+
+```typescript
+// Without pathCasePlugin - ugly bracket notation
+api["user-profiles"]["profile-settings"].$get();
+api["blog-posts"](":postId")["related-articles"].$get();
+api["order-history"]["order-items"].$get();
+```
+
+## The Solution
+
+With `pathCasePlugin`, write clean camelCase:
+
+```typescript
+// With pathCasePlugin - clean dot notation
+api.userProfiles.profileSettings.$get();
+api.blogPosts(":postId").relatedArticles.$get();
+api.orderHistory.orderItems.$get();
+
+// HTTP requests still use: /blog-posts/123/related-articles
+```
+
+## Installation
+
+```package-install
+@spoosh/plugin-path-case
+```
+
+## Usage
+
+<Callout type="warn">
+You must wrap your schema type with `CamelCaseKeys<ApiSchema>` at the `Spoosh` constructor level. This transforms the types so TypeScript sees camelCase keys while the plugin transforms paths at runtime.
+</Callout>
+
+```typescript
+import { Spoosh } from "@spoosh/core";
+import { createReactSpoosh } from "@spoosh/react";
+import { CamelCaseKeys, pathCasePlugin } from "@spoosh/plugin-path-case";
+import type { ApiSchema } from "./generated/api-schema";
+
+// Apply CamelCaseKeys to your schema type
+const client = new Spoosh<CamelCaseKeys<ApiSchema>, Error>("/api").use([
+  pathCasePlugin({ targetCase: "kebab" }),
+]);
+
+const { useRead, useWrite } = createReactSpoosh(client);
+```
+
+Now you can use camelCase everywhere:
+
+```typescript
+// TypeScript: camelCase with full autocomplete
+const { data } = useRead((api) => api.blogPosts(postId).comments.$get());
+
+// HTTP request: GET /blog-posts/123/comments
+```
+
+## Supported Cases
+
+| Target Case | TypeScript  | HTTP URL             |
+| ----------- | ----------- | -------------------- |
+| `kebab`     | `blogPosts` | `/blog-posts`        |
+| `snake`     | `blogPosts` | `/blog_posts`        |
+| `pascal`    | `blogPosts` | `/BlogPosts`         |
+| `camel`     | `blogPosts` | `/blogPosts` (no-op) |
+
+## Excluding Segments
+
+Some path segments shouldn't be transformed (like `v1`, `api`, etc.):
+
+```typescript
+pathCasePlugin({
+  targetCase: "kebab",
+  exclude: ["v1", "api"],
+});
+
+// api.v1.blogPosts.$get()
+// HTTP: GET /v1/blog-posts (v1 unchanged)
+```
+
+## Custom Converter
+
+Use a custom function or external library:
+
+```typescript
+import { paramCase } from "change-case";
+
+pathCasePlugin({
+  targetCase: paramCase,
+});
+
+// Or inline function
+pathCasePlugin({
+  targetCase: (segment) => segment.toLowerCase(),
+});
+```
+
+## Per-Request Override
+
+Override the transformation for specific requests:
+
+```typescript
+// Use snake_case for this specific endpoint
+useRead((api) => api.legacyEndpoint.$get(), {
+  pathCase: { targetCase: "snake" },
+});
+
+// Add exclusions for this request
+useWrite((api) => api.v2.users.$post(), {
+  pathCase: { exclude: ["v2"] },
+});
+```
+
+## Special Segment Handling
+
+The plugin automatically skips:
+
+- **Param placeholders**: `:id`, `:postId` (starts with `:`)
+- **Numeric IDs**: `123`, `456` (purely numeric)
+- **Excluded segments**: as configured
+
+```typescript
+api.blogPosts(postId).comments(commentId).$get();
+// HTTP: GET /blog-posts/123/comments/456
+// "123" and "456" are not transformed
+```
+
+## Type Utilities
+
+The plugin exports type utilities for transforming schema types:
+
+| Utility          | Input           | Output          |
+| ---------------- | --------------- | --------------- |
+| `CamelCaseKeys`  | `"hello-world"` | `helloWorld`    |
+| `KebabCaseKeys`  | `helloWorld`    | `"hello-world"` |
+| `SnakeCaseKeys`  | `helloWorld`    | `hello_world`   |
+| `PascalCaseKeys` | `helloWorld`    | `HelloWorld`    |
+
+These only transform **path segment keys** - request body, query params, and response types are preserved unchanged.
+
+```typescript
+type Schema = {
+  "user-posts": {
+    $get: () => Promise<{ data: { user_name: string } }>;
+  };
+};
+
+type CamelSchema = CamelCaseKeys<Schema>;
+// Result: {
+//   userPosts: {
+//     $get: () => Promise<{ data: { user_name: string } }>;
+//   }
+// }
+// Note: user_name in response type is unchanged
+```
+
+## Options
+
+### Plugin Config
+
+| Option       | Type                                                                       | Default  | Description                     |
+| ------------ | -------------------------------------------------------------------------- | -------- | ------------------------------- |
+| `targetCase` | `"kebab" \| "snake" \| "pascal" \| "camel" \| (segment: string) => string` | Required | Target case for HTTP URLs       |
+| `exclude`    | `string[]`                                                                 | `[]`     | Segments to skip transformation |
+
+### Per-Request Options
+
+| Option       | Type                  | Description           |
+| ------------ | --------------------- | --------------------- |
+| `targetCase` | Same as plugin config | Override target case  |
+| `exclude`    | `string[]`            | Override exclude list |
+
+## How It Works
+
+1. `CamelCaseKeys<Schema>` transforms your schema types so TypeScript sees camelCase keys
+2. You write code using camelCase with full autocomplete
+3. At runtime, `pathCasePlugin` transforms the path segments back to the target case
+4. The HTTP request is sent with the correct URL format
+
+This approach requires no changes to your OpenAPI importer or generated schema files.
