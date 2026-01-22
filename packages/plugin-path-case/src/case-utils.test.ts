@@ -1,4 +1,9 @@
-import { camelToKebab, camelToSnake, camelToPascal, camelToTargetCase } from "./case-utils";
+import {
+  camelToKebab,
+  camelToSnake,
+  camelToPascal,
+  camelToTargetCase,
+} from "./case-utils";
 
 describe("case-utils", () => {
   describe("camelToKebab", () => {

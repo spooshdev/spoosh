@@ -14,6 +14,7 @@
     "debounce",
     "throttle",
     "initial-data",
+    "path-case",
     "qs",
     "transform",
     "gc",

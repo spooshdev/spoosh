@@ -41,11 +41,9 @@ describe("pathCasePlugin", () => {
       await plugin.middleware!(context, next);
 
       const transformer = context.requestOptions._pathTransformer!;
-      expect(transformer(["userAccounts", "accountSettings", "privacyOptions"])).toEqual([
-        "user-accounts",
-        "account-settings",
-        "privacy-options",
-      ]);
+      expect(
+        transformer(["userAccounts", "accountSettings", "privacyOptions"])
+      ).toEqual(["user-accounts", "account-settings", "privacy-options"]);
     });
   });
 
@@ -349,7 +347,9 @@ describe("pathCasePlugin", () => {
     it("should work with infiniteRead operations", async () => {
       const plugin = pathCasePlugin({ targetCase: "kebab" });
       const context = createMockContext({ operationType: "infiniteRead" });
-      const next = vi.fn().mockResolvedValue({ data: { items: [] }, status: 200 });
+      const next = vi
+        .fn()
+        .mockResolvedValue({ data: { items: [] }, status: 200 });
 
       await plugin.middleware!(context, next);
 
