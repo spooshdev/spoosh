@@ -1,5 +1,11 @@
 # @spoosh/core
 
+## 0.4.3
+
+### Patch Changes
+
+- Strict request options types to allow optional value as well.
+
 ## 0.4.2
 
 ### Patch Changes

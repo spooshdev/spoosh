@@ -1,5 +1,14 @@
 # @spoosh/angular
 
+## 0.1.4
+
+### Bug Fixes
+
+- Strict request options types to allow optional value as well.
+- Fix `injectWrite` does not re-evaluate selector when dynamic signal update
+- Fix `injectInfiniteRead` run even when `enabled` is false
+- Fix lazy loading not working correctly.
+
 ## 0.1.3
 
 ### Patch Changes

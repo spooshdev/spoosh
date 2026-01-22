@@ -1,5 +1,11 @@
 # @spoosh/react
 
+## 0.2.3
+
+### Patch Changes
+
+- Strict request options types to allow optional value as well.
+
 ## 0.2.2
 
 ### Patch Changes
