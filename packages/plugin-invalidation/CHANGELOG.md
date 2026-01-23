@@ -1,5 +1,11 @@
 # @spoosh/plugin-invalidation
 
+## 0.2.0
+
+### Features
+
+- Expose `invalidate` function to manually invalidate cache entries by api schema or custom tags. (Useful when user want to invalidate cache after certain actions)
+
 ## 0.1.4
 
 ### Patch Changes

@@ -1,6 +1,6 @@
 {
   "name": "@spoosh/plugin-invalidation",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "description": "Cache invalidation plugin for Spoosh - auto-invalidates after mutations",
   "license": "MIT",
   "repository": {
