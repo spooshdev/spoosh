@@ -1,6 +1,22 @@
 import { createMockContext, createStateManager } from "@spoosh/test-utils";
+import type { StateManager, InstanceApiContext } from "@spoosh/core";
 
 import { cachePlugin } from "./plugin";
+import type { CacheInstanceApi } from "./types";
+
+function createMockInstanceApiContext(
+  stateManager?: StateManager
+): InstanceApiContext {
+  return {
+    api: {},
+    stateManager: stateManager ?? createStateManager(),
+    eventEmitter: { on: vi.fn(), off: vi.fn(), emit: vi.fn() },
+    pluginExecutor: {
+      executeMiddleware: vi.fn(),
+      createContext: vi.fn(),
+    },
+  } as unknown as InstanceApiContext;
+}
 
 describe("cachePlugin", () => {
   beforeEach(() => {
@@ -343,6 +359,55 @@ describe("cachePlugin", () => {
       const cached = stateManager.getCache(context.queryKey);
       expect(cached?.state.error).toBeUndefined();
       expect(cached?.state.data).toEqual({ id: 1 });
+    });
+  });
+
+  describe("instanceApi", () => {
+    it("should have instanceApi defined", () => {
+      const plugin = cachePlugin();
+      expect(plugin.instanceApi).toBeDefined();
+    });
+
+    it("should return clearCache function", () => {
+      const plugin = cachePlugin();
+      const context = createMockInstanceApiContext();
+      const exports = plugin.instanceApi!(context) as CacheInstanceApi;
+
+      expect(exports.clearCache).toBeInstanceOf(Function);
+    });
+
+    it("should clear all cache entries when clearCache is called", () => {
+      const plugin = cachePlugin();
+      const stateManager = createStateManager();
+
+      stateManager.setCache("entry-1", {
+        state: { data: "data1", error: undefined, timestamp: Date.now() },
+        tags: ["tag1"],
+      });
+      stateManager.setCache("entry-2", {
+        state: { data: "data2", error: undefined, timestamp: Date.now() },
+        tags: ["tag2"],
+      });
+
+      expect(stateManager.getSize()).toBe(2);
+
+      const context = createMockInstanceApiContext(stateManager);
+      const exports = plugin.instanceApi!(context) as CacheInstanceApi;
+
+      exports.clearCache();
+
+      expect(stateManager.getSize()).toBe(0);
+      expect(stateManager.getCache("entry-1")).toBeUndefined();
+      expect(stateManager.getCache("entry-2")).toBeUndefined();
+    });
+
+    it("should not throw when clearing empty cache", () => {
+      const plugin = cachePlugin();
+      const stateManager = createStateManager();
+      const context = createMockInstanceApiContext(stateManager);
+      const exports = plugin.instanceApi!(context) as CacheInstanceApi;
+
+      expect(() => exports.clearCache()).not.toThrow();
     });
   });
 

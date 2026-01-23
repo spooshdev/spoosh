@@ -3,6 +3,11 @@ export interface CachePluginConfig {
   staleTime?: number;
 }
 
+export interface CacheInstanceApi {
+  /** Clear all cached data. Useful for logout or user switching scenarios. */
+  clearCache: () => void;
+}
+
 export interface CacheReadOptions {
   /** Time in milliseconds before cached data is considered stale. Overrides plugin default. */
   staleTime?: number;

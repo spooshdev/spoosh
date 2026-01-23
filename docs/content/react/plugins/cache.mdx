@@ -71,3 +71,28 @@ const client = new Spoosh<ApiSchema, Error>("/api").use([
 ```
 
 When a mutation succeeds, related cached queries are automatically refreshed.
+
+## Clearing Cache
+
+The plugin exposes a `clearCache` function for manually clearing all cached data. This is useful for scenarios like user logout or switching accounts:
+
+```typescript
+import { createReactSpoosh } from "@spoosh/react";
+
+const { useRead, clearCache } = createReactSpoosh(client);
+
+function LogoutButton() {
+  const handleLogout = () => {
+    clearCache();
+    // ... rest of logout logic
+  };
+
+  return <button onClick={handleLogout}>Logout</button>;
+}
+```
+
+### Instance API
+
+| Method       | Description                                              |
+| ------------ | -------------------------------------------------------- |
+| `clearCache` | Clears all cached data. Useful for logout/user switching |

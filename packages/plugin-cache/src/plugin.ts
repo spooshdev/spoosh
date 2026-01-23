@@ -1,4 +1,4 @@
-import type { SpooshPlugin } from "@spoosh/core";
+import type { SpooshPlugin, InstanceApiContext } from "@spoosh/core";
 
 import type {
   CachePluginConfig,
@@ -7,6 +7,7 @@ import type {
   CacheInfiniteReadOptions,
   CacheReadResult,
   CacheWriteResult,
+  CacheInstanceApi,
 } from "./types";
 
 /**
@@ -41,6 +42,7 @@ export function cachePlugin(config: CachePluginConfig = {}): SpooshPlugin<{
   infiniteReadOptions: CacheInfiniteReadOptions;
   readResult: CacheReadResult;
   writeResult: CacheWriteResult;
+  instanceApi: CacheInstanceApi;
 }> {
   const { staleTime: defaultStaleTime = 0 } = config;
 
@@ -80,6 +82,16 @@ export function cachePlugin(config: CachePluginConfig = {}): SpooshPlugin<{
       }
 
       return response;
+    },
+
+    instanceApi(context: InstanceApiContext) {
+      const { stateManager } = context;
+
+      const clearCache = (): void => {
+        stateManager.clear();
+      };
+
+      return { clearCache };
     },
   };
 }

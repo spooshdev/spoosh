@@ -37,3 +37,22 @@ useRead((api) => api.posts.$get(), { staleTime: 10000 });
 | Option      | Type     | Description                          |
 | ----------- | -------- | ------------------------------------ |
 | `staleTime` | `number` | Override stale time for this request |
+
+## Instance API
+
+The plugin exposes a `clearCache` function for manually clearing all cached data:
+
+```typescript
+import { createReactSpoosh } from "@spoosh/react";
+
+const { useRead, clearCache } = createReactSpoosh(client);
+
+// Clear all cached data (e.g., on logout or user switch)
+function handleLogout() {
+  clearCache();
+}
+```
+
+| Method       | Description                                             |
+| ------------ | ------------------------------------------------------- |
+| `clearCache` | Clears all cached data. Useful for logout/user switching |

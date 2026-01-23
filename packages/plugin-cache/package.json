@@ -1,6 +1,6 @@
 {
   "name": "@spoosh/plugin-cache",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "description": "Response caching plugin for Spoosh with configurable stale time",
   "license": "MIT",
   "repository": {

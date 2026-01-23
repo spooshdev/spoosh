@@ -1,5 +1,11 @@
 # @spoosh/plugin-cache
 
+## 0.2.0
+
+### Features
+
+- Expose `clearCache` method to manually clear the cache. (Useful when you logout or switch user)
+
 ## 0.1.4
 
 ### Patch Changes
