@@ -136,7 +136,7 @@ function applyOptimisticUpdate(
       },
     });
 
-    stateManager.setPluginResult(key, { isOptimistic: true });
+    stateManager.setMeta(key, { isOptimistic: true });
   }
 
   return snapshots;
@@ -154,7 +154,7 @@ function confirmOptimistic(
         previousData: undefined,
       });
 
-      stateManager.setPluginResult(key, { isOptimistic: false });
+      stateManager.setMeta(key, { isOptimistic: false });
     }
   }
 }
@@ -175,7 +175,7 @@ function rollbackOptimistic(
         },
       });
 
-      stateManager.setPluginResult(key, { isOptimistic: false });
+      stateManager.setMeta(key, { isOptimistic: false });
     }
   }
 }

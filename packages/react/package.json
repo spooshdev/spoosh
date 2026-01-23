@@ -1,6 +1,6 @@
 {
   "name": "@spoosh/react",
-  "version": "0.2.3",
+  "version": "0.3.0",
   "license": "MIT",
   "description": "React hooks for Spoosh API client",
   "keywords": [

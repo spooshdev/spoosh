@@ -1,5 +1,12 @@
 # @spoosh/plugin-initial-data
 
+## 0.2.0
+
+### Breaking Changes
+
+- Rename `pluginResult` to `meta` to have consistent naming.
+- @spoosh/core now requires at least version 0.5.0, which includes breaking changes.
+
 ## 0.1.4
 
 ### Patch Changes

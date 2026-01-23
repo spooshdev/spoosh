@@ -1,5 +1,11 @@
 # @spoosh/core
 
+## 0.5.0
+
+### Breaking Changes
+
+- Rename `pluginResult` to `meta` to have consistent naming.
+
 ## 0.4.3
 
 ### Patch Changes

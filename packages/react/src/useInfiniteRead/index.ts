@@ -272,9 +272,7 @@ export function createUseInfiniteRead<
     }, [JSON.stringify(pluginOpts)]);
 
     const entry = stateManager.getCache(queryKey);
-    const pluginResultData = entry?.pluginResult
-      ? Object.fromEntries(entry.pluginResult)
-      : {};
+    const pluginResultData = entry?.meta ? Object.fromEntries(entry.meta) : {};
 
     const result = {
       meta: pluginResultData,

@@ -151,7 +151,7 @@ describe("optimisticPlugin", () => {
 
       const next = vi.fn().mockImplementation(() => {
         const entry = stateManager.getCache(cacheKey);
-        isOptimisticDuringNext = entry?.pluginResult.get("isOptimistic");
+        isOptimisticDuringNext = entry?.meta.get("isOptimistic");
         return Promise.resolve({ data: { success: true }, status: 200 });
       });
 
@@ -373,7 +373,7 @@ describe("optimisticPlugin", () => {
       await plugin.middleware!(context, next);
 
       const entry = stateManager.getCache(cacheKey);
-      expect(entry?.pluginResult.get("isOptimistic")).toBe(false);
+      expect(entry?.meta.get("isOptimistic")).toBe(false);
     });
 
     it("should call onError callback when error occurs", async () => {
@@ -548,7 +548,7 @@ describe("optimisticPlugin", () => {
       await plugin.middleware!(context, next);
 
       const entry = stateManager.getCache(cacheKey);
-      expect(entry?.pluginResult.get("isOptimistic")).toBe(false);
+      expect(entry?.meta.get("isOptimistic")).toBe(false);
     });
 
     it("should return success response unchanged", async () => {

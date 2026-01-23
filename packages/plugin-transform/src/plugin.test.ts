@@ -316,7 +316,7 @@ describe("transformPlugin", () => {
       await plugin.onResponse!(context, response);
 
       const cached = stateManager.getCache(queryKey);
-      expect(cached?.pluginResult.get("transformedData")).toEqual({
+      expect(cached?.meta.get("transformedData")).toEqual({
         count: 2,
         processed: true,
       });
@@ -346,7 +346,7 @@ describe("transformPlugin", () => {
       await plugin.onResponse!(context, response);
 
       const cached = stateManager.getCache(queryKey);
-      expect(cached?.pluginResult.get("transformedData")).toEqual({
+      expect(cached?.meta.get("transformedData")).toEqual({
         doubled: 10,
       });
     });
@@ -424,7 +424,7 @@ describe("transformPlugin", () => {
       await plugin.onResponse!(context, response);
 
       const cached = stateManager.getCache(queryKey);
-      expect(cached?.pluginResult.get("transformedData")).toEqual({
+      expect(cached?.meta.get("transformedData")).toEqual({
         ids: [1, 2, 3],
         total: 3,
         hasMore: false,
@@ -443,7 +443,7 @@ describe("transformPlugin", () => {
       await plugin.onResponse!(context, response);
 
       const cached = stateManager.getCache(queryKey);
-      expect(cached?.pluginResult.get("transformedData")).toBeUndefined();
+      expect(cached?.meta.get("transformedData")).toBeUndefined();
     });
   });
 
@@ -505,7 +505,7 @@ describe("transformPlugin", () => {
       await plugin.onResponse!(context, response);
 
       const cached = stateManager.getCache(queryKey);
-      expect(cached?.pluginResult.get("transformedData")).toEqual({
+      expect(cached?.meta.get("transformedData")).toEqual({
         result: "success",
         responseTransformed: true,
       });

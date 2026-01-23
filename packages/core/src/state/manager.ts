@@ -58,7 +58,7 @@ export type StateManager = {
     selfTag: string
   ) => CacheEntryWithKey<TData, TError>[];
 
-  setPluginResult: (key: string, data: Record<string, unknown>) => void;
+  setMeta: (key: string, data: Record<string, unknown>) => void;
 
   /** Mark all cache entries with matching tags as stale */
   markStale: (tags: string[]) => void;
@@ -129,7 +129,7 @@ export function createStateManager(): StateManager {
         const newEntry: CacheEntry = {
           state: entry.state ?? createInitialState(),
           tags: entry.tags ?? [],
-          pluginResult: new Map(),
+          meta: new Map(),
           selfTag: generateSelfTagFromKey(key),
           previousData: entry.previousData,
           stale: entry.stale,
@@ -206,12 +206,12 @@ export function createStateManager(): StateManager {
       return entries;
     },
 
-    setPluginResult(key, data) {
+    setMeta(key, data) {
       const entry = cache.get(key);
 
       if (entry) {
         for (const [name, value] of Object.entries(data)) {
-          entry.pluginResult.set(name, value);
+          entry.meta.set(name, value);
         }
 
         notifySubscribers(key);

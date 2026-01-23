@@ -236,9 +236,7 @@ export function createUseWrite<
     );
 
     const entry = stateManager.getCache(queryKey);
-    const pluginResultData = entry?.pluginResult
-      ? Object.fromEntries(entry.pluginResult)
-      : {};
+    const pluginResultData = entry?.meta ? Object.fromEntries(entry.meta) : {};
 
     const opts = lastTriggerOptions as Record<string, unknown> | undefined;
     const inputInner: Record<string, unknown> = {};

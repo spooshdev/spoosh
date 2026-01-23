@@ -135,7 +135,7 @@ export function transformPlugin(): SpooshPlugin<{
       if (responseTransformer && response.data !== undefined) {
         const transformedData = await responseTransformer(response.data);
 
-        context.stateManager.setPluginResult(context.queryKey, {
+        context.stateManager.setMeta(context.queryKey, {
           transformedData,
         });
       }

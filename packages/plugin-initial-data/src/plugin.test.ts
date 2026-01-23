@@ -75,11 +75,11 @@ describe("initialDataPlugin", () => {
         status: 200,
       });
 
-      const setPluginResultSpy = vi.spyOn(stateManager, "setPluginResult");
+      const setMetaSpy = vi.spyOn(stateManager, "setMeta");
 
       await plugin.middleware!(context, next);
 
-      expect(setPluginResultSpy).toHaveBeenCalledWith(
+      expect(setMetaSpy).toHaveBeenCalledWith(
         context.queryKey,
         expect.objectContaining({ isInitialData: true })
       );
@@ -240,11 +240,11 @@ describe("initialDataPlugin", () => {
         status: 200,
       });
 
-      const setPluginResult = vi.spyOn(stateManager, "setPluginResult");
+      const setMeta = vi.spyOn(stateManager, "setMeta");
 
       await plugin.middleware!(context, next);
 
-      expect(setPluginResult).toHaveBeenLastCalledWith(context.queryKey, {
+      expect(setMeta).toHaveBeenLastCalledWith(context.queryKey, {
         isInitialData: false,
       });
     });
@@ -265,14 +265,14 @@ describe("initialDataPlugin", () => {
         status: 500,
       });
 
-      const setPluginResult = vi.spyOn(stateManager, "setPluginResult");
+      const setMeta = vi.spyOn(stateManager, "setMeta");
 
       await plugin.middleware!(context, next);
 
-      expect(setPluginResult).toHaveBeenCalledWith(context.queryKey, {
+      expect(setMeta).toHaveBeenCalledWith(context.queryKey, {
         isInitialData: true,
       });
-      expect(setPluginResult).not.toHaveBeenCalledWith(context.queryKey, {
+      expect(setMeta).not.toHaveBeenCalledWith(context.queryKey, {
         isInitialData: false,
       });
     });
@@ -414,7 +414,7 @@ describe("initialDataPlugin", () => {
         pluginOptions: {},
       });
 
-      const setPluginResult = vi.spyOn(stateManager, "setPluginResult");
+      const setMeta = vi.spyOn(stateManager, "setMeta");
 
       const next = vi.fn().mockResolvedValue({
         data: { id: 1 },
@@ -423,7 +423,7 @@ describe("initialDataPlugin", () => {
 
       await plugin.middleware!(context, next);
 
-      expect(setPluginResult).toHaveBeenCalledWith(context.queryKey, {
+      expect(setMeta).toHaveBeenCalledWith(context.queryKey, {
         isInitialData: false,
       });
     });
@@ -438,7 +438,7 @@ describe("initialDataPlugin", () => {
         pluginOptions: {},
       });
 
-      const setPluginResult = vi.spyOn(stateManager, "setPluginResult");
+      const setMeta = vi.spyOn(stateManager, "setMeta");
 
       const next = vi.fn().mockResolvedValue({
         error: { message: "Not found" },
@@ -447,7 +447,7 @@ describe("initialDataPlugin", () => {
 
       await plugin.middleware!(context, next);
 
-      expect(setPluginResult).not.toHaveBeenCalled();
+      expect(setMeta).not.toHaveBeenCalled();
     });
   });
 

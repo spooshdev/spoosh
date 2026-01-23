@@ -301,9 +301,7 @@ export function createInjectInfiniteRead<
         canFetchPrevSignal.set(state.canFetchPrev);
 
         const entry = stateManager.getCache(queryKey);
-        const newMeta = entry?.pluginResult
-          ? Object.fromEntries(entry.pluginResult)
-          : {};
+        const newMeta = entry?.meta ? Object.fromEntries(entry.meta) : {};
         metaSignal.set(newMeta);
       });
 

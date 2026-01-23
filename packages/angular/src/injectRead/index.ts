@@ -192,9 +192,7 @@ export function createInjectRead<
         errorSignal.set(state.error as TError | undefined);
 
         const entry = stateManager.getCache(queryKey);
-        const newMeta = entry?.pluginResult
-          ? Object.fromEntries(entry.pluginResult)
-          : {};
+        const newMeta = entry?.meta ? Object.fromEntries(entry.meta) : {};
         metaSignal.set(newMeta);
       });
 

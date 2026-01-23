@@ -62,7 +62,7 @@ export function initialDataPlugin(): SpooshPlugin<{
         const response = await next();
 
         if (!response.error) {
-          context.stateManager.setPluginResult(context.queryKey, {
+          context.stateManager.setMeta(context.queryKey, {
             isInitialData: false,
           });
         }
@@ -74,7 +74,7 @@ export function initialDataPlugin(): SpooshPlugin<{
         const response = await next();
 
         if (!response.error) {
-          context.stateManager.setPluginResult(context.queryKey, {
+          context.stateManager.setMeta(context.queryKey, {
             isInitialData: false,
           });
         }
@@ -86,7 +86,7 @@ export function initialDataPlugin(): SpooshPlugin<{
         const response = await next();
 
         if (!response.error) {
-          context.stateManager.setPluginResult(context.queryKey, {
+          context.stateManager.setMeta(context.queryKey, {
             isInitialData: false,
           });
         }
@@ -102,7 +102,7 @@ export function initialDataPlugin(): SpooshPlugin<{
         const response = await next();
 
         if (!response.error) {
-          context.stateManager.setPluginResult(context.queryKey, {
+          context.stateManager.setMeta(context.queryKey, {
             isInitialData: false,
           });
         }
@@ -121,7 +121,7 @@ export function initialDataPlugin(): SpooshPlugin<{
         tags: context.tags,
       });
 
-      context.stateManager.setPluginResult(context.queryKey, {
+      context.stateManager.setMeta(context.queryKey, {
         isInitialData: true,
       });
 
@@ -132,7 +132,7 @@ export function initialDataPlugin(): SpooshPlugin<{
       const response = await next();
 
       if (!response.error) {
-        context.stateManager.setPluginResult(context.queryKey, {
+        context.stateManager.setMeta(context.queryKey, {
           isInitialData: false,
         });
       }

@@ -37,7 +37,7 @@ describe("createStateManager", () => {
       expect(manager.getCacheByTags).toBeDefined();
       expect(manager.getCacheEntriesByTags).toBeDefined();
       expect(manager.getCacheEntriesBySelfTag).toBeDefined();
-      expect(manager.setPluginResult).toBeDefined();
+      expect(manager.setMeta).toBeDefined();
       expect(manager.markStale).toBeDefined();
       expect(manager.clear).toBeDefined();
     });
@@ -371,14 +371,14 @@ describe("createStateManager", () => {
       expect(callback2).toHaveBeenCalledTimes(1);
     });
 
-    it("should notify subscribers when setPluginResult is called", () => {
+    it("should notify subscribers when setMeta is called", () => {
       const manager = createStateManager();
       const key = "test-key";
       const callback = vi.fn();
 
       manager.setCache(key, { state: createState({ data: "data" }) });
       manager.subscribeCache(key, callback);
-      manager.setPluginResult(key, { isOptimistic: true });
+      manager.setMeta(key, { isOptimistic: true });
 
       expect(callback).toHaveBeenCalledTimes(1);
     });
@@ -572,17 +572,17 @@ describe("createStateManager", () => {
     });
   });
 
-  describe("setPluginResult", () => {
+  describe("setMeta", () => {
     it("should set plugin result data on cache entry", () => {
       const manager = createStateManager();
       const key = "test-key";
 
       manager.setCache(key, { state: createState({ data: "data" }) });
-      manager.setPluginResult(key, { isOptimistic: true, retryCount: 3 });
+      manager.setMeta(key, { isOptimistic: true, retryCount: 3 });
 
       const cached = manager.getCache(key);
-      expect(cached?.pluginResult.get("isOptimistic")).toBe(true);
-      expect(cached?.pluginResult.get("retryCount")).toBe(3);
+      expect(cached?.meta.get("isOptimistic")).toBe(true);
+      expect(cached?.meta.get("retryCount")).toBe(3);
     });
 
     it("should merge multiple plugin results", () => {
@@ -590,26 +590,26 @@ describe("createStateManager", () => {
       const key = "test-key";
 
       manager.setCache(key, { state: createState({ data: "data" }) });
-      manager.setPluginResult(key, { isOptimistic: true });
-      manager.setPluginResult(key, { isStale: false });
+      manager.setMeta(key, { isOptimistic: true });
+      manager.setMeta(key, { isStale: false });
 
       const cached = manager.getCache(key);
-      expect(cached?.pluginResult.get("isOptimistic")).toBe(true);
-      expect(cached?.pluginResult.get("isStale")).toBe(false);
+      expect(cached?.meta.get("isOptimistic")).toBe(true);
+      expect(cached?.meta.get("isStale")).toBe(false);
     });
 
-    it("should not throw when setting plugin result on non-existent entry", () => {
+    it("should not throw when setting meta on non-existent entry", () => {
       const manager = createStateManager();
 
       expect(() =>
-        manager.setPluginResult("non-existent", { data: "value" })
+        manager.setMeta("non-existent", { data: "value" })
       ).not.toThrow();
     });
 
-    it("should not create entry when setting plugin result on non-existent key", () => {
+    it("should not create entry when setting meta on non-existent key", () => {
       const manager = createStateManager();
 
-      manager.setPluginResult("non-existent", { data: "value" });
+      manager.setMeta("non-existent", { data: "value" });
 
       expect(manager.getCache("non-existent")).toBeUndefined();
     });

@@ -19,7 +19,7 @@ export type CacheEntry<TData = unknown, TError = unknown> = {
   tags: string[];
 
   /** Plugin-contributed result data (e.g., isOptimistic, isStale). Merged into hook result. */
-  pluginResult: Map<string, unknown>;
+  meta: Map<string, unknown>;
 
   /** The original path-derived tag (e.g., "posts/1/comments"). Used for exact matching in cache */
   selfTag?: string;

@@ -282,9 +282,7 @@ export function createUseRead<
     }, [executeWithTracking]);
 
     const entry = stateManager.getCache(queryKey);
-    const pluginResultData = entry?.pluginResult
-      ? Object.fromEntries(entry.pluginResult)
-      : {};
+    const pluginResultData = entry?.meta ? Object.fromEntries(entry.meta) : {};
 
     const opts = capturedCall.options as Record<string, unknown> | undefined;
     const inputInner: Record<string, unknown> = {};
