@@ -43,7 +43,7 @@
   },
   "peerDependencies": {
     "@elysiajs/eden": ">=1.0.0",
-    "@spoosh/core": ">=0.4.0",
+    "@spoosh/core": ">=0.6.0",
     "elysia": ">=1.0.0"
   },
   "devDependencies": {
