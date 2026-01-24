@@ -30,14 +30,12 @@ describe("transformPlugin", () => {
         stateManager,
         queryKey,
         pluginOptions: {
-          transform: {
-            response: (r: unknown) => {
-              const response = r as { items: unknown[] };
-              return {
-                count: response.items.length,
-                processed: true,
-              };
-            },
+          transform: (r: unknown) => {
+            const response = r as { items: unknown[] };
+            return {
+              count: response.items.length,
+              processed: true,
+            };
           },
         },
       });
@@ -62,12 +60,10 @@ describe("transformPlugin", () => {
         stateManager,
         queryKey,
         pluginOptions: {
-          transform: {
-            response: async (r: unknown) => {
-              const response = r as { value: number };
-              const multiplier = await Promise.resolve(2);
-              return { doubled: response.value * multiplier };
-            },
+          transform: async (r: unknown) => {
+            const response = r as { value: number };
+            const multiplier = await Promise.resolve(2);
+            return { doubled: response.value * multiplier };
           },
         },
       });
@@ -91,11 +87,9 @@ describe("transformPlugin", () => {
         stateManager,
         queryKey,
         pluginOptions: {
-          transform: {
-            response: (r: unknown) => {
-              const response = r as { items: unknown[] };
-              return { count: response.items.length };
-            },
+          transform: (r: unknown) => {
+            const response = r as { items: unknown[] };
+            return { count: response.items.length };
           },
         },
       });
@@ -112,9 +106,7 @@ describe("transformPlugin", () => {
       const plugin = transformPlugin();
       const context = createMockContext({
         pluginOptions: {
-          transform: {
-            response: transformer,
-          },
+          transform: transformer,
         },
       });
       const response = { error: { message: "Not found" }, status: 404 };
@@ -134,15 +126,13 @@ describe("transformPlugin", () => {
         stateManager,
         queryKey,
         pluginOptions: {
-          transform: {
-            response: (r: unknown) => {
-              const response = r as { items: { id: number }[] };
-              return {
-                ids: response.items.map((i) => i.id),
-                total: response.items.length,
-                hasMore: response.items.length >= 10,
-              };
-            },
+          transform: (r: unknown) => {
+            const response = r as { items: { id: number }[] };
+            return {
+              ids: response.items.map((i) => i.id),
+              total: response.items.length,
+              hasMore: response.items.length >= 10,
+            };
           },
         },
       });
@@ -188,12 +178,10 @@ describe("transformPlugin", () => {
         stateManager,
         queryKey,
         pluginOptions: {
-          transform: {
-            response: (r: unknown) => ({
-              ...(r as Record<string, unknown>),
-              responseTransformed: true,
-            }),
-          },
+          transform: (r: unknown) => ({
+            ...(r as Record<string, unknown>),
+            responseTransformed: true,
+          }),
         },
       });
       const response = { data: { result: "success" }, status: 200 };
@@ -236,10 +224,8 @@ describe("transformPlugin", () => {
         stateManager,
         queryKey,
         pluginOptions: {
-          transform: {
-            response: () => {
-              throw new Error("Transform error");
-            },
+          transform: () => {
+            throw new Error("Transform error");
           },
         },
       });
@@ -260,11 +246,9 @@ describe("transformPlugin", () => {
         stateManager,
         queryKey,
         pluginOptions: {
-          transform: {
-            response: async () => {
-              await Promise.resolve();
-              throw new Error("Async transform error");
-            },
+          transform: async () => {
+            await Promise.resolve();
+            throw new Error("Async transform error");
           },
         },
       });

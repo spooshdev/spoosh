@@ -32,12 +32,10 @@ import type {
  * const { data, meta } = useRead(
  *   (api) => api.posts.$get(),
  *   {
- *     transform: {
- *       response: (posts) => ({
- *         count: posts.length,
- *         hasMore: posts.length >= 10,
- *       }),
- *     },
+ *     transform: (posts) => ({
+ *       count: posts.length,
+ *       hasMore: posts.length >= 10,
+ *     }),
  *   }
  * );
  *
@@ -60,7 +58,7 @@ export function transformPlugin(): SpooshPlugin<{
       const pluginOptions = context.pluginOptions as
         | TransformOptions
         | undefined;
-      const responseTransformer = pluginOptions?.transform?.response;
+      const responseTransformer = pluginOptions?.transform;
 
       if (responseTransformer && response.data !== undefined) {
         const transformedData = await responseTransformer(response.data);

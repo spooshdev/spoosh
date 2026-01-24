@@ -1,6 +1,6 @@
 {
   "name": "@spoosh/plugin-transform",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Data transformation plugin for Spoosh with sync/async support",
   "license": "MIT",
   "repository": {

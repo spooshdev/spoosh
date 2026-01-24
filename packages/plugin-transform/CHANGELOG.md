@@ -1,5 +1,11 @@
 # @spoosh/plugin-transform
 
+## 0.4.0
+
+### Breaking Changes
+
+- Simplified transform API: Changed from `transform: { response: (data) => ... }` to direct `transform: (data) => ...`
+
 ## 0.3.0
 
 ### Breaking Changes

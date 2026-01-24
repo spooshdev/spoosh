@@ -2,14 +2,12 @@ import type { ResolverContext } from "@spoosh/core";
 
 export type MaybePromise<T> = T | Promise<T>;
 
+/**
+ * Transform response data after request. Returns transformedData (can be any type).
+ */
 export type ResponseTransformer<TIn = unknown, TOut = unknown> = (
   response: TIn
 ) => MaybePromise<TOut>;
-
-export interface TransformConfig {
-  /** Transform response data after request. Returns transformedData (can be any type). */
-  response?: ResponseTransformer<unknown, unknown>;
-}
 
 /**
  * Plugin-level config. All transforms are per-request only for type inference.
@@ -17,18 +15,18 @@ export interface TransformConfig {
 export type TransformPluginConfig = object;
 
 export interface TransformReadOptions {
-  /** Per-request transform functions. */
-  transform?: TransformConfig;
+  /** Per-request transform function for response data. */
+  transform?: ResponseTransformer<unknown, unknown>;
 }
 
 export interface TransformWriteOptions {
-  /** Per-request transform functions. */
-  transform?: TransformConfig;
+  /** Per-request transform function for response data. */
+  transform?: ResponseTransformer<unknown, unknown>;
 }
 
 export interface TransformInfiniteReadOptions {
-  /** Per-request transform functions. */
-  transform?: TransformConfig;
+  /** Per-request transform function for response data. */
+  transform?: ResponseTransformer<unknown, unknown>;
 }
 
 export type TransformReadResult = object;
@@ -45,7 +43,7 @@ export type TransformOptions =
  * Returns `never` if no response transformer is provided.
  */
 export type InferTransformedData<TOptions> = TOptions extends {
-  transform: { response: (data: never) => MaybePromise<infer R> };
+  transform: (data: never) => MaybePromise<infer R>;
 }
   ? R
   : never;
@@ -60,19 +58,14 @@ export type TransformResultField<TOptions> = [
   ? object
   : { transformedData: InferTransformedData<TOptions> | undefined };
 
-type ResolvedTransformConfig<TContext extends ResolverContext> = {
-  /** Transform response data after request. Returns transformedData (can be any type). */
-  response?: ResponseTransformer<TContext["data"], unknown>;
-};
-
 declare module "@spoosh/core" {
   interface PluginResolvers<TContext extends ResolverContext> {
-    transform: ResolvedTransformConfig<TContext> | undefined;
+    transform: ResponseTransformer<TContext["data"], unknown> | undefined;
   }
 
   interface PluginResultResolvers<TOptions> {
     transformedData: TOptions extends {
-      transform: { response: (data: never) => MaybePromise<infer R> };
+      transform: (data: never) => MaybePromise<infer R>;
     }
       ? Awaited<R> | undefined
       : never;

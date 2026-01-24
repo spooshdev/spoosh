@@ -1,9 +1,9 @@
 ---
 title: Transform
-description: Transform request and response data with full type inference
+description: Transform response data with full type inference
 ---
 
-The Transform plugin enables per-request transformation of query, body, and response data. All transforms are defined at the hook level for full type inference.
+The Transform plugin enables per-request transformation of response data with full type inference.
 
 ## Installation
 
@@ -22,36 +22,17 @@ const client = new Spoosh<ApiSchema, Error>("/api").use([transformPlugin()]);
 
 ## Usage
 
-### Request Transforms (useRead)
-
-Transform request data in hook options:
-
-```typescript
-const { data } = useRead((api) => api("posts").GET({ query: { page: 1 } }), {
-  transform: {
-    query: (q) => {
-      // q is typed based on the endpoint schema
-      if (q.category === "all") delete q.category;
-      return { ...q, limit: 10 };
-    },
-  },
-});
-```
-
 ### Response Transforms (useRead)
 
 Response transforms produce a separate `transformedData` field in `meta` while preserving the original `data`:
 
 ```typescript
 const { data, meta } = useRead((api) => api("posts").GET(), {
-  transform: {
-    response: (posts) => ({
-      // posts is typed as the endpoint's response type
-      count: posts.length,
-      hasMore: posts.length >= 10,
-      ids: posts.map((p) => p.id),
-    }),
-  },
+  transform: (posts) => ({
+    count: posts.length,
+    hasMore: posts.length >= 10,
+    ids: posts.map((p) => p.id),
+  }),
 });
 
 // data = Post[] (original response, preserved)
@@ -59,25 +40,6 @@ const { data, meta } = useRead((api) => api("posts").GET(), {
 ```
 
 The `meta.transformedData` type is automatically inferred from your transformer's return type.
-
-### Request Transforms (useWrite)
-
-Transform request data in trigger options:
-
-```typescript
-const { trigger } = useWrite((api) => api("posts").POST);
-
-trigger({
-  body: { title: "New Post" },
-  transform: {
-    body: (b) => ({
-      ...b,
-      createdAt: Date.now(),
-      version: "2.0",
-    }),
-  },
-});
-```
 
 ### Response Transforms (useWrite)
 
@@ -88,14 +50,11 @@ const { trigger, data, meta } = useWrite((api) => api("posts").POST);
 
 const response = await trigger({
   body: { title: "New Post" },
-  transform: {
-    response: (post) => ({
-      // post is typed as the endpoint's response type
-      success: true,
-      postId: post.id,
-      createdAt: new Date(post.timestamp),
-    }),
-  },
+  transform: (post) => ({
+    success: true,
+    postId: post.id,
+    createdAt: new Date(post.timestamp),
+  }),
 });
 
 // After trigger completes:
@@ -122,9 +81,7 @@ const { trigger } = useWrite((api) => api("posts").POST);
 
 const response = await trigger({
   body: { title: "New Post" },
-  transform: {
-    response: (post) => ({ success: true, postId: post.id }),
-  },
+  transform: (post) => ({ success: true, postId: post.id }),
 });
 
 // Access from response
@@ -134,63 +91,20 @@ const result = response.data; // Post
 
 </Callout>
 
-## Transform Types
+## Response Transform Examples
 
-### Query Transform
-
-Transform query parameters before the request:
-
-```typescript
-const { data } = useRead(
-  (api) => api("users").GET({ query: { status: "all", page: 1 } }),
-  {
-    transform: {
-      query: (query) => {
-        // Remove "all" status filter
-        if (query.status === "all") {
-          const { status, ...rest } = query;
-          return rest;
-        }
-        return query;
-      },
-    },
-  }
-);
-```
-
-### Body Transform
-
-Transform JSON body before the request:
-
-```typescript
-const { trigger } = useWrite((api) => api("posts").POST);
-
-trigger({
-  body: { title: "Hello" },
-  transform: {
-    body: (body) => ({
-      ...body,
-      timestamp: Date.now(),
-      clientVersion: "1.0.0",
-    }),
-  },
-});
-```
-
-### Response Transform
+### Transform and Analyze Data
 
 Transform and analyze response data:
 
 ```typescript
 const { data, meta } = useRead((api) => api("analytics").GET(), {
-  transform: {
-    response: (analytics) => ({
-      totalViews: analytics.reduce((sum, a) => sum + a.views, 0),
-      averageEngagement:
-        analytics.reduce((sum, a) => sum + a.engagement, 0) / analytics.length,
-      topPerformer: analytics.sort((a, b) => b.views - a.views)[0],
-    }),
-  },
+  transform: (analytics) => ({
+    totalViews: analytics.reduce((sum, a) => sum + a.views, 0),
+    averageEngagement:
+      analytics.reduce((sum, a) => sum + a.engagement, 0) / analytics.length,
+    topPerformer: analytics.sort((a, b) => b.views - a.views)[0],
+  }),
 });
 
 // data = original analytics array
@@ -202,12 +116,13 @@ const { data, meta } = useRead((api) => api("analytics").GET(), {
 All transform functions support async operations:
 
 ```typescript
-const { data } = useRead((api) => api("posts").GET(), {
-  transform: {
-    query: async (query) => {
-      const token = await getAuthToken();
-      return { ...query, token };
-    },
+const { data, meta } = useRead((api) => api("posts").GET(), {
+  transform: async (posts) => {
+    const enriched = await enrichPostsWithMetadata(posts);
+    return {
+      count: enriched.length,
+      titles: enriched.map((p) => p.title),
+    };
   },
 });
 ```
@@ -217,52 +132,15 @@ const { data } = useRead((api) => api("posts").GET(), {
 Return `undefined` to remove the data entirely:
 
 ```typescript
-const { data } = useRead(
-  (api) => api("search").GET({ query: { q: "", filters: {} } }),
-  {
-    transform: {
-      query: (query) => {
-        // Remove query if search term is empty
-        if (!query.q?.trim()) return undefined;
-        return query;
-      },
-    },
-  }
-);
-```
-
-## Immutability
-
-Data is deep-cloned before transformation, so you can safely mutate:
-
-```typescript
-transform: {
-  query: (query) => {
-    // Safe to mutate - original data is not affected
-    delete query.internalField;
-    query.normalized = true;
-    return query;
+const { data, meta } = useRead((api) => api("posts").GET(), {
+  transform: (posts) => {
+    if (posts.length === 0) return undefined;
+    return {
+      count: posts.length,
+      titles: posts.map((p) => p.title),
+    };
   },
-}
-```
-
-## Multiple Transforms
-
-Apply multiple transforms in a single request:
-
-```typescript
-const { data, meta } = useRead(
-  (api) => api("posts").GET({ query: { page: 1 } }),
-  {
-    transform: {
-      query: (q) => ({ ...q, limit: 20 }),
-      response: (posts) => ({
-        count: posts.length,
-        titles: posts.map((p) => p.title),
-      }),
-    },
-  }
-);
+});
 ```
 
 ## Type Inference
@@ -272,14 +150,12 @@ The transform plugin provides full type inference:
 ```typescript
 // Response type is inferred from endpoint (useRead)
 const { data, meta } = useRead((api) => api("users").GET(), {
-  transform: {
-    response: (users) => {
-      // 'users' is typed as User[]
-      return {
-        activeCount: users.filter((u) => u.active).length,
-        admins: users.filter((u) => u.role === "admin"),
-      };
-    },
+  transform: (users) => {
+    // 'users' is typed as User[]
+    return {
+      activeCount: users.filter((u) => u.active).length,
+      admins: users.filter((u) => u.role === "admin"),
+    };
   },
 });
 
@@ -330,46 +206,40 @@ const transformed = meta.transformedData as TransformedPost | undefined;
 
 ```typescript
 const { data, meta } = useRead((api) => api("orders").GET(), {
-  transform: {
-    response: (orders) => ({
-      total: orders.reduce((sum, o) => sum + o.amount, 0),
-      averageOrder:
-        orders.reduce((sum, o) => sum + o.amount, 0) / orders.length,
-      pendingCount: orders.filter((o) => o.status === "pending").length,
-    }),
-  },
+  transform: (orders) => ({
+    total: orders.reduce((sum, o) => sum + o.amount, 0),
+    averageOrder: orders.reduce((sum, o) => sum + o.amount, 0) / orders.length,
+    pendingCount: orders.filter((o) => o.status === "pending").length,
+  }),
 });
 ```
 
-### Filter Empty Query Params
+### Extract Specific Fields
 
 ```typescript
-const { data } = useRead((api) => api("search").GET({ query: filters }), {
-  transform: {
-    query: (query) =>
-      Object.fromEntries(
-        Object.entries(query).filter(
-          ([_, v]) => v !== undefined && v !== null && v !== ""
-        )
-      ),
-  },
+const { data, meta } = useRead((api) => api("posts").GET(), {
+  transform: (posts) => ({
+    ids: posts.map((p) => p.id),
+    titles: posts.map((p) => p.title),
+    publishedCount: posts.filter((p) => p.published).length,
+  }),
 });
 ```
 
-### Add Request Metadata
+### Enrich Response Data
 
 ```typescript
-const { trigger } = useWrite((api) => api("events").POST);
-
-trigger({
-  body: eventData,
-  transform: {
-    body: (body) => ({
-      ...body,
-      clientTimestamp: Date.now(),
-      sessionId: getSessionId(),
-      userAgent: navigator.userAgent,
-    }),
-  },
+const { data, meta } = useRead((api) => api("users").GET(), {
+  transform: (users) => ({
+    totalUsers: users.length,
+    activeUsers: users.filter((u) => u.active),
+    usersByRole: users.reduce(
+      (acc, u) => {
+        acc[u.role] = (acc[u.role] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>
+    ),
+  }),
 });
 ```

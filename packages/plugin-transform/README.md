@@ -1,6 +1,6 @@
 # @spoosh/plugin-transform
 
-Transform request and response data with full type inference.
+Transform response data with full type inference.
 
 **[Documentation](https://spoosh.dev/docs/plugins/transform)** · **Requirements:** TypeScript >= 5.0 · **Peer Dependencies:** `@spoosh/core`
 
@@ -12,7 +12,9 @@ npm install @spoosh/plugin-transform
 
 ## Usage
 
-### Request Transforms
+### Response Transforms
+
+Response transforms produce a separate `transformedData` field in `meta` while preserving the original `data`:
 
 ```typescript
 import { Spoosh } from "@spoosh/core";
@@ -20,61 +22,44 @@ import { transformPlugin } from "@spoosh/plugin-transform";
 
 const client = new Spoosh<ApiSchema, Error>("/api").use([transformPlugin()]);
 
-const { data } = useRead((api) => api("posts").GET({ query: { page: 1 } }), {
-  transform: {
-    query: (q) => ({ ...q, limit: 10 }),
-  },
-});
-
-// Transform body in useWrite
-const { trigger } = useWrite((api) => api("posts").POST);
-
-trigger({
-  body: { title: "New Post" },
-  transform: {
-    body: (b) => ({ ...b, createdAt: Date.now() }),
-  },
-});
-```
-
-### Response Transforms
-
-Response transforms produce a separate `transformedData` field while preserving the original `data`:
-
-```typescript
-const { data, transformedData } = useRead((api) => api("posts").GET(), {
-  transform: {
-    response: (posts) => ({
-      count: posts.length,
-      hasMore: posts.length >= 10,
-      ids: posts.map((p) => p.id),
-    }),
-  },
+const { data, meta } = useRead((api) => api("posts").GET(), {
+  transform: (posts) => ({
+    count: posts.length,
+    hasMore: posts.length >= 10,
+    ids: posts.map((p) => p.id),
+  }),
 });
 
 // data = Post[] (original response, preserved)
-// transformedData = { count: number, hasMore: boolean, ids: number[] } | undefined
+// meta.transformedData = { count: number, hasMore: boolean, ids: number[] } | undefined
 ```
 
-## Transform Types
+### Async Transforms
 
-The plugin supports transformation of:
+Transform functions support async operations:
 
-- **query** - Transform query parameters before request
-- **body** - Transform request body before request (files auto-detected)
-- **response** - Transform response data after request (produces `transformedData`)
+```typescript
+const { data, meta } = useRead((api) => api("posts").GET(), {
+  transform: async (posts) => {
+    const enriched = await enrichPostsWithMetadata(posts);
+    return {
+      count: enriched.length,
+      titles: enriched.map((p) => p.title),
+    };
+  },
+});
+```
 
 ## Features
 
-- ✅ Full type inference for all transforms
+- ✅ Full type inference for transforms
 - ✅ Async transform functions supported
-- ✅ Automatic deep cloning (safe to mutate)
 - ✅ Per-request transforms (no global config needed)
 - ✅ Return `undefined` to remove data entirely
 
 ## TypeScript Limitation (useWrite)
 
-Due to TypeScript limitations with dynamic trigger options, `transformedData` is typed as `never` in `useWrite` hook results. Use type assertion:
+Due to TypeScript limitations with dynamic trigger options, `meta.transformedData` is typed as `never` in `useWrite` hook results. Use type assertion:
 
 ```typescript
 type TransformedPost = {
@@ -82,10 +67,10 @@ type TransformedPost = {
   postId: number;
 };
 
-const { transformedData } = useWrite((api) => api("posts").POST);
+const { meta } = useWrite((api) => api("posts").POST);
 
 // Type assertion required
-const typed = transformedData as TransformedPost | undefined;
+const typed = meta.transformedData as TransformedPost | undefined;
 ```
 
 This limitation does not affect `useRead` or `useInfiniteRead`, where options are passed at hook creation time.
