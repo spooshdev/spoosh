@@ -65,3 +65,14 @@ export function setHeaders(
     };
   }
 }
+
+/**
+ * Extracts the Content-Type header value from HeadersInit.
+ * Returns undefined if no Content-Type is set.
+ */
+export function getContentType(headers?: HeadersInit): string | undefined {
+  if (!headers) return undefined;
+
+  const headersObj = new Headers(headers);
+  return headersObj.get("content-type") ?? undefined;
+}

@@ -1,11 +1,5 @@
 /** All supported HTTP method keys used in the API client */
-export const HTTP_METHODS = [
-  "$get",
-  "$post",
-  "$put",
-  "$patch",
-  "$delete",
-] as const;
+export const HTTP_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE"] as const;
 
 /** Union type of all HTTP method keys */
 export type HttpMethodKey = (typeof HTTP_METHODS)[number];
@@ -16,10 +10,10 @@ export type HttpMethodKey = (typeof HTTP_METHODS)[number];
  * Does not execute any request - only captures the API endpoint selection.
  */
 export type SelectorFunction = (() => Promise<{ data: undefined }>) & {
-  /** The path segments leading to this endpoint (e.g., ['posts', 'comments']) */
-  __selectorPath?: string[];
+  /** The path string for this endpoint (e.g., 'posts', 'posts/:id') */
+  __selectorPath?: string;
 
-  /** The HTTP method selected (e.g., '$get', '$post') */
+  /** The HTTP method selected (e.g., 'GET', 'POST') */
   __selectorMethod?: string;
 };
 
@@ -29,10 +23,10 @@ export type SelectorFunction = (() => Promise<{ data: undefined }>) & {
  * Captured when an HTTP method is invoked with options.
  */
 export type CapturedCall = {
-  /** Path segments to the endpoint (e.g., ['posts', ':id']) */
-  path: string[];
+  /** Path string to the endpoint (e.g., 'posts/:id') */
+  path: string;
 
-  /** HTTP method called (e.g., '$get', '$post') */
+  /** HTTP method called (e.g., 'GET', 'POST') */
   method: string;
 
   /** Request options passed to the method (query, body, params, etc.) */
@@ -45,8 +39,8 @@ export type CapturedCall = {
  * Captured when an HTTP method is accessed but not yet called.
  */
 export type SelectedEndpoint = {
-  /** Path segments to the endpoint */
-  path: string[];
+  /** Path string to the endpoint */
+  path: string;
 
   /** HTTP method selected */
   method: string;
@@ -80,11 +74,11 @@ export type SelectorResult = {
  * const proxy = createSelectorProxy<ApiSchema>();
  *
  * // Select an endpoint
- * const endpoint = proxy.posts.$get;
+ * const endpoint = proxy("posts").GET;
  *
  * // Extract path for cache operations
- * const path = extractPathFromSelector(endpoint); // ['posts']
- * const method = extractMethodFromSelector(endpoint); // '$get'
+ * const path = extractPathFromSelector(endpoint); // 'posts'
+ * const method = extractMethodFromSelector(endpoint); // 'GET'
  * ```
  *
  * @internal onCapture - Used internally by framework adapters
@@ -92,73 +86,71 @@ export type SelectorResult = {
 export function createSelectorProxy<TSchema>(
   onCapture?: (result: SelectorResult) => void
 ): TSchema {
-  const createProxy = (path: string[] = []): unknown => {
-    return new Proxy(() => {}, {
-      get(_, prop: string) {
-        if (HTTP_METHODS.includes(prop as HttpMethodKey)) {
-          const selectorFn: SelectorFunction = (options?: unknown) => {
+  const createMethodsProxy = (path: string): unknown => {
+    return new Proxy(
+      {},
+      {
+        get(_, prop: string) {
+          if (HTTP_METHODS.includes(prop as HttpMethodKey)) {
+            const selectorFn: SelectorFunction = (options?: unknown) => {
+              onCapture?.({
+                call: { path, method: prop, options },
+                selector: null,
+              });
+
+              return Promise.resolve({ data: undefined });
+            };
+
+            selectorFn.__selectorPath = path;
+            selectorFn.__selectorMethod = prop;
+
             onCapture?.({
-              call: { path, method: prop, options },
-              selector: null,
+              call: null,
+              selector: { path, method: prop },
             });
 
-            return Promise.resolve({ data: undefined });
-          };
+            return selectorFn;
+          }
 
-          selectorFn.__selectorPath = path;
-          selectorFn.__selectorMethod = prop;
-
-          onCapture?.({
-            call: null,
-            selector: { path, method: prop },
-          });
-
-          return selectorFn;
-        }
-
-        return createProxy([...path, prop]);
-      },
-
-      // Handles function call syntax for dynamic segments: api.posts("123"), api.users(userId)
-      apply(_, __, args: [string | number]) {
-        const [segment] = args;
-
-        return createProxy([...path, String(segment)]);
-      },
-    });
+          return undefined;
+        },
+      }
+    );
   };
 
-  return createProxy() as TSchema;
+  return ((path: string) => {
+    return createMethodsProxy(path);
+  }) as TSchema;
 }
 
 /**
- * Extracts the path segments from a SelectorFunction.
+ * Extracts the path from a SelectorFunction.
  *
  * @param fn - A SelectorFunction returned from `createSelectorProxy`
- * @returns Array of path segments (e.g., ['posts', 'comments'])
+ * @returns The path string (e.g., 'posts', 'posts/:id')
  *
  * @example
  * ```ts
  * const proxy = createSelectorProxy<ApiSchema>();
- * const path = extractPathFromSelector(proxy.posts.comments.$get);
- * // path = ['posts', 'comments']
+ * const path = extractPathFromSelector(proxy("posts").GET);
+ * // path = 'posts'
  * ```
  */
-export function extractPathFromSelector(fn: unknown): string[] {
-  return (fn as SelectorFunction).__selectorPath ?? [];
+export function extractPathFromSelector(fn: unknown): string {
+  return (fn as SelectorFunction).__selectorPath ?? "";
 }
 
 /**
  * Extracts the HTTP method from a SelectorFunction.
  *
  * @param fn - A SelectorFunction returned from `createSelectorProxy`
- * @returns The HTTP method string (e.g., '$get', '$post') or undefined
+ * @returns The HTTP method string (e.g., 'GET', 'POST') or undefined
  *
  * @example
  * ```ts
  * const proxy = createSelectorProxy<ApiSchema>();
- * const method = extractMethodFromSelector(proxy.posts.$post);
- * // method = '$post'
+ * const method = extractMethodFromSelector(proxy("posts").POST);
+ * // method = 'POST'
  * ```
  */
 export function extractMethodFromSelector(fn: unknown): string | undefined {

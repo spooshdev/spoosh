@@ -1,34 +1,67 @@
 import type { SpooshResponse } from "../types/response.types";
-import type { SchemaMethod } from "../types/common.types";
-import type { HasQueryMethods } from "../types/filtered-client.types";
+import type {
+  FindMatchingKey,
+  ExtractData,
+  ExtractQuery,
+  ExtractBody,
+  ExtractParamNames,
+  HasParams,
+} from "../types/schema.types";
 
-type ExtractEndpointData<T> = T extends { data: infer D }
-  ? D
-  : T extends void
-    ? void
-    : T;
+type Simplify<T> = { [K in keyof T]: T[K] } & {};
 
-type ExtractEndpointRequestOptions<T> = {
-  [K in Extract<keyof T, "query" | "body" | "params">]?: T[K];
-};
+type IsNever<T> = [T] extends [never] ? true : false;
 
-type EndpointToMethod<T> = (
-  options?: ExtractEndpointRequestOptions<T>
+type EndpointRequestOptions<TEndpoint, TPath extends string> = (IsNever<
+  ExtractBody<TEndpoint>
+> extends true
+  ? object
+  : { body: ExtractBody<TEndpoint> }) &
+  (IsNever<ExtractQuery<TEndpoint>> extends true
+    ? object
+    : { query: ExtractQuery<TEndpoint> }) &
+  (HasParams<TPath> extends true
+    ? { params: Record<ExtractParamNames<TPath>, string | number> }
+    : object);
+
+type EndpointMethodFn<TEndpoint, TPath extends string> = (
+  options?: Simplify<EndpointRequestOptions<TEndpoint, TPath>>
 ) => Promise<
   SpooshResponse<
-    ExtractEndpointData<T>,
+    ExtractData<TEndpoint>,
     unknown,
-    ExtractEndpointRequestOptions<T>
+    EndpointRequestOptions<TEndpoint, TPath>
   >
 >;
+
+type QueryPathMethods<TSchema, TPath extends string> =
+  FindMatchingKey<TSchema, TPath> extends infer TKey
+    ? TKey extends keyof TSchema
+      ? "GET" extends keyof TSchema[TKey]
+        ? Simplify<{ GET: EndpointMethodFn<TSchema[TKey]["GET"], TPath> }>
+        : never
+      : never
+    : never;
+
+type ReadPaths<TSchema> = {
+  [K in keyof TSchema & string]: "GET" extends keyof TSchema[K] ? K : never;
+}[keyof TSchema & string];
+
+type HasGetMethod<TSchema, TPath extends string> =
+  FindMatchingKey<TSchema, TPath> extends infer TKey
+    ? TKey extends keyof TSchema
+      ? "GET" extends keyof TSchema[TKey]
+        ? true
+        : false
+      : false
+    : false;
 
 /**
  * Schema navigation helper for plugins that need type-safe API schema access.
  *
- * This type transforms the API schema into a navigable structure where:
- * - Static path segments become nested properties
- * - Dynamic segments (`_`) become index signatures
- * - `$get` endpoints become callable method types
+ * This type transforms the API schema into a callable function where:
+ * - Path strings are used to select endpoints
+ * - Only GET methods are exposed (for query operations)
  *
  * Use this in plugin option types that need to reference API endpoints:
  *
@@ -57,27 +90,65 @@ type EndpointToMethod<T> = (
  * // User's code - paths are type-checked!
  * trigger({
  *   myCallback: (api) => [
- *     api.posts.$get,           // ✓ Valid
- *     api.users(1).$get,        // ✓ Dynamic segment
- *     api.nonexistent.$get,     // ✗ Type error
+ *     api("posts").GET,           // ✓ Valid
+ *     api("posts/:id").GET,       // ✓ Dynamic segment
+ *     api("nonexistent").GET,     // ✗ Type error
  *   ],
  * });
  * ```
  */
-export type QuerySchemaHelper<TSchema> = {
-  [K in keyof TSchema as K extends SchemaMethod | "_"
-    ? never
-    : HasQueryMethods<TSchema[K]> extends true
-      ? K
-      : never]: K extends keyof TSchema ? QuerySchemaHelper<TSchema[K]> : never;
-} & {
-  [K in "$get" as K extends keyof TSchema ? K : never]: K extends keyof TSchema
-    ? EndpointToMethod<TSchema[K]>
+export type QuerySchemaHelper<TSchema> = <
+  TPath extends ReadPaths<TSchema> | (string & {}),
+>(
+  path: TPath
+) => HasGetMethod<TSchema, TPath> extends true
+  ? QueryPathMethods<TSchema, TPath>
+  : never;
+
+type MutationMethod = "POST" | "PUT" | "PATCH" | "DELETE";
+
+type MutationPathMethods<TSchema, TPath extends string> =
+  FindMatchingKey<TSchema, TPath> extends infer TKey
+    ? TKey extends keyof TSchema
+      ? Simplify<{
+          [M in MutationMethod as M extends keyof TSchema[TKey]
+            ? M
+            : never]: M extends keyof TSchema[TKey]
+            ? EndpointMethodFn<TSchema[TKey][M], TPath>
+            : never;
+        }>
+      : never
     : never;
-} & (TSchema extends { _: infer D }
-    ? HasQueryMethods<D> extends true
-      ? {
-          <TKey extends string | number>(key: TKey): QuerySchemaHelper<D>;
-        }
-      : object
-    : object);
+
+type WritePaths<TSchema> = {
+  [K in keyof TSchema & string]: Extract<
+    keyof TSchema[K],
+    MutationMethod
+  > extends never
+    ? never
+    : K;
+}[keyof TSchema & string];
+
+type HasMutationMethod<TSchema, TPath extends string> =
+  FindMatchingKey<TSchema, TPath> extends infer TKey
+    ? TKey extends keyof TSchema
+      ? MutationMethod extends never
+        ? false
+        : Extract<keyof TSchema[TKey], MutationMethod> extends never
+          ? false
+          : true
+      : false
+    : false;
+
+/**
+ * Schema navigation helper for plugins that need type-safe API schema access for mutations.
+ *
+ * Similar to QuerySchemaHelper but exposes mutation methods (POST, PUT, PATCH, DELETE).
+ */
+export type MutationSchemaHelper<TSchema> = <
+  TPath extends WritePaths<TSchema> | (string & {}),
+>(
+  path: TPath
+) => HasMutationMethod<TSchema, TPath> extends true
+  ? MutationPathMethods<TSchema, TPath>
+  : never;

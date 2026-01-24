@@ -1,5 +1,48 @@
 # @spoosh/core
 
+## 0.6.0
+
+### Breaking Changes
+
+- **New Flat Schema API**: Replaced nested schema structure with flat path-based schema
+  - Old: `api.posts._.$get()` with `_` wildcard for path params
+  - New: `api("posts/:id").GET()` with path string keys
+- HTTP methods changed from `$get`, `$post` to `GET`, `POST` format
+
+### Migration
+
+**Before (nested schema):**
+
+```typescript
+type ApiSchema = {
+  posts: {
+    $get: { data: Post[] };
+    _: {
+      $get: { data: Post };
+    };
+  };
+};
+
+const { data } = await api.posts._.$get({ params: { id: 1 } });
+```
+
+**After (flat schema):**
+
+```typescript
+type ApiSchema = {
+  "posts": { GET: { data: Post[] } };
+  "posts/:id": { GET: { data: Post } };
+};
+
+const { data } = await api("posts/:id").GET({ params: { id: 1 } });
+```
+
+### Improvements
+
+- Cleaner path syntax with explicit path parameters in key
+- Better TypeScript autocomplete for path strings
+- Prevent type deep recursion issues in large schemas
+
 ## 0.5.0
 
 ### Breaking Changes

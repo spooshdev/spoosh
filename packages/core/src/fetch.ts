@@ -3,6 +3,7 @@ import {
   buildUrl,
   containsFile,
   generateTags,
+  getContentType,
   isJsonBody,
   mergeHeaders,
   objectToFormData,
@@ -81,14 +82,6 @@ function buildInputFields(
 
   if (requestOptions?.body !== undefined) {
     fields.body = requestOptions.body;
-  }
-
-  if (requestOptions?.formData !== undefined) {
-    fields.formData = requestOptions.formData;
-  }
-
-  if (requestOptions?.urlEncoded !== undefined) {
-    fields.urlEncoded = requestOptions.urlEncoded;
   }
 
   if (requestOptions?.params !== undefined) {
@@ -178,23 +171,21 @@ async function executeCoreFetch<TData, TError>(
     fetchInit.signal = requestOptions.signal;
   }
 
-  if (requestOptions?.formData !== undefined) {
-    fetchInit.body = objectToFormData(
-      requestOptions.formData as Record<string, unknown>
-    );
-  } else if (requestOptions?.urlEncoded !== undefined) {
-    fetchInit.body = objectToUrlEncoded(
-      requestOptions.urlEncoded as Record<string, unknown>
-    );
-    headers = await mergeHeaders(headers, {
-      "Content-Type": "application/x-www-form-urlencoded",
-    });
+  if (requestOptions?.body !== undefined) {
+    const contentType = getContentType(headers);
 
-    if (headers) {
-      fetchInit.headers = headers;
-    }
-  } else if (requestOptions?.body !== undefined) {
-    if (isJsonBody(requestOptions.body)) {
+    if (contentType?.includes("application/x-www-form-urlencoded")) {
+      fetchInit.body = objectToUrlEncoded(
+        requestOptions.body as Record<string, unknown>
+      );
+    } else if (
+      contentType?.includes("multipart/form-data") ||
+      containsFile(requestOptions.body)
+    ) {
+      fetchInit.body = objectToFormData(
+        requestOptions.body as Record<string, unknown>
+      );
+    } else if (isJsonBody(requestOptions.body)) {
       fetchInit.body = JSON.stringify(requestOptions.body);
       headers = await mergeHeaders(headers, {
         "Content-Type": "application/json",
@@ -203,10 +194,6 @@ async function executeCoreFetch<TData, TError>(
       if (headers) {
         fetchInit.headers = headers;
       }
-    } else if (containsFile(requestOptions.body)) {
-      fetchInit.body = objectToFormData(
-        requestOptions.body as Record<string, unknown>
-      );
     } else {
       fetchInit.body = requestOptions.body as BodyInit;
     }

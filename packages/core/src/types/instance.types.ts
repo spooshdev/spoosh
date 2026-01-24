@@ -4,7 +4,6 @@ import type { PluginExecutor } from "../plugins/executor";
 import type { SpooshClient } from "./client.types";
 import type { SpooshOptions } from "./request.types";
 import type { SpooshPlugin, PluginTypeConfig } from "../plugins/types";
-import type { CoreRequestOptionsBase } from "./request.types";
 
 export type PluginArray = readonly SpooshPlugin<PluginTypeConfig>[];
 
@@ -19,7 +18,7 @@ export type SpooshInstance<
   TDefaultError = unknown,
   TPlugins extends PluginArray = PluginArray,
 > = {
-  api: SpooshClient<TSchema, TDefaultError, CoreRequestOptionsBase>;
+  api: SpooshClient<TSchema, TDefaultError>;
 
   stateManager: StateManager;
   eventEmitter: EventEmitter;

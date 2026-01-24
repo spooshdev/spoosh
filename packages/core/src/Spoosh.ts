@@ -18,7 +18,7 @@ import type { SpooshOptions } from "./types/request.types";
  *   .use([cachePlugin(), retryPlugin()]);
  *
  * const { api } = client;
- * const response = await api.posts.$get();
+ * const response = await api("posts").GET();
  * ```
  *
  * @example With default options
@@ -36,6 +36,10 @@ import type { SpooshOptions } from "./types/request.types";
  *   .use([cachePlugin(), retryPlugin()]);
  *
  * const { useRead, useWrite } = createReactSpoosh(client);
+ *
+ * // In component
+ * const { data } = useRead((api) => api("posts").GET());
+ * const { trigger } = useWrite((api) => api("posts").POST);
  * ```
  *
  * @since 0.1.0
@@ -173,13 +177,13 @@ export class Spoosh<
    * const { api } = client;
    *
    * // GET request
-   * const { data } = await api.posts.$get();
+   * const { data } = await api("posts").GET();
    *
    * // POST request with body
-   * const { data } = await api.posts.$post({ body: { title: 'Hello' } });
+   * const { data } = await api("posts").POST({ body: { title: 'Hello' } });
    *
    * // Dynamic path parameters
-   * const { data } = await api.posts(postId).$get();
+   * const { data } = await api("posts/:id").GET({ params: { id: postId } });
    * ```
    */
   get api() {
@@ -196,7 +200,7 @@ export class Spoosh<
    * const { stateManager } = client;
    *
    * // Get cached data
-   * const cache = stateManager.getCache('posts.$get');
+   * const cache = stateManager.getCache('posts.GET');
    *
    * // Invalidate cache by tag
    * stateManager.invalidate(['posts']);

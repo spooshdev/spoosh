@@ -302,8 +302,6 @@ export type ResolverContext<
   TQuery = unknown,
   TBody = unknown,
   TParams = unknown,
-  TFormData = unknown,
-  TUrlEncoded = unknown,
 > = {
   schema: TSchema;
   data: TData;
@@ -312,8 +310,6 @@ export type ResolverContext<
     query: TQuery;
     body: TBody;
     params: TParams;
-    formData: TFormData;
-    urlEncoded: TUrlEncoded;
   };
 };
 
