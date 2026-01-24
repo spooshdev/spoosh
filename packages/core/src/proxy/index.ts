@@ -1,4 +1,5 @@
 export { createProxyHandler } from "./handler";
+export { createFlatProxyHandler } from "./flat-handler";
 
 export {
   createSelectorProxy,

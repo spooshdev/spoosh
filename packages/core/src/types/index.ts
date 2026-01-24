@@ -6,3 +6,6 @@ export * from "./client.types";
 export * from "./filtered-client.types";
 export * from "./middleware.types";
 export * from "./instance.types";
+export * from "./path-matching.types";
+export * from "./flat-schema.types";
+export * from "./flat-client.types";
