@@ -6,7 +6,6 @@
     "cache",
     "invalidation",
     "deduplication",
-    "path-case",
     "retry",
     "optimistic",
     "polling",

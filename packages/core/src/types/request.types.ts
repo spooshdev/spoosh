@@ -41,9 +41,6 @@ export type AnyRequestOptions = BaseRequestOptions & {
   query?: Record<string, string | number | boolean | undefined>;
   params?: Record<string, string | number>;
   signal?: AbortSignal;
-
-  /** @internal Path transformer function. Set by plugins like path-case. */
-  _pathTransformer?: (path: string[]) => string[];
 } & Partial<RetryConfig>;
 
 type DynamicParamsOption = {

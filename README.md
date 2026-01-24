@@ -154,7 +154,6 @@ function UserList() {
 | [@spoosh/plugin-prefetch](./packages/plugin-prefetch)           | Preload data before it's needed                      |
 | [@spoosh/plugin-nextjs](./packages/plugin-nextjs)               | Next.js server-side cache revalidation               |
 | [@spoosh/plugin-debug](./packages/plugin-debug)                 | Debug logging for development                        |
-| [@spoosh/plugin-path-case](./packages/plugin-path-case)         | Write camelCase, send kebab-case to API              |
 
 ## Plugin Usage
 
