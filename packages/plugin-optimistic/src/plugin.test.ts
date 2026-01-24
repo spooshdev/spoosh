@@ -2,39 +2,46 @@ import type { SpooshResponse } from "@spoosh/core";
 import { createMockContext, createStateManager } from "@spoosh/test-utils";
 
 import { optimisticPlugin, OPTIMISTIC_SNAPSHOTS_KEY } from "./plugin";
-import type { ResolvedCacheConfig, OptimisticWriteOptions } from "./types";
+import type { OptimisticWriteOptions, OptimisticTarget } from "./types";
 
-type SelectorFunction = (() => Promise<{ data: undefined }>) & {
-  __selectorPath?: string[];
-  __selectorMethod?: string;
-};
-
-function createSelectorForPath(path: string[]): SelectorFunction {
-  const fn = (() => Promise.resolve({ data: undefined })) as SelectorFunction;
-  fn.__selectorPath = path;
-  fn.__selectorMethod = "$get";
-  return fn;
+function createOptimisticTarget(
+  targetPath: string,
+  updater: (data: unknown, response?: unknown) => unknown,
+  options: {
+    where?: (opts: unknown) => boolean;
+    timing?: "immediate" | "onSuccess";
+    rollbackOnError?: boolean;
+    onError?: (error: unknown) => void;
+  } = {}
+): OptimisticTarget {
+  return {
+    path: targetPath,
+    method: "GET",
+    where: options.where,
+    updater,
+    timing: options.timing ?? "immediate",
+    rollbackOnError: options.rollbackOnError ?? true,
+    onError: options.onError,
+  };
 }
 
 function createOptimisticPluginOptions(
-  path: string[],
+  path: string,
   updater: (data: unknown, response?: unknown) => unknown,
   options: {
     timing?: "immediate" | "onSuccess";
     rollbackOnError?: boolean;
-    match?: (request: Record<string, unknown>) => boolean;
+    where?: (opts: unknown) => boolean;
     onError?: (error: unknown) => void;
   } = {}
 ): OptimisticWriteOptions {
   return {
-    optimistic: () => ({
-      for: createSelectorForPath(path) as ResolvedCacheConfig["for"],
-      updater,
-      timing: options.timing,
-      rollbackOnError: options.rollbackOnError,
-      match: options.match,
-      onError: options.onError,
-    }),
+    optimistic: (() =>
+      createOptimisticTarget(
+        path,
+        updater,
+        options
+      )) as unknown as OptimisticWriteOptions["optimistic"],
   };
 }
 
@@ -79,10 +86,10 @@ describe("optimisticPlugin", () => {
       const plugin = optimisticPlugin();
       const stateManager = createStateManager();
 
-      const cacheKey = '{"method":"$get","path":["posts"]}';
+      const cacheKey = '{"method":"GET","path":["posts"]}';
       setupCacheEntry(stateManager, cacheKey, [{ id: 1 }, { id: 2 }], "posts");
 
-      const pluginOptions = createOptimisticPluginOptions(["posts"], (data) =>
+      const pluginOptions = createOptimisticPluginOptions("posts", (data) =>
         (data as Array<{ id: number }>).filter((p) => p.id !== 1)
       );
 
@@ -105,10 +112,10 @@ describe("optimisticPlugin", () => {
       const plugin = optimisticPlugin();
       const stateManager = createStateManager();
 
-      const cacheKey = '{"method":"$get","path":["posts"]}';
+      const cacheKey = '{"method":"GET","path":["posts"]}';
       setupCacheEntry(stateManager, cacheKey, [{ id: 1 }], "posts");
 
-      const pluginOptions = createOptimisticPluginOptions(["posts"], (data) => [
+      const pluginOptions = createOptimisticPluginOptions("posts", (data) => [
         ...(data as Array<{ id: number }>),
         { id: 2 },
       ]);
@@ -134,11 +141,11 @@ describe("optimisticPlugin", () => {
       const plugin = optimisticPlugin();
       const stateManager = createStateManager();
 
-      const cacheKey = '{"method":"$get","path":["posts"]}';
+      const cacheKey = '{"method":"GET","path":["posts"]}';
       setupCacheEntry(stateManager, cacheKey, [{ id: 1 }], "posts");
 
       const pluginOptions = createOptimisticPluginOptions(
-        ["posts"],
+        "posts",
         (data) => data
       );
 
@@ -164,13 +171,15 @@ describe("optimisticPlugin", () => {
       const plugin = optimisticPlugin();
       const stateManager = createStateManager();
 
-      const cacheKey1 = '{"method":"$get","path":["posts"],"query":{"page":1}}';
-      const cacheKey2 = '{"method":"$get","path":["posts"],"query":{"page":2}}';
+      const cacheKey1 =
+        '{"method":"GET","options":{"query":{"page":1}},"path":["posts"]}';
+      const cacheKey2 =
+        '{"method":"GET","options":{"query":{"page":2}},"path":["posts"]}';
 
       setupCacheEntry(stateManager, cacheKey1, [{ id: 1 }], "posts");
       setupCacheEntry(stateManager, cacheKey2, [{ id: 2 }], "posts");
 
-      const pluginOptions = createOptimisticPluginOptions(["posts"], (data) =>
+      const pluginOptions = createOptimisticPluginOptions("posts", (data) =>
         (data as Array<{ id: number }>).map((p) => ({ ...p, updated: true }))
       );
 
@@ -198,11 +207,11 @@ describe("optimisticPlugin", () => {
       const plugin = optimisticPlugin();
       const stateManager = createStateManager();
 
-      const cacheKey = '{"method":"$get","path":["posts"]}';
+      const cacheKey = '{"method":"GET","path":["posts"]}';
       const originalData = [{ id: 1, title: "Original" }];
       setupCacheEntry(stateManager, cacheKey, originalData, "posts");
 
-      const pluginOptions = createOptimisticPluginOptions(["posts"], (data) => [
+      const pluginOptions = createOptimisticPluginOptions("posts", (data) => [
         ...(data as Array<{ id: number; title: string }>),
         { id: 2, title: "New" },
       ]);
@@ -229,11 +238,11 @@ describe("optimisticPlugin", () => {
       const stateManager = createStateManager();
       const metadata = new Map();
 
-      const cacheKey = '{"method":"$get","path":["posts"]}';
+      const cacheKey = '{"method":"GET","path":["posts"]}';
       setupCacheEntry(stateManager, cacheKey, [{ id: 1 }], "posts");
 
       const pluginOptions = createOptimisticPluginOptions(
-        ["posts"],
+        "posts",
         (data) => data
       );
 
@@ -263,12 +272,12 @@ describe("optimisticPlugin", () => {
       const plugin = optimisticPlugin();
       const stateManager = createStateManager();
 
-      const cacheKey = '{"method":"$get","path":["posts"]}';
+      const cacheKey = '{"method":"GET","path":["posts"]}';
       const originalData = [{ id: 1 }, { id: 2 }];
       setupCacheEntry(stateManager, cacheKey, originalData, "posts");
 
       const pluginOptions = createOptimisticPluginOptions(
-        ["posts"],
+        "posts",
         (data) => (data as Array<{ id: number }>).filter((p) => p.id !== 1),
         { rollbackOnError: true }
       );
@@ -293,11 +302,11 @@ describe("optimisticPlugin", () => {
       const plugin = optimisticPlugin();
       const stateManager = createStateManager();
 
-      const cacheKey = '{"method":"$get","path":["posts"]}';
+      const cacheKey = '{"method":"GET","path":["posts"]}';
       const originalData = [{ id: 1 }];
       setupCacheEntry(stateManager, cacheKey, originalData, "posts");
 
-      const pluginOptions = createOptimisticPluginOptions(["posts"], (data) => [
+      const pluginOptions = createOptimisticPluginOptions("posts", (data) => [
         ...(data as Array<{ id: number }>),
         { id: 2 },
       ]);
@@ -322,12 +331,12 @@ describe("optimisticPlugin", () => {
       const plugin = optimisticPlugin();
       const stateManager = createStateManager();
 
-      const cacheKey = '{"method":"$get","path":["posts"]}';
+      const cacheKey = '{"method":"GET","path":["posts"]}';
       const originalData = [{ id: 1 }];
       setupCacheEntry(stateManager, cacheKey, originalData, "posts");
 
       const pluginOptions = createOptimisticPluginOptions(
-        ["posts"],
+        "posts",
         (data) => [...(data as Array<{ id: number }>), { id: 99 }],
         { rollbackOnError: true }
       );
@@ -352,11 +361,11 @@ describe("optimisticPlugin", () => {
       const plugin = optimisticPlugin();
       const stateManager = createStateManager();
 
-      const cacheKey = '{"method":"$get","path":["posts"]}';
+      const cacheKey = '{"method":"GET","path":["posts"]}';
       setupCacheEntry(stateManager, cacheKey, [{ id: 1 }], "posts");
 
       const pluginOptions = createOptimisticPluginOptions(
-        ["posts"],
+        "posts",
         (data) => data
       );
 
@@ -380,12 +389,12 @@ describe("optimisticPlugin", () => {
       const plugin = optimisticPlugin();
       const stateManager = createStateManager();
 
-      const cacheKey = '{"method":"$get","path":["posts"]}';
+      const cacheKey = '{"method":"GET","path":["posts"]}';
       setupCacheEntry(stateManager, cacheKey, [{ id: 1 }], "posts");
 
       const onError = vi.fn();
       const pluginOptions = createOptimisticPluginOptions(
-        ["posts"],
+        "posts",
         (data) => data,
         { onError }
       );
@@ -410,12 +419,12 @@ describe("optimisticPlugin", () => {
       const plugin = optimisticPlugin();
       const stateManager = createStateManager();
 
-      const cacheKey = '{"method":"$get","path":["posts"]}';
+      const cacheKey = '{"method":"GET","path":["posts"]}';
       const originalData = [{ id: 1 }];
       setupCacheEntry(stateManager, cacheKey, originalData, "posts");
 
       const pluginOptions = createOptimisticPluginOptions(
-        ["posts"],
+        "posts",
         (data) => [...(data as Array<{ id: number }>), { id: 2 }],
         { rollbackOnError: false }
       );
@@ -440,13 +449,15 @@ describe("optimisticPlugin", () => {
       const plugin = optimisticPlugin();
       const stateManager = createStateManager();
 
-      const cacheKey1 = '{"method":"$get","path":["posts"],"query":{"page":1}}';
-      const cacheKey2 = '{"method":"$get","path":["posts"],"query":{"page":2}}';
+      const cacheKey1 =
+        '{"method":"GET","options":{"query":{"page":1}},"path":["posts"]}';
+      const cacheKey2 =
+        '{"method":"GET","options":{"query":{"page":2}},"path":["posts"]}';
 
       setupCacheEntry(stateManager, cacheKey1, [{ id: 1 }], "posts");
       setupCacheEntry(stateManager, cacheKey2, [{ id: 2 }], "posts");
 
-      const pluginOptions = createOptimisticPluginOptions(["posts"], (data) =>
+      const pluginOptions = createOptimisticPluginOptions("posts", (data) =>
         (data as Array<{ id: number }>).map((p) => ({ ...p, deleted: true }))
       );
 
@@ -475,10 +486,10 @@ describe("optimisticPlugin", () => {
       const plugin = optimisticPlugin();
       const stateManager = createStateManager();
 
-      const cacheKey = '{"method":"$get","path":["posts"]}';
+      const cacheKey = '{"method":"GET","path":["posts"]}';
       setupCacheEntry(stateManager, cacheKey, [{ id: 1 }, { id: 2 }], "posts");
 
-      const pluginOptions = createOptimisticPluginOptions(["posts"], (data) =>
+      const pluginOptions = createOptimisticPluginOptions("posts", (data) =>
         (data as Array<{ id: number }>).filter((p) => p.id !== 1)
       );
 
@@ -501,10 +512,10 @@ describe("optimisticPlugin", () => {
       const plugin = optimisticPlugin();
       const stateManager = createStateManager();
 
-      const cacheKey = '{"method":"$get","path":["posts"]}';
+      const cacheKey = '{"method":"GET","path":["posts"]}';
       setupCacheEntry(stateManager, cacheKey, [{ id: 1 }], "posts");
 
-      const pluginOptions = createOptimisticPluginOptions(["posts"], (data) => [
+      const pluginOptions = createOptimisticPluginOptions("posts", (data) => [
         ...(data as Array<{ id: number }>),
         { id: 2 },
       ]);
@@ -528,11 +539,11 @@ describe("optimisticPlugin", () => {
       const plugin = optimisticPlugin();
       const stateManager = createStateManager();
 
-      const cacheKey = '{"method":"$get","path":["posts"]}';
+      const cacheKey = '{"method":"GET","path":["posts"]}';
       setupCacheEntry(stateManager, cacheKey, [{ id: 1 }], "posts");
 
       const pluginOptions = createOptimisticPluginOptions(
-        ["posts"],
+        "posts",
         (data) => data
       );
 
@@ -555,11 +566,11 @@ describe("optimisticPlugin", () => {
       const plugin = optimisticPlugin();
       const stateManager = createStateManager();
 
-      const cacheKey = '{"method":"$get","path":["posts"]}';
+      const cacheKey = '{"method":"GET","path":["posts"]}';
       setupCacheEntry(stateManager, cacheKey, [{ id: 1 }], "posts");
 
       const pluginOptions = createOptimisticPluginOptions(
-        ["posts"],
+        "posts",
         (data) => data
       );
 
@@ -586,12 +597,12 @@ describe("optimisticPlugin", () => {
       const plugin = optimisticPlugin();
       const stateManager = createStateManager();
 
-      const cacheKey = '{"method":"$get","path":["posts"]}';
+      const cacheKey = '{"method":"GET","path":["posts"]}';
       const originalData = [{ id: 1 }];
       setupCacheEntry(stateManager, cacheKey, originalData, "posts");
 
       const pluginOptions = createOptimisticPluginOptions(
-        ["posts"],
+        "posts",
         (data) => [...(data as Array<{ id: number }>), { id: 2 }],
         { timing: "onSuccess" }
       );
@@ -617,11 +628,11 @@ describe("optimisticPlugin", () => {
       const plugin = optimisticPlugin();
       const stateManager = createStateManager();
 
-      const cacheKey = '{"method":"$get","path":["posts"]}';
+      const cacheKey = '{"method":"GET","path":["posts"]}';
       setupCacheEntry(stateManager, cacheKey, [{ id: 1 }], "posts");
 
       const pluginOptions = createOptimisticPluginOptions(
-        ["posts"],
+        "posts",
         (data, response) => [
           ...(data as Array<{ id: number }>),
           response as { id: number },
@@ -646,12 +657,12 @@ describe("optimisticPlugin", () => {
       const plugin = optimisticPlugin();
       const stateManager = createStateManager();
 
-      const cacheKey = '{"method":"$get","path":["posts"]}';
+      const cacheKey = '{"method":"GET","path":["posts"]}';
       const originalData = [{ id: 1 }];
       setupCacheEntry(stateManager, cacheKey, originalData, "posts");
 
       const pluginOptions = createOptimisticPluginOptions(
-        ["posts"],
+        "posts",
         (data, response) => [
           ...(data as Array<{ id: number }>),
           response as { id: number },
@@ -681,12 +692,12 @@ describe("optimisticPlugin", () => {
       const plugin = optimisticPlugin();
       const stateManager = createStateManager();
 
-      const cacheKey = '{"method":"$get","path":["posts"]}';
+      const cacheKey = '{"method":"GET","path":["posts"]}';
       setupCacheEntry(stateManager, cacheKey, [{ id: 1 }], "posts");
 
       const setAutoInvalidateDefault = vi.fn();
       const pluginOptions = createOptimisticPluginOptions(
-        ["posts"],
+        "posts",
         (data) => data
       );
 
@@ -732,7 +743,7 @@ describe("optimisticPlugin", () => {
       const plugin = optimisticPlugin();
       const stateManager = createStateManager();
 
-      const cacheKey = '{"method":"$get","path":["posts"]}';
+      const cacheKey = '{"method":"GET","path":["posts"]}';
       const originalData = [{ id: 1 }];
       setupCacheEntry(stateManager, cacheKey, originalData, "posts");
 
@@ -752,22 +763,27 @@ describe("optimisticPlugin", () => {
     });
   });
 
-  describe("match filter", () => {
-    it("should only update entries matching the filter", async () => {
+  describe("WHERE predicate matching", () => {
+    it("should only update entries matching the WHERE predicate", async () => {
       const plugin = optimisticPlugin();
       const stateManager = createStateManager();
 
-      const cacheKey1 = '{"method":"$get","path":["posts"],"query":{"page":1}}';
-      const cacheKey2 = '{"method":"$get","path":["posts"],"query":{"page":2}}';
+      const cacheKey1 =
+        '{"method":"GET","options":{"query":{"page":1}},"path":["posts"]}';
+      const cacheKey2 =
+        '{"method":"GET","options":{"query":{"page":2}},"path":["posts"]}';
 
       setupCacheEntry(stateManager, cacheKey1, [{ id: 1 }], "posts");
       setupCacheEntry(stateManager, cacheKey2, [{ id: 2 }], "posts");
 
       const pluginOptions = createOptimisticPluginOptions(
-        ["posts"],
+        "posts",
         (data) =>
           (data as Array<{ id: number }>).map((p) => ({ ...p, updated: true })),
-        { match: (request) => (request.query as { page?: number })?.page === 1 }
+        {
+          where: (opts) =>
+            (opts as { query: { page: number } }).query.page === 1,
+        }
       );
 
       const context = createMockContext({
@@ -787,6 +803,40 @@ describe("optimisticPlugin", () => {
       expect(entry1?.state.data).toEqual([{ id: 1, updated: true }]);
       expect(entry2?.state.data).toEqual([{ id: 2 }]);
     });
+
+    it("should update all entries when WHERE is not provided", async () => {
+      const plugin = optimisticPlugin();
+      const stateManager = createStateManager();
+
+      const cacheKey1 =
+        '{"method":"GET","options":{"query":{"page":1}},"path":["posts"]}';
+      const cacheKey2 =
+        '{"method":"GET","options":{"query":{"page":2}},"path":["posts"]}';
+
+      setupCacheEntry(stateManager, cacheKey1, [{ id: 1 }], "posts");
+      setupCacheEntry(stateManager, cacheKey2, [{ id: 2 }], "posts");
+
+      const pluginOptions = createOptimisticPluginOptions("posts", (data) =>
+        (data as Array<{ id: number }>).map((p) => ({ ...p, updated: true }))
+      );
+
+      const context = createMockContext({
+        stateManager,
+        pluginOptions,
+      });
+
+      const next = vi
+        .fn()
+        .mockResolvedValue({ data: { success: true }, status: 200 });
+
+      await plugin.middleware!(context, next);
+
+      const entry1 = stateManager.getCache(cacheKey1);
+      const entry2 = stateManager.getCache(cacheKey2);
+
+      expect(entry1?.state.data).toEqual([{ id: 1, updated: true }]);
+      expect(entry2?.state.data).toEqual([{ id: 2, updated: true }]);
+    });
   });
 
   describe("edge cases", () => {
@@ -794,7 +844,7 @@ describe("optimisticPlugin", () => {
       const plugin = optimisticPlugin();
       const stateManager = createStateManager();
 
-      const cacheKey = '{"method":"$get","path":["posts"]}';
+      const cacheKey = '{"method":"GET","path":["posts"]}';
       stateManager.setCache(cacheKey, {
         state: {
           data: undefined,
@@ -807,7 +857,7 @@ describe("optimisticPlugin", () => {
       });
 
       const pluginOptions = createOptimisticPluginOptions(
-        ["posts"],
+        "posts",
         (data) => data
       );
 
@@ -831,13 +881,13 @@ describe("optimisticPlugin", () => {
       const stateManager = createStateManager();
 
       const trackerKey =
-        '{"method":"$get","path":["posts"],"type":"infinite-tracker"}';
-      const regularKey = '{"method":"$get","path":["posts"]}';
+        '{"method":"GET","path":["posts"],"type":"infinite-tracker"}';
+      const regularKey = '{"method":"GET","path":["posts"]}';
 
       setupCacheEntry(stateManager, trackerKey, { pages: [] }, "posts");
       setupCacheEntry(stateManager, regularKey, [{ id: 1 }], "posts");
 
-      const pluginOptions = createOptimisticPluginOptions(["posts"], (data) => {
+      const pluginOptions = createOptimisticPluginOptions("posts", (data) => {
         if (Array.isArray(data)) {
           return (data as Array<{ id: number }>).map((p) => ({
             ...p,
@@ -876,6 +926,47 @@ describe("optimisticPlugin", () => {
       const result = await plugin.middleware!(context, next);
 
       expect(result.error).toEqual({ message: "Error" });
+    });
+  });
+
+  describe("multiple targets", () => {
+    it("should update multiple targets", async () => {
+      const plugin = optimisticPlugin();
+      const stateManager = createStateManager();
+
+      const postsKey = '{"method":"GET","path":["posts"]}';
+      const statsKey = '{"method":"GET","path":["stats"]}';
+
+      setupCacheEntry(stateManager, postsKey, [{ id: 1 }, { id: 2 }], "posts");
+      setupCacheEntry(stateManager, statsKey, { count: 2 }, "stats");
+
+      const pluginOptions: OptimisticWriteOptions = {
+        optimistic: (() => [
+          createOptimisticTarget("posts", (data) =>
+            (data as Array<{ id: number }>).filter((p) => p.id !== 1)
+          ),
+          createOptimisticTarget("stats", (data) => ({
+            count: ((data as { count: number }).count || 0) - 1,
+          })),
+        ]) as unknown as OptimisticWriteOptions["optimistic"],
+      };
+
+      const context = createMockContext({
+        stateManager,
+        pluginOptions,
+      });
+
+      const next = vi
+        .fn()
+        .mockResolvedValue({ data: { success: true }, status: 200 });
+
+      await plugin.middleware!(context, next);
+
+      const postsEntry = stateManager.getCache(postsKey);
+      const statsEntry = stateManager.getCache(statsKey);
+
+      expect(postsEntry?.state.data).toEqual([{ id: 2 }]);
+      expect(statsEntry?.state.data).toEqual({ count: 1 });
     });
   });
 });

@@ -1,5 +1,13 @@
 # @spoosh/plugin-optimistic
 
+## 0.3.0
+
+### Breaking Changes
+
+- Updated to support new flat schema API from @spoosh/core@0.6.0
+- Optimistic target path format changed from nested to flat (e.g., `"posts/:id"`)
+- Change optimistic structure to DSL format for better readability
+
 ## 0.2.0
 
 ### Breaking Changes
