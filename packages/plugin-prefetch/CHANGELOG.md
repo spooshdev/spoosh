@@ -1,5 +1,12 @@
 # @spoosh/plugin-prefetch
 
+## 0.3.0
+
+### Breaking Changes
+
+- Updated for @spoosh/core@0.7.0 unified tags API
+- Removed `additionalTags` option (use `tags` array instead)
+
 ## 0.2.0
 
 ### Breaking Changes

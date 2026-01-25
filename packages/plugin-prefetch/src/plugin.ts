@@ -82,7 +82,7 @@ export function prefetchPlugin(
         selector: (api: unknown) => unknown,
         options: PrefetchOptions = {}
       ): Promise<SpooshResponse<TData, TError>> => {
-        const { tags, additionalTags } = options;
+        const { tags } = options;
 
         let callPath = "";
         let callMethod = "";
@@ -110,10 +110,7 @@ export function prefetchPlugin(
 
         const pathSegments = callPath.split("/").filter(Boolean);
         const resolvedPath = resolvePath(pathSegments, undefined);
-        const resolvedTags = resolveTags(
-          { tags, additionalTags },
-          resolvedPath
-        );
+        const resolvedTags = resolveTags({ tags }, resolvedPath);
 
         const queryKey = stateManager.createQueryKey({
           path: pathSegments,

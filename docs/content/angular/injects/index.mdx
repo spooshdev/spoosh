@@ -43,12 +43,22 @@ Tags are hierarchical. Invalidating `"users"` will refetch all queries under `/u
 
 ### Custom Tags
 
-Override or extend auto-generated tags:
+The unified `tags` option supports modes and custom tags:
 
 ```typescript
-const { data } = useRead((api) => api("users").GET(), {
-  tags: ["custom-users"], // overrides auto-generated tags
-  additionalTags: ["dashboard-data"], // adds to auto-generated tags
+// Mode only - generates auto tags based on mode
+const users = injectRead((api) => api("users").GET(), {
+  tags: "all", // Full hierarchy: ['users']
+});
+
+// Custom tags only - replaces auto-generated tags
+const users = injectRead((api) => api("users").GET(), {
+  tags: ["custom-users", "dashboard"],
+});
+
+// Mode + custom tags - combines both
+const users = injectRead((api) => api("users").GET(), {
+  tags: ["all", "dashboard-data"], // ['users', 'dashboard-data']
 });
 ```
 

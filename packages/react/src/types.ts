@@ -12,7 +12,7 @@ import type {
   ResolveTypes,
   ResolverContext,
   PluginTypeConfig,
-  TagOptions,
+  TagMode,
 } from "@spoosh/core";
 
 type QueryRequestOptions = CoreRequestOptionsBase;
@@ -34,12 +34,23 @@ export type PluginHooksConfig<
   plugins: TPlugins;
 };
 
+type TagModeInArray = "all" | "self";
+
 /**
  * Base options for `useRead` hook.
  */
-export type BaseReadOptions = TagOptions & {
+export type BaseReadOptions = {
   /** Whether to fetch automatically on mount. Default: true */
   enabled?: boolean;
+
+  /**
+   * Unified tag option
+   * - String: mode only ('all' | 'self' | 'none')
+   * - Array: custom tags only OR [mode keyword mixed with custom tags]
+   *   - 'all' or 'self' can be used in arrays
+   *   - 'none' should only be used as string (use `tags: 'none'` not in array)
+   */
+  tags?: TagMode | (TagModeInArray | (string & {}))[];
 };
 
 export type { ResolveSchemaTypes, ResolveTypes, ResolverContext };
@@ -317,9 +328,18 @@ export type BaseInfiniteReadOptions<
   TData,
   TItem,
   TRequest = AnyInfiniteRequestOptions,
-> = TagOptions & {
+> = {
   /** Whether to fetch automatically on mount. Default: true */
   enabled?: boolean;
+
+  /**
+   * Unified tag option
+   * - String: mode only ('all' | 'self' | 'none')
+   * - Array: custom tags only OR [mode keyword mixed with custom tags]
+   *   - 'all' or 'self' can be used in arrays
+   *   - 'none' should only be used as string (use `tags: 'none'` not in array)
+   */
+  tags?: TagMode | (TagModeInArray | (string & {}))[];
 
   /** Callback to determine if there's a next page to fetch */
   canFetchNext: (ctx: InfiniteNextContext<TData, TRequest>) => boolean;

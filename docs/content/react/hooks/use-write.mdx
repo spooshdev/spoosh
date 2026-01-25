@@ -58,13 +58,12 @@ await trigger({
 
 ## Trigger Options
 
-| Option       | Type                                    | Description                                                       |
-| ------------ | --------------------------------------- | ----------------------------------------------------------------- |
-| `body`       | `TBody`                                 | Request body                                                      |
-| `query`      | `TQuery`                                | Query parameters                                                  |
-| `params`     | `Record<string, string \| number>`      | Path parameters                                                   |
-| `invalidate` | `"all" \| "self" \| "none" \| string[]` | Invalidation: mode (string), tags (array), or mode + tags (array) |
-| `dedupe`     | `"in-flight" \| false`                  | Request deduplication mode                                        |
+| Option           | Type                               | Description                    |
+| ---------------- | ---------------------------------- | ------------------------------ |
+| `body`           | `TBody`                            | Request body                   |
+| `query`          | `TQuery`                           | Query parameters               |
+| `params`         | `Record<string, string \| number>` | Path parameters                |
+| + plugin options | -                                  | Options from installed plugins |
 
 ## Resetting Mutation State
 

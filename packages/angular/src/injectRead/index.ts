@@ -101,8 +101,7 @@ export function createInjectRead<
 
     const {
       enabled: enabledOption = true,
-      tags = undefined,
-      additionalTags = undefined,
+      tags,
       ...pluginOpts
     } = (readOptions ?? {}) as BaseReadOptions & Record<string, unknown>;
 
@@ -253,7 +252,7 @@ export function createInjectRead<
       initialRequestOptions?.params
     );
     const initialResolvedTags = resolveTags(
-      { tags, additionalTags },
+      tags !== undefined ? { tags } : undefined,
       initialResolvedPath
     );
     const initialQueryKey = stateManager.createQueryKey({
@@ -287,7 +286,7 @@ export function createInjectRead<
         const pathSegments = capturedCall.path.split("/").filter(Boolean);
         const resolvedPath = resolvePath(pathSegments, requestOptions?.params);
         const resolvedTags = resolveTags(
-          { tags, additionalTags },
+          tags !== undefined ? { tags } : undefined,
           resolvedPath
         );
 

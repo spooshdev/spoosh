@@ -100,7 +100,6 @@ export function createInjectInfiniteRead<
     const {
       enabled: enabledOption = true,
       tags,
-      additionalTags,
       canFetchNext,
       nextPageRequest,
       merger,
@@ -341,7 +340,7 @@ export function createInjectInfiniteRead<
       initialRequestOptions?.params
     );
     const initialResolvedTags = resolveTags(
-      { tags, additionalTags },
+      tags !== undefined ? { tags } : undefined,
       initialResolvedPath
     );
     const initialBaseOptionsForKey = {
@@ -374,7 +373,7 @@ export function createInjectInfiniteRead<
         const pathSegments = capturedCall.path.split("/").filter(Boolean);
         const resolvedPath = resolvePath(pathSegments, requestOptions?.params);
         const resolvedTags = resolveTags(
-          { tags, additionalTags },
+          tags !== undefined ? { tags } : undefined,
           resolvedPath
         );
 

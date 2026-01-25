@@ -9,6 +9,7 @@ import type {
   WriteClient,
   MethodOptionsMap,
   CoreRequestOptionsBase,
+  TagOptions,
 } from "@spoosh/core";
 
 export interface SpooshInstanceShape<
@@ -30,10 +31,8 @@ export interface SpooshInstanceShape<
 
 export type EnabledOption = boolean | (() => boolean);
 
-export interface BaseReadOptions {
+export interface BaseReadOptions extends TagOptions {
   enabled?: EnabledOption;
-  tags?: string[];
-  additionalTags?: string[];
 }
 
 export interface BaseReadResult<
@@ -75,7 +74,9 @@ export interface BaseInfiniteReadOptions<
   TData,
   TItem,
   TRequest,
-> extends BaseReadOptions {
+> extends TagOptions {
+  enabled?: EnabledOption;
+
   canFetchNext: (ctx: PageContext<TData, TRequest>) => boolean;
   canFetchPrev?: (ctx: PageContext<TData, TRequest>) => boolean;
   nextPageRequest: (ctx: PageContext<TData, TRequest>) => Partial<TRequest>;

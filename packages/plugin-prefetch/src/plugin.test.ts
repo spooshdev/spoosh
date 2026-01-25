@@ -692,8 +692,7 @@ describe("prefetchPlugin", () => {
       await prefetch(
         (apiProxy) => (apiProxy as unknown as MockApi)("posts").GET(),
         {
-          tags: ["custom-tag"],
-          additionalTags: ["extra-tag"],
+          tags: ["custom-tag", "extra-tag"],
         }
       );
 

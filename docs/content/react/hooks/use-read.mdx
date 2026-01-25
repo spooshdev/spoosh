@@ -31,20 +31,50 @@ const { data, input } = useRead(
   (api) => api("users").GET({ query: { page: 1, limit: 10 } }),
   {
     enabled: isReady,
-    additionalTags: ["custom-tag"],
+    tags: ["all", "custom-tag"],
   }
 );
 ```
 
+## Tag Modes
+
+```typescript
+// Mode only - 'all' generates full hierarchy
+useRead((api) => api("users/:id/posts").GET({ params: { id: "123" } }), {
+  tags: "all", // ['users', 'users/123', 'users/123/posts']
+});
+
+// Mode only - 'self' generates only exact path
+useRead((api) => api("users/:id/posts").GET({ params: { id: "123" } }), {
+  tags: "self", // ['users/123/posts']
+});
+
+// Mode only - 'none' generates no tags
+useRead((api) => api("posts").GET(), { tags: "none" }); // []
+
+// Custom tags only - replaces auto-generated tags
+useRead((api) => api("posts").GET(), {
+  tags: ["custom", "dashboard"], // ['custom', 'dashboard']
+});
+
+// Mode + custom tags - 'all' mode combined with custom tags
+useRead((api) => api("users/:id/posts").GET({ params: { id: "123" } }), {
+  tags: ["all", "dashboard"], // ['users', 'users/123', 'users/123/posts', 'dashboard']
+});
+
+// Mode + custom tags - 'self' mode combined with custom tags
+useRead((api) => api("users/:id/posts").GET({ params: { id: "123" } }), {
+  tags: ["self", "dashboard"], // ['users/123/posts', 'dashboard']
+});
+```
+
 ## Options
 
-| Option           | Type                   | Default       | Description                        |
-| ---------------- | ---------------------- | ------------- | ---------------------------------- |
-| `enabled`        | `boolean`              | `true`        | Whether to fetch automatically     |
-| `tags`           | `string[]`             | -             | Override auto-generated cache tags |
-| `additionalTags` | `string[]`             | -             | Add extra cache tags               |
-| `dedupe`         | `"in-flight" \| false` | `"in-flight"` | Request deduplication mode         |
-| + plugin options | -                      | -             | Options from installed plugins     |
+| Option           | Type                                    | Default | Description                    |
+| ---------------- | --------------------------------------- | ------- | ------------------------------ |
+| `enabled`        | `boolean`                               | `true`  | Whether to fetch automatically |
+| `tags`           | `'all' \| 'self' \| 'none' \| string[]` | `'all'` | Tag mode or custom tags        |
+| + plugin options | -                                       | -       | Options from installed plugins |
 
 ## Returns
 

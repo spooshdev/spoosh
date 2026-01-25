@@ -57,7 +57,6 @@ export function createUseInfiniteRead<
     const {
       enabled = true,
       tags,
-      additionalTags,
       canFetchNext,
       nextPageRequest,
       merger,
@@ -112,7 +111,7 @@ export function createUseInfiniteRead<
     };
 
     const resolvedPath = resolvePath(pathSegments, requestOptions?.params);
-    const resolvedTags = resolveTags({ tags, additionalTags }, resolvedPath);
+    const resolvedTags = resolveTags({ tags }, resolvedPath);
 
     const canFetchNextRef = useRef(canFetchNext);
     const canFetchPrevRef = useRef(canFetchPrev);

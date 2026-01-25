@@ -1,5 +1,16 @@
 # @spoosh/core
 
+## 0.7.0
+
+### Breaking Changes
+
+**Unified Tags API**
+
+The tags API now follows the same pattern as the invalidation plugin's unified `invalidate` option. This simplifies the API by merging `tags` and `additionalTags` into a single `tags` option that supports modes ('all', 'self', 'none') and arrays.
+
+- Removed `additionalTags` option
+- `tags` now accepts `'all' | 'self' | 'none' | string[]` (unified pattern matching invalidation API)
+
 ## 0.6.0
 
 ### Breaking Changes

@@ -1,6 +1,6 @@
 {
   "name": "@spoosh/plugin-prefetch",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Prefetch plugin for Spoosh - preload data before it's needed",
   "license": "MIT",
   "repository": {
@@ -40,7 +40,7 @@
     "format": "prettier --write 'src/**/*.ts'"
   },
   "peerDependencies": {
-    "@spoosh/core": ">=0.6.0"
+    "@spoosh/core": ">=0.7.0"
   },
   "devDependencies": {
     "@spoosh/core": "workspace:*",

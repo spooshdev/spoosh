@@ -77,12 +77,7 @@ export function createUseRead<
       ExtractResponseBody<TReadFn>,
       ExtractResponseParamNames<TReadFn>
     > {
-    const {
-      enabled = true,
-      tags,
-      additionalTags,
-      ...pluginOpts
-    } = readOptions ?? {};
+    const { enabled = true, tags, ...pluginOpts } = readOptions ?? {};
 
     const hookId = useId();
 
@@ -112,7 +107,7 @@ export function createUseRead<
 
     const pathSegments = capturedCall.path.split("/").filter(Boolean);
     const resolvedPath = resolvePath(pathSegments, requestOptions?.params);
-    const resolvedTags = resolveTags({ tags, additionalTags }, resolvedPath);
+    const resolvedTags = resolveTags({ tags }, resolvedPath);
 
     const queryKey = stateManager.createQueryKey({
       path: pathSegments,

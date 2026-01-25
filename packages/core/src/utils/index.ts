@@ -10,4 +10,9 @@ export {
 export { objectToFormData } from "./objectToFormData";
 export { objectToUrlEncoded } from "./objectToUrlEncoded";
 export { sortObjectKeys } from "./sortObjectKeys";
-export { resolvePath, resolveTags, type TagOptions } from "./path-utils";
+export {
+  resolvePath,
+  resolveTags,
+  type TagMode,
+  type TagOptions,
+} from "./path-utils";

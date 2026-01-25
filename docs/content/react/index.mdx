@@ -53,18 +53,45 @@ TypeScript knows every endpoint exists, every parameter is correct, and every re
 
 ## Custom Tags
 
-You can also specify custom tags manually:
+The unified `tags` option supports modes and custom tags:
 
 ```typescript
-// Override auto-generated tags
+// Mode only - 'all' generates full hierarchy
+const { data } = useRead(
+  (api) => api("users/:id/posts").GET({ params: { id: "123" } }),
+  {
+    tags: "all", // ['users', 'users/123', 'users/123/posts']
+  }
+);
+
+// Mode only - 'self' generates only exact path
+const { data } = useRead(
+  (api) => api("users/:id/posts").GET({ params: { id: "123" } }),
+  {
+    tags: "self", // ['users/123/posts']
+  }
+);
+
+// Custom tags only - replaces auto-generated tags
 const { data } = useRead((api) => api("users").GET(), {
-  tags: ["custom-users"], // replaces auto-generated tags
+  tags: ["custom-users", "dashboard"], // ['custom-users', 'dashboard']
 });
 
-// Or extend auto-generated tags
-const { data } = useRead((api) => api("users").GET(), {
-  additionalTags: ["dashboard-data"], // adds to auto-generated tags
-});
+// Mode + custom tags - 'all' mode combined with custom tags
+const { data } = useRead(
+  (api) => api("users/:id/posts").GET({ params: { id: "123" } }),
+  {
+    tags: ["all", "dashboard"], // ['users', 'users/123', 'users/123/posts', 'dashboard']
+  }
+);
+
+// Mode + custom tags - 'self' mode combined with custom tags
+const { data } = useRead(
+  (api) => api("users/:id/posts").GET({ params: { id: "123" } }),
+  {
+    tags: ["self", "dashboard"], // ['users/123/posts', 'dashboard']
+  }
+);
 
 // On mutations, specify which tags to invalidate
 await trigger({

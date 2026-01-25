@@ -1,25 +1,69 @@
 import { generateTags } from "./generateTags";
 
+export type TagMode = "all" | "self" | "none";
+
+type TagModeInArray = "all" | "self";
+
 /**
  * Common tag options used across plugins and operations.
  */
 export type TagOptions = {
-  /** Custom tags to use instead of auto-generated path-based tags */
-  tags?: string[];
-
-  /** Additional tags to append to auto-generated or custom tags */
-  additionalTags?: string[];
+  /**
+   * Unified tag option (follows invalidation pattern)
+   * - String: mode only ('all' | 'self' | 'none')
+   * - Array: custom tags only OR [mode keyword mixed with custom tags]
+   *   - If array contains 'all' or 'self', it's treated as mode + tags
+   *   - Otherwise, it's custom tags only (replaces auto-generated tags)
+   *   - 'none' keyword should NOT be used in arrays (use string 'none' instead)
+   */
+  tags?: TagMode | (TagModeInArray | (string & {}))[];
 };
+
+function resolveTagMode(mode: TagMode, path: string[]): string[] {
+  switch (mode) {
+    case "all":
+      return generateTags(path);
+    case "self":
+      return [path.join("/")];
+    case "none":
+      return [];
+  }
+}
 
 export function resolveTags(
   options: TagOptions | undefined,
   resolvedPath: string[]
 ): string[] {
-  const customTags = options?.tags;
-  const additionalTags = options?.additionalTags ?? [];
-  const baseTags = customTags ?? generateTags(resolvedPath);
+  const tagsOption = options?.tags;
 
-  return [...baseTags, ...additionalTags];
+  if (!tagsOption) {
+    return generateTags(resolvedPath);
+  }
+
+  if (typeof tagsOption === "string") {
+    return resolveTagMode(tagsOption, resolvedPath);
+  }
+
+  if (Array.isArray(tagsOption)) {
+    const tags: string[] = [];
+    let mode: TagMode | null = null;
+
+    for (const item of tagsOption) {
+      if (item === "all" || item === "self") {
+        mode = item as TagMode;
+      } else if (typeof item === "string") {
+        tags.push(item);
+      }
+    }
+
+    if (mode) {
+      tags.push(...resolveTagMode(mode, resolvedPath));
+    }
+
+    return [...new Set(tags)];
+  }
+
+  return generateTags(resolvedPath);
 }
 
 export function resolvePath(
