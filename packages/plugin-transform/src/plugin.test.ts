@@ -13,9 +13,9 @@ describe("transformPlugin", () => {
       expect(plugin.name).toBe("spoosh:transform");
     });
 
-    it("should operate on read, write, and infiniteRead operations", () => {
+    it("should operate on read and write operations", () => {
       const plugin = transformPlugin();
-      expect(plugin.operations).toEqual(["read", "write", "infiniteRead"]);
+      expect(plugin.operations).toEqual(["read", "write"]);
     });
   });
 
