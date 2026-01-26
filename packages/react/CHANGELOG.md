@@ -1,5 +1,10 @@
 # @spoosh/react
 
+## 0.5.1
+
+- Improve type inference for meta field with overloaded hooks
+- Fix changing tags not update the tag keys properly in cache
+
 ## 0.5.0
 
 ### Breaking Changes

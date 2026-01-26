@@ -24,14 +24,13 @@ export interface TransformWriteOptions {
   transform?: ResponseTransformer<unknown, unknown>;
 }
 
-export interface TransformInfiniteReadOptions {
-  /** Per-request transform function for response data. */
-  transform?: ResponseTransformer<unknown, unknown>;
-}
+export type TransformInfiniteReadOptions = object;
 
 export type TransformReadResult = object;
 
-export type TransformWriteResult = object;
+export type TransformWriteResult = {
+  transformedData?: unknown;
+};
 
 export type TransformOptions =
   | TransformReadOptions
@@ -48,16 +47,6 @@ export type InferTransformedData<TOptions> = TOptions extends {
   ? R
   : never;
 
-/**
- * Conditionally adds `transformedData` field to hook result.
- * Only present when a response transformer is provided.
- */
-export type TransformResultField<TOptions> = [
-  InferTransformedData<TOptions>,
-] extends [never]
-  ? object
-  : { transformedData: InferTransformedData<TOptions> | undefined };
-
 declare module "@spoosh/core" {
   interface PluginResolvers<TContext extends ResolverContext> {
     transform: ResponseTransformer<TContext["data"], unknown> | undefined;
@@ -65,7 +54,8 @@ declare module "@spoosh/core" {
 
   interface PluginResultResolvers<TOptions> {
     transformedData: TOptions extends {
-      transform: (data: never) => MaybePromise<infer R>;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      transform?: (data: any) => MaybePromise<infer R>;
     }
       ? Awaited<R> | undefined
       : never;

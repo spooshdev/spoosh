@@ -1,5 +1,9 @@
 # @spoosh/plugin-transform
 
+## 0.4.2
+
+- Remove `transform` for infinite read.
+
 ## 0.4.1
 
 ### Patch Changes

@@ -52,13 +52,14 @@ export function transformPlugin(): SpooshPlugin<{
 }> {
   return {
     name: "spoosh:transform",
-    operations: ["read", "write", "infiniteRead"],
+    operations: ["read", "write"],
 
     onResponse: async (context, response) => {
       const pluginOptions = context.pluginOptions as
         | TransformOptions
         | undefined;
-      const responseTransformer = pluginOptions?.transform;
+      const responseTransformer = (pluginOptions as TransformReadOptions)
+        ?.transform;
 
       if (responseTransformer && response.data !== undefined) {
         const transformedData = await responseTransformer(response.data);

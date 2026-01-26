@@ -12,8 +12,8 @@ import {
   type SpooshPlugin,
   type PluginTypeConfig,
   type SelectorResult,
-  type ResolveResultTypes,
   type ResolverContext,
+  type ResolveTypes,
   createOperationController,
   createSelectorProxy,
   resolvePath,
@@ -47,7 +47,6 @@ export function createUseWrite<
   const { api, stateManager, pluginExecutor, eventEmitter } = options;
 
   type PluginOptions = MergePluginOptions<TPlugins>;
-  type PluginResults = MergePluginResults<TPlugins>;
 
   type InferError<T> = [T] extends [unknown] ? TDefaultError : T;
 
@@ -65,12 +64,12 @@ export function createUseWrite<
     ExtractParamsRecord<TMethod>
   >;
 
-  type ResolvedWriteOptions<TMethod> = import("@spoosh/core").ResolveTypes<
+  type ResolvedWriteOptions<TMethod> = ResolveTypes<
     PluginOptions["write"],
     WriteResolverContext<TMethod>
   >;
 
-  return function useWrite<
+  function useWrite<
     TMethod extends (
       ...args: never[]
     ) => Promise<SpooshResponse<unknown, unknown>>,
@@ -80,20 +79,22 @@ export function createUseWrite<
     ExtractMethodData<TMethod>,
     InferError<ExtractMethodError<TMethod>>,
     ExtractMethodOptions<TMethod> & ResolvedWriteOptions<TMethod>,
-    ResolveResultTypes<
-      PluginResults["write"],
-      ExtractMethodOptions<TMethod> & ResolvedWriteOptions<TMethod>
-    >
+    MergePluginResults<TPlugins>["write"]
   > &
     WriteResponseInputFields<
       ExtractResponseQuery<TMethod>,
       ExtractResponseBody<TMethod>,
       ExtractResponseParamNames<TMethod>
-    > {
-    type TData = ExtractMethodData<TMethod>;
-    type TError = InferError<ExtractMethodError<TMethod>>;
-    type TOptions = ExtractMethodOptions<TMethod> &
-      ResolvedWriteOptions<TMethod>;
+    >;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  function useWrite(writeFn: any): any {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    type TData = any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    type TError = any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    type TOptions = any;
 
     const hookId = useId();
 
@@ -246,27 +247,19 @@ export function createUseWrite<
 
     const loading = requestState.isPending;
 
-    const result = {
+    return {
       trigger,
-      meta: pluginResultData,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      meta: pluginResultData as any,
       ...inputField,
       data: state.data as TData | undefined,
       error: requestState.error ?? (state.error as TError | undefined),
       loading,
       reset,
       abort,
-    };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any;
+  }
 
-    return result as unknown as BaseWriteResult<
-      TData,
-      TError,
-      TOptions,
-      ResolveResultTypes<PluginResults["write"], TOptions>
-    > &
-      WriteResponseInputFields<
-        ExtractResponseQuery<TMethod>,
-        ExtractResponseBody<TMethod>,
-        ExtractResponseParamNames<TMethod>
-      >;
-  };
+  return useWrite;
 }

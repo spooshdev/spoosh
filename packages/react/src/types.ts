@@ -8,9 +8,6 @@ import type {
   MergePluginResults,
   MethodOptionsMap,
   CoreRequestOptionsBase,
-  ResolveSchemaTypes,
-  ResolveTypes,
-  ResolverContext,
   PluginTypeConfig,
   TagMode,
 } from "@spoosh/core";
@@ -53,20 +50,14 @@ export type BaseReadOptions = {
   tags?: TagMode | (TagModeInArray | (string & {}))[];
 };
 
-export type { ResolveSchemaTypes, ResolveTypes, ResolverContext };
-
 /**
  * Result returned by `useRead` hook.
  *
  * @template TData - The response data type
  * @template TError - The error type
- * @template TPluginResult - Plugin-provided result fields
+ * @template TMeta - Plugin-provided metadata fields
  */
-export type BaseReadResult<
-  TData,
-  TError,
-  TPluginResult = Record<string, unknown>,
-> = {
+export type BaseReadResult<TData, TError, TMeta = Record<string, unknown>> = {
   /** True during the initial load (no data yet) */
   loading: boolean;
 
@@ -80,7 +71,7 @@ export type BaseReadResult<
   error: TError | undefined;
 
   /** Plugin-provided metadata */
-  meta: TPluginResult;
+  meta: TMeta;
 
   /** Abort the current fetch operation */
   abort: () => void;
@@ -95,13 +86,13 @@ export type BaseReadResult<
  * @template TData - The response data type
  * @template TError - The error type
  * @template TOptions - The trigger options type
- * @template TPluginResult - Plugin-provided result fields
+ * @template TMeta - Plugin-provided metadata fields
  */
 export type BaseWriteResult<
   TData,
   TError,
   TOptions,
-  TPluginResult = Record<string, unknown>,
+  TMeta = Record<string, unknown>,
 > = {
   /** Execute the mutation with optional options */
   trigger: (options?: TOptions) => Promise<SpooshResponse<TData, TError>>;
@@ -116,7 +107,7 @@ export type BaseWriteResult<
   error: TError | undefined;
 
   /** Plugin-provided metadata */
-  meta: TPluginResult;
+  meta: TMeta;
 
   /** Reset the state to initial values */
   reset: () => void;
@@ -162,15 +153,17 @@ export type WriteResponseInputFields<
 export type UseReadResult<
   TData,
   TError,
+  TMeta,
   TPlugins extends readonly SpooshPlugin<PluginTypeConfig>[],
-> = BaseReadResult<TData, TError> & MergePluginResults<TPlugins>["read"];
+> = BaseReadResult<TData, TError, TMeta> & MergePluginResults<TPlugins>["read"];
 
 export type UseWriteResult<
   TData,
   TError,
   TOptions,
+  TMeta,
   TPlugins extends readonly SpooshPlugin<PluginTypeConfig>[],
-> = BaseWriteResult<TData, TError, TOptions> &
+> = BaseWriteResult<TData, TError, TOptions, TMeta> &
   MergePluginResults<TPlugins>["write"];
 
 export type ReadApiClient<TSchema, TDefaultError> = ReadClient<

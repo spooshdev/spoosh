@@ -8,6 +8,7 @@ import type {
   MergePluginResults,
   MergePluginInstanceApi,
   ResolverContext,
+  ResolveTypes,
   ResolveResultTypes,
 } from "@spoosh/core";
 import type {
@@ -33,30 +34,6 @@ import type {
 
 type InferError<T, TDefaultError> = [T] extends [unknown] ? TDefaultError : T;
 
-type ExtractParamsRecord<T> =
-  ExtractResponseParamNames<T> extends never
-    ? never
-    : Record<ExtractResponseParamNames<T>, string | number>;
-
-type ReadResolverContext<TSchema, TReadFn, TDefaultError> = ResolverContext<
-  TSchema,
-  ExtractMethodData<TReadFn>,
-  InferError<ExtractMethodError<TReadFn>, TDefaultError>,
-  ExtractResponseQuery<TReadFn>,
-  ExtractResponseBody<TReadFn>,
-  ExtractParamsRecord<TReadFn>
->;
-
-type ResolvedReadOptions<
-  TSchema,
-  TPlugins extends PluginArray,
-  TReadFn,
-  TDefaultError,
-> = import("@spoosh/core").ResolveTypes<
-  MergePluginOptions<TPlugins>["read"],
-  ReadResolverContext<TSchema, TReadFn, TDefaultError>
->;
-
 type WriteResolverContext<TSchema, TMethod, TDefaultError> = ResolverContext<
   TSchema,
   ExtractMethodData<TMethod>,
@@ -73,54 +50,83 @@ type ResolvedWriteOptions<
   TPlugins extends PluginArray,
   TMethod,
   TDefaultError,
-> = import("@spoosh/core").ResolveTypes<
+> = ResolveTypes<
   MergePluginOptions<TPlugins>["write"],
   WriteResolverContext<TSchema, TMethod, TDefaultError>
 >;
 
-type UseReadFn<TDefaultError, TSchema, TPlugins extends PluginArray> = <
-  TReadFn extends (
-    api: ReadApiClient<TSchema, TDefaultError>
-  ) => Promise<{ data?: unknown; error?: unknown }>,
->(
-  readFn: TReadFn,
-  readOptions?: BaseReadOptions &
-    ResolvedReadOptions<TSchema, TPlugins, TReadFn, TDefaultError>
-) => BaseReadResult<
-  ExtractMethodData<TReadFn>,
-  InferError<ExtractMethodError<TReadFn>, TDefaultError>,
-  ResolveResultTypes<
-    MergePluginResults<TPlugins>["read"],
-    BaseReadOptions &
-      ResolvedReadOptions<TSchema, TPlugins, TReadFn, TDefaultError>
-  >
-> &
-  ResponseInputFields<
-    ExtractResponseQuery<TReadFn>,
-    ExtractResponseBody<TReadFn>,
-    ExtractResponseParamNames<TReadFn>
-  >;
+type UseReadFn<TDefaultError, TSchema, TPlugins extends PluginArray> = {
+  <
+    TReadFn extends (
+      api: ReadApiClient<TSchema, TDefaultError>
+    ) => Promise<{ data?: unknown; error?: unknown }>,
+    TReadOpts,
+  >(
+    readFn: TReadFn,
+    readOptions: TReadOpts &
+      BaseReadOptions &
+      ResolveTypes<
+        MergePluginOptions<TPlugins>["read"],
+        ResolverContext<
+          TSchema,
+          ExtractMethodData<TReadFn>,
+          InferError<ExtractMethodError<TReadFn>, TDefaultError>,
+          ExtractResponseQuery<TReadFn>,
+          ExtractResponseBody<TReadFn>,
+          ExtractResponseParamNames<TReadFn> extends never
+            ? never
+            : Record<ExtractResponseParamNames<TReadFn>, string | number>
+        >
+      >
+  ): BaseReadResult<
+    ExtractMethodData<TReadFn>,
+    InferError<ExtractMethodError<TReadFn>, TDefaultError>,
+    ResolveResultTypes<MergePluginResults<TPlugins>["read"], TReadOpts>
+  > &
+    ResponseInputFields<
+      ExtractResponseQuery<TReadFn>,
+      ExtractResponseBody<TReadFn>,
+      ExtractResponseParamNames<TReadFn>
+    >;
 
-type UseWriteFn<TDefaultError, TSchema, TPlugins extends PluginArray> = <
-  TMethod extends (...args: never) => Promise<SpooshResponse<unknown, unknown>>,
->(
-  writeFn: (api: WriteApiClient<TSchema, TDefaultError>) => TMethod
-) => BaseWriteResult<
-  ExtractMethodData<TMethod>,
-  InferError<ExtractMethodError<TMethod>, TDefaultError>,
-  Parameters<TMethod>[0] &
-    ResolvedWriteOptions<TSchema, TPlugins, TMethod, TDefaultError>,
-  ResolveResultTypes<
-    MergePluginResults<TPlugins>["write"],
+  <
+    TReadFn extends (
+      api: ReadApiClient<TSchema, TDefaultError>
+    ) => Promise<{ data?: unknown; error?: unknown }>,
+  >(
+    readFn: TReadFn
+  ): BaseReadResult<
+    ExtractMethodData<TReadFn>,
+    InferError<ExtractMethodError<TReadFn>, TDefaultError>,
+    MergePluginResults<TPlugins>["read"]
+  > &
+    ResponseInputFields<
+      ExtractResponseQuery<TReadFn>,
+      ExtractResponseBody<TReadFn>,
+      ExtractResponseParamNames<TReadFn>
+    >;
+};
+
+type UseWriteFn<TDefaultError, TSchema, TPlugins extends PluginArray> = {
+  <
+    TMethod extends (
+      ...args: never
+    ) => Promise<SpooshResponse<unknown, unknown>>,
+  >(
+    writeFn: (api: WriteApiClient<TSchema, TDefaultError>) => TMethod
+  ): BaseWriteResult<
+    ExtractMethodData<TMethod>,
+    InferError<ExtractMethodError<TMethod>, TDefaultError>,
     Parameters<TMethod>[0] &
-      ResolvedWriteOptions<TSchema, TPlugins, TMethod, TDefaultError>
-  >
-> &
-  WriteResponseInputFields<
-    ExtractMethodQuery<TMethod>,
-    ExtractMethodBody<TMethod>,
-    ExtractResponseParamNames<TMethod>
-  >;
+      ResolvedWriteOptions<TSchema, TPlugins, TMethod, TDefaultError>,
+    MergePluginResults<TPlugins>["write"]
+  > &
+    WriteResponseInputFields<
+      ExtractMethodQuery<TMethod>,
+      ExtractMethodBody<TMethod>,
+      ExtractResponseParamNames<TMethod>
+    >;
+};
 
 type InfiniteReadResolverContext<TSchema, TData, TError, TRequest> =
   ResolverContext<
@@ -138,7 +144,7 @@ type ResolvedInfiniteReadOptions<
   TData,
   TError,
   TRequest,
-> = import("@spoosh/core").ResolveTypes<
+> = ResolveTypes<
   MergePluginOptions<TPlugins>["infiniteRead"],
   InfiniteReadResolverContext<TSchema, TData, TError, TRequest>
 >;

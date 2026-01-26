@@ -216,6 +216,8 @@ export function createUseInfiniteRead<
       prevContext: null,
     });
 
+    const tagsKey = JSON.stringify(tags);
+
     useEffect(() => {
       return () => {
         controllerRef.current?.controller.unmount();
@@ -244,7 +246,7 @@ export function createUseInfiniteRead<
       return () => {
         unsubInvalidate();
       };
-    }, []);
+    }, [tagsKey]);
 
     useEffect(() => {
       if (!lifecycleRef.current.initialized) return;

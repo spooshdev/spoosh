@@ -15,6 +15,8 @@ import {
   type PluginContext,
   type SelectorResult,
   type ResolveResultTypes,
+  type ResolverContext,
+  type ResolveTypes,
   createOperationController,
   createSelectorProxy,
   resolvePath,
@@ -44,7 +46,6 @@ export function createUseRead<
   const { api, stateManager, eventEmitter, pluginExecutor } = options;
 
   type PluginOptions = MergePluginOptions<TPlugins>;
-  type PluginResults = MergePluginResults<TPlugins>;
 
   type InferError<T> = [T] extends [unknown] ? TDefaultError : T;
   type ExtractData<T> = T extends (
@@ -58,26 +59,63 @@ export function createUseRead<
     ? E
     : unknown;
 
-  return function useRead<
+  function useRead<
     TReadFn extends (
       api: ReadApiClient<TSchema, TDefaultError>
     ) => Promise<{ data?: unknown; error?: unknown }>,
-    TReadOpts extends BaseReadOptions & PluginOptions["read"] =
-      BaseReadOptions & PluginOptions["read"],
+    TReadOpts,
   >(
     readFn: TReadFn,
-    readOptions?: TReadOpts
+    readOptions: TReadOpts &
+      BaseReadOptions &
+      ResolveTypes<
+        PluginOptions["read"],
+        ResolverContext<
+          TSchema,
+          ExtractData<TReadFn>,
+          InferError<ExtractError<TReadFn>>,
+          ExtractResponseQuery<TReadFn>,
+          ExtractResponseBody<TReadFn>,
+          ExtractResponseParamNames<TReadFn> extends never
+            ? never
+            : Record<ExtractResponseParamNames<TReadFn>, string | number>
+        >
+      >
   ): BaseReadResult<
     ExtractData<TReadFn>,
     InferError<ExtractError<TReadFn>>,
-    ResolveResultTypes<PluginResults["read"], TReadOpts>
+    ResolveResultTypes<MergePluginResults<TPlugins>["read"], TReadOpts>
   > &
     ResponseInputFields<
       ExtractResponseQuery<TReadFn>,
       ExtractResponseBody<TReadFn>,
       ExtractResponseParamNames<TReadFn>
-    > {
-    const { enabled = true, tags, ...pluginOpts } = readOptions ?? {};
+    >;
+
+  function useRead<
+    TReadFn extends (
+      api: ReadApiClient<TSchema, TDefaultError>
+    ) => Promise<{ data?: unknown; error?: unknown }>,
+  >(
+    readFn: TReadFn
+  ): BaseReadResult<
+    ExtractData<TReadFn>,
+    InferError<ExtractError<TReadFn>>,
+    MergePluginResults<TPlugins>["read"]
+  > &
+    ResponseInputFields<
+      ExtractResponseQuery<TReadFn>,
+      ExtractResponseBody<TReadFn>,
+      ExtractResponseParamNames<TReadFn>
+    >;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  function useRead(readFn: any, readOptions?: any): any {
+    const {
+      enabled = true,
+      tags,
+      ...pluginOpts
+    } = (readOptions ?? {}) as BaseReadOptions & PluginOptions["read"];
 
     const hookId = useId();
 
@@ -115,8 +153,8 @@ export function createUseRead<
       options: capturedCall.options,
     });
 
-    type TData = ExtractData<TReadFn>;
-    type TError = InferError<ExtractError<TReadFn>>;
+    type TData = unknown;
+    type TError = unknown;
 
     const controllerRef = useRef<{
       controller: ReturnType<typeof createOperationController<TData, TError>>;
@@ -187,6 +225,7 @@ export function createUseRead<
     abortRef.current = controller.abort;
 
     const pluginOptsKey = JSON.stringify(pluginOpts);
+    const tagsKey = JSON.stringify(tags);
 
     const executeWithTracking = useCallback(
       async (force = false) => {
@@ -255,7 +294,7 @@ export function createUseRead<
         unsubRefetch();
         unsubInvalidate();
       };
-    }, [queryKey, enabled]);
+    }, [queryKey, enabled, tagsKey]);
 
     useEffect(() => {
       if (!enabled || !lifecycleRef.current.initialized) return;
@@ -297,26 +336,18 @@ export function createUseRead<
     const loading = requestState.isPending && !hasData;
     const fetching = requestState.isPending;
 
-    const result = {
-      meta: pluginResultData,
+    return {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      meta: pluginResultData as any,
       ...inputField,
-      data: state.data as TData | undefined,
-      error: requestState.error ?? (state.error as TError | undefined),
+      data: state.data,
+      error: requestState.error ?? state.error,
       loading,
       fetching,
       abort,
       refetch,
     };
+  }
 
-    return result as unknown as BaseReadResult<
-      TData,
-      TError,
-      ResolveResultTypes<PluginResults["read"], TReadOpts>
-    > &
-      ResponseInputFields<
-        ExtractResponseQuery<TReadFn>,
-        ExtractResponseBody<TReadFn>,
-        ExtractResponseParamNames<TReadFn>
-      >;
-  };
+  return useRead;
 }
