@@ -118,12 +118,16 @@ export type PluginUpdateHandler<TData = unknown, TError = unknown> = (
 
 /**
  * Handler called after every response, regardless of early returns from middleware.
- * Use this for post-response logic like scheduling polls or emitting events.
+ * Can return a new response to transform it, or void for side effects only.
+ * Returned responses are chained through plugins in order.
  */
 export type PluginResponseHandler<TData = unknown, TError = unknown> = (
   context: PluginContext<TData, TError>,
   response: SpooshResponse<TData, TError>
-) => void | Promise<void>;
+) =>
+  | SpooshResponse<TData, TError>
+  | void
+  | Promise<SpooshResponse<TData, TError> | void>;
 
 export type PluginLifecycle<TData = unknown, TError = unknown> = {
   /** Called on component mount */
@@ -172,7 +176,7 @@ export type PluginTypeConfig = {
  *
  * Plugins can implement:
  * - `middleware`: Wraps the fetch flow for full control (intercept, retry, transform)
- * - `onResponse`: Called after every response, regardless of early returns
+ * - `afterResponse`: Called after every response, regardless of early returns
  * - `lifecycle`: Component lifecycle hooks (onMount, onUpdate, onUnmount)
  * - `exports`: Functions/variables accessible to other plugins
  *
@@ -192,7 +196,7 @@ export type PluginTypeConfig = {
  *       const result = await next();
  *       return result;
  *     },
- *     onResponse(context, response) {
+ *     afterResponse(context, response) {
  *       // Always runs after response
  *     },
  *     lifecycle: {
@@ -211,8 +215,11 @@ export interface SpooshPlugin<T extends PluginTypeConfig = PluginTypeConfig> {
   /** Middleware for controlling the fetch flow. Called in plugin order, composing a chain. */
   middleware?: PluginMiddleware;
 
-  /** Called after every response, regardless of early returns from middleware. */
-  onResponse?: PluginResponseHandler;
+  /**
+   * Called after middleware chain completes, regardless of early returns.
+   * Return a new response to transform it, or void for side effects only.
+   */
+  afterResponse?: PluginResponseHandler;
 
   /** Component lifecycle hooks (setup, cleanup, option changes) */
   lifecycle?: PluginLifecycle;

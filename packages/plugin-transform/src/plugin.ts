@@ -52,20 +52,22 @@ export function transformPlugin(): SpooshPlugin<{
     name: "spoosh:transform",
     operations: ["read", "write"],
 
-    onResponse: async (context, response) => {
+    afterResponse: async (context, response) => {
       const pluginOptions = context.pluginOptions as
         | TransformOptions
         | undefined;
       const responseTransformer = (pluginOptions as TransformReadOptions)
         ?.transform;
 
-      if (responseTransformer && response.data !== undefined) {
-        const transformedData = await responseTransformer(response.data);
-
-        context.stateManager.setMeta(context.queryKey, {
-          transformedData,
-        });
+      if (!responseTransformer || response.data === undefined) {
+        return;
       }
+
+      const transformedData = await responseTransformer(response.data);
+
+      context.stateManager.setMeta(context.queryKey, {
+        transformedData,
+      });
     },
   };
 }

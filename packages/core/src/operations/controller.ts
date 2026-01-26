@@ -169,14 +169,6 @@ export function createOperationController<TData, TError>(
             const response = await fetchFn(context.requestOptions);
             context.response = response;
 
-            if (response.data !== undefined && !response.error) {
-              updateState({
-                data: response.data,
-                error: undefined,
-                timestamp: Date.now(),
-              });
-            }
-
             return response;
           } catch (err) {
             const errorResponse: SpooshResponse<TData, TError> = {
@@ -200,11 +192,21 @@ export function createOperationController<TData, TError>(
         return fetchPromise;
       };
 
-      return pluginExecutor.executeMiddleware(
+      const finalResponse = await pluginExecutor.executeMiddleware(
         operationType,
         context,
         coreFetch
       );
+
+      if (finalResponse.data !== undefined && !finalResponse.error) {
+        updateState({
+          data: finalResponse.data,
+          error: undefined,
+          timestamp: Date.now(),
+        });
+      }
+
+      return finalResponse;
     },
 
     getState() {

@@ -52,7 +52,7 @@ describe("pollingPlugin", () => {
         pluginOptions: { pollingInterval: 5000 },
       });
 
-      plugin.onResponse!(context, createMockResponse());
+      plugin.afterResponse!(context, createMockResponse());
 
       expect(emitSpy).not.toHaveBeenCalled();
 
@@ -84,7 +84,7 @@ describe("pollingPlugin", () => {
         pluginOptions: { pollingInterval: 5000 },
       });
 
-      plugin.onResponse!(context, createMockResponse());
+      plugin.afterResponse!(context, createMockResponse());
 
       vi.advanceTimersByTime(4999);
 
@@ -120,7 +120,7 @@ describe("pollingPlugin", () => {
         pluginOptions: { pollingInterval: 3000 },
       });
 
-      plugin.onResponse!(context, createMockResponse());
+      plugin.afterResponse!(context, createMockResponse());
       vi.advanceTimersByTime(3000);
 
       expect(emitSpy).toHaveBeenCalledWith("refetch", {
@@ -153,7 +153,7 @@ describe("pollingPlugin", () => {
         pluginOptions: { pollingInterval: 1000 },
       });
 
-      plugin.onResponse!(context, createMockResponse());
+      plugin.afterResponse!(context, createMockResponse());
       vi.advanceTimersByTime(1000);
 
       expect(emitSpy).toHaveBeenCalledWith("refetch", {
@@ -187,7 +187,7 @@ describe("pollingPlugin", () => {
         pluginOptions: { pollingInterval: 5000 },
       });
 
-      plugin.onResponse!(context, createMockResponse());
+      plugin.afterResponse!(context, createMockResponse());
 
       vi.advanceTimersByTime(2000);
 
@@ -232,7 +232,7 @@ describe("pollingPlugin", () => {
         pluginOptions: { pollingInterval: pollingIntervalFn },
       });
 
-      plugin.onResponse!(context, createMockResponse());
+      plugin.afterResponse!(context, createMockResponse());
 
       expect(pollingIntervalFn).toHaveBeenCalledWith(cachedData, undefined);
     });
@@ -260,7 +260,7 @@ describe("pollingPlugin", () => {
         pluginOptions: { pollingInterval: () => 7000 },
       });
 
-      plugin.onResponse!(context, createMockResponse());
+      plugin.afterResponse!(context, createMockResponse());
 
       vi.advanceTimersByTime(6999);
       expect(emitSpy).not.toHaveBeenCalled();
@@ -294,7 +294,7 @@ describe("pollingPlugin", () => {
         pluginOptions: { pollingInterval: pollingIntervalFn },
       });
 
-      plugin.onResponse!(context, createMockResponse());
+      plugin.afterResponse!(context, createMockResponse());
 
       expect(pollingIntervalFn).toHaveBeenCalledWith(undefined, cachedError);
     });
@@ -322,7 +322,7 @@ describe("pollingPlugin", () => {
         pluginOptions: { pollingInterval: () => false },
       });
 
-      plugin.onResponse!(context, createMockResponse());
+      plugin.afterResponse!(context, createMockResponse());
 
       vi.advanceTimersByTime(10000);
 
@@ -352,7 +352,7 @@ describe("pollingPlugin", () => {
         pluginOptions: { pollingInterval: () => 0 },
       });
 
-      plugin.onResponse!(context, createMockResponse());
+      plugin.afterResponse!(context, createMockResponse());
 
       vi.advanceTimersByTime(10000);
 
@@ -384,7 +384,7 @@ describe("pollingPlugin", () => {
         pluginOptions: { pollingInterval: false },
       });
 
-      plugin.onResponse!(context, createMockResponse());
+      plugin.afterResponse!(context, createMockResponse());
 
       vi.advanceTimersByTime(60000);
 
@@ -404,7 +404,7 @@ describe("pollingPlugin", () => {
         pluginOptions: {},
       });
 
-      plugin.onResponse!(context, createMockResponse());
+      plugin.afterResponse!(context, createMockResponse());
 
       vi.advanceTimersByTime(60000);
 
@@ -424,7 +424,7 @@ describe("pollingPlugin", () => {
         pluginOptions: undefined,
       });
 
-      plugin.onResponse!(context, createMockResponse());
+      plugin.afterResponse!(context, createMockResponse());
 
       vi.advanceTimersByTime(60000);
 
@@ -459,7 +459,7 @@ describe("pollingPlugin", () => {
         pluginOptions: { pollingInterval: 5000 },
       });
 
-      plugin.onResponse!(oldContext, createMockResponse());
+      plugin.afterResponse!(oldContext, createMockResponse());
 
       vi.advanceTimersByTime(2000);
 
@@ -518,7 +518,7 @@ describe("pollingPlugin", () => {
         pluginOptions: { pollingInterval: 5000 },
       });
 
-      plugin.onResponse!(contextWithPolling, createMockResponse());
+      plugin.afterResponse!(contextWithPolling, createMockResponse());
 
       vi.advanceTimersByTime(2000);
 
@@ -601,11 +601,11 @@ describe("pollingPlugin", () => {
         pluginOptions: { pollingInterval: 5000 },
       });
 
-      plugin.onResponse!(context, createMockResponse());
+      plugin.afterResponse!(context, createMockResponse());
 
       vi.advanceTimersByTime(2000);
 
-      plugin.onResponse!(context, createMockResponse());
+      plugin.afterResponse!(context, createMockResponse());
 
       vi.advanceTimersByTime(3000);
 
@@ -659,8 +659,8 @@ describe("pollingPlugin", () => {
         pluginOptions: { pollingInterval: 5000 },
       });
 
-      plugin.onResponse!(context1, createMockResponse());
-      plugin.onResponse!(context2, createMockResponse());
+      plugin.afterResponse!(context1, createMockResponse());
+      plugin.afterResponse!(context2, createMockResponse());
 
       vi.advanceTimersByTime(3000);
 
@@ -702,7 +702,7 @@ describe("pollingPlugin", () => {
         pluginOptions: { pollingInterval: -1000 },
       });
 
-      plugin.onResponse!(context, createMockResponse());
+      plugin.afterResponse!(context, createMockResponse());
 
       vi.advanceTimersByTime(10000);
 

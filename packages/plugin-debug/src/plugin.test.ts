@@ -203,12 +203,12 @@ describe("debugPlugin", () => {
       expect(consoleGroupCollapsedSpy).not.toHaveBeenCalled();
     });
 
-    it("should not log in onResponse when disabled", () => {
+    it("should not log in afterResponse when disabled", () => {
       const plugin = debugPlugin({ enabled: false });
       const context = createMockContext();
       const response = { data: { id: 1 }, status: 200 };
 
-      plugin.onResponse!(context, response);
+      plugin.afterResponse!(context, response);
 
       expect(consoleLogSpy).not.toHaveBeenCalled();
       expect(consoleGroupCollapsedSpy).not.toHaveBeenCalled();
@@ -321,22 +321,12 @@ describe("debugPlugin", () => {
       const context = createMockContext();
       const response = { data: { id: 1, name: "User" }, status: 200 };
 
-      plugin.onResponse!(context, response);
+      plugin.afterResponse!(context, response);
 
       expect(consoleGroupCollapsedSpy).toHaveBeenCalledWith(
         "[spoosh] read GET /users/1 → afterFetch"
       );
-      expect(consoleLogSpy).toHaveBeenCalledWith("Response:", context.response);
-    });
-
-    it("should attach response to context in onResponse", () => {
-      const plugin = debugPlugin({ enabled: true });
-      const context = createMockContext();
-      const response = { data: { id: 1 }, status: 200 };
-
-      plugin.onResponse!(context, response);
-
-      expect(context.response).toEqual(response);
+      expect(consoleLogSpy).toHaveBeenCalledWith("Response:", response);
     });
 
     it("should log error responses", () => {
@@ -344,7 +334,7 @@ describe("debugPlugin", () => {
       const context = createMockContext();
       const response = { error: { message: "Not found" }, status: 404 };
 
-      plugin.onResponse!(context, response);
+      plugin.afterResponse!(context, response);
 
       expect(consoleGroupCollapsedSpy).toHaveBeenCalledWith(
         "[spoosh] read GET /users/1 → afterFetch"
@@ -361,7 +351,7 @@ describe("debugPlugin", () => {
       });
       const response = { data: { id: 1 }, status: 201 };
 
-      plugin.onResponse!(context, response);
+      plugin.afterResponse!(context, response);
 
       expect(consoleGroupCollapsedSpy).toHaveBeenCalledWith(
         "[spoosh] write POST /users → afterFetch"
@@ -431,13 +421,13 @@ describe("debugPlugin", () => {
       );
     });
 
-    it("should use custom logger in onResponse", () => {
+    it("should use custom logger in afterResponse", () => {
       const customLogger = vi.fn();
       const plugin = debugPlugin({ enabled: true, logger: customLogger });
       const context = createMockContext();
       const response = { data: { id: 1 }, status: 200 };
 
-      plugin.onResponse!(context, response);
+      plugin.afterResponse!(context, response);
 
       expect(customLogger).toHaveBeenCalledWith(
         expect.objectContaining({

@@ -131,7 +131,7 @@ export function invalidationPlugin(
       };
     },
 
-    onResponse(context, response) {
+    afterResponse(context, response) {
       if (!response.error) {
         const tags = resolveInvalidateTags(context, defaultMode);
 

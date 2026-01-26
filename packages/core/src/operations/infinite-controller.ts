@@ -362,39 +362,6 @@ export function createInfiniteReadController<
             } as SpooshResponse<TData, TError>;
           }
 
-          if (response.data !== undefined && !response.error) {
-            pageRequests.set(pageKey, mergedRequest);
-
-            if (direction === "next") {
-              if (!pageKeys.includes(pageKey)) {
-                pageKeys = [...pageKeys, pageKey];
-              }
-            } else {
-              if (!pageKeys.includes(pageKey)) {
-                pageKeys = [pageKey, ...pageKeys];
-              }
-            }
-
-            saveToTracker();
-            subscribeToPages();
-
-            stateManager.setCache(pageKey, {
-              state: {
-                data: response.data,
-                error: undefined,
-                timestamp: Date.now(),
-              },
-              tags,
-              stale: false,
-            });
-          }
-
-          if (response.data !== undefined && !response.error) {
-            latestError = undefined;
-          } else if (response.error) {
-            latestError = response.error;
-          }
-
           return response;
         } catch (err) {
           if (signal.aborted) {
@@ -428,7 +395,42 @@ export function createInfiniteReadController<
       return fetchPromise;
     };
 
-    await pluginExecutor.executeMiddleware("infiniteRead", context, coreFetch);
+    const finalResponse = await pluginExecutor.executeMiddleware(
+      "infiniteRead",
+      context,
+      coreFetch
+    );
+
+    if (finalResponse.data !== undefined && !finalResponse.error) {
+      pageRequests.set(pageKey, mergedRequest);
+
+      if (direction === "next") {
+        if (!pageKeys.includes(pageKey)) {
+          pageKeys = [...pageKeys, pageKey];
+        }
+      } else {
+        if (!pageKeys.includes(pageKey)) {
+          pageKeys = [pageKey, ...pageKeys];
+        }
+      }
+
+      saveToTracker();
+      subscribeToPages();
+
+      stateManager.setCache(pageKey, {
+        state: {
+          data: finalResponse.data,
+          error: undefined,
+          timestamp: Date.now(),
+        },
+        tags,
+        stale: false,
+      });
+
+      latestError = undefined;
+    } else if (finalResponse.error) {
+      latestError = finalResponse.error;
+    }
   };
 
   const controller: InfiniteReadController<TData, TItem, TError> = {

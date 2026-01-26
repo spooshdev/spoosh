@@ -41,7 +41,7 @@ describe("transformPlugin", () => {
       });
       const response = { data: { items: [{ id: 1 }, { id: 2 }] }, status: 200 };
 
-      await plugin.onResponse!(context, response);
+      await plugin.afterResponse!(context, response);
 
       const cached = stateManager.getCache(queryKey);
       expect(cached?.meta.get("transformedData")).toEqual({
@@ -69,7 +69,7 @@ describe("transformPlugin", () => {
       });
       const response = { data: { value: 5 }, status: 200 };
 
-      await plugin.onResponse!(context, response);
+      await plugin.afterResponse!(context, response);
 
       const cached = stateManager.getCache(queryKey);
       expect(cached?.meta.get("transformedData")).toEqual({
@@ -96,7 +96,7 @@ describe("transformPlugin", () => {
       const originalData = { items: [{ id: 1 }, { id: 2 }] };
       const response = { data: originalData, status: 200 };
 
-      await plugin.onResponse!(context, response);
+      await plugin.afterResponse!(context, response);
 
       expect(response.data).toEqual({ items: [{ id: 1 }, { id: 2 }] });
     });
@@ -111,7 +111,7 @@ describe("transformPlugin", () => {
       });
       const response = { error: { message: "Not found" }, status: 404 };
 
-      await plugin.onResponse!(context, response);
+      await plugin.afterResponse!(context, response);
 
       expect(transformer).not.toHaveBeenCalled();
     });
@@ -141,7 +141,7 @@ describe("transformPlugin", () => {
         status: 200,
       };
 
-      await plugin.onResponse!(context, response);
+      await plugin.afterResponse!(context, response);
 
       const cached = stateManager.getCache(queryKey);
       expect(cached?.meta.get("transformedData")).toEqual({
@@ -160,7 +160,7 @@ describe("transformPlugin", () => {
       const context = createMockContext({ stateManager, queryKey });
       const response = { data: { items: [{ id: 1 }] }, status: 200 };
 
-      await plugin.onResponse!(context, response);
+      await plugin.afterResponse!(context, response);
 
       const cached = stateManager.getCache(queryKey);
       expect(cached?.meta.get("transformedData")).toBeUndefined();
@@ -186,7 +186,7 @@ describe("transformPlugin", () => {
       });
       const response = { data: { result: "success" }, status: 200 };
 
-      await plugin.onResponse!(context, response);
+      await plugin.afterResponse!(context, response);
 
       const cached = stateManager.getCache(queryKey);
       expect(cached?.meta.get("transformedData")).toEqual({
@@ -206,7 +206,7 @@ describe("transformPlugin", () => {
       const context = createMockContext({ stateManager, queryKey });
       const response = { data: { items: [{ id: 1 }] }, status: 200 };
 
-      await plugin.onResponse!(context, response);
+      await plugin.afterResponse!(context, response);
 
       const cached = stateManager.getCache(queryKey);
       expect(cached?.meta.get("transformedData")).toBeUndefined();
@@ -231,7 +231,7 @@ describe("transformPlugin", () => {
       });
       const response = { data: { items: [] }, status: 200 };
 
-      await expect(plugin.onResponse!(context, response)).rejects.toThrow(
+      await expect(plugin.afterResponse!(context, response)).rejects.toThrow(
         "Transform error"
       );
     });
@@ -254,7 +254,7 @@ describe("transformPlugin", () => {
       });
       const response = { data: { items: [] }, status: 200 };
 
-      await expect(plugin.onResponse!(context, response)).rejects.toThrow(
+      await expect(plugin.afterResponse!(context, response)).rejects.toThrow(
         "Async transform error"
       );
     });

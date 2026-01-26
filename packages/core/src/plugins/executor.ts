@@ -22,7 +22,7 @@ export type PluginExecutor = {
     previousContext: PluginContext<TData, TError>
   ) => Promise<void>;
 
-  /** Execute middleware chain with a core fetch function, then run onResponse handlers */
+  /** Execute middleware chain with a core fetch function, then run afterResponse handlers */
   executeMiddleware: <TData, TError>(
     operationType: OperationType,
     context: PluginContext<TData, TError>,
@@ -181,11 +181,15 @@ export function createPluginExecutor(
       }
 
       for (const plugin of applicablePlugins) {
-        if (plugin.onResponse) {
-          await plugin.onResponse(
+        if (plugin.afterResponse) {
+          const newResponse = await plugin.afterResponse(
             context as PluginContext<unknown, unknown>,
             response as SpooshResponse<unknown, unknown>
           );
+
+          if (newResponse) {
+            response = newResponse as SpooshResponse<TData, TError>;
+          }
         }
       }
 

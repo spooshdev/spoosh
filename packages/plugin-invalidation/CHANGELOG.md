@@ -1,5 +1,12 @@
 # @spoosh/plugin-invalidation
 
+## 0.5.0
+
+### Breaking Changes
+
+- Renamed `onResponse` to `afterResponse` to align with core plugin API changes
+- Requires `@spoosh/core@>=0.8.0`
+
 ## 0.4.0
 
 ### Breaking Changes

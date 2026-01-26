@@ -94,7 +94,7 @@ export function pollingPlugin(): SpooshPlugin<{
     name: "spoosh:polling",
     operations: ["read", "infiniteRead"],
 
-    onResponse(context) {
+    afterResponse(context) {
       scheduleNextPoll(context);
     },
 

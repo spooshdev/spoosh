@@ -1,6 +1,6 @@
 {
   "name": "@spoosh/plugin-transform",
-  "version": "0.4.2",
+  "version": "0.5.0",
   "description": "Data transformation plugin for Spoosh with sync/async support",
   "license": "MIT",
   "repository": {
@@ -40,7 +40,7 @@
     "format": "prettier --write 'src/**/*.ts'"
   },
   "peerDependencies": {
-    "@spoosh/core": ">=0.6.0"
+    "@spoosh/core": ">=0.8.0"
   },
   "devDependencies": {
     "@spoosh/core": "workspace:*",

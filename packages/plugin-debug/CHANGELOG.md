@@ -1,5 +1,16 @@
 # @spoosh/plugin-debug
 
+## 0.2.0
+
+### Breaking Changes
+
+- Renamed `onResponse` to `afterResponse` to align with core plugin API changes
+- Requires `@spoosh/core@>=0.8.0`
+
+### Bug Fixes
+
+- Removed direct mutation of `context.response` in favor of passing response as parameter
+
 ## 0.1.4
 
 ### Patch Changes

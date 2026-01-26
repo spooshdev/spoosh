@@ -1,5 +1,19 @@
 # @spoosh/core
 
+## 0.8.0
+
+### Breaking Changes
+
+- Renamed `onResponse` to `afterResponse` in plugin interface
+- `afterResponse` now supports return values for response transformation
+- Plugins can return new response objects to chain transformations, or return void for side effects only
+
+### Bug Fixes
+
+- Fixed cache timing bug in `createOperationController` where cache was updated before `afterResponse` handlers ran
+- Fixed identical cache timing bug in `createInfiniteReadController`
+- Cache now correctly stores transformed data instead of original wrapped responses
+
 ## 0.7.0
 
 ### Breaking Changes

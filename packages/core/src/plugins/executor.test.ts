@@ -292,9 +292,11 @@ describe("createPluginExecutor", () => {
       expect(writeMiddleware).not.toHaveBeenCalled();
     });
 
-    it("executes onResponse handlers after middleware chain", async () => {
-      const onResponse = vi.fn();
-      const plugin = createMockPlugin("test-plugin", ["read"], { onResponse });
+    it("executes afterResponse handlers after middleware chain", async () => {
+      const afterResponse = vi.fn();
+      const plugin = createMockPlugin("test-plugin", ["read"], {
+        afterResponse,
+      });
       const executor = createPluginExecutor([plugin]);
       const context = createMockContext();
       const coreFetch = vi
@@ -303,20 +305,20 @@ describe("createPluginExecutor", () => {
 
       await executor.executeMiddleware("read", context, coreFetch);
 
-      expect(onResponse).toHaveBeenCalledWith(context, {
+      expect(afterResponse).toHaveBeenCalledWith(context, {
         data: "test",
         status: 200,
       });
     });
 
-    it("executes onResponse even when middleware short-circuits", async () => {
-      const onResponse = vi.fn();
+    it("executes afterResponse even when middleware short-circuits", async () => {
+      const afterResponse = vi.fn();
       const middleware = vi
         .fn()
         .mockResolvedValue({ data: "cached", status: 200 });
       const plugin = createMockPlugin("test-plugin", ["read"], {
         middleware,
-        onResponse,
+        afterResponse,
       });
 
       const executor = createPluginExecutor([plugin]);
@@ -327,27 +329,27 @@ describe("createPluginExecutor", () => {
 
       await executor.executeMiddleware("read", context, coreFetch);
 
-      expect(onResponse).toHaveBeenCalledWith(context, {
+      expect(afterResponse).toHaveBeenCalledWith(context, {
         data: "cached",
         status: 200,
       });
     });
 
-    it("executes multiple onResponse handlers in order", async () => {
+    it("executes multiple afterResponse handlers in order", async () => {
       const callOrder: string[] = [];
 
-      const onResponse1 = vi.fn().mockImplementation(() => {
-        callOrder.push("onResponse1");
+      const afterResponse1 = vi.fn().mockImplementation(() => {
+        callOrder.push("afterResponse1");
       });
-      const onResponse2 = vi.fn().mockImplementation(() => {
-        callOrder.push("onResponse2");
+      const afterResponse2 = vi.fn().mockImplementation(() => {
+        callOrder.push("afterResponse2");
       });
 
       const plugin1 = createMockPlugin("plugin-1", ["read"], {
-        onResponse: onResponse1,
+        afterResponse: afterResponse1,
       });
       const plugin2 = createMockPlugin("plugin-2", ["read"], {
-        onResponse: onResponse2,
+        afterResponse: afterResponse2,
       });
 
       const executor = createPluginExecutor([plugin1, plugin2]);
@@ -358,18 +360,20 @@ describe("createPluginExecutor", () => {
 
       await executor.executeMiddleware("read", context, coreFetch);
 
-      expect(callOrder).toEqual(["onResponse1", "onResponse2"]);
+      expect(callOrder).toEqual(["afterResponse1", "afterResponse2"]);
     });
 
-    it("supports async onResponse handlers", async () => {
+    it("supports async afterResponse handlers", async () => {
       const callOrder: string[] = [];
 
-      const onResponse = vi.fn().mockImplementation(async () => {
+      const afterResponse = vi.fn().mockImplementation(async () => {
         await new Promise((resolve) => setTimeout(resolve, 10));
-        callOrder.push("async-onResponse");
+        callOrder.push("async-afterResponse");
       });
 
-      const plugin = createMockPlugin("test-plugin", ["read"], { onResponse });
+      const plugin = createMockPlugin("test-plugin", ["read"], {
+        afterResponse,
+      });
       const executor = createPluginExecutor([plugin]);
       const context = createMockContext();
       const coreFetch = vi
@@ -378,13 +382,13 @@ describe("createPluginExecutor", () => {
 
       await executor.executeMiddleware("read", context, coreFetch);
 
-      expect(callOrder).toEqual(["async-onResponse"]);
+      expect(callOrder).toEqual(["async-afterResponse"]);
     });
 
-    it("handles plugins with only onResponse (no middleware)", async () => {
-      const onResponse = vi.fn();
+    it("handles plugins with only afterResponse (no middleware)", async () => {
+      const afterResponse = vi.fn();
       const plugin = createMockPlugin("response-only-plugin", ["read"], {
-        onResponse,
+        afterResponse,
       });
 
       const executor = createPluginExecutor([plugin]);
@@ -400,7 +404,61 @@ describe("createPluginExecutor", () => {
       );
 
       expect(result).toEqual({ data: "test", status: 200 });
-      expect(onResponse).toHaveBeenCalledTimes(1);
+      expect(afterResponse).toHaveBeenCalledTimes(1);
+    });
+
+    it("chains responses returned from afterResponse", async () => {
+      const plugin1 = createMockPlugin("plugin-1", ["read"], {
+        afterResponse: (_ctx, res) => ({ ...res, prop1: "value1" }),
+      });
+
+      const plugin2 = createMockPlugin("plugin-2", ["read"], {
+        afterResponse: (_ctx, res) => ({ ...res, prop2: "value2" }),
+      });
+
+      const executor = createPluginExecutor([plugin1, plugin2]);
+      const context = createMockContext();
+      const coreFetch = vi
+        .fn()
+        .mockResolvedValue({ data: "test", status: 200 });
+
+      const response = await executor.executeMiddleware(
+        "read",
+        context,
+        coreFetch
+      );
+
+      expect(response).toMatchObject({
+        data: "test",
+        status: 200,
+        prop1: "value1",
+        prop2: "value2",
+      });
+    });
+
+    it("preserves response when afterResponse returns void", async () => {
+      const afterResponse = vi.fn().mockImplementation((ctx) => {
+        ctx.metadata.set("processed", true);
+      });
+
+      const plugin = createMockPlugin("test-plugin", ["read"], {
+        afterResponse,
+      });
+
+      const executor = createPluginExecutor([plugin]);
+      const context = createMockContext();
+      const coreFetch = vi
+        .fn()
+        .mockResolvedValue({ data: "original", status: 200 });
+
+      const response = await executor.executeMiddleware(
+        "read",
+        context,
+        coreFetch
+      );
+
+      expect(response).toEqual({ data: "original", status: 200 });
+      expect(context.metadata.get("processed")).toBe(true);
     });
   });
 
@@ -900,14 +958,14 @@ describe("createPluginExecutor", () => {
       expect(middleware2).not.toHaveBeenCalled();
     });
 
-    it("does not call onResponse handlers when middleware throws", async () => {
-      const onResponse = vi.fn();
+    it("does not call afterResponse handlers when middleware throws", async () => {
+      const afterResponse = vi.fn();
       const middleware = vi
         .fn()
         .mockRejectedValue(new Error("Middleware error"));
       const plugin = createMockPlugin("error-plugin", ["read"], {
         middleware,
-        onResponse,
+        afterResponse,
       });
 
       const executor = createPluginExecutor([plugin]);
@@ -920,7 +978,7 @@ describe("createPluginExecutor", () => {
         executor.executeMiddleware("read", context, coreFetch)
       ).rejects.toThrow("Middleware error");
 
-      expect(onResponse).not.toHaveBeenCalled();
+      expect(afterResponse).not.toHaveBeenCalled();
     });
 
     it("allows middleware to catch and handle errors from next", async () => {
@@ -955,12 +1013,14 @@ describe("createPluginExecutor", () => {
       expect(result).toEqual({ data: "fallback", status: 200 });
     });
 
-    it("propagates errors from onResponse handlers", async () => {
-      const onResponse = vi.fn().mockImplementation(() => {
-        throw new Error("onResponse error");
+    it("propagates errors from afterResponse handlers", async () => {
+      const afterResponse = vi.fn().mockImplementation(() => {
+        throw new Error("afterResponse error");
       });
 
-      const plugin = createMockPlugin("error-plugin", ["read"], { onResponse });
+      const plugin = createMockPlugin("error-plugin", ["read"], {
+        afterResponse,
+      });
       const executor = createPluginExecutor([plugin]);
       const context = createMockContext();
       const coreFetch = vi
@@ -969,7 +1029,7 @@ describe("createPluginExecutor", () => {
 
       await expect(
         executor.executeMiddleware("read", context, coreFetch)
-      ).rejects.toThrow("onResponse error");
+      ).rejects.toThrow("afterResponse error");
     });
 
     it("propagates errors from lifecycle handlers", async () => {

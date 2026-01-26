@@ -105,7 +105,7 @@ describe("invalidationPlugin", () => {
         status: 200,
       };
 
-      plugin.onResponse!(context, response);
+      plugin.afterResponse!(context, response);
 
       const entry1 = stateManager.getCache('{"method":"GET","path":["users"]}');
       const entry2 = stateManager.getCache(
@@ -134,7 +134,7 @@ describe("invalidationPlugin", () => {
         status: 200,
       };
 
-      plugin.onResponse!(context, response);
+      plugin.afterResponse!(context, response);
 
       expect(invalidateHandler).toHaveBeenCalledWith(["users", "users/1"]);
     });
@@ -178,7 +178,7 @@ describe("invalidationPlugin", () => {
         status: 200,
       };
 
-      plugin.onResponse!(context, response);
+      plugin.afterResponse!(context, response);
 
       const entry1 = stateManager.getCache('{"method":"GET","path":["users"]}');
       const entry2 = stateManager.getCache(
@@ -219,7 +219,7 @@ describe("invalidationPlugin", () => {
         status: 200,
       };
 
-      plugin.onResponse!(context, response);
+      plugin.afterResponse!(context, response);
 
       const entry = stateManager.getCache('{"method":"GET","path":["users"]}');
       expect(entry?.stale).toBe(false);
@@ -250,7 +250,7 @@ describe("invalidationPlugin", () => {
         status: 200,
       };
 
-      plugin.onResponse!(context, response);
+      plugin.afterResponse!(context, response);
 
       expect(invalidateHandler).toHaveBeenCalledWith(["users", "users/1"]);
     });
@@ -278,7 +278,7 @@ describe("invalidationPlugin", () => {
         status: 200,
       };
 
-      plugin.onResponse!(context, response);
+      plugin.afterResponse!(context, response);
 
       expect(invalidateHandler).toHaveBeenCalledWith(["users/1"]);
     });
@@ -305,7 +305,7 @@ describe("invalidationPlugin", () => {
         status: 200,
       };
 
-      plugin.onResponse!(context, response);
+      plugin.afterResponse!(context, response);
 
       expect(invalidateHandler).not.toHaveBeenCalled();
     });
@@ -351,7 +351,7 @@ describe("invalidationPlugin", () => {
         status: 200,
       };
 
-      plugin.onResponse!(context, response);
+      plugin.afterResponse!(context, response);
 
       const postsEntry = stateManager.getCache(
         '{"method":"GET","path":["posts"]}'
@@ -385,7 +385,7 @@ describe("invalidationPlugin", () => {
         status: 200,
       };
 
-      plugin.onResponse!(context, response);
+      plugin.afterResponse!(context, response);
 
       expect(invalidateHandler).toHaveBeenCalledWith(["posts"]);
     });
@@ -414,7 +414,7 @@ describe("invalidationPlugin", () => {
         status: 200,
       };
 
-      plugin.onResponse!(context, response);
+      plugin.afterResponse!(context, response);
 
       const calledTags = invalidateHandler.mock.calls[0]?.[0] as string[];
       expect(calledTags).toContain("posts");
@@ -446,7 +446,7 @@ describe("invalidationPlugin", () => {
         status: 200,
       };
 
-      plugin.onResponse!(context, response);
+      plugin.afterResponse!(context, response);
 
       const calledTags = invalidateHandler.mock.calls[0]?.[0] as string[];
       expect(calledTags).toContain("posts");
@@ -476,7 +476,7 @@ describe("invalidationPlugin", () => {
         status: 200,
       };
 
-      plugin.onResponse!(context, response);
+      plugin.afterResponse!(context, response);
 
       const calledTags = invalidateHandler.mock.calls[0]?.[0] as string[];
       expect(calledTags).toContain("posts");
@@ -510,7 +510,7 @@ describe("invalidationPlugin", () => {
         status: 200,
       };
 
-      plugin.onResponse!(context, response);
+      plugin.afterResponse!(context, response);
 
       expect(invalidateHandler).not.toHaveBeenCalled();
     });
@@ -546,7 +546,7 @@ describe("invalidationPlugin", () => {
         status: 500,
       };
 
-      plugin.onResponse!(context, response);
+      plugin.afterResponse!(context, response);
 
       const entry = stateManager.getCache('{"method":"GET","path":["users"]}');
       expect(entry?.stale).toBe(false);
@@ -577,7 +577,7 @@ describe("invalidationPlugin", () => {
         status: 200,
       };
 
-      plugin.onResponse!(context, response);
+      plugin.afterResponse!(context, response);
 
       const calledTags = invalidateHandler.mock.calls[0]?.[0] as string[];
       expect(calledTags).toContain("users");
@@ -607,7 +607,7 @@ describe("invalidationPlugin", () => {
         status: 200,
       };
 
-      plugin.onResponse!(context, response);
+      plugin.afterResponse!(context, response);
 
       expect(invalidateHandler).not.toHaveBeenCalled();
     });
@@ -631,7 +631,7 @@ describe("invalidationPlugin", () => {
         status: 200,
       };
 
-      plugin.onResponse!(context, response);
+      plugin.afterResponse!(context, response);
 
       expect(invalidateHandler).not.toHaveBeenCalled();
     });

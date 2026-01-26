@@ -1,4 +1,4 @@
-import type { SpooshPlugin, PluginContext } from "@spoosh/core";
+import type { SpooshPlugin, PluginContext, SpooshResponse } from "@spoosh/core";
 import type {
   DebugPluginConfig,
   DebugReadOptions,
@@ -76,7 +76,11 @@ export function debugPlugin(config: DebugPluginConfig = {}): SpooshPlugin<{
 
   let lastRequestTimestamp: number | null = null;
 
-  const logPhase = (phase: DebugPhase, context: PluginContext) => {
+  const logPhase = (
+    phase: DebugPhase,
+    context: PluginContext,
+    response?: SpooshResponse<unknown, unknown>
+  ) => {
     if (!enabled) return;
 
     const cacheEntries = logCache
@@ -99,11 +103,11 @@ export function debugPlugin(config: DebugPluginConfig = {}): SpooshPlugin<{
         error: context.state.error,
         timestamp: context.state.timestamp,
       },
-      response: context.response
+      response: response
         ? {
-            data: context.response.data,
-            error: context.response.error,
-            status: context.response.status,
+            data: response.data,
+            error: response.error,
+            status: response.status,
           }
         : undefined,
       cacheEntries,
@@ -130,8 +134,8 @@ export function debugPlugin(config: DebugPluginConfig = {}): SpooshPlugin<{
     console.log("Request Options:", context.requestOptions);
     console.log("State:", context.state);
 
-    if (context.response) {
-      console.log("Response:", context.response);
+    if (response) {
+      console.log("Response:", response);
     }
 
     if (cacheEntries) {
@@ -154,9 +158,8 @@ export function debugPlugin(config: DebugPluginConfig = {}): SpooshPlugin<{
       return next();
     },
 
-    onResponse(context, response) {
-      context.response = response;
-      logPhase("afterFetch", context);
+    afterResponse(context, response) {
+      logPhase("afterFetch", context, response);
     },
 
     lifecycle: {
