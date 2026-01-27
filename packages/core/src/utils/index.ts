@@ -1,4 +1,5 @@
 export { buildUrl } from "./buildUrl";
+export { __DEV__ } from "./env";
 export { generateTags } from "./generateTags";
 export { containsFile, isJsonBody } from "./isJsonBody";
 export {

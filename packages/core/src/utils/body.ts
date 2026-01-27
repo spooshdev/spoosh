@@ -1,5 +1,4 @@
-declare const process: { env?: Record<string, string | undefined> } | undefined;
-
+import { __DEV__ } from "./env";
 import { containsFile, isJsonBody } from "./isJsonBody";
 import { objectToFormData } from "./objectToFormData";
 import { objectToUrlEncoded } from "./objectToUrlEncoded";
@@ -72,11 +71,7 @@ export function resolveRequestBody(
   }
 
   if (isJsonBody(rawBody)) {
-    if (
-      typeof process !== "undefined" &&
-      process?.env?.NODE_ENV !== "production" &&
-      containsFile(rawBody)
-    ) {
+    if (__DEV__() && containsFile(rawBody)) {
       console.warn(
         "[spoosh] Plain object body contains File/Blob. Use form() wrapper for multipart upload."
       );
