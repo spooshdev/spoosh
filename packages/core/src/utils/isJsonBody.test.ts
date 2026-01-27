@@ -89,21 +89,21 @@ describe("isJsonBody", () => {
     expect(isJsonBody(new URLSearchParams())).toBe(false);
   });
 
-  it("should return false for object containing File", () => {
-    expect(isJsonBody({ file: new File([], "test.txt") })).toBe(false);
+  it("should return true for object containing File", () => {
+    expect(isJsonBody({ file: new File([], "test.txt") })).toBe(true);
   });
 
-  it("should return false for object containing Blob", () => {
-    expect(isJsonBody({ data: new Blob([]) })).toBe(false);
+  it("should return true for object containing Blob", () => {
+    expect(isJsonBody({ data: new Blob([]) })).toBe(true);
   });
 
-  it("should return false for array containing File", () => {
-    expect(isJsonBody([new File([], "test.txt")])).toBe(false);
+  it("should return true for array containing File", () => {
+    expect(isJsonBody([new File([], "test.txt")])).toBe(true);
   });
 
-  it("should return false for nested object containing File", () => {
+  it("should return true for nested object containing File", () => {
     expect(isJsonBody({ nested: { file: new File([], "test.txt") } })).toBe(
-      false
+      true
     );
   });
 

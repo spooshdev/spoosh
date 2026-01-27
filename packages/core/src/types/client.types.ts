@@ -9,6 +9,7 @@ import type {
   HasParams,
 } from "./schema.types";
 import type { HeadersInitOrGetter } from "./request.types";
+import type { SpooshBody } from "../utils/body";
 
 type Simplify<T> = { [K in keyof T]: T[K] } & {};
 
@@ -55,8 +56,8 @@ type IsQueryRequired<T> = T extends { query: infer Q }
 type BodyOption<T> = [ExtractBody<T>] extends [never]
   ? {}
   : IsBodyRequired<T> extends true
-    ? { body: ExtractBody<T> }
-    : { body?: ExtractBody<T> };
+    ? { body: ExtractBody<T> | SpooshBody<ExtractBody<T>> }
+    : { body?: ExtractBody<T> | SpooshBody<ExtractBody<T>> };
 
 type QueryOption<T> = [ExtractQuery<T>] extends [never]
   ? {}

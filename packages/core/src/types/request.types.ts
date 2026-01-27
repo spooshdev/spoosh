@@ -1,5 +1,6 @@
 import type { SpooshResponse } from "./response.types";
 import type { HttpMethod } from "./common.types";
+import type { SpooshBody } from "../utils/body";
 
 export type RetryConfig = {
   retries?: number | false;
@@ -23,8 +24,12 @@ type BaseRequestOptions = {
 type BodyOption<TBody> = [TBody] extends [never]
   ? object
   : undefined extends TBody
-    ? { body?: Exclude<TBody, undefined> }
-    : { body: TBody };
+    ? {
+        body?:
+          | Exclude<TBody, undefined>
+          | SpooshBody<Exclude<TBody, undefined>>;
+      }
+    : { body: TBody | SpooshBody<TBody> };
 
 type QueryOption<TQuery> = [TQuery] extends [never]
   ? object

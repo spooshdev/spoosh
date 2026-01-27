@@ -11,6 +11,14 @@ export { objectToFormData } from "./objectToFormData";
 export { objectToUrlEncoded } from "./objectToUrlEncoded";
 export { sortObjectKeys } from "./sortObjectKeys";
 export {
+  form,
+  json,
+  urlencoded,
+  resolveRequestBody,
+  isSpooshBody,
+  type SpooshBody,
+} from "./body";
+export {
   resolvePath,
   resolveTags,
   type TagMode,

@@ -21,7 +21,6 @@ export function isJsonBody(
   if (typeof body === "string") return false;
 
   if (typeof body === "object") {
-    if (containsFile(body)) return false;
     return true;
   }
 

@@ -1,13 +1,9 @@
 import { applyMiddlewares } from "./middleware";
 import {
   buildUrl,
-  containsFile,
   generateTags,
-  getContentType,
-  isJsonBody,
   mergeHeaders,
-  objectToFormData,
-  objectToUrlEncoded,
+  resolveRequestBody,
 } from "./utils";
 import type {
   AnyRequestOptions,
@@ -172,30 +168,18 @@ async function executeCoreFetch<TData, TError>(
   }
 
   if (requestOptions?.body !== undefined) {
-    const contentType = getContentType(headers);
+    const resolved = resolveRequestBody(requestOptions.body);
 
-    if (contentType?.includes("application/x-www-form-urlencoded")) {
-      fetchInit.body = objectToUrlEncoded(
-        requestOptions.body as Record<string, unknown>
-      );
-    } else if (
-      contentType?.includes("multipart/form-data") ||
-      containsFile(requestOptions.body)
-    ) {
-      fetchInit.body = objectToFormData(
-        requestOptions.body as Record<string, unknown>
-      );
-    } else if (isJsonBody(requestOptions.body)) {
-      fetchInit.body = JSON.stringify(requestOptions.body);
-      headers = await mergeHeaders(headers, {
-        "Content-Type": "application/json",
-      });
+    if (resolved) {
+      fetchInit.body = resolved.body;
 
-      if (headers) {
-        fetchInit.headers = headers;
+      if (resolved.headers) {
+        headers = await mergeHeaders(headers, resolved.headers);
+
+        if (headers) {
+          fetchInit.headers = headers;
+        }
       }
-    } else {
-      fetchInit.body = requestOptions.body as BodyInit;
     }
   }
 
