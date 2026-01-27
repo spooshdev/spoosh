@@ -8,9 +8,6 @@ export type SpooshBody<T = unknown> = {
   readonly __spooshBody: true;
   readonly kind: "form" | "json" | "urlencoded";
   readonly value: T;
-
-  /** @internal Invariance marker — prevents excess properties through generics */
-  readonly _phantom?: (v: T) => T;
 };
 
 export function isSpooshBody(value: unknown): value is SpooshBody {
