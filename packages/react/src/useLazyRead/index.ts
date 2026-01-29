@@ -104,7 +104,7 @@ export function createUseLazyRead<
     } | null>(null);
 
     const emptyStateRef = useRef({ data: undefined, error: undefined });
-    const [currentQueryKey, setCurrentQueryKey] = useState<string | null>(null);
+    const [, setCurrentQueryKey] = useState<string | null>(null);
     const [, forceUpdate] = useState(0);
 
     const getOrCreateController = useCallback(
