@@ -39,6 +39,7 @@ export interface BaseReadResult<
   TData,
   TError,
   TPluginResult = Record<string, unknown>,
+  TTriggerOptions = { force?: boolean },
 > {
   data: Signal<TData | undefined>;
   error: Signal<TError | undefined>;
@@ -46,7 +47,15 @@ export interface BaseReadResult<
   fetching: Signal<boolean>;
   meta: Signal<TPluginResult>;
   abort: () => void;
-  trigger: () => Promise<SpooshResponse<TData, TError>>;
+
+  /**
+   * Manually trigger a fetch.
+   *
+   * @param options - Optional override options (query, body, params) to use for this specific request
+   */
+  trigger: (
+    options?: TTriggerOptions
+  ) => Promise<SpooshResponse<TData, TError>>;
 }
 
 export interface BaseWriteResult<
@@ -246,6 +255,34 @@ export type ExtractResponseParamNames<T> =
       ? K
       : never
     : never;
+
+type AwaitedReturnTypeTrigger<T> = T extends (...args: never[]) => infer R
+  ? Awaited<R>
+  : never;
+
+type ExtractInputFromResponse<T> = T extends { input: infer I } ? I : never;
+
+type ExtractTriggerQuery<I> = I extends { query: infer Q }
+  ? { query?: Q }
+  : unknown;
+type ExtractTriggerBody<I> = I extends { body: infer B }
+  ? { body?: B }
+  : unknown;
+type ExtractTriggerParams<I> = I extends { params: infer P }
+  ? { params?: P }
+  : unknown;
+
+export type TriggerOptions<T> =
+  ExtractInputFromResponse<AwaitedReturnTypeTrigger<T>> extends infer I
+    ? [I] extends [never]
+      ? { force?: boolean }
+      : ExtractTriggerQuery<I> &
+          ExtractTriggerBody<I> &
+          ExtractTriggerParams<I> & {
+            /** Force refetch even if data is cached */
+            force?: boolean;
+          }
+    : { force?: boolean };
 
 export type ExtractMethodQuery<T> =
   ExtractMethodOptions<T> extends {

@@ -31,6 +31,7 @@ import type {
   ExtractResponseParamNames,
   ResponseInputFields,
   SpooshInstanceShape,
+  TriggerOptions,
 } from "../types";
 
 export function createInjectRead<
@@ -87,7 +88,8 @@ export function createInjectRead<
   ): BaseReadResult<
     ExtractData<TReadFn>,
     InferError<ExtractError<TReadFn>>,
-    ResolveResultTypes<PluginResults["read"], TReadOpts>
+    ResolveResultTypes<PluginResults["read"], TReadOpts>,
+    TriggerOptions<TReadFn>
   > &
     ResponseInputFields<
       ExtractResponseQuery<TReadFn>,
@@ -119,6 +121,7 @@ export function createInjectRead<
       typeof createOperationController<TData, TError>
     > | null = null;
     let currentQueryKey: string | null = null;
+    let baseQueryKey: string | null = null;
     let currentSubscription: (() => void) | null = null;
     let currentResolvedTags: string[] = [];
     let prevContext: PluginContext<TData, TError> | null = null;
@@ -200,14 +203,22 @@ export function createInjectRead<
 
     const executeWithTracking = async (
       controller: ReturnType<typeof createOperationController<TData, TError>>,
-      force = false
+      force = false,
+      overrideOptions?: Record<string, unknown>
     ) => {
       const hasData = dataSignal() !== undefined;
       loadingSignal.set(!hasData);
       fetchingSignal.set(true);
 
       try {
-        const response = await controller.execute(undefined, { force });
+        const execOptions = overrideOptions
+          ? {
+              ...currentController?.getContext().requestOptions,
+              ...overrideOptions,
+            }
+          : undefined;
+
+        const response = await controller.execute(execOptions, { force });
 
         if (response.error) {
           errorSignal.set(response.error);
@@ -262,6 +273,7 @@ export function createInjectRead<
     });
 
     createController(initialCapturedCall, initialResolvedTags, initialQueryKey);
+    baseQueryKey = initialQueryKey;
     loadingSignal.set(false);
 
     let wasEnabled = false;
@@ -315,11 +327,12 @@ export function createInjectRead<
 
         inputSignal.set(inputInner);
 
-        const queryKeyChanged = queryKey !== currentQueryKey;
+        const baseQueryKeyChanged = queryKey !== baseQueryKey;
         const enabledChanged = isEnabled !== wasEnabled;
         wasEnabled = isEnabled;
 
-        if (queryKeyChanged) {
+        if (baseQueryKeyChanged) {
+          baseQueryKey = queryKey;
           if (currentController) {
             prevContext = currentController.getContext();
 
@@ -417,18 +430,62 @@ export function createInjectRead<
       currentController?.abort();
     };
 
-    const trigger = () => {
-      if (currentController) {
-        // Mount if not already mounted (allows manual fetch when enabled: false)
-        if (!isMounted) {
-          currentController.mount();
-          isMounted = true;
+    const trigger = async (
+      triggerOptions?: { force?: boolean } & Record<string, unknown>
+    ) => {
+      const { force = false, ...overrideOptions } = triggerOptions ?? {};
+      const hasOverrides = Object.keys(overrideOptions).length > 0;
+
+      if (!hasOverrides) {
+        if (!currentController) {
+          return Promise.resolve({ data: undefined, error: undefined });
         }
 
-        return executeWithTracking(currentController, true);
+        return executeWithTracking(currentController, force, undefined);
       }
 
-      return Promise.resolve({ data: undefined, error: undefined });
+      const selectorResult = captureSelector();
+      const capturedCall = selectorResult.call;
+
+      if (!capturedCall) {
+        return Promise.resolve({ data: undefined, error: undefined });
+      }
+
+      const mergedOptions = {
+        ...(capturedCall.options ?? {}),
+        ...overrideOptions,
+      };
+
+      const pathSegments = capturedCall.path.split("/").filter(Boolean);
+      const newQueryKey = stateManager.createQueryKey({
+        path: pathSegments,
+        method: capturedCall.method,
+        options: mergedOptions,
+      });
+
+      if (newQueryKey === currentQueryKey && currentController) {
+        return executeWithTracking(currentController, force, overrideOptions);
+      }
+
+      const params = (
+        mergedOptions as { params?: Record<string, string | number> }
+      )?.params;
+      const newResolvedPath = resolvePath(pathSegments, params);
+      const newResolvedTags = resolveTags(
+        tags !== undefined ? { tags } : undefined,
+        newResolvedPath
+      );
+
+      const newController = createController(
+        { ...capturedCall, options: mergedOptions },
+        newResolvedTags,
+        newQueryKey
+      );
+
+      newController.mount();
+      isMounted = true;
+
+      return executeWithTracking(newController, force, undefined);
     };
 
     const result = {

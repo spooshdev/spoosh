@@ -32,6 +32,7 @@ import type {
   ReadApiClient,
   WriteApiClient,
   InfiniteReadApiClient,
+  TriggerOptions,
 } from "../types";
 
 type InferError<T, TDefaultError> = [T] extends [unknown] ? TDefaultError : T;
@@ -61,7 +62,7 @@ type UseReadFn<TDefaultError, TSchema, TPlugins extends PluginArray> = {
   <
     TReadFn extends (
       api: ReadApiClient<TSchema, TDefaultError>
-    ) => Promise<{ data?: unknown; error?: unknown }>,
+    ) => Promise<SpooshResponse<unknown, unknown>>,
     TReadOpts,
   >(
     readFn: TReadFn,
@@ -83,7 +84,8 @@ type UseReadFn<TDefaultError, TSchema, TPlugins extends PluginArray> = {
   ): BaseReadResult<
     ExtractMethodData<TReadFn>,
     InferError<ExtractMethodError<TReadFn>, TDefaultError>,
-    ResolveResultTypes<MergePluginResults<TPlugins>["read"], TReadOpts>
+    ResolveResultTypes<MergePluginResults<TPlugins>["read"], TReadOpts>,
+    TriggerOptions<TReadFn>
   > &
     ResponseInputFields<
       ExtractResponseQuery<TReadFn>,
@@ -94,13 +96,14 @@ type UseReadFn<TDefaultError, TSchema, TPlugins extends PluginArray> = {
   <
     TReadFn extends (
       api: ReadApiClient<TSchema, TDefaultError>
-    ) => Promise<{ data?: unknown; error?: unknown }>,
+    ) => Promise<SpooshResponse<unknown, unknown>>,
   >(
     readFn: TReadFn
   ): BaseReadResult<
     ExtractMethodData<TReadFn>,
     InferError<ExtractMethodError<TReadFn>, TDefaultError>,
-    MergePluginResults<TPlugins>["read"]
+    MergePluginResults<TPlugins>["read"],
+    TriggerOptions<TReadFn>
   > &
     ResponseInputFields<
       ExtractResponseQuery<TReadFn>,

@@ -56,8 +56,14 @@ export type BaseReadOptions = {
  * @template TData - The response data type
  * @template TError - The error type
  * @template TMeta - Plugin-provided metadata fields
+ * @template TTriggerOptions - Options that can be passed to trigger()
  */
-export type BaseReadResult<TData, TError, TMeta = Record<string, unknown>> = {
+export type BaseReadResult<
+  TData,
+  TError,
+  TMeta = Record<string, unknown>,
+  TTriggerOptions = { force?: boolean },
+> = {
   /** True during the initial load (no data yet) */
   loading: boolean;
 
@@ -76,8 +82,14 @@ export type BaseReadResult<TData, TError, TMeta = Record<string, unknown>> = {
   /** Abort the current fetch operation */
   abort: () => void;
 
-  /** Manually trigger a fetch */
-  trigger: () => Promise<SpooshResponse<TData, TError>>;
+  /**
+   * Manually trigger a fetch.
+   *
+   * @param options - Optional override options (query, body, params) to use for this specific request
+   */
+  trigger: (
+    options?: TTriggerOptions
+  ) => Promise<SpooshResponse<TData, TError>>;
 };
 
 /**
@@ -274,6 +286,34 @@ export type ExtractResponseParamNames<T> =
       ? K
       : never
     : never;
+
+type TriggerAwaitedReturn<T> = T extends (...args: never[]) => infer R
+  ? Awaited<R>
+  : never;
+
+type ExtractInputFromResponse<T> = T extends { input: infer I } ? I : never;
+
+type ExtractTriggerQuery<I> = I extends { query: infer Q }
+  ? { query?: Q }
+  : unknown;
+type ExtractTriggerBody<I> = I extends { body: infer B }
+  ? { body?: B }
+  : unknown;
+type ExtractTriggerParams<I> = I extends { params: infer P }
+  ? { params?: P }
+  : unknown;
+
+export type TriggerOptions<T> =
+  ExtractInputFromResponse<TriggerAwaitedReturn<T>> extends infer I
+    ? [I] extends [never]
+      ? { force?: boolean }
+      : ExtractTriggerQuery<I> &
+          ExtractTriggerBody<I> &
+          ExtractTriggerParams<I> & {
+            /** Force refetch even if data is cached */
+            force?: boolean;
+          }
+    : { force?: boolean };
 
 type QueryField<TQuery> = [TQuery] extends [never]
   ? object

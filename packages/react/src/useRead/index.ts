@@ -30,6 +30,7 @@ import type {
   ExtractResponseBody,
   ExtractResponseParamNames,
   ResponseInputFields,
+  TriggerOptions,
 } from "../types";
 import type { SpooshInstanceShape } from "../createReactSpoosh/types";
 
@@ -59,49 +60,35 @@ export function createUseRead<
     ? E
     : unknown;
 
-  function useRead<
-    TReadFn extends (
-      api: ReadApiClient<TSchema, TDefaultError>
-    ) => Promise<{ data?: unknown; error?: unknown }>,
-    TReadOpts,
-  >(
-    readFn: TReadFn,
-    readOptions: TReadOpts &
-      BaseReadOptions &
-      ResolveTypes<
-        PluginOptions["read"],
-        ResolverContext<
-          TSchema,
-          ExtractData<TReadFn>,
-          InferError<ExtractError<TReadFn>>,
-          ExtractResponseQuery<TReadFn>,
-          ExtractResponseBody<TReadFn>,
-          ExtractResponseParamNames<TReadFn> extends never
-            ? never
-            : Record<ExtractResponseParamNames<TReadFn>, string | number>
-        >
+  type ResolvedReadOptions<TReadFn> = BaseReadOptions &
+    ResolveTypes<
+      PluginOptions["read"],
+      ResolverContext<
+        TSchema,
+        ExtractData<TReadFn>,
+        InferError<ExtractError<TReadFn>>,
+        ExtractResponseQuery<TReadFn>,
+        ExtractResponseBody<TReadFn>,
+        ExtractResponseParamNames<TReadFn> extends never
+          ? never
+          : Record<ExtractResponseParamNames<TReadFn>, string | number>
       >
-  ): BaseReadResult<
-    ExtractData<TReadFn>,
-    InferError<ExtractError<TReadFn>>,
-    ResolveResultTypes<MergePluginResults<TPlugins>["read"], TReadOpts>
-  > &
-    ResponseInputFields<
-      ExtractResponseQuery<TReadFn>,
-      ExtractResponseBody<TReadFn>,
-      ExtractResponseParamNames<TReadFn>
     >;
 
   function useRead<
     TReadFn extends (
       api: ReadApiClient<TSchema, TDefaultError>
-    ) => Promise<{ data?: unknown; error?: unknown }>,
+    ) => Promise<SpooshResponse<unknown, unknown>>,
+    TReadOpts extends ResolvedReadOptions<TReadFn> =
+      ResolvedReadOptions<TReadFn>,
   >(
-    readFn: TReadFn
+    readFn: TReadFn,
+    readOptions?: TReadOpts
   ): BaseReadResult<
     ExtractData<TReadFn>,
     InferError<ExtractError<TReadFn>>,
-    MergePluginResults<TPlugins>["read"]
+    ResolveResultTypes<MergePluginResults<TPlugins>["read"], TReadOpts>,
+    TriggerOptions<TReadFn>
   > &
     ResponseInputFields<
       ExtractResponseQuery<TReadFn>,
@@ -159,6 +146,7 @@ export function createUseRead<
     const controllerRef = useRef<{
       controller: ReturnType<typeof createOperationController<TData, TError>>;
       queryKey: string;
+      baseQueryKey: string;
     } | null>(null);
 
     const lifecycleRef = useRef<{
@@ -169,12 +157,15 @@ export function createUseRead<
       prevContext: null,
     });
 
-    if (controllerRef.current && controllerRef.current.queryKey !== queryKey) {
+    const baseQueryKeyChanged =
+      controllerRef.current && controllerRef.current.baseQueryKey !== queryKey;
+
+    if (baseQueryKeyChanged) {
       lifecycleRef.current.prevContext =
-        controllerRef.current.controller.getContext();
+        controllerRef.current!.controller.getContext();
     }
 
-    if (!controllerRef.current || controllerRef.current.queryKey !== queryKey) {
+    if (!controllerRef.current || baseQueryKeyChanged) {
       const controller = createOperationController<TData, TError>({
         operationType: "read",
         path: pathSegments,
@@ -199,18 +190,25 @@ export function createUseRead<
         },
       });
 
-      controllerRef.current = { controller, queryKey };
+      controllerRef.current = { controller, queryKey, baseQueryKey: queryKey };
     }
 
     const controller = controllerRef.current.controller;
 
     controller.setPluginOptions(pluginOpts);
 
-    const state = useSyncExternalStore(
-      controller.subscribe,
-      controller.getState,
-      controller.getState
+    const subscribe = useCallback(
+      (callback: () => void) => {
+        return controller.subscribe(callback);
+      },
+      [controller]
     );
+
+    const getSnapshot = useCallback(() => {
+      return controller.getState();
+    }, [controller]);
+
+    const state = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 
     const [requestState, setRequestState] = useState<{
       isPending: boolean;
@@ -221,6 +219,8 @@ export function createUseRead<
       return { isPending: enabled && !hasCachedData, error: undefined };
     });
 
+    const [, forceUpdate] = useState(0);
+
     const abortRef = useRef(controller.abort);
     abortRef.current = controller.abort;
 
@@ -228,11 +228,15 @@ export function createUseRead<
     const tagsKey = JSON.stringify(tags);
 
     const executeWithTracking = useCallback(
-      async (force = false) => {
+      async (force = false, overrideOptions?: Record<string, unknown>) => {
         setRequestState((prev) => ({ ...prev, isPending: true }));
 
         try {
-          const response = await controller.execute(undefined, { force });
+          const execOptions = overrideOptions
+            ? { ...(capturedCall.options ?? {}), ...overrideOptions }
+            : undefined;
+
+          const response = await controller.execute(execOptions, { force });
 
           if (response.error) {
             setRequestState({ isPending: false, error: response.error });
@@ -246,7 +250,7 @@ export function createUseRead<
           throw err;
         }
       },
-      [controller]
+      [controller, capturedCall.options]
     );
 
     useEffect(() => {
@@ -307,9 +311,106 @@ export function createUseRead<
       abortRef.current();
     }, []);
 
-    const trigger = useCallback(() => {
-      return executeWithTracking(true);
-    }, [executeWithTracking]);
+    const trigger = useCallback(
+      async (
+        triggerOptions?: { force?: boolean } & Record<string, unknown>
+      ) => {
+        const { force = false, ...overrideOptions } = triggerOptions ?? {};
+        const hasOverrides = Object.keys(overrideOptions).length > 0;
+
+        if (!hasOverrides) {
+          return executeWithTracking(force, undefined);
+        }
+
+        const mergedOptions = {
+          ...(capturedCall.options ?? {}),
+          ...overrideOptions,
+        };
+
+        const newQueryKey = stateManager.createQueryKey({
+          path: pathSegments,
+          method: capturedCall.method,
+          options: mergedOptions,
+        });
+
+        if (newQueryKey === controllerRef.current?.queryKey) {
+          return executeWithTracking(force, overrideOptions);
+        }
+
+        const params = (
+          mergedOptions as { params?: Record<string, string | number> }
+        )?.params;
+        const newResolvedPath = resolvePath(pathSegments, params);
+        const newResolvedTags = resolveTags({ tags }, newResolvedPath);
+
+        const newController = createOperationController<TData, TError>({
+          operationType: "read",
+          path: pathSegments,
+          method: capturedCall.method as "GET",
+          tags: newResolvedTags,
+          requestOptions: mergedOptions,
+          stateManager,
+          eventEmitter,
+          pluginExecutor,
+          hookId,
+          fetchFn: async (fetchOpts) => {
+            const pathMethods = (
+              api as (path: string) => Record<string, unknown>
+            )(capturedCall.path);
+            const method = pathMethods[capturedCall.method] as (
+              o?: unknown
+            ) => Promise<SpooshResponse<TData, TError>>;
+
+            return method(fetchOpts);
+          },
+        });
+
+        newController.setPluginOptions(pluginOpts);
+
+        const currentBaseQueryKey =
+          controllerRef.current?.baseQueryKey ?? queryKey;
+        controllerRef.current = {
+          controller: newController,
+          queryKey: newQueryKey,
+          baseQueryKey: currentBaseQueryKey,
+        };
+        forceUpdate((n) => n + 1);
+
+        newController.mount();
+        setRequestState((prev) => ({ ...prev, isPending: true }));
+
+        try {
+          const response = await newController.execute(mergedOptions, {
+            force,
+          });
+
+          if (response.error) {
+            setRequestState({ isPending: false, error: response.error });
+          } else {
+            setRequestState({ isPending: false, error: undefined });
+          }
+
+          return response;
+        } catch (err) {
+          setRequestState({ isPending: false, error: err as TError });
+          throw err;
+        }
+      },
+      [
+        executeWithTracking,
+        capturedCall.options,
+        capturedCall.method,
+        capturedCall.path,
+        pathSegments,
+        tags,
+        stateManager,
+        eventEmitter,
+        pluginExecutor,
+        hookId,
+        pluginOpts,
+        api,
+      ]
+    );
 
     const entry = stateManager.getCache(queryKey);
     const pluginResultData = entry?.meta ? Object.fromEntries(entry.meta) : {};
