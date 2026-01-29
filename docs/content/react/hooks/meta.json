@@ -1,5 +1,11 @@
 {
   "title": "Hooks",
   "defaultOpen": false,
-  "pages": ["index", "use-read", "use-write", "use-infinite-read"]
+  "pages": [
+    "index",
+    "use-read",
+    "use-lazy-read",
+    "use-write",
+    "use-infinite-read"
+  ]
 }

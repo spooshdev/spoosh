@@ -1,5 +1,11 @@
 {
   "title": "Injects",
   "defaultOpen": false,
-  "pages": ["index", "inject-read", "inject-write", "inject-infinite-read"]
+  "pages": [
+    "index",
+    "inject-read",
+    "inject-lazy-read",
+    "inject-write",
+    "inject-infinite-read"
+  ]
 }

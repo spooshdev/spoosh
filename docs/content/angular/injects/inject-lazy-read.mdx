@@ -1,0 +1,121 @@
+---
+title: injectLazyRead
+description: Lazy data fetching with manual triggering using Signals
+---
+
+Lazy data fetching that doesn't auto-fetch on mount. Works like `injectWrite` - you select the endpoint without calling it, then trigger manually with options.
+
+<Callout type="warn">
+  **Use sparingly.** This hook is designed for specific scenarios where you need
+  to fetch data without displaying it (print, download, export). For most use
+  cases like search, conditional fetching, or displaying data, use
+  [`injectRead`](/angular/docs/injects/inject-read) with the `enabled` option
+  instead.
+</Callout>
+
+## When to Use
+
+Use `injectLazyRead` when you need to **fetch data without displaying it** - just use the data directly with a loading state:
+
+- Fetch data for printing or export without displaying
+- Background operations - fetch data to process or transform without rendering
+
+For most other cases, prefer `injectRead` with the `enabled` option:
+
+```typescript
+// ✅ Prefer: injectRead with enabled for conditional fetching
+userId = signal<string | null>(null);
+user = injectRead(
+  (api) => api("users/:id").GET({ params: { id: this.userId()! } }),
+  { enabled: computed(() => !!this.userId()) }
+);
+
+// ✅ Prefer: injectRead with enabled for search
+search = signal("");
+users = injectRead(
+  (api) => api("users").GET({ query: { search: this.search() } }),
+  { enabled: computed(() => this.search().length > 0) }
+);
+```
+
+For auto-fetching on mount, use [`injectRead`](/docs/angular/injects/inject-read).
+
+## Basic Usage
+
+Fetch data for printing without displaying it:
+
+```typescript
+@Component({
+  selector: "app-order-print",
+  template: `
+    <button (click)="handlePrint('123')" [disabled]="order.loading()">
+      {{ order.loading() ? "Loading..." : "Print Receipt" }}
+    </button>
+  `,
+})
+export class OrderPrintComponent {
+  order = injectLazyRead((api) => api("orders/:id").GET);
+
+  async handlePrint(orderId: string) {
+    const { data, error } = await this.order.trigger({
+      params: { id: orderId },
+    });
+
+    if (error) {
+      this.toast.error("Failed to load order");
+      return;
+    }
+
+    // Use data directly for printing - no need to render it
+    this.printService.printReceipt({
+      orderId: data.id,
+      items: data.items,
+      total: data.total,
+      date: data.createdAt,
+    });
+  }
+}
+```
+
+## With Query Parameters
+
+```typescript
+@Component({
+  selector: "app-export-report",
+  template: `
+    <button
+      (click)="handleExport('sales', 'pdf')"
+      [disabled]="report.loading()"
+    >
+      {{ report.loading() ? "Generating..." : "Export PDF" }}
+    </button>
+  `,
+})
+export class ExportReportComponent {
+  report = injectLazyRead((api) => api("reports/:type").GET);
+
+  async handleExport(type: string, format: string) {
+    const { data } = await this.report.trigger({
+      params: { type },
+      query: { format, includeCharts: true },
+    });
+
+    if (data) {
+      this.downloadService.downloadFile(data, `report.${format}`);
+    }
+  }
+}
+```
+
+## Returns
+
+| Property  | Type                          | Description                             |
+| --------- | ----------------------------- | --------------------------------------- |
+| `data`    | `Signal<TData \| undefined>`  | Response data signal                    |
+| `error`   | `Signal<TError \| undefined>` | Error signal if request failed          |
+| `loading` | `Signal<boolean>`             | Signal true during fetch                |
+| `trigger` | `(options) => Promise`        | Trigger fetch with options              |
+| `abort`   | `() => void`                  | Abort current request                   |
+| `input`   | `Signal<object>`              | The request input (query, body, params) |
+| `meta`    | `Signal<object>`              | Plugin-provided metadata                |
+| `reset`   | `() => void`                  | Reset state to initial values           |

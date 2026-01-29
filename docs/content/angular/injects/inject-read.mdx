@@ -1,9 +1,11 @@
 ---
 title: injectRead
-description: Fetch data with automatic caching and refetching using Signals
+description: Fetch data with automatic caching and triggering using Signals
 ---
 
-Fetch data with automatic caching and refetching. Returns Angular Signals for reactive data binding. The callback **calls** the API method.
+Fetch data with automatic caching. Auto-fetches on mount. Returns Angular Signals for reactive data binding.
+
+For lazy/manual fetching, see [injectLazyRead](/docs/angular/injects/inject-lazy-read).
 
 ## Basic Usage
 
@@ -104,7 +106,7 @@ injectRead((api) => api("users/:id/posts").GET({ params: { id: "123" } }), {
 | `error`    | `Signal<TError \| undefined>` | Error signal if request failed          |
 | `loading`  | `Signal<boolean>`             | Signal true during initial load         |
 | `fetching` | `Signal<boolean>`             | Signal true during any fetch            |
-| `refetch`  | `() => Promise`               | Manually trigger refetch                |
+| `trigger`  | `() => Promise`               | Manually trigger fetch                  |
 | `abort`    | `() => void`                  | Abort current request                   |
 | `input`    | `Signal<object>`              | The request input (query, body, params) |
 | `meta`     | `Signal<object>`              | Plugin-provided metadata                |

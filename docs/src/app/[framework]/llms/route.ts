@@ -30,6 +30,7 @@ const reactContent = `# Spoosh React
 
 - [Overview](${REACT_RAW_BASE}/hooks/index.mdx): React hooks overview
 - [useRead](${REACT_RAW_BASE}/hooks/use-read.mdx): Fetch data with automatic caching
+- [useLazyRead](${REACT_RAW_BASE}/hooks/use-lazy-read.mdx): Manual trigger for print/download/export
 - [useWrite](${REACT_RAW_BASE}/hooks/use-write.mdx): Trigger mutations
 - [useInfiniteRead](${REACT_RAW_BASE}/hooks/use-infinite-read.mdx): Paginated data fetching
 
@@ -99,6 +100,7 @@ const angularContent = `# Spoosh Angular
 
 - [Overview](${ANGULAR_RAW_BASE}/injects/index.mdx): Angular inject functions overview
 - [injectRead](${ANGULAR_RAW_BASE}/injects/inject-read.mdx): Fetch data with Signals
+- [injectLazyRead](${ANGULAR_RAW_BASE}/injects/inject-lazy-read.mdx): Manual trigger for print/download/export
 - [injectWrite](${ANGULAR_RAW_BASE}/injects/inject-write.mdx): Trigger mutations
 - [injectInfiniteRead](${ANGULAR_RAW_BASE}/injects/inject-infinite-read.mdx): Paginated data fetching
 

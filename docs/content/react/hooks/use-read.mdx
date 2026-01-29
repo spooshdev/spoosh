@@ -1,15 +1,17 @@
 ---
 title: useRead
-description: Fetch data with automatic caching and refetching
+description: Fetch data with automatic caching and triggering
 ---
 
-Fetch data with automatic caching and refetching. The callback **calls** the API method.
+Fetch data with automatic caching. Auto-fetches on mount.
+
+For lazy/manual fetching, see [useLazyRead](/docs/react/hooks/use-lazy-read).
 
 ## Basic Usage
 
 ```typescript
 function UserList() {
-  const { data, loading, error, refetch } = useRead(
+  const { data, loading, error, trigger } = useRead(
     (api) => api("users").GET()
   );
 
@@ -84,7 +86,7 @@ useRead((api) => api("users/:id/posts").GET({ params: { id: "123" } }), {
 | `error`    | `TError \| undefined` | Error if request failed                 |
 | `loading`  | `boolean`             | True during initial load                |
 | `fetching` | `boolean`             | True during any fetch                   |
-| `refetch`  | `() => Promise`       | Manually trigger refetch                |
+| `trigger`  | `() => Promise`       | Manually trigger fetch (or refetch)     |
 | `abort`    | `() => void`          | Abort current request                   |
 | `input`    | `object`              | The request input (query, body, params) |
 | `meta`     | `object`              | Plugin-provided metadata                |

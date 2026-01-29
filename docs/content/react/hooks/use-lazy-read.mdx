@@ -1,0 +1,121 @@
+---
+title: useLazyRead
+description: Lazy data fetching with manual trigger control
+---
+
+Lazy data fetching that doesn't auto-fetch on mount. The callback **selects** the API method (no parentheses), similar to `useWrite`.
+
+<Callout type="warn">
+  **Use sparingly.** This hook is designed for specific scenarios where you need
+  to fetch data without displaying it (print, download, export). For most use
+  cases like search, conditional fetching, or displaying data, use
+  [`useRead`](/react/docs/hooks/use-read) with the `enabled` option instead.
+</Callout>
+
+## When to Use
+
+Use `useLazyRead` when you need to **fetch data without displaying it** - just use the data directly with a loading state:
+
+- **Print/Export** - Fetch order data, then send to printer
+- **Background operations** - Fetch data to process or transform without rendering
+
+For most other cases, prefer `useRead` with the `enabled` option:
+
+```typescript
+// ✅ Prefer: useRead with enabled for conditional fetching
+const { data } = useRead(
+  (api) => api("users/:id").GET({ params: { id: userId } }),
+  { enabled: !!userId }
+);
+
+// ✅ Prefer: useRead with enabled for search
+const { data } = useRead(
+  (api) => api("users").GET({ query: { search: debouncedSearch } }),
+  { enabled: debouncedSearch.length > 0 }
+);
+```
+
+For auto-fetching on mount, use [`useRead`](/docs/react/hooks/use-read).
+
+## Basic Usage
+
+Fetch data for printing without displaying it - just use the data and loading state:
+
+```typescript
+function OrderPrint() {
+  const { loading, trigger } = useLazyRead(
+    (api) => api("orders/:id").GET
+  );
+
+  const handlePrint = async (orderId: string) => {
+    const { data, error } = await trigger({ params: { id: orderId } });
+
+    if (error) {
+      toast.error("Failed to load order");
+      return;
+    }
+
+    // Use data directly for printing - no need to render it
+    printReceipt({
+      orderId: data.id,
+      items: data.items,
+      total: data.total,
+      date: data.createdAt,
+    });
+  };
+
+  return (
+    <button onClick={() => handlePrint("123")} disabled={loading}>
+      {loading ? "Loading..." : "Print Receipt"}
+    </button>
+  );
+}
+```
+
+## With Query Parameters
+
+```typescript
+function ExportReport() {
+  const { loading, trigger } = useLazyRead(
+    (api) => api("reports/:type").GET
+  );
+
+  const handleExport = async (type: string, format: string) => {
+    const { data, error } = await trigger({
+      params: { type },
+      query: { format, includeCharts: true },
+    });
+
+    if (data) {
+      downloadFile(data, `report.${format}`);
+    }
+  };
+
+  return (
+    <button onClick={() => handleExport("sales", "pdf")} disabled={loading}>
+      {loading ? "Generating..." : "Export PDF"}
+    </button>
+  );
+}
+```
+
+## Returns
+
+| Property   | Type                   | Description                         |
+| ---------- | ---------------------- | ----------------------------------- |
+| `data`     | `TData \| undefined`   | Response data                       |
+| `error`    | `TError \| undefined`  | Error if request failed             |
+| `loading`  | `boolean`              | True during fetch                   |
+| `fetching` | `boolean`              | True during any fetch               |
+| `trigger`  | `(options) => Promise` | Manually trigger fetch with options |
+| `abort`    | `() => void`           | Abort current request               |
+| `input`    | `object \| undefined`  | The last trigger input              |
+| `meta`     | `object`               | Plugin-provided metadata            |
+
+## Trigger Options
+
+| Option   | Type                               | Description                  |
+| -------- | ---------------------------------- | ---------------------------- |
+| `query`  | `TQuery`                           | Query parameters             |
+| `params` | `Record<string, string \| number>` | Path parameters              |
+| `body`   | `TBody`                            | Request body (if applicable) |

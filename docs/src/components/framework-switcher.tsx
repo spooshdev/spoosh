@@ -65,6 +65,7 @@ export function FrameworkSwitcher({ framework }: { framework: Framework }) {
       newPathname = newPathname.replace("/hooks/", "/injects/");
       newPathname = newPathname.replace("/use-read", "/inject-read");
       newPathname = newPathname.replace("/use-write", "/inject-write");
+      newPathname = newPathname.replace("/use-lazy-read", "/inject-lazy-read");
       newPathname = newPathname.replace(
         "/use-infinite-read",
         "/inject-infinite-read"
@@ -73,6 +74,7 @@ export function FrameworkSwitcher({ framework }: { framework: Framework }) {
       newPathname = newPathname.replace("/injects/", "/hooks/");
       newPathname = newPathname.replace("/inject-read", "/use-read");
       newPathname = newPathname.replace("/inject-write", "/use-write");
+      newPathname = newPathname.replace("/inject-lazy-read", "/use-lazy-read");
       newPathname = newPathname.replace(
         "/inject-infinite-read",
         "/use-infinite-read"

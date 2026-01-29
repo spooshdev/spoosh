@@ -26,7 +26,8 @@ const client = new Spoosh<ApiSchema, Error>("/api").use([
   deduplicationPlugin({ read: "in-flight" }),
 ]);
 
-export const { useRead, useWrite, useInfiniteRead } = createReactSpoosh(client);
+export const { useRead, useLazyRead, useWrite, useInfiniteRead } =
+  createReactSpoosh(client);
 ```
 
 ## Automatic Tag Generation
@@ -136,6 +137,7 @@ function Sidebar() {
 
 ## Available Hooks
 
-- [useRead](/react/docs/hooks/use-read) - Fetch data with automatic caching
-- [useWrite](/react/docs/hooks/use-write) - Trigger mutations with loading states
-- [useInfiniteRead](/react/docs/hooks/use-infinite-read) - Paginated data fetching
+- [useRead](/docs/react/hooks/use-read) - Fetch data with automatic caching
+- [useLazyRead](/docs/react/hooks/use-lazy-read) - Lazy data fetching with manual trigger
+- [useWrite](/docs/react/hooks/use-write) - Trigger mutations with loading states
+- [useInfiniteRead](/docs/react/hooks/use-infinite-read) - Paginated data fetching

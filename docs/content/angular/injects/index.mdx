@@ -1,21 +1,21 @@
 ---
-title: React Hooks
-description: React hooks for data fetching with full type safety
+title: Angular Injects
+description: Angular inject functions for data fetching with full type safety
 ---
 
-The `@spoosh/react` package provides React hooks for data fetching with full type safety.
+The `@spoosh/angular` package provides Angular inject functions for data fetching with full type safety using Signals.
 
 ## Installation
 
 ```package-install
-@spoosh/core @spoosh/react
+@spoosh/core @spoosh/angular
 ```
 
 ## Setup
 
 ```typescript title="src/api/client.ts"
 import { Spoosh } from "@spoosh/core";
-import { createReactSpoosh } from "@spoosh/react";
+import { createAngularSpoosh } from "@spoosh/angular";
 import { cachePlugin } from "@spoosh/plugin-cache";
 import { invalidationPlugin } from "@spoosh/plugin-invalidation";
 import { deduplicationPlugin } from "@spoosh/plugin-deduplication";
@@ -26,7 +26,8 @@ const client = new Spoosh<ApiSchema, Error>("/api").use([
   deduplicationPlugin({ read: "in-flight" }),
 ]);
 
-export const { useRead, useWrite, useInfiniteRead } = createReactSpoosh(client);
+export const { injectRead, injectLazyRead, injectWrite, injectInfiniteRead } =
+  createAngularSpoosh(client);
 ```
 
 ## Automatic Tag Generation
@@ -75,9 +76,9 @@ The `invalidationPlugin` automatically refetches stale queries after mutations.
 | `"none"` | No automatic invalidation                           |
 
 ```typescript
-const { trigger } = useWrite((api) => api("posts").POST);
+const posts = injectWrite((api) => api("posts").POST);
 
-await trigger({
+await posts.trigger({
   body: { title: "New Post" },
   invalidate: "all",
 });
@@ -88,9 +89,9 @@ await trigger({
 Target specific tags to invalidate:
 
 ```typescript
-const { trigger } = useWrite((api) => api("posts").POST);
+const posts = injectWrite((api) => api("posts").POST);
 
-await trigger({
+await posts.trigger({
   body: { title: "New Post" },
   invalidate: ["posts", "users/123/stats"],
 });
@@ -117,25 +118,32 @@ The `deduplicationPlugin` prevents duplicate network requests when the same quer
 | `false`       | Disable deduplication                                                  |
 
 ```typescript
-const { data } = useRead((api) => api("users").GET(), { dedupe: "in-flight" });
+const users = injectRead((api) => api("users").GET(), { dedupe: "in-flight" });
 ```
 
 When multiple components call the same query simultaneously, only one network request is made:
 
 ```typescript
-function Header() {
-  const { data: user } = useRead((api) => api("me").GET());
-  return <div>{user?.name}</div>;
+@Component({
+  selector: "app-header",
+  template: `<div>{{ user.data()?.name }}</div>`,
+})
+export class HeaderComponent {
+  user = injectRead((api) => api("me").GET());
 }
 
-function Sidebar() {
-  const { data: user } = useRead((api) => api("me").GET());
-  return <nav>{user?.email}</nav>;
+@Component({
+  selector: "app-sidebar",
+  template: `<nav>{{ user.data()?.email }}</nav>`,
+})
+export class SidebarComponent {
+  user = injectRead((api) => api("me").GET());
 }
 ```
 
-## Available Hooks
+## Available Injects
 
-- [useRead](/react/docs/hooks/use-read) - Fetch data with automatic caching
-- [useWrite](/react/docs/hooks/use-write) - Trigger mutations with loading states
-- [useInfiniteRead](/react/docs/hooks/use-infinite-read) - Paginated data fetching
+- [injectRead](/docs/angular/injects/inject-read) - Fetch data with automatic caching
+- [injectLazyRead](/docs/angular/injects/inject-lazy-read) - Lazy data fetching with manual trigger
+- [injectWrite](/docs/angular/injects/inject-write) - Trigger mutations with loading states
+- [injectInfiniteRead](/docs/angular/injects/inject-infinite-read) - Paginated data fetching
