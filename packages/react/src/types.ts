@@ -125,30 +125,6 @@ export type BaseWriteResult<
   abort: () => void;
 };
 
-/**
- * Result returned by `useLazyRead` hook.
- *
- * @template TData - The response data type
- * @template TError - The error type
- * @template TOptions - The trigger options type
- */
-export type BaseLazyReadResult<TData, TError, TOptions> = {
-  /** Execute the fetch with optional options */
-  trigger: (options?: TOptions) => Promise<SpooshResponse<TData, TError>>;
-
-  /** True while the fetch is in progress */
-  loading: boolean;
-
-  /** Response data from the API */
-  data: TData | undefined;
-
-  /** Error from the last failed request */
-  error: TError | undefined;
-
-  /** Abort the current fetch */
-  abort: () => void;
-};
-
 type OptionalQueryField<TQuery> = [TQuery] extends [never]
   ? object
   : undefined extends TQuery

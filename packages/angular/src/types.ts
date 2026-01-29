@@ -72,14 +72,6 @@ export interface BaseWriteResult<
   abort: () => void;
 }
 
-export interface BaseLazyReadResult<TData, TError, TOptions> {
-  trigger: (options?: TOptions) => Promise<SpooshResponse<TData, TError>>;
-  data: Signal<TData | undefined>;
-  error: Signal<TError | undefined>;
-  loading: Signal<boolean>;
-  abort: () => void;
-}
-
 export type PageContext<TData, TRequest> = {
   response: TData | undefined;
   allResponses: TData[];

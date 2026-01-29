@@ -2,7 +2,6 @@
 
 export { createReactSpoosh, type SpooshReactHooks } from "./createReactSpoosh";
 export { createUseRead } from "./useRead";
-export { createUseLazyRead } from "./useLazyRead";
 export { createUseWrite } from "./useWrite";
 export { createUseInfiniteRead } from "./useInfiniteRead";
 
@@ -13,7 +12,6 @@ export type {
   UseWriteResult,
   UseInfiniteReadResult,
   BaseReadResult,
-  BaseLazyReadResult,
   BaseWriteResult,
   BaseInfiniteReadResult,
   BaseInfiniteReadOptions,
