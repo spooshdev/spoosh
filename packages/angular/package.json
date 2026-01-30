@@ -45,6 +45,8 @@
     "@angular/core": ">=16.0.0"
   },
   "devDependencies": {
-    "@spoosh/core": "workspace:*"
+    "@angular/core": "^19.0.0",
+    "@spoosh/core": "workspace:*",
+    "@spoosh/test-utils": "workspace:*"
   }
 }
