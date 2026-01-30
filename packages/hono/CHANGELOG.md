@@ -1,5 +1,9 @@
 # @spoosh/hono
 
+## 0.6.0
+
+- OK again -\_-, HonoToSpoosh<typeof app> works with Hono app directly cuz Introduction of `StripPrefix` fix the prefix issue.
+
 ## 0.5.2
 
 - Remove `formData` from request body now it's `body`.

@@ -54,15 +54,20 @@ export type App = typeof app;
 
 ### Client (Spoosh)
 
-Use `ElysiaToSpoosh` with your Elysia app type:
+Use `ElysiaToSpoosh` with your Elysia app type. Since the server uses a prefix (`/api`), use `StripPrefix` to avoid double prefixing:
 
 ```typescript title="client.ts"
-import { Spoosh } from "@spoosh/core";
+import { Spoosh, StripPrefix } from "@spoosh/core";
 import { createAngularSpoosh } from "@spoosh/angular";
 import type { ElysiaToSpoosh } from "@spoosh/elysia";
 import type { App } from "./server";
 
-type ApiSchema = ElysiaToSpoosh<App>["api"];
+// Full schema has prefixed paths: "api/posts", "api/posts/:id"
+type FullSchema = ElysiaToSpoosh<App>;
+
+// Since baseUrl already includes "/api", strip the prefix to avoid
+// double prefixing (e.g., "api/api/posts")
+type ApiSchema = StripPrefix<FullSchema, "api">;
 
 const spoosh = new Spoosh<ApiSchema, Error>("http://localhost:3000/api");
 
@@ -187,12 +192,34 @@ export type App = typeof app;
 ```
 
 ```typescript title="client.ts"
-import { Spoosh } from "@spoosh/core";
+import { Spoosh, StripPrefix } from "@spoosh/core";
 import type { ElysiaToSpoosh } from "@spoosh/elysia";
 import type { App } from "./app";
 
 // Types are correctly inferred from split routes
-type ApiSchema = ElysiaToSpoosh<App>["api"];
+// Strip "api" prefix since baseUrl already includes it
+type ApiSchema = StripPrefix<ElysiaToSpoosh<App>, "api">;
 
 const spoosh = new Spoosh<ApiSchema, Error>("/api");
 ```
+
+## StripPrefix
+
+When using Elysia with a prefix like `new Elysia({ prefix: "/api" })`, the `ElysiaToSpoosh` type produces paths like `api/posts`, `api/users`. Since your `baseUrl` already includes the prefix, you need to use `StripPrefix` to avoid double prefixing (e.g., requesting `/api/api/users`).
+
+```typescript
+import { StripPrefix } from "@spoosh/core";
+import type { ElysiaToSpoosh } from "@spoosh/elysia";
+
+// Full schema has prefixed paths: "api/posts", "api/users", "api/posts/:id"
+type FullSchema = ElysiaToSpoosh<App>;
+
+// Strip the prefix since baseUrl already includes "/api"
+type ApiSchema = StripPrefix<FullSchema, "api">;
+// Result: "posts", "users", "posts/:id"
+```
+
+<Callout type="info">
+  `StripPrefix` normalizes the prefix by removing leading/trailing slashes, so
+  `"api"`, `"/api"`, and `"/api/"` all work the same way.
+</Callout>

@@ -48,11 +48,10 @@ export type AppType = typeof app;
 ```typescript
 import { Spoosh } from "@spoosh/core";
 import type { HonoToSpoosh } from "@spoosh/hono";
-import type { hc } from "hono/client";
 import type { AppType } from "./server";
 
-// Transform Hono's hc client type to Spoosh schema
-type ApiSchema = HonoToSpoosh<ReturnType<typeof hc<AppType>>>;
+// Transform Hono app type to Spoosh schema
+type ApiSchema = HonoToSpoosh<AppType>;
 
 const spoosh = new Spoosh<ApiSchema, Error>("http://localhost:3000/api");
 
@@ -88,14 +87,13 @@ const { data } = await spoosh.api("posts/:id").GET({ params: { id: postId } });
 
 ### HonoToSpoosh<T>
 
-Type utility that transforms a Hono `hc` client type into Spoosh's ApiSchema format.
+Type utility that transforms a Hono app type into Spoosh's ApiSchema format.
 
 ```typescript
 import type { HonoToSpoosh } from "@spoosh/hono";
-import type { hc } from "hono/client";
 import type { AppType } from "./server";
 
-type ApiSchema = HonoToSpoosh<ReturnType<typeof hc<AppType>>>;
+type ApiSchema = HonoToSpoosh<AppType>;
 ```
 
 **Supported HTTP methods:**
@@ -126,30 +124,13 @@ spoosh.api("users/:userId/posts/:postId").GET({
 });
 ```
 
-### HonoToSpoosh<T>
-
-Type utility for the split-app pattern. Use this when your app has many routes to avoid TS2589 errors.
-
-```typescript
-import type { HonoToSpoosh } from "@spoosh/hono";
-import type { hc } from "hono/client";
-import type { usersRoutes } from "./routes/users";
-import type { postsRoutes } from "./routes/posts";
-
-type UsersSchema = HonoToSpoosh<ReturnType<typeof hc<typeof usersRoutes>>>;
-type PostsSchema = HonoToSpoosh<ReturnType<typeof hc<typeof postsRoutes>>>;
-
-// Merge into single schema with proper prefixes
-type ApiSchema = UsersSchema & PostsSchema;
-```
-
 ## Handling Large Apps (TS2589)
 
 When your Hono app has many routes (20+), you may encounter TypeScript error TS2589: "Type instantiation is excessively deep and possibly infinite."
 
 ### Solution: Split-App Pattern
 
-Instead of using `HonoToSpoosh` with your entire app type, split your routes into separate groups and use `HonoToSpoosh` with the `hc` client type:
+Instead of using `HonoToSpoosh` with your entire app type, split your routes into separate groups:
 
 **1. Organize routes into separate files:**
 
@@ -179,30 +160,21 @@ const app = new Hono()
   .route("/posts", postsRoutes);
 ```
 
-**3. Define schema using `HonoToSpoosh` with `hc` client types:**
+**3. Define schema using `HonoToSpoosh`:**
 
 ```typescript
 // client.ts
 import type { HonoToSpoosh } from "@spoosh/hono";
-import type { hc } from "hono/client";
 import type { usersRoutes } from "./routes/users";
 import type { postsRoutes } from "./routes/posts";
 
 // Pre-compute each route type separately (helps TypeScript caching)
-type UsersSchema = HonoToSpoosh<ReturnType<typeof hc<typeof usersRoutes>>>;
-type PostsSchema = HonoToSpoosh<ReturnType<typeof hc<typeof postsRoutes>>>;
+type UsersSchema = HonoToSpoosh<typeof usersRoutes>;
+type PostsSchema = HonoToSpoosh<typeof postsRoutes>;
 
 // Merge schemas
 type ApiSchema = UsersSchema & PostsSchema;
 ```
-
-### Why use `hc` client types?
-
-Using `typeof hc<typeof routes>` instead of `typeof app` is recommended because:
-
-1. **Version stability**: The `hc` client type structure is more stable across Hono versions
-2. **Isolated transformation**: Each route group is transformed independently, reducing type depth
-3. **Better caching**: TypeScript can cache intermediate type computations more effectively
 
 ### Splitting Complex Route Groups
 
@@ -220,12 +192,8 @@ const bookingByIdRoutes = new Hono()
   .delete("/:id", (c) => c.json({}));
 
 // Merge the types
-type BookingsRoot = HonoToSpoosh<
-  ReturnType<typeof hc<typeof bookingsRootRoutes>>
->;
-type BookingById = HonoToSpoosh<
-  ReturnType<typeof hc<typeof bookingByIdRoutes>>
->;
+type BookingsRoot = HonoToSpoosh<typeof bookingsRootRoutes>;
+type BookingById = HonoToSpoosh<typeof bookingByIdRoutes>;
 
 type ApiSchema = BookingsRoot & BookingById;
 ```

@@ -1,6 +1,6 @@
 {
   "name": "@spoosh/hono",
-  "version": "0.5.2",
+  "version": "0.4.0",
   "license": "MIT",
   "description": "Hono server adapter for Spoosh API definitions",
   "keywords": [
@@ -36,7 +36,6 @@
   "scripts": {
     "dev": "tsup --watch",
     "build": "tsup",
-    "test": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --max-warnings 0",
     "format": "prettier --write 'src/**/*.ts'"
@@ -46,9 +45,7 @@
     "hono": ">=4.0.0"
   },
   "devDependencies": {
-    "@hono/zod-validator": "^0.4.3",
     "@spoosh/core": "workspace:*",
-    "hono": "^4.11.3",
-    "zod": "^3.25.76"
+    "hono": "^4.10.6"
   }
 }

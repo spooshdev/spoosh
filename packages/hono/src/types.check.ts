@@ -97,8 +97,7 @@ const app = new Hono()
   .route("/upload", uploadRoutes)
   .route("/api/users", nestedUsersRoutes);
 
-type Client = ReturnType<typeof hc<typeof app>>;
-type Schema = HonoToSpoosh<Client>;
+type Schema = HonoToSpoosh<typeof app>;
 
 // Root routes
 const _checkRootGet: Schema["/"]["GET"]["data"] = { message: "Hello" };
