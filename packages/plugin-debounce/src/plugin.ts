@@ -72,6 +72,23 @@ export function debouncePlugin(): SpooshPlugin<{
     name: "spoosh:debounce",
     operations: ["read", "infiniteRead"],
 
+    lifecycle: {
+      onUnmount: (context) => {
+        const { path, method } = context;
+        const stableKey = `${path.join("/")}:${method}`;
+
+        const existingTimer = timers.get(stableKey);
+
+        if (existingTimer) {
+          clearTimeout(existingTimer);
+          timers.delete(stableKey);
+        }
+
+        latestQueryKeys.delete(stableKey);
+        prevRequests.delete(stableKey);
+      },
+    },
+
     middleware: async (context, next) => {
       const pluginOptions = context.pluginOptions as
         | DebounceReadOptions

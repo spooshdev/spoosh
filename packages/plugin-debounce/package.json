@@ -1,6 +1,6 @@
 {
   "name": "@spoosh/plugin-debounce",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Request debouncing plugin for Spoosh - waits for inactivity before fetching",
   "license": "MIT",
   "repository": {

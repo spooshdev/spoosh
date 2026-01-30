@@ -1,5 +1,9 @@
 # @spoosh/plugin-debounce
 
+## 0.2.1
+
+- Cleanup timers on unmount to prevent memory leaks
+
 ## 0.2.0
 
 ### Breaking Changes
