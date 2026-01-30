@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { Elysia, t } from "elysia";
-import { treaty } from "@elysiajs/eden";
 import type { ElysiaToSpoosh } from "./types";
 
 const postsRoutes = new Elysia({ prefix: "/posts" })
@@ -74,10 +73,10 @@ const app = new Elysia()
   .use(uploadRoutes)
   .use(nestedUsersRoutes);
 
-type Client = ReturnType<typeof treaty<typeof app>>;
-type Schema = ElysiaToSpoosh<Client>;
+type Schema = ElysiaToSpoosh<typeof app>;
 
 // Root routes
+const _root: Schema[""]["GET"]["data"] = { message: "Hello" };
 const _checkHealthGet: Schema["health"]["GET"]["data"] = { status: "ok" };
 
 // Primitive returns

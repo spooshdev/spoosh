@@ -3,18 +3,11 @@ title: Elysia
 description: Type-safe API client from your Elysia server
 ---
 
-The `@spoosh/elysia` package transforms your Elysia Eden Treaty client type into Spoosh's ApiSchema format, giving you end-to-end type safety.
-
-<Callout type="warn">
-  Eden Treaty does not enforce strict types for `body` properties. The object
-  shape is preserved but property values are typed as `any` (e.g., `
-  {"{ name: any }"}` instead of `{"{ name: string }"}`). Response and query
-  types are fully preserved.
-</Callout>
+The `@spoosh/elysia` package transforms your Elysia app type into Spoosh's ApiSchema format, giving you end-to-end type safety.
 
 <Callout type="info">
   For proper type inference, your Elysia routes must use TypeBox schemas for
-  validation. The types are extracted from the Eden Treaty client.
+  validation. The types are extracted directly from your Elysia app.
 </Callout>
 
 ## Installation
@@ -61,16 +54,15 @@ export type App = typeof app;
 
 ### Client (Spoosh)
 
-Use `ElysiaToSpoosh` with the Eden Treaty client type to convert the Elysia type:
+Use `ElysiaToSpoosh` with your Elysia app type:
 
 ```typescript title="client.ts"
 import { Spoosh } from "@spoosh/core";
 import { createReactSpoosh } from "@spoosh/react";
-import { treaty } from "@elysiajs/eden";
 import type { ElysiaToSpoosh } from "@spoosh/elysia";
 import type { App } from "./server";
 
-type ApiSchema = ElysiaToSpoosh<ReturnType<typeof treaty<App>>>["api"];
+type ApiSchema = ElysiaToSpoosh<App>["api"];
 
 const spoosh = new Spoosh<ApiSchema, Error>("http://localhost:3000/api");
 
@@ -190,12 +182,11 @@ export type App = typeof app;
 
 ```typescript title="client.ts"
 import { Spoosh } from "@spoosh/core";
-import { treaty } from "@elysiajs/eden";
 import type { ElysiaToSpoosh } from "@spoosh/elysia";
 import type { App } from "./app";
 
 // Types are correctly inferred from split routes
-type ApiSchema = ElysiaToSpoosh<ReturnType<typeof treaty<App>>>["api"];
+type ApiSchema = ElysiaToSpoosh<App>["api"];
 
 const spoosh = new Spoosh<ApiSchema, Error>("/api");
 ```

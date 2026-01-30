@@ -279,10 +279,9 @@ If you're using Elysia on the server, you can automatically infer your schema:
 
 ```typescript
 import type { ElysiaToSpoosh } from "@spoosh/elysia";
-import { treaty } from "@elysiajs/eden";
 import type { App } from "./server";
 
-type ApiSchema = ElysiaToSpoosh<ReturnType<typeof treaty<App>>>;
+type ApiSchema = ElysiaToSpoosh<App>;
 ```
 
 See the [Elysia Integration](/docs/integrations/elysia) guide for details.

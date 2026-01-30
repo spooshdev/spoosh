@@ -1,10 +1,8 @@
 # @spoosh/elysia
 
-Type adapter to convert [Elysia](https://elysiajs.com) Eden Treaty client types to Spoosh's ApiSchema format.
+Type adapter to convert [Elysia](https://elysiajs.com) app types to Spoosh's ApiSchema format.
 
 **[Documentation](https://spoosh.dev/docs/integrations/elysia)** · **Requirements:** TypeScript >= 5.0
-
-> **Note:** Eden Treaty does not enforce strict types for `body` properties. The object shape is preserved but property values are typed as `any` (e.g., `{ name: any }` instead of `{ name: string }`). Response and query types are fully preserved.
 
 ## Installation
 
@@ -50,12 +48,11 @@ export type App = typeof app;
 
 ```typescript
 import { Spoosh } from "@spoosh/core";
-import { treaty } from "@elysiajs/eden";
 import type { ElysiaToSpoosh } from "@spoosh/elysia";
 import type { App } from "./server";
 
-// Transform Eden Treaty client type to Spoosh schema
-type ApiSchema = ElysiaToSpoosh<ReturnType<typeof treaty<App>>>["api"];
+// Transform Elysia app type to Spoosh schema
+type ApiSchema = ElysiaToSpoosh<App>["api"];
 
 const spoosh = new Spoosh<ApiSchema, Error>("http://localhost:3000/api");
 
@@ -90,14 +87,13 @@ const { data } = await spoosh.api("posts/:id").GET({ params: { id: postId } });
 
 ### ElysiaToSpoosh<T>
 
-Type utility that transforms an Eden Treaty client type into Spoosh's ApiSchema format.
+Type utility that transforms an Elysia app type into Spoosh's ApiSchema format.
 
 ```typescript
 import type { ElysiaToSpoosh } from "@spoosh/elysia";
-import { treaty } from "@elysiajs/eden";
 import type { App } from "./server";
 
-type ApiSchema = ElysiaToSpoosh<ReturnType<typeof treaty<App>>>["api"];
+type ApiSchema = ElysiaToSpoosh<App>["api"];
 ```
 
 **Supported HTTP methods:**
@@ -150,5 +146,5 @@ const app = new Elysia({ prefix: "/api" }).use(usersRoutes).use(postsRoutes);
 export type App = typeof app;
 
 // client.ts - types are correctly inferred
-type ApiSchema = ElysiaToSpoosh<ReturnType<typeof treaty<App>>>["api"];
+type ApiSchema = ElysiaToSpoosh<App>["api"];
 ```

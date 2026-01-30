@@ -1,12 +1,11 @@
 {
   "name": "@spoosh/elysia",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "license": "MIT",
   "description": "Elysia server adapter for Spoosh API definitions",
   "keywords": [
     "spoosh",
     "elysia",
-    "eden",
     "server",
     "api",
     "adapter",
@@ -43,12 +42,10 @@
     "format": "prettier --write 'src/**/*.ts'"
   },
   "peerDependencies": {
-    "@elysiajs/eden": ">=1.0.0",
     "@spoosh/core": ">=0.9.0",
     "elysia": ">=1.0.0"
   },
   "devDependencies": {
-    "@elysiajs/eden": "^1.4.6",
     "@spoosh/core": "workspace:*",
     "elysia": "^1.4.22"
   }

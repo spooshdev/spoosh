@@ -1,5 +1,9 @@
 # @spoosh/elysia
 
+## 0.3.0
+
+- Direct type infer from Elysia app without relying on Eden Treaty types
+
 ## 0.2.1
 
 - Updated dependencies
