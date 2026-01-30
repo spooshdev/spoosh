@@ -1,5 +1,9 @@
 # @spoosh/hono
 
+## 0.5.2
+
+- Remove `formData` from request body now it's `body`.
+
 ## 0.5.1
 
 - Restore `HonoToSpoosh<T>` to accept `ReturnType<typeof hc<AppType>>` for better compatibility with Hono apps(At least I try :D)
