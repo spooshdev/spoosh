@@ -266,9 +266,10 @@ If you're using Hono on the server, you can automatically infer your schema:
 
 ```typescript
 import type { HonoToSpoosh } from "@spoosh/hono";
+import type { hc } from "hono/client";
 import type { AppType } from "./server";
 
-type ApiSchema = HonoToSpoosh<AppType>;
+type ApiSchema = HonoToSpoosh<ReturnType<typeof hc<AppType>>>;
 ```
 
 See the [Hono Integration](/angular/docs/integrations/hono) guide for details.

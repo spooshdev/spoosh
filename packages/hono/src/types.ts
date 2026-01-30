@@ -1,11 +1,5 @@
-import type { ClientRequest, hc } from "hono/client";
-import type { Hono } from "hono";
+import type { ClientRequest } from "hono/client";
 import type { Simplify } from "@spoosh/core";
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyHono = Hono<any, any, any>;
-
-type HonoClient<T extends AnyHono> = ReturnType<typeof hc<T>>;
 
 type IsNever<T> = [T] extends [never] ? true : false;
 
@@ -151,32 +145,20 @@ type CleanupRootPath<T> = {
 };
 
 /**
- * Transforms Hono app or route type into Spoosh flat schema format.
+ * Transforms `hc` client type into Spoosh flat schema format.
  *
  * @example
  * ```typescript
+ * import { hc } from 'hono/client';
  * import type { HonoToSpoosh } from '@spoosh/hono';
  * import type { AppType } from './server';
  *
- * type ApiSchema = HonoToSpoosh<AppType>;
+ * type Client = ReturnType<typeof hc<AppType>>;
+ * type ApiSchema = HonoToSpoosh<Client>;
  *
  * const api = createClient<ApiSchema>({ baseUrl: "/api" });
  * await api("posts").GET();
  * await api("posts/:id").GET({ params: { id: "123" } });
  * ```
- *
- * @example Split-app pattern for large apps
- * ```typescript
- * import type { HonoToSpoosh } from '@spoosh/hono';
- * import type { usersRoutes } from './routes/users';
- * import type { postsRoutes } from './routes/posts';
- *
- * type ApiSchema = {
- *   users: HonoToSpoosh<typeof usersRoutes>;
- *   posts: HonoToSpoosh<typeof postsRoutes>;
- * };
- * ```
  */
-export type HonoToSpoosh<T extends AnyHono> = Simplify<
-  CleanupRootPath<FlattenHonoClient<HonoClient<T>>>
->;
+export type HonoToSpoosh<T> = Simplify<CleanupRootPath<FlattenHonoClient<T>>>;

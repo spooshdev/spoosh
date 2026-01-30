@@ -54,15 +54,16 @@ export type AppType = typeof app;
 
 ### Client (Spoosh)
 
-Use `HonoToSpoosh` to convert your Hono app type to Spoosh schema:
+Use `HonoToSpoosh` with the `hc` client type to convert the Hono type:
 
 ```typescript title="client.ts"
 import { Spoosh } from "@spoosh/core";
 import { createReactSpoosh } from "@spoosh/react";
 import type { HonoToSpoosh } from "@spoosh/hono";
+import type { hc } from "hono/client";
 import type { AppType } from "./server";
 
-type ApiSchema = HonoToSpoosh<AppType>;
+type ApiSchema = HonoToSpoosh<ReturnType<typeof hc<AppType>>>;
 
 const spoosh = new Spoosh<ApiSchema, Error>("http://localhost:3000/api");
 
@@ -165,7 +166,7 @@ Type instantiation is excessively deep and possibly infinite.
 
 ### Solution: Split-App Pattern
 
-Instead of using `HonoToSpoosh` with your entire app type, split your routes into separate groups.
+Instead of using `HonoToSpoosh` with your entire app type, split your routes into separate groups and use `HonoToSpoosh` with the `hc` client type.
 
 #### Step 1: Organize routes into separate files
 
@@ -207,12 +208,13 @@ export default app;
 import { Spoosh } from "@spoosh/core";
 import { createReactSpoosh } from "@spoosh/react";
 import type { HonoToSpoosh } from "@spoosh/hono";
+import type { hc } from "hono/client";
 import type { usersRoutes } from "./routes/users";
 import type { postsRoutes } from "./routes/posts";
 
 // Pre-compute each route type separately (helps TypeScript caching)
-type UsersSchema = HonoToSpoosh<typeof usersRoutes>;
-type PostsSchema = HonoToSpoosh<typeof postsRoutes>;
+type UsersSchema = HonoToSpoosh<ReturnType<typeof hc<typeof usersRoutes>>>;
+type PostsSchema = HonoToSpoosh<ReturnType<typeof hc<typeof postsRoutes>>>;
 
 type ApiSchema = {
   users: UsersSchema;
@@ -223,6 +225,16 @@ const spoosh = new Spoosh<ApiSchema, Error>("/api");
 
 export const { useRead, useWrite } = createReactSpoosh(spoosh);
 ```
+
+### Why use `hc` client types?
+
+Using `typeof hc<typeof routes>` instead of `typeof app` is recommended because:
+
+| Benefit                     | Description                                                          |
+| --------------------------- | -------------------------------------------------------------------- |
+| **Version stability**       | The `hc` client type structure is more stable across Hono versions   |
+| **Isolated transformation** | Each route group is transformed independently, reducing type depth   |
+| **Better caching**          | TypeScript can cache intermediate type computations more effectively |
 
 ### Splitting Complex Route Groups
 
@@ -251,8 +263,12 @@ const app = new Hono()
 
 ```typescript title="client.ts"
 // Merge the types with intersection
-type BookingsRoot = HonoToSpoosh<typeof bookingsRootRoutes>;
-type BookingById = HonoToSpoosh<typeof bookingByIdRoutes>;
+type BookingsRoot = HonoToSpoosh<
+  ReturnType<typeof hc<typeof bookingsRootRoutes>>
+>;
+type BookingById = HonoToSpoosh<
+  ReturnType<typeof hc<typeof bookingByIdRoutes>>
+>;
 
 type ApiSchema = {
   bookings: BookingsRoot & BookingById;

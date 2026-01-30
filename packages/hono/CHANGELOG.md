@@ -1,5 +1,10 @@
 # @spoosh/hono
 
+## 0.5.1
+
+- Restore `HonoToSpoosh<T>` to accept `ReturnType<typeof hc<AppType>>` for better compatibility with Hono apps(At least I try :D)
+- Remove `HonoRouteToSpoosh`, now `HonoToSpoosh` work for both app and route types
+
 ## 0.4.0
 
 - Simplified `HonoToSpoosh<T>` to accept Hono app type directly instead of `ReturnType<typeof hc<AppType>>`
@@ -30,7 +35,7 @@
 ## 0.2.0
 
 - Use `hc` return type of Hono handlers to support multiple hono versions
-- Create `HonoRouteToSpoosh` type transformer for converting individual Hono route types to Spoosh schema
+- Use `hc` return type of Hono handlers for better type compatibility
 
 ## 0.1.1
 
