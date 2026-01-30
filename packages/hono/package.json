@@ -45,7 +45,9 @@
     "hono": ">=4.0.0"
   },
   "devDependencies": {
+    "@hono/zod-validator": "^0.7.6",
     "@spoosh/core": "workspace:*",
-    "hono": "^4.10.6"
+    "hono": "^4.10.6",
+    "zod": "^4.3.6"
   }
 }
