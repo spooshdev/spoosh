@@ -76,7 +76,7 @@ const app = new Elysia()
 type Schema = ElysiaToSpoosh<typeof app>;
 
 // Root routes
-const _root: Schema[""]["GET"]["data"] = { message: "Hello" };
+const _root: Schema["/"]["GET"]["data"] = { message: "Hello" };
 const _checkHealthGet: Schema["health"]["GET"]["data"] = { status: "ok" };
 
 // Primitive returns

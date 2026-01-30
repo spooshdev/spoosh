@@ -84,6 +84,10 @@ type TransformRoutes<T, Path extends string = ""> = (HasMethods<T> extends true
         }[NonMethodKeys<T>]
       >);
 
+type CleanupRootPath<T> = {
+  [K in keyof T as K extends "" ? "/" : K]: T[K];
+};
+
 /**
  * Transforms Elysia app type directly into Spoosh flat schema format.
  * Extracts types directly from Elysia's internal ~Routes.
@@ -101,5 +105,5 @@ type TransformRoutes<T, Path extends string = ""> = (HasMethods<T> extends true
  * ```
  */
 export type ElysiaToSpoosh<App extends { "~Routes": unknown }> = Simplify<
-  TransformRoutes<App["~Routes"]>
+  CleanupRootPath<TransformRoutes<App["~Routes"]>>
 >;
