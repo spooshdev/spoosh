@@ -168,7 +168,7 @@ const _checkSearchGet: Schema["search"]["GET"]["data"] = {
 const _checkSearchGetQuery: Schema["search"]["GET"]["query"] = { q: "test" };
 const _checkSearchGetQueryWithLimit: Schema["search"]["GET"]["query"] = {
   q: "test",
-  limit: "10",
+  limit: 10,
 };
 
 // Form data (maps to body)

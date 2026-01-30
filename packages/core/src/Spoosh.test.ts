@@ -163,6 +163,68 @@ describe("Spoosh", () => {
     });
   });
 
+  describe("configure() method", () => {
+    it("returns new Spoosh instance", () => {
+      const spoosh1 = new Spoosh("/api");
+      const spoosh2 = spoosh1.configure({ stripTagPrefix: "api/v1" });
+
+      expect(spoosh2).toBeInstanceOf(Spoosh);
+      expect(spoosh2).not.toBe(spoosh1);
+    });
+
+    it("preserves baseUrl and defaultOptions", () => {
+      const spoosh = new Spoosh("/api", {
+        headers: { "X-Test": "value" },
+      }).configure({ stripTagPrefix: "api" });
+
+      expect(spoosh.config.baseUrl).toBe("/api");
+      expect(spoosh.config.defaultOptions.headers).toEqual({
+        "X-Test": "value",
+      });
+    });
+
+    it("preserves plugins when configuring", () => {
+      const plugin = createMockPlugin("test-plugin");
+      const spoosh = new Spoosh("/api")
+        .use([plugin])
+        .configure({ stripTagPrefix: "api" });
+
+      expect(spoosh.pluginExecutor.getPlugins()).toHaveLength(1);
+      expect(spoosh.pluginExecutor.getPlugins()[0]?.name).toBe("test-plugin");
+    });
+
+    it("preserves config when using plugins", () => {
+      const plugin = createMockPlugin("test-plugin");
+      const spoosh = new Spoosh("/api")
+        .configure({ stripTagPrefix: "api/v1" })
+        .use([plugin]);
+
+      // @ts-expect-error - accessing private property for test
+      expect(spoosh._config.stripTagPrefix).toBe("api/v1");
+    });
+
+    it("allows chaining configure() and use()", () => {
+      const plugin = createMockPlugin("test-plugin");
+      const spoosh = new Spoosh("/api")
+        .configure({ stripTagPrefix: "api" })
+        .use([plugin])
+        .configure({ stripTagPrefix: "api/v1" });
+
+      expect(spoosh).toBeInstanceOf(Spoosh);
+      // @ts-expect-error - accessing private property for test
+      expect(spoosh._config.stripTagPrefix).toBe("api/v1");
+    });
+
+    it("merges config options on multiple configure() calls", () => {
+      const spoosh = new Spoosh("/api")
+        .configure({ stripTagPrefix: "api" })
+        .configure({ stripTagPrefix: "api/v1" });
+
+      // @ts-expect-error - accessing private property for test
+      expect(spoosh._config.stripTagPrefix).toBe("api/v1");
+    });
+  });
+
   describe("plugin integration", () => {
     it("passes plugins to createSpoosh", () => {
       const plugin1 = createMockPlugin("plugin-1");

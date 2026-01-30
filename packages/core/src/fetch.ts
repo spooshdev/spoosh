@@ -28,7 +28,8 @@ export async function executeFetch<TData, TError>(
   method: HttpMethod,
   defaultOptions: SpooshOptions & SpooshOptionsExtra,
   requestOptions?: AnyRequestOptions,
-  nextTags?: boolean
+  nextTags?: boolean,
+  tagPath?: string[]
 ): Promise<SpooshResponse<TData, TError>> {
   const middlewares = (defaultOptions.middlewares ?? []) as SpooshMiddleware<
     TData,
@@ -56,6 +57,7 @@ export async function executeFetch<TData, TError>(
     requestOptions: context.requestOptions,
     middlewareFetchInit: context.fetchInit,
     nextTags,
+    tagPath,
   });
 
   context.response = response;
@@ -99,6 +101,7 @@ type CoreFetchConfig = {
   requestOptions?: AnyRequestOptions;
   middlewareFetchInit?: RequestInit;
   nextTags?: boolean;
+  tagPath?: string[];
 };
 
 async function executeCoreFetch<TData, TError>(
@@ -112,6 +115,7 @@ async function executeCoreFetch<TData, TError>(
     requestOptions,
     middlewareFetchInit,
     nextTags,
+    tagPath,
   } = config;
   const {
     middlewares: _,
@@ -144,7 +148,7 @@ async function executeCoreFetch<TData, TError>(
   fetchInit.cache = requestOptions?.cache ?? fetchDefaults?.cache;
 
   if (nextTags) {
-    const autoTags = generateTags(path);
+    const autoTags = generateTags(tagPath ?? path);
     const userNext = (
       requestOptions as {
         next?: { tags?: string[]; revalidate?: number | false };

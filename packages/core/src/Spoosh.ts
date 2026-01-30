@@ -2,7 +2,12 @@ import { createProxyHandler } from "./proxy";
 import { createStateManager } from "./state";
 import { createEventEmitter } from "./events";
 import { createPluginExecutor } from "./plugins";
-import type { SpooshInstance, PluginArray } from "./types/instance.types";
+import { extractPrefixFromBaseUrl } from "./utils/stripPathPrefix";
+import type {
+  SpooshInstance,
+  PluginArray,
+  SpooshConfigOptions,
+} from "./types/instance.types";
 import type { SpooshOptions } from "./types/request.types";
 
 /**
@@ -52,6 +57,7 @@ export class Spoosh<
   private baseUrl: string;
   private defaultOptions: SpooshOptions;
   private _plugins: TPlugins;
+  private _config: SpooshConfigOptions;
 
   /**
    * Creates a new Spoosh instance.
@@ -59,6 +65,7 @@ export class Spoosh<
    * @param baseUrl - The base URL for all API requests (e.g., '/api' or 'https://api.example.com')
    * @param defaultOptions - Optional default options applied to all requests (headers, credentials, etc.)
    * @param plugins - Internal parameter used by the `.use()` method. Do not pass directly.
+   * @param configOptions - Internal parameter used by the `.config()` method. Do not pass directly.
    *
    * @example
    * ```ts
@@ -74,11 +81,13 @@ export class Spoosh<
   constructor(
     baseUrl: string,
     defaultOptions?: SpooshOptions,
-    plugins?: TPlugins
+    plugins?: TPlugins,
+    configOptions?: SpooshConfigOptions
   ) {
     this.baseUrl = baseUrl;
     this.defaultOptions = defaultOptions || {};
     this._plugins = (plugins || []) as TPlugins;
+    this._config = configOptions || {};
   }
 
   /**
@@ -121,7 +130,44 @@ export class Spoosh<
     return new Spoosh<TSchema, TError, TNewPlugins>(
       this.baseUrl,
       this.defaultOptions,
-      plugins
+      plugins,
+      this._config
+    );
+  }
+
+  /**
+   * Configures runtime options for the Spoosh instance.
+   *
+   * Returns a **new** Spoosh instance with the updated configuration (immutable pattern).
+   * Configuration is preserved across `.use()` calls.
+   *
+   * URL prefix stripping always auto-detects from baseUrl.
+   * Tag prefix stripping defaults to URL prefix but can be overridden.
+   *
+   * @param options - Configuration options
+   * @returns A new Spoosh instance with the specified configuration
+   *
+   * @example Default behavior (auto-detect from baseUrl for both URL and tags)
+   * ```ts
+   * // baseUrl="/api", schema="api/posts"
+   * // URL: /api/posts, Tags: ["posts"]
+   * const client = new Spoosh<Schema, Error>('https://localhost:3000/api');
+   * ```
+   *
+   * @example Override tag prefix (when baseUrl doesn't have the prefix you want to strip from tags)
+   * ```ts
+   * // baseUrl="/", schema="api/v1/posts"
+   * // URL: /api/v1/posts, Tags: ["posts"] (strips "api/v1" from tags only)
+   * const client = new Spoosh<Schema, Error>('http://localhost:3000')
+   *   .configure({ stripTagPrefix: "api/v1" });
+   * ```
+   */
+  configure(options: SpooshConfigOptions): Spoosh<TSchema, TError, TPlugins> {
+    return new Spoosh<TSchema, TError, TPlugins>(
+      this.baseUrl,
+      this.defaultOptions,
+      this._plugins,
+      { ...this._config, ...options }
     );
   }
 
@@ -139,9 +185,14 @@ export class Spoosh<
    */
   private getInstance(): SpooshInstance<TSchema, TError, TPlugins> {
     if (!this._instance) {
+      const urlPrefix = extractPrefixFromBaseUrl(this.baseUrl) || undefined;
+      const tagPrefix = this._config.stripTagPrefix ?? urlPrefix;
+
       const api = createProxyHandler({
         baseUrl: this.baseUrl,
         defaultOptions: this.defaultOptions,
+        urlPrefix,
+        tagPrefix,
       });
       const stateManager = createStateManager();
       const eventEmitter = createEventEmitter();

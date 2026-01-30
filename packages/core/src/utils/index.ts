@@ -25,3 +25,8 @@ export {
   type TagMode,
   type TagOptions,
 } from "./path-utils";
+export {
+  extractPrefixFromBaseUrl,
+  stripPrefixFromPath,
+  resolveStripPrefix,
+} from "./stripPathPrefix";

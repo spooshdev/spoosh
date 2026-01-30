@@ -3,6 +3,8 @@
 ## 0.9.1
 
 - Create `StripPrefix` utility type to remove prefix from api schema paths
+- Auto merge duplicate prefix paths when fetching data
+- Add `stripTagPrefix` option to prevent unintended tag generation with prefixed paths
 
 ## 0.9.0
 
