@@ -1,6 +1,6 @@
 {
   "name": "@spoosh/hono",
-  "version": "0.4.0",
+  "version": "0.6.0",
   "license": "MIT",
   "description": "Hono server adapter for Spoosh API definitions",
   "keywords": [
