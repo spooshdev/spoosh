@@ -80,18 +80,7 @@ export type ExtractError<T, TDefault = unknown> = T extends {
  * const api = createClient<ApiSchema>({ baseUrl: "/api" });
  * ```
  */
-export type SpooshSchema<
-  T extends {
-    [path: string]: {
-      [M in HttpMethod]?: {
-        data: unknown;
-        body?: unknown;
-        query?: unknown;
-        error?: unknown;
-      };
-    };
-  },
-> = T;
+export type SpooshSchema<T extends ApiSchema> = T;
 
 /**
  * Convert a route pattern like "posts/:id" to a path matcher pattern like `posts/${string}`.
@@ -104,11 +93,14 @@ export type SpooshSchema<
  * type C = RouteToPath<"posts">; // "posts"
  * ```
  */
-export type RouteToPath<T extends string> =
-  T extends `${infer Start}/:${string}/${infer Rest}`
-    ? `${Start}/${string}/${RouteToPath<Rest>}`
-    : T extends `${infer Start}/:${string}`
-      ? `${Start}/${string}`
+type RouteToPath<T extends string> = T extends `/${infer Rest}`
+  ? `/${RouteToPath<Rest>}`
+  : T extends `${infer Segment}/${infer Rest}`
+    ? Segment extends `:${string}`
+      ? `${string}/${RouteToPath<Rest>}`
+      : `${Segment}/${RouteToPath<Rest>}`
+    : T extends `:${string}`
+      ? string
       : T;
 
 /**
@@ -231,12 +223,12 @@ type StripPrefixFromPath<
  *   "api": { GET: { data: string } };
  *   "api/users": { GET: { data: User[] } };
  *   "api/posts/:id": { GET: { data: Post } };
- *   "health": { GET: { data: { status: string } } };
+ *   "api/health": { GET: { data: { status: string } } };
  * };
  *
  * type ApiSchema = StripPrefix<FullSchema, "api">;
  * // {
- * //   "": { GET: { data: string } };
+ * //   "/": { GET: { data: string } };
  * //   "users": { GET: { data: User[] } };
  * //   "posts/:id": { GET: { data: Post } };
  * //   "health": { GET: { data: { status: string } } };
