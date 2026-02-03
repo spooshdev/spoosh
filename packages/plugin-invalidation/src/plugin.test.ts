@@ -311,6 +311,175 @@ describe("invalidationPlugin", () => {
     });
   });
 
+  describe("invalidate option with single tag string", () => {
+    it("should invalidate single tag when non-mode string is provided", () => {
+      const plugin = invalidationPlugin({ defaultMode: "none" });
+      const stateManager = createStateManager();
+      const eventEmitter = createEventEmitter();
+
+      stateManager.setCache('{"method":"GET","path":["posts"]}', {
+        state: {
+          data: [{ id: 1 }],
+          error: undefined,
+          timestamp: Date.now(),
+        },
+        tags: ["posts"],
+        stale: false,
+      });
+
+      const invalidateHandler = vi.fn();
+      eventEmitter.on("invalidate", invalidateHandler);
+
+      const context = createMockContext({
+        stateManager,
+        eventEmitter,
+        tags: ["users"],
+        pluginOptions: {
+          invalidate: "posts",
+        },
+      });
+
+      const response: SpooshResponse<unknown, unknown> = {
+        data: { success: true },
+        status: 200,
+      };
+
+      plugin.afterResponse!(context, response);
+
+      expect(invalidateHandler).toHaveBeenCalledWith(["posts"]);
+      const postsEntry = stateManager.getCache(
+        '{"method":"GET","path":["posts"]}'
+      );
+      expect(postsEntry?.stale).toBe(true);
+    });
+
+    it("should treat custom tag string differently from mode strings", () => {
+      const plugin = invalidationPlugin({ defaultMode: "all" });
+      const stateManager = createStateManager();
+      const eventEmitter = createEventEmitter();
+
+      const invalidateHandler = vi.fn();
+      eventEmitter.on("invalidate", invalidateHandler);
+
+      const context = createMockContext({
+        stateManager,
+        eventEmitter,
+        tags: ["users", "users/1"],
+        pluginOptions: {
+          invalidate: "dashboard",
+        },
+      });
+
+      const response: SpooshResponse<unknown, unknown> = {
+        data: { success: true },
+        status: 200,
+      };
+
+      plugin.afterResponse!(context, response);
+
+      expect(invalidateHandler).toHaveBeenCalledWith(["dashboard"]);
+    });
+  });
+
+  describe("invalidate option with wildcard '*'", () => {
+    it("should emit refetchAll event when '*' string is provided", () => {
+      const plugin = invalidationPlugin({ defaultMode: "none" });
+      const stateManager = createStateManager();
+      const eventEmitter = createEventEmitter();
+
+      const refetchAllHandler = vi.fn();
+      const invalidateHandler = vi.fn();
+      eventEmitter.on("refetchAll", refetchAllHandler);
+      eventEmitter.on("invalidate", invalidateHandler);
+
+      const context = createMockContext({
+        stateManager,
+        eventEmitter,
+        tags: ["users"],
+        pluginOptions: {
+          invalidate: "*",
+        },
+      });
+
+      const response: SpooshResponse<unknown, unknown> = {
+        data: { success: true },
+        status: 200,
+      };
+
+      plugin.afterResponse!(context, response);
+
+      expect(refetchAllHandler).toHaveBeenCalledWith(undefined);
+      expect(invalidateHandler).not.toHaveBeenCalled();
+    });
+
+    it("should emit refetchAll when '*' is in array", () => {
+      const plugin = invalidationPlugin({ defaultMode: "none" });
+      const stateManager = createStateManager();
+      const eventEmitter = createEventEmitter();
+
+      const refetchAllHandler = vi.fn();
+      const invalidateHandler = vi.fn();
+      eventEmitter.on("refetchAll", refetchAllHandler);
+      eventEmitter.on("invalidate", invalidateHandler);
+
+      const context = createMockContext({
+        stateManager,
+        eventEmitter,
+        tags: ["users"],
+        pluginOptions: {
+          invalidate: ["*", "posts"],
+        },
+      });
+
+      const response: SpooshResponse<unknown, unknown> = {
+        data: { success: true },
+        status: 200,
+      };
+
+      plugin.afterResponse!(context, response);
+
+      expect(refetchAllHandler).toHaveBeenCalledWith(undefined);
+      expect(invalidateHandler).not.toHaveBeenCalled();
+    });
+
+    it("should not mark any tags as stale when '*' is used", () => {
+      const plugin = invalidationPlugin({ defaultMode: "none" });
+      const stateManager = createStateManager();
+      const eventEmitter = createEventEmitter();
+
+      stateManager.setCache('{"method":"GET","path":["users"]}', {
+        state: {
+          data: [{ id: 1 }],
+          error: undefined,
+          timestamp: Date.now(),
+        },
+        tags: ["users"],
+        stale: false,
+      });
+
+      const context = createMockContext({
+        stateManager,
+        eventEmitter,
+        tags: ["users"],
+        pluginOptions: {
+          invalidate: "*",
+        },
+      });
+
+      const response: SpooshResponse<unknown, unknown> = {
+        data: { success: true },
+        status: 200,
+      };
+
+      plugin.afterResponse!(context, response);
+
+      const usersEntry = stateManager.getCache(
+        '{"method":"GET","path":["users"]}'
+      );
+      expect(usersEntry?.stale).toBe(false);
+    });
+  });
+
   describe("invalidate option with tags array", () => {
     it("should invalidate specific tags from array", () => {
       const plugin = invalidationPlugin({ defaultMode: "none" });
@@ -774,6 +943,103 @@ describe("invalidationPlugin", () => {
       instanceApi.invalidate([]);
 
       expect(invalidateHandler).not.toHaveBeenCalled();
+    });
+
+    it("should emit refetchAll when '*' string is passed", () => {
+      const plugin = invalidationPlugin();
+      const stateManager = createStateManager();
+      const eventEmitter = createEventEmitter();
+
+      const refetchAllHandler = vi.fn();
+      const invalidateHandler = vi.fn();
+      eventEmitter.on("refetchAll", refetchAllHandler);
+      eventEmitter.on("invalidate", invalidateHandler);
+
+      const context = {
+        api: {},
+        stateManager,
+        eventEmitter,
+        pluginExecutor: {
+          executeMiddleware: vi.fn(),
+          createContext: vi.fn(),
+        },
+      } as unknown as InstanceApiContext;
+
+      const instanceApi = plugin.instanceApi!(
+        context
+      ) as InvalidationInstanceApi;
+
+      instanceApi.invalidate("*");
+
+      expect(refetchAllHandler).toHaveBeenCalledWith(undefined);
+      expect(invalidateHandler).not.toHaveBeenCalled();
+    });
+
+    it("should emit refetchAll when '*' is in array", () => {
+      const plugin = invalidationPlugin();
+      const stateManager = createStateManager();
+      const eventEmitter = createEventEmitter();
+
+      const refetchAllHandler = vi.fn();
+      const invalidateHandler = vi.fn();
+      eventEmitter.on("refetchAll", refetchAllHandler);
+      eventEmitter.on("invalidate", invalidateHandler);
+
+      const context = {
+        api: {},
+        stateManager,
+        eventEmitter,
+        pluginExecutor: {
+          executeMiddleware: vi.fn(),
+          createContext: vi.fn(),
+        },
+      } as unknown as InstanceApiContext;
+
+      const instanceApi = plugin.instanceApi!(
+        context
+      ) as InvalidationInstanceApi;
+
+      instanceApi.invalidate(["*", "users", "posts"]);
+
+      expect(refetchAllHandler).toHaveBeenCalledWith(undefined);
+      expect(invalidateHandler).not.toHaveBeenCalled();
+    });
+
+    it("should not mark tags as stale when '*' is used", () => {
+      const plugin = invalidationPlugin();
+      const stateManager = createStateManager();
+      const eventEmitter = createEventEmitter();
+
+      stateManager.setCache('{"method":"GET","path":["users"]}', {
+        state: {
+          data: [{ id: 1 }],
+          error: undefined,
+          timestamp: Date.now(),
+        },
+        tags: ["users"],
+        stale: false,
+      });
+
+      const context = {
+        api: {},
+        stateManager,
+        eventEmitter,
+        pluginExecutor: {
+          executeMiddleware: vi.fn(),
+          createContext: vi.fn(),
+        },
+      } as unknown as InstanceApiContext;
+
+      const instanceApi = plugin.instanceApi!(
+        context
+      ) as InvalidationInstanceApi;
+
+      instanceApi.invalidate("*");
+
+      const usersEntry = stateManager.getCache(
+        '{"method":"GET","path":["users"]}'
+      );
+      expect(usersEntry?.stale).toBe(false);
     });
   });
 });
