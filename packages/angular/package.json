@@ -1,6 +1,6 @@
 {
   "name": "@spoosh/angular",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "license": "MIT",
   "description": "Angular signals integration for Spoosh API client",
   "keywords": [

@@ -1,5 +1,9 @@
 # @spoosh/angular
 
+## 0.6.1
+
+- Handle `refetchAll` event in read injectors to trigger refetching when cache is cleared
+
 ## 0.6.0
 
 - Remove `injectLazyRead` hook and now `injectRead` trigger support passing custom options

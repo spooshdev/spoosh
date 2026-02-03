@@ -410,9 +410,18 @@ export function createInjectRead<
           }
         );
 
+        const unsubRefetchAll = eventEmitter.on("refetchAll", () => {
+          if (currentController) {
+            untracked(() => {
+              executeWithTracking(currentController!, true);
+            });
+          }
+        });
+
         return () => {
           unsubRefetch();
           unsubInvalidate();
+          unsubRefetchAll();
         };
       },
       { allowSignalWrites: true }

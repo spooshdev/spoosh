@@ -165,6 +165,7 @@ export function createInjectInfiniteRead<
     let prevContext: PluginContext<TData, TError> | null = null;
     let isMounted = false;
     let unsubInvalidate: (() => void) | null = null;
+    let unsubRefetchAll: (() => void) | null = null;
 
     const updateSignalsFromState = () => {
       if (!currentController) return;
@@ -209,6 +210,10 @@ export function createInjectInfiniteRead<
 
       if (unsubInvalidate) {
         unsubInvalidate();
+      }
+
+      if (unsubRefetchAll) {
+        unsubRefetchAll();
       }
 
       const requestOptions = capturedCall.options as
@@ -323,6 +328,16 @@ export function createInjectInfiniteRead<
           }
         }
       );
+
+      unsubRefetchAll = eventEmitter.on("refetchAll", () => {
+        if (!getEnabled() || !currentController) return;
+
+        loadingSignal.set(true);
+        currentController.refetch().finally(() => {
+          updateSignalsFromState();
+          loadingSignal.set(false);
+        });
+      });
 
       return controller;
     };
@@ -441,6 +456,10 @@ export function createInjectInfiniteRead<
     destroyRef.onDestroy(() => {
       if (unsubInvalidate) {
         unsubInvalidate();
+      }
+
+      if (unsubRefetchAll) {
+        unsubRefetchAll();
       }
 
       if (currentSubscription) {
