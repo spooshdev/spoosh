@@ -18,6 +18,7 @@ type EventCallback<T = unknown> = (payload: T) => void;
 export interface BuiltInEvents {
   refetch: RefetchEvent;
   invalidate: string[];
+  refetchAll: void;
 }
 
 /**

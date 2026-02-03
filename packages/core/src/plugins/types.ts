@@ -423,13 +423,15 @@ export type PluginAccessor = {
   get(name: string): unknown;
 };
 
+type RefetchEventReason = "focus" | "reconnect" | "polling" | "invalidate";
+
 /**
  * Event emitted by plugins to request a refetch.
  * Hooks subscribe to this event and trigger controller.execute().
  */
 export type RefetchEvent = {
   queryKey: string;
-  reason: "focus" | "reconnect" | "polling" | "invalidate";
+  reason: RefetchEventReason | Omit<string, RefetchEventReason>;
 };
 
 /**
