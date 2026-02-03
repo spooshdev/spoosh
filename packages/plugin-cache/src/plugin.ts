@@ -71,10 +71,11 @@ export function cachePlugin(config: CachePluginConfig = {}): SpooshPlugin<{
     },
 
     instanceApi(context: InstanceApiContext) {
-      const { stateManager } = context;
+      const { stateManager, eventEmitter } = context;
 
       const clearCache = (): void => {
         stateManager.clear();
+        eventEmitter.emit("refetchAll", undefined);
       };
 
       return { clearCache };

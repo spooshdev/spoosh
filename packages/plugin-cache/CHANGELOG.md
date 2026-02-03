@@ -1,5 +1,9 @@
 # @spoosh/plugin-cache
 
+## 0.2.3
+
+- Emit `refetchAll` event when cache is cleared
+
 ## 0.2.2
 
 ### Bug Fixes
