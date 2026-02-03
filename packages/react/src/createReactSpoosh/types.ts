@@ -12,26 +12,32 @@ import type {
   ResolveResultTypes,
 } from "@spoosh/core";
 import type {
-  BaseReadOptions,
-  BaseReadResult,
-  BaseWriteResult,
-  BaseInfiniteReadOptions,
-  BaseInfiniteReadResult,
-  ExtractResponseQuery,
-  ExtractResponseBody,
-  ExtractResponseParamNames,
-  ResponseInputFields,
-  WriteResponseInputFields,
   ExtractMethodData,
   ExtractMethodError,
   ExtractMethodQuery,
   ExtractMethodBody,
-  AnyInfiniteRequestOptions,
+  ExtractResponseQuery,
+  ExtractResponseBody,
+  ExtractResponseParamNames,
+} from "../types/extraction";
+import type {
+  BaseReadOptions,
+  BaseReadResult,
+  ResponseInputFields,
   ReadApiClient,
-  WriteApiClient,
-  InfiniteReadApiClient,
   TriggerOptions,
-} from "../types";
+} from "../useRead/types";
+import type {
+  BaseWriteResult,
+  WriteResponseInputFields,
+  WriteApiClient,
+} from "../useWrite/types";
+import type {
+  BaseInfiniteReadOptions,
+  BaseInfiniteReadResult,
+  AnyInfiniteRequestOptions,
+  InfiniteReadApiClient,
+} from "../useInfiniteRead/types";
 
 type InferError<T, TDefaultError> = [T] extends [unknown] ? TDefaultError : T;
 

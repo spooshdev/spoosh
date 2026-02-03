@@ -22,6 +22,9 @@ import {
 import type {
   BaseWriteResult,
   WriteApiClient,
+  WriteResponseInputFields,
+} from "./types";
+import type {
   ExtractMethodData,
   ExtractMethodError,
   ExtractMethodOptions,
@@ -30,8 +33,7 @@ import type {
   ExtractResponseQuery,
   ExtractResponseBody,
   ExtractResponseParamNames,
-  WriteResponseInputFields,
-} from "../types";
+} from "../types/extraction";
 import type { SpooshInstanceShape } from "../createReactSpoosh/types";
 
 export function createUseWrite<

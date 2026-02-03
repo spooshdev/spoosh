@@ -24,7 +24,7 @@ import type {
   BaseInfiniteReadResult,
   InfiniteReadApiClient,
   AnyInfiniteRequestOptions,
-} from "../types";
+} from "./types";
 import type { SpooshInstanceShape } from "../createReactSpoosh/types";
 
 export function createUseInfiniteRead<

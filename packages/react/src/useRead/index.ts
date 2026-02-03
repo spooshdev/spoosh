@@ -26,12 +26,14 @@ import type {
   BaseReadOptions,
   BaseReadResult,
   ReadApiClient,
+  ResponseInputFields,
+  TriggerOptions,
+} from "./types";
+import type {
   ExtractResponseQuery,
   ExtractResponseBody,
   ExtractResponseParamNames,
-  ResponseInputFields,
-  TriggerOptions,
-} from "../types";
+} from "../types/extraction";
 import type { SpooshInstanceShape } from "../createReactSpoosh/types";
 
 export function createUseRead<
