@@ -4,6 +4,7 @@ import { Logo } from "@/components/logo";
 import { CodeBlock } from "@/components/code-block";
 import { HomeLayout } from "fumadocs-ui/layouts/home";
 import { baseOptions } from "@/lib/layout.shared";
+import { GITHUB_URL } from "@/lib/constants";
 
 export const metadata: Metadata = {
   title: "Spoosh - Type-Safe API Client",
@@ -16,8 +17,6 @@ export const metadata: Metadata = {
     images: ["/og/home"],
   },
 };
-
-const GITHUB_URL = "https://github.com/nxnom/spoosh";
 
 const heroCode = `import { Spoosh } from "@spoosh/core";
 import { createReactSpoosh } from "@spoosh/react";
@@ -96,7 +95,7 @@ export default function HomePage() {
 
           <div className="flex flex-wrap gap-4 justify-center mb-12">
             <Link
-              href="/react/docs"
+              href="/docs/react"
               className="px-6 py-3 bg-fd-primary text-fd-primary-foreground rounded-lg font-medium hover:opacity-90 transition-opacity"
             >
               Get Started
@@ -130,7 +129,7 @@ export default function HomePage() {
               {frameworks.map((framework) => (
                 <Link
                   key={framework.slug}
-                  href={`/${framework.slug}/docs`}
+                  href={`/docs/${framework.slug}`}
                   className={`p-6 bg-fd-card border-2 rounded-lg transition-all ${framework.borderColor}`}
                 >
                   <div
@@ -311,13 +310,13 @@ export default function HomePage() {
             />
             <div className="mt-8 flex gap-4 justify-center flex-wrap">
               <Link
-                href="/react/docs/getting-started"
+                href="/docs/react/getting-started"
                 className="inline-block px-6 py-3 bg-fd-primary text-fd-primary-foreground rounded-lg font-medium hover:opacity-90 transition-opacity"
               >
                 React Documentation
               </Link>
               <Link
-                href="/angular/docs/getting-started"
+                href="/docs/angular/getting-started"
                 className="inline-block px-6 py-3 border border-fd-border rounded-lg font-medium hover:bg-fd-accent transition-colors"
               >
                 Angular Documentation

@@ -1,12 +1,17 @@
+import { notFound } from "next/navigation";
 import { DocsLayout } from "fumadocs-ui/layouts/docs";
 import { baseOptions } from "@/lib/layout.shared";
-import { getSourceByFramework, type Framework } from "@/lib/source";
+import { getSourceByFramework, FRAMEWORKS, type Framework } from "@/lib/source";
 import { FrameworkSwitcher } from "@/components/framework-switcher";
 import type { Folder, Root } from "fumadocs-core/page-tree";
 
 interface DocsLayoutProps {
   children: React.ReactNode;
   params: Promise<{ framework: string }>;
+}
+
+export function generateStaticParams() {
+  return FRAMEWORKS.map((framework) => ({ framework }));
 }
 
 function getTreeWithLLM(tree: Root, framework: Framework): Root {
@@ -18,13 +23,13 @@ function getTreeWithLLM(tree: Root, framework: Framework): Root {
       {
         type: "page",
         name: "Docs List",
-        url: `/${framework}/llms`,
+        url: `/docs/${framework}/llms`,
         external: true,
       },
       {
         type: "page",
         name: "Full Docs",
-        url: `/${framework}/llms-full`,
+        url: `/docs/${framework}/llms-full`,
         external: true,
       },
     ],
@@ -38,6 +43,11 @@ function getTreeWithLLM(tree: Root, framework: Framework): Root {
 
 export default async function Layout({ children, params }: DocsLayoutProps) {
   const { framework } = await params;
+
+  if (!FRAMEWORKS.includes(framework as Framework)) {
+    notFound();
+  }
+
   const source = getSourceByFramework(framework as Framework);
   const options = baseOptions(framework as Framework);
   const tree = getTreeWithLLM(source.getPageTree(), framework as Framework);

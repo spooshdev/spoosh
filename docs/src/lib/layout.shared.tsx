@@ -1,8 +1,7 @@
 import type { BaseLayoutProps } from "fumadocs-ui/layouts/shared";
 import { Logo } from "@/components/logo";
 import type { Framework } from "@/lib/source";
-
-const GITHUB_URL = "https://github.com/nxnom/spoosh";
+import { GITHUB_URL } from "@/lib/constants";
 
 export function baseOptions(framework?: Framework): BaseLayoutProps {
   return {
@@ -22,7 +21,7 @@ export function baseOptions(framework?: Framework): BaseLayoutProps {
     links: [
       {
         text: "Documentation",
-        url: framework ? `/${framework}/docs` : "/react/docs",
+        url: framework ? `/docs/${framework}` : "/docs/react",
         active: "nested-url",
       },
       {

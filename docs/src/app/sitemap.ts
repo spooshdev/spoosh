@@ -20,7 +20,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     const pages = source.getPages();
 
     entries.push({
-      url: `${siteUrl}/${framework}/docs`,
+      url: `${siteUrl}/docs/${framework}`,
       lastModified: new Date(),
       changeFrequency: "weekly",
       priority: 0.9,
@@ -28,7 +28,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
     for (const page of pages) {
       entries.push({
-        url: `${siteUrl}/${framework}/docs/${page.slugs.join("/")}`,
+        url: `${siteUrl}/docs/${framework}/${page.slugs.join("/")}`,
         lastModified: new Date(),
         changeFrequency: "weekly",
         priority: 0.8,

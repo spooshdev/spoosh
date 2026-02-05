@@ -5,13 +5,13 @@ export const FRAMEWORKS = ["react", "angular"] as const;
 export type Framework = (typeof FRAMEWORKS)[number];
 
 export const reactSource = loader({
-  baseUrl: "/react/docs",
+  baseUrl: "/docs/react",
   source: reactDocs.toFumadocsSource(),
   plugins: [],
 });
 
 export const angularSource = loader({
-  baseUrl: "/angular/docs",
+  baseUrl: "/docs/angular",
   source: angularDocs.toFumadocsSource(),
   plugins: [],
 });
@@ -33,7 +33,7 @@ export function getPageImage(
 
   return {
     segments,
-    url: `/og/${framework}/docs/${segments.join("/")}`,
+    url: `/og/docs/${framework}/${segments.join("/")}`,
   };
 }
 

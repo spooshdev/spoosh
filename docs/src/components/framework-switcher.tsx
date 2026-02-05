@@ -59,10 +59,13 @@ export function FrameworkSwitcher({ framework }: { framework: Framework }) {
       return;
     }
 
-    let newPathname = pathname.replace(`/${framework}/`, `/${newFramework}/`);
+    let newPathname = pathname.replace(
+      `/docs/${framework}`,
+      `/docs/${newFramework}`
+    );
 
     if (framework === "react" && newFramework === "angular") {
-      newPathname = newPathname.replace("/hooks/", "/injects/");
+      newPathname = newPathname.replace("/hooks", "/injects");
       newPathname = newPathname.replace("/use-read", "/inject-read");
       newPathname = newPathname.replace("/use-write", "/inject-write");
       newPathname = newPathname.replace("/use-lazy-read", "/inject-lazy-read");
@@ -71,7 +74,7 @@ export function FrameworkSwitcher({ framework }: { framework: Framework }) {
         "/inject-infinite-read"
       );
     } else if (framework === "angular" && newFramework === "react") {
-      newPathname = newPathname.replace("/injects/", "/hooks/");
+      newPathname = newPathname.replace("/injects", "/hooks");
       newPathname = newPathname.replace("/inject-read", "/use-read");
       newPathname = newPathname.replace("/inject-write", "/use-write");
       newPathname = newPathname.replace("/inject-lazy-read", "/use-lazy-read");

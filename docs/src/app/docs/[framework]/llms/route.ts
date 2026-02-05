@@ -1,9 +1,11 @@
+import { GITHUB_URL } from "@/lib/constants";
 import { type Framework } from "@/lib/source";
 
-const REACT_RAW_BASE =
-  "https://raw.githubusercontent.com/nxnom/spoosh/main/docs/content/react";
-const ANGULAR_RAW_BASE =
-  "https://raw.githubusercontent.com/nxnom/spoosh/main/docs/content/angular";
+const RAW_BASE =
+  GITHUB_URL.replace("github.com", "raw.githubusercontent.com") +
+  "/main/docs/content";
+const REACT_RAW_BASE = `${RAW_BASE}/react`;
+const ANGULAR_RAW_BASE = `${RAW_BASE}/angular`;
 
 const reactContent = `# Spoosh React
 
@@ -11,7 +13,7 @@ const reactContent = `# Spoosh React
 
 ## Docs
 
-- [Full Docs](https://spoosh.dev/react/llms-full): Full React documentation.
+- [Full Docs](https://spoosh.dev/docs/react/llms-full): Full React documentation.
 
 ## Getting Started
 
@@ -80,7 +82,7 @@ const angularContent = `# Spoosh Angular
 
 ## Docs
 
-- [Full Docs](https://spoosh.dev/angular/llms-full): Full Angular documentation.
+- [Full Docs](https://spoosh.dev/docs/angular/llms-full): Full Angular documentation.
 
 ## Getting Started
 
