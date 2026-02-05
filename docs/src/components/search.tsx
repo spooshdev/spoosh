@@ -13,6 +13,7 @@ import {
 import { useDocsSearch } from "fumadocs-core/search/client";
 import { create } from "@orama/orama";
 import { useI18n } from "fumadocs-ui/contexts/i18n";
+import { usePathname } from "next/navigation";
 
 function initOrama() {
   return create({
@@ -22,13 +23,27 @@ function initOrama() {
   });
 }
 
+function useFramework(): string {
+  const pathname = usePathname();
+
+  if (pathname.startsWith("/docs/angular")) return "angular";
+
+  return "react";
+}
+
 export default function DefaultSearchDialog(props: SharedProps) {
-  const { locale } = useI18n(); // (optional) for i18n
-  const { search, setSearch, query } = useDocsSearch({
-    type: "static",
-    initOrama,
-    locale,
-  });
+  const { locale } = useI18n();
+  const framework = useFramework();
+
+  const { search, setSearch, query } = useDocsSearch(
+    {
+      type: "static",
+      from: `/api/search/${framework}`,
+      initOrama,
+      locale,
+    },
+    [framework]
+  );
 
   return (
     <SearchDialog
