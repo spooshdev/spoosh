@@ -19,6 +19,36 @@ export type SpooshOptions = Omit<RequestInit, "method" | "body" | "headers"> & {
   transport?: TransportOption;
 };
 
+type FetchOnlyInitKeys =
+  | "mode"
+  | "cache"
+  | "integrity"
+  | "keepalive"
+  | "next"
+  | "priority"
+  | "redirect"
+  | "referrer"
+  | "referrerPolicy"
+  | "window";
+
+type SharedSpooshOptions = Omit<
+  RequestInit,
+  "signal" | "method" | "body" | "headers" | FetchOnlyInitKeys
+> & {
+  headers?: HeadersInitOrGetter;
+};
+
+type SpooshFetchOptions = SharedSpooshOptions &
+  Pick<RequestInit, Extract<keyof RequestInit, FetchOnlyInitKeys>> & {
+    transport?: "fetch";
+  };
+
+type SpooshXhrOptions = SharedSpooshOptions & {
+  transport: "xhr";
+};
+
+export type SpooshOptionsInput = SpooshFetchOptions | SpooshXhrOptions;
+
 type BaseRequestOptions = {
   headers?: HeadersInitOrGetter;
   cache?: RequestCache;

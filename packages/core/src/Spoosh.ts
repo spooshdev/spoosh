@@ -3,7 +3,7 @@ import { createStateManager } from "./state";
 import { createEventEmitter } from "./events";
 import { createPluginExecutor } from "./plugins";
 import type { SpooshInstance, PluginArray } from "./types/instance.types";
-import type { SpooshOptions } from "./types/request.types";
+import type { SpooshOptions, SpooshOptionsInput } from "./types/request.types";
 
 /**
  * Class-based builder for creating Spoosh instances with type-safe plugin inference.
@@ -73,11 +73,11 @@ export class Spoosh<
    */
   constructor(
     baseUrl: string,
-    defaultOptions?: SpooshOptions,
+    defaultOptions?: SpooshOptionsInput,
     plugins?: TPlugins
   ) {
     this.baseUrl = baseUrl;
-    this.defaultOptions = defaultOptions || {};
+    this.defaultOptions = (defaultOptions || {}) as SpooshOptions;
     this._plugins = (plugins || []) as TPlugins;
   }
 
@@ -120,7 +120,7 @@ export class Spoosh<
   ): Spoosh<TSchema, TError, TNewPlugins> {
     return new Spoosh<TSchema, TError, TNewPlugins>(
       this.baseUrl,
-      this.defaultOptions,
+      this.defaultOptions as SpooshOptionsInput,
       plugins
     );
   }

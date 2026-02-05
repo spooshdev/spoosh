@@ -1,11 +1,11 @@
 import { createProxyHandler } from "./proxy";
 import type { SpooshClient } from "./types/client.types";
-import type { SpooshOptions } from "./types/request.types";
+import type { SpooshOptions, SpooshOptionsInput } from "./types/request.types";
 import type { SpooshMiddleware } from "./types/middleware.types";
 
 export type SpooshClientConfig = {
   baseUrl: string;
-  defaultOptions?: SpooshOptions;
+  defaultOptions?: SpooshOptionsInput;
   middlewares?: SpooshMiddleware[];
 };
 
@@ -51,7 +51,7 @@ export function createClient<TSchema, TDefaultError = unknown>(
 ): SpooshClient<TSchema, TDefaultError> {
   const { baseUrl, defaultOptions = {}, middlewares = [] } = config;
 
-  const optionsWithMiddlewares = { ...defaultOptions, middlewares };
+  const optionsWithMiddlewares = { ...(defaultOptions as SpooshOptions), middlewares };
 
   return createProxyHandler<TSchema, TDefaultError>({
     baseUrl,
