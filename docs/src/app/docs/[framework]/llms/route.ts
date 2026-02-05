@@ -72,6 +72,9 @@ const reactContent = `# Spoosh React
 ### Framework Integration
 - [Next.js](${REACT_RAW_BASE}/plugins/nextjs.mdx): Server-side cache revalidation
 
+### Upload/Download
+- [Progress](${REACT_RAW_BASE}/plugins/progress.mdx): Upload/download progress tracking via XHR
+
 ### Developer Tools
 - [Debug](${REACT_RAW_BASE}/plugins/debug.mdx): Debug logging for development
 `;
@@ -137,6 +140,9 @@ const angularContent = `# Spoosh Angular
 ### Data Transformation
 - [Transform](${ANGULAR_RAW_BASE}/plugins/transform.mdx): Transform request and response data
 - [QS](${ANGULAR_RAW_BASE}/plugins/qs.mdx): Query string serialization for nested objects
+
+### Upload/Download
+- [Progress](${ANGULAR_RAW_BASE}/plugins/progress.mdx): Upload/download progress tracking via XHR
 
 ### Developer Tools
 - [Debug](${ANGULAR_RAW_BASE}/plugins/debug.mdx): Debug logging for development

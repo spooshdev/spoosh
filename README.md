@@ -194,6 +194,7 @@ export class UserListComponent {
 | [@spoosh/plugin-gc](./packages/plugin-gc)                       | Garbage collection for cache cleanup                 |
 | [@spoosh/plugin-qs](./packages/plugin-qs)                       | Query string serialization with nested object support|
 | [@spoosh/plugin-nextjs](./packages/plugin-nextjs)               | Next.js server-side cache revalidation               |
+| [@spoosh/plugin-progress](./packages/plugin-progress)           | Upload/download progress tracking via XHR            |
 | [@spoosh/plugin-debug](./packages/plugin-debug)                 | Debug logging for development                        |
 
 ## Plugin Usage
