@@ -223,6 +223,7 @@ export function createStateManager(): StateManager {
         entry.meta.set(name, value);
       }
 
+      entry.state = { ...entry.state };
       notifySubscribers(key);
     },
 
