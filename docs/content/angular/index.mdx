@@ -13,26 +13,26 @@ Spoosh uses a tag-based caching system. Each query is automatically tagged based
 
 ```typescript
 // Query tags are automatically generated from the path:
-useRead((api) => api("users").GET());
+injectRead((api) => api("users").GET());
 // → tags: ["users"]
 
-useRead((api) => api("users/:id").GET({ params: { id: 123 } }));
+injectRead((api) => api("users/:id").GET({ params: { id: 123 } }));
 // → tags: ["users", "users/123"]
 
-useRead((api) => api("users/:id/posts").GET({ params: { id: 123 } }));
+injectRead((api) => api("users/:id/posts").GET({ params: { id: 123 } }));
 // → tags: ["users", "users/123", "users/123/posts"]
 ```
 
 When you mutate data, Spoosh automatically invalidates related queries based on these tags. Create a post for user 123? Every query that depends on that user's data refreshes automatically.
 
 ```typescript
-const { trigger } = useWrite((api) => api("users/:id/posts").POST);
+const write = injectWrite((api) => api("users/:id/posts").POST);
 
 // This mutation automatically invalidates:
 // - users
 // - users/123
 // - users/123/posts
-await trigger({ params: { id: 123 }, body: newPost });
+await write.trigger({ params: { id: 123 }, body: newPost });
 ```
 
 ### Type-Safe Routing with Zero Strings
@@ -41,10 +41,8 @@ Define your API schema once, then use a function-based API that gives you autoco
 
 ```typescript
 // Fully typed paths
-const { data: user } = useRead((api) =>
-  api("users/:id").GET({ params: { id: 123 } })
-);
-const { data: posts } = useRead((api) =>
+const user = injectRead((api) => api("users/:id").GET({ params: { id: 123 } }));
+const posts = injectRead((api) =>
   api("users/:id/posts").GET({ params: { id: 123 }, query: { page: 1 } })
 );
 ```
@@ -117,7 +115,7 @@ const spoosh = new Spoosh<API, Error>("/api").use([
 ]);
 
 // Options are typed based on installed plugins
-useRead((api) => api("users").GET(), {
+injectRead((api) => api("users").GET(), {
   staleTime: 10000, // ✓ Known from cachePlugin
   retries: 5, // ✓ Known from retryPlugin
   interval: 60000, // ✓ Known from pollingPlugin
@@ -137,13 +135,13 @@ At ~10KB gzipped for the core, Spoosh keeps your bundle size minimal. Add only t
 
 ## Packages
 
-| Package           | Description                                               |
-| ----------------- | --------------------------------------------------------- |
-| `@spoosh/core`    | Core client and plugin system                             |
-| `@spoosh/react`   | React bindings (`useRead`, `useWrite`, `useInfiniteRead`) |
-| `@spoosh/hono`    | Hono type adapter                                         |
-| `@spoosh/elysia`  | Elysia type adapter                                       |
-| `@spoosh/openapi` | Bidirectional OpenAPI converter (import/export)           |
+| Package           | Description                                                          |
+| ----------------- | -------------------------------------------------------------------- |
+| `@spoosh/core`    | Core client and plugin system                                        |
+| `@spoosh/angular` | Angular bindings (`injectRead`, `injectWrite`, `injectInfiniteRead`) |
+| `@spoosh/hono`    | Hono type adapter                                                    |
+| `@spoosh/elysia`  | Elysia type adapter                                                  |
+| `@spoosh/openapi` | Bidirectional OpenAPI converter (import/export)                      |
 
 ### Plugins
 
@@ -170,6 +168,9 @@ At ~10KB gzipped for the core, Spoosh keeps your bundle size minimal. Add only t
 ## Next Steps
 
 <Cards>
-  <Card title="Getting Started" href="/docs/react/getting-started" />
-  <Card title="Installation" href="/docs/react/getting-started/installation" />
+  <Card title="Getting Started" href="/docs/angular/getting-started" />
+  <Card
+    title="Installation"
+    href="/docs/angular/getting-started/installation"
+  />
 </Cards>
