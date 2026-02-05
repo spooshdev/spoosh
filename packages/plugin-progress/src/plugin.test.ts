@@ -141,12 +141,11 @@ describe("progressPlugin", () => {
         progress: {
           loaded: 500,
           total: 1000,
-          percentage: 50,
         },
       });
     });
 
-    it("should set total to 0 and percentage to 0 when not lengthComputable", async () => {
+    it("should set total to 0 when not lengthComputable", async () => {
       const plugin = progressPlugin();
       const context = createMockContext({
         pluginOptions: { progress: true },
@@ -175,109 +174,6 @@ describe("progressPlugin", () => {
         progress: {
           loaded: 500,
           total: 0,
-          percentage: 0,
-        },
-      });
-    });
-
-    it("should round percentage to nearest integer", async () => {
-      const plugin = progressPlugin();
-      const context = createMockContext({
-        pluginOptions: { progress: true },
-      });
-      const setMetaSpy = vi.spyOn(context.stateManager, "setMeta");
-      const next = vi.fn().mockResolvedValue({ data: {}, status: 200 });
-
-      await plugin.middleware!(context, next);
-
-      const { onProgress } = context.requestOptions.transportOptions as {
-        onProgress: (event: ProgressEvent, xhr: XMLHttpRequest) => void;
-      };
-
-      const mockXhr = {} as XMLHttpRequest;
-
-      onProgress(
-        {
-          lengthComputable: true,
-          loaded: 333,
-          total: 1000,
-        } as ProgressEvent,
-        mockXhr
-      );
-
-      expect(setMetaSpy).toHaveBeenCalledWith(context.queryKey, {
-        progress: {
-          loaded: 333,
-          total: 1000,
-          percentage: 33,
-        },
-      });
-    });
-
-    it("should report 100% when fully loaded", async () => {
-      const plugin = progressPlugin();
-      const context = createMockContext({
-        pluginOptions: { progress: true },
-      });
-      const setMetaSpy = vi.spyOn(context.stateManager, "setMeta");
-      const next = vi.fn().mockResolvedValue({ data: {}, status: 200 });
-
-      await plugin.middleware!(context, next);
-
-      const { onProgress } = context.requestOptions.transportOptions as {
-        onProgress: (event: ProgressEvent, xhr: XMLHttpRequest) => void;
-      };
-
-      const mockXhr = {} as XMLHttpRequest;
-
-      onProgress(
-        {
-          lengthComputable: true,
-          loaded: 1000,
-          total: 1000,
-        } as ProgressEvent,
-        mockXhr
-      );
-
-      expect(setMetaSpy).toHaveBeenCalledWith(context.queryKey, {
-        progress: {
-          loaded: 1000,
-          total: 1000,
-          percentage: 100,
-        },
-      });
-    });
-
-    it("should report 0% at start", async () => {
-      const plugin = progressPlugin();
-      const context = createMockContext({
-        pluginOptions: { progress: true },
-      });
-      const setMetaSpy = vi.spyOn(context.stateManager, "setMeta");
-      const next = vi.fn().mockResolvedValue({ data: {}, status: 200 });
-
-      await plugin.middleware!(context, next);
-
-      const { onProgress } = context.requestOptions.transportOptions as {
-        onProgress: (event: ProgressEvent, xhr: XMLHttpRequest) => void;
-      };
-
-      const mockXhr = {} as XMLHttpRequest;
-
-      onProgress(
-        {
-          lengthComputable: true,
-          loaded: 0,
-          total: 1000,
-        } as ProgressEvent,
-        mockXhr
-      );
-
-      expect(setMetaSpy).toHaveBeenCalledWith(context.queryKey, {
-        progress: {
-          loaded: 0,
-          total: 1000,
-          percentage: 0,
         },
       });
     });
@@ -348,7 +244,6 @@ describe("progressPlugin", () => {
         progress: {
           loaded: 500,
           total: 2000,
-          percentage: 25,
         },
       });
     });
@@ -385,7 +280,6 @@ describe("progressPlugin", () => {
         progress: {
           loaded: 500,
           total: 0,
-          percentage: 0,
         },
       });
     });
@@ -424,7 +318,6 @@ describe("progressPlugin", () => {
         progress: {
           loaded: 500,
           total: 0,
-          percentage: 0,
         },
       });
     });

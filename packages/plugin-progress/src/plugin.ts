@@ -56,8 +56,6 @@ export function progressPlugin(): SpooshPlugin<{
               progress: {
                 loaded: event.loaded,
                 total,
-                percentage:
-                  total > 0 ? Math.round((event.loaded / total) * 100) : 0,
               },
             });
           },

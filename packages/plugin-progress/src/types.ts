@@ -2,8 +2,6 @@ export interface ProgressInfo {
   loaded: number;
 
   total: number;
-
-  percentage: number;
 }
 
 export interface ProgressOptions {
