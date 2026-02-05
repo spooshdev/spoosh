@@ -7,6 +7,7 @@ export {
 export * from "./types";
 export * from "./utils";
 export * from "./proxy";
+export * from "./transport";
 export { executeFetch } from "./fetch";
 export {
   createMiddleware,

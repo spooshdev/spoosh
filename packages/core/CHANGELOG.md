@@ -1,8 +1,9 @@
 # @spoosh/core
 
-## [Unreleased]
+## 0.10.0
 
-- Set SpooshSchema `data` as optional to allow endpoints with no response body
+- Set SpooshSchema `data` as optional field to allow endpoints with no response body
+- Introduce `xhr` transport option for custom XMLHttpRequest handling
 
 ## 0.9.3
 

@@ -1,6 +1,7 @@
 import type { SpooshResponse } from "./response.types";
 import type { HttpMethod } from "./common.types";
 import type { SpooshBody } from "../utils/body";
+import type { TransportOption } from "../transport/types";
 
 export type RetryConfig = {
   retries?: number | false;
@@ -13,6 +14,9 @@ export type HeadersInitOrGetter =
 
 export type SpooshOptions = Omit<RequestInit, "method" | "body" | "headers"> & {
   headers?: HeadersInitOrGetter;
+
+  /** Default transport for all requests. */
+  transport?: TransportOption;
 };
 
 type BaseRequestOptions = {
@@ -46,6 +50,12 @@ export type AnyRequestOptions = BaseRequestOptions & {
   query?: Record<string, string | number | boolean | undefined>;
   params?: Record<string, string | number>;
   signal?: AbortSignal;
+
+  /** Per-request transport override. */
+  transport?: TransportOption;
+
+  /** Transport-specific options passed through to the transport function. */
+  transportOptions?: unknown;
 } & Partial<RetryConfig>;
 
 type DynamicParamsOption = {

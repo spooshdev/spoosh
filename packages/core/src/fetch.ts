@@ -14,6 +14,9 @@ import type {
   HttpMethod,
   MiddlewareContext,
 } from "./types";
+import type { Transport, TransportOption } from "./transport/types";
+import { fetchTransport } from "./transport/fetch";
+import { xhrTransport } from "./transport/xhr";
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -91,6 +94,14 @@ function buildInputFields(
   return { input: fields };
 }
 
+function resolveTransport(option?: TransportOption): Transport {
+  if (option === "xhr" && typeof XMLHttpRequest !== "undefined") {
+    return xhrTransport as Transport;
+  }
+
+  return fetchTransport;
+}
+
 type CoreFetchConfig = {
   baseUrl: string;
   path: string[];
@@ -116,6 +127,7 @@ async function executeCoreFetch<TData, TError>(
   const {
     middlewares: _,
     headers: defaultHeaders,
+    transport: defaultTransport,
     ...fetchDefaults
   } = defaultOptions;
   void _;
@@ -183,33 +195,34 @@ async function executeCoreFetch<TData, TError>(
     }
   }
 
+  const resolvedTransport = resolveTransport(
+    requestOptions?.transport ?? defaultTransport
+  );
+
   let lastError: TError | undefined;
 
   for (let attempt = 0; attempt <= retryCount; attempt++) {
     try {
-      const res = await fetch(url, fetchInit);
-      const status = res.status;
-      const resHeaders = res.headers;
+      const result = await resolvedTransport(
+        url,
+        fetchInit,
+        requestOptions?.transportOptions
+      );
 
-      const contentType = resHeaders.get("content-type");
-      const isJson = contentType?.includes("application/json");
-
-      const body = (isJson ? await res.json() : res) as never;
-
-      if (res.ok) {
+      if (result.ok) {
         return {
-          status,
-          data: body,
-          headers: resHeaders,
+          status: result.status,
+          data: result.data as TData,
+          headers: result.headers,
           error: undefined,
           ...inputFields,
         };
       }
 
       return {
-        status,
-        error: body,
-        headers: resHeaders,
+        status: result.status,
+        error: result.data as TError,
+        headers: result.headers,
         data: undefined,
         ...inputFields,
       };

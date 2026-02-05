@@ -1,6 +1,6 @@
 {
   "name": "@spoosh/core",
-  "version": "0.9.4",
+  "version": "0.10.0",
   "license": "MIT",
   "description": "Type-safe API client with plugin middleware system",
   "keywords": [
