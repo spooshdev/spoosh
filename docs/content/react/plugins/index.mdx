@@ -34,44 +34,44 @@ const spoosh = new Spoosh<ApiSchema, Error>("/api").use([
 
 ### Essential
 
-| Plugin                                       | Package                        | Description                                   |
-| -------------------------------------------- | ------------------------------ | --------------------------------------------- |
-| [Cache](/docs/plugins/cache)                 | `@spoosh/plugin-cache`         | Response caching with configurable stale time |
-| [Invalidation](/docs/plugins/invalidation)   | `@spoosh/plugin-invalidation`  | Auto-invalidate queries after mutations       |
-| [Deduplication](/docs/plugins/deduplication) | `@spoosh/plugin-deduplication` | Prevent duplicate concurrent requests         |
-| [Retry](/docs/plugins/retry)                 | `@spoosh/plugin-retry`         | Automatic retry on failure                    |
+| Plugin                                             | Package                        | Description                                   |
+| -------------------------------------------------- | ------------------------------ | --------------------------------------------- |
+| [Cache](/docs/react/plugins/cache)                 | `@spoosh/plugin-cache`         | Response caching with configurable stale time |
+| [Invalidation](/docs/react/plugins/invalidation)   | `@spoosh/plugin-invalidation`  | Auto-invalidate queries after mutations       |
+| [Deduplication](/docs/react/plugins/deduplication) | `@spoosh/plugin-deduplication` | Prevent duplicate concurrent requests         |
 
 ### Data Management
 
-| Plugin                                     | Package                       | Description                                |
-| ------------------------------------------ | ----------------------------- | ------------------------------------------ |
-| [Optimistic](/docs/plugins/optimistic)     | `@spoosh/plugin-optimistic`   | Instant UI updates with automatic rollback |
-| [Initial Data](/docs/plugins/initial-data) | `@spoosh/plugin-initial-data` | Provide initial data for queries           |
-| [Prefetch](/docs/plugins/prefetch)         | `@spoosh/plugin-prefetch`     | Preload data before it's needed            |
+| Plugin                                           | Package                       | Description                                |
+| ------------------------------------------------ | ----------------------------- | ------------------------------------------ |
+| [Optimistic](/docs/react/plugins/optimistic)     | `@spoosh/plugin-optimistic`   | Instant UI updates with automatic rollback |
+| [Initial Data](/docs/react/plugins/initial-data) | `@spoosh/plugin-initial-data` | Provide initial data for queries           |
+| [Prefetch](/docs/react/plugins/prefetch)         | `@spoosh/plugin-prefetch`     | Preload data before it's needed            |
 
 ### Request Control
 
-| Plugin                             | Package                   | Description                               |
-| ---------------------------------- | ------------------------- | ----------------------------------------- |
-| [Polling](/docs/plugins/polling)   | `@spoosh/plugin-polling`  | Automatic periodic refetching             |
-| [Refetch](/docs/plugins/refetch)   | `@spoosh/plugin-refetch`  | Refetch on window focus/network reconnect |
-| [Debounce](/docs/plugins/debounce) | `@spoosh/plugin-debounce` | Delay requests until input stops changing |
-| [Throttle](/docs/plugins/throttle) | `@spoosh/plugin-throttle` | Limit request frequency                   |
-| [Progress](/docs/plugins/progress) | `@spoosh/plugin-progress` | Upload/download progress via XHR          |
+| Plugin                                   | Package                   | Description                               |
+| ---------------------------------------- | ------------------------- | ----------------------------------------- |
+| [Retry](/docs/react/plugins/retry)       | `@spoosh/plugin-retry`    | Automatic retry on failure                |
+| [Polling](/docs/react/plugins/polling)   | `@spoosh/plugin-polling`  | Automatic periodic refetching             |
+| [Refetch](/docs/react/plugins/refetch)   | `@spoosh/plugin-refetch`  | Refetch on window focus/network reconnect |
+| [Debounce](/docs/react/plugins/debounce) | `@spoosh/plugin-debounce` | Delay requests until input stops changing |
+| [Throttle](/docs/react/plugins/throttle) | `@spoosh/plugin-throttle` | Limit request frequency                   |
+| [Progress](/docs/react/plugins/progress) | `@spoosh/plugin-progress` | Upload/download progress via XHR          |
 
 ### Data Transformation
 
-| Plugin                               | Package                    | Description                                  |
-| ------------------------------------ | -------------------------- | -------------------------------------------- |
-| [QS](/docs/plugins/qs)               | `@spoosh/plugin-qs`        | Nested object serialization for query params |
-| [Transform](/docs/plugins/transform) | `@spoosh/plugin-transform` | Transform request and response data          |
+| Plugin                                     | Package                    | Description                                  |
+| ------------------------------------------ | -------------------------- | -------------------------------------------- |
+| [QS](/docs/react/plugins/qs)               | `@spoosh/plugin-qs`        | Nested object serialization for query params |
+| [Transform](/docs/react/plugins/transform) | `@spoosh/plugin-transform` | Transform response data                      |
 
 ### Framework Integration
 
-| Plugin                          | Package                 | Description                    |
-| ------------------------------- | ----------------------- | ------------------------------ |
-| [Next.js](/docs/plugins/nextjs) | `@spoosh/plugin-nextjs` | Server-side cache revalidation |
-| [Debug](/docs/plugins/debug)    | `@spoosh/plugin-debug`  | Development logging            |
+| Plugin                                | Package                 | Description                    |
+| ------------------------------------- | ----------------------- | ------------------------------ |
+| [Next.js](/docs/react/plugins/nextjs) | `@spoosh/plugin-nextjs` | Server-side cache revalidation |
+| [Debug](/docs/react/plugins/debug)    | `@spoosh/plugin-debug`  | Development logging            |
 
 ## Recommended Setup
 

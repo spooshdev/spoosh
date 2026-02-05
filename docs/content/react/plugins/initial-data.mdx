@@ -69,4 +69,4 @@ const api = createClient<ApiSchema>({ baseUrl: process.env.API_URL! });
 const { data: posts } = await api("posts").GET();
 ```
 
-For a complete SSR example with cache invalidation, see [Next.js Plugin - With Initial Data](/docs/plugins/nextjs#with-initial-data).
+For a complete SSR example with cache invalidation, see [Next.js Plugin - With Initial Data](/docs/react/plugins/nextjs#with-initial-data).

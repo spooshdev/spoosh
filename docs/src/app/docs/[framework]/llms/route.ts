@@ -66,7 +66,7 @@ const reactContent = `# Spoosh React
 - [Refetch](${REACT_RAW_BASE}/plugins/refetch.mdx): Refetch on window focus or reconnect
 
 ### Data Transformation
-- [Transform](${REACT_RAW_BASE}/plugins/transform.mdx): Transform request and response data
+- [Transform](${REACT_RAW_BASE}/plugins/transform.mdx): Transform response data
 - [QS](${REACT_RAW_BASE}/plugins/qs.mdx): Query string serialization for nested objects
 
 ### Framework Integration
@@ -138,7 +138,7 @@ const angularContent = `# Spoosh Angular
 - [Refetch](${ANGULAR_RAW_BASE}/plugins/refetch.mdx): Refetch on window focus or reconnect
 
 ### Data Transformation
-- [Transform](${ANGULAR_RAW_BASE}/plugins/transform.mdx): Transform request and response data
+- [Transform](${ANGULAR_RAW_BASE}/plugins/transform.mdx): Transform response data
 - [QS](${ANGULAR_RAW_BASE}/plugins/qs.mdx): Query string serialization for nested objects
 
 ### Upload/Download
