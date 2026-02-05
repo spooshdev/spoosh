@@ -44,6 +44,12 @@ export type SpooshClientConfig = {
  * const { data } = await api("posts").GET();
  * const { data: post } = await api("posts/123").GET();
  * await api("posts/:id").GET({ params: { id: 123 } });
+ *
+ * // With XHR transport
+ * const api = createClient<ApiSchema, ApiError>({
+ *   baseUrl: "/api",
+ *   defaultOptions: { transport: "xhr" },
+ * });
  * ```
  */
 export function createClient<TSchema, TDefaultError = unknown>(

@@ -20,10 +20,10 @@ const spoosh = new Spoosh<ApiSchema, Error>("/api").use([
 
 ### Constructor Parameters
 
-| Parameter        | Type          | Required | Description                   |
-| ---------------- | ------------- | -------- | ----------------------------- |
-| `baseUrl`        | `string`      | Yes      | Base URL for all API requests |
-| `defaultOptions` | `RequestInit` | No       | Default fetch options         |
+| Parameter        | Type                 | Required | Description                                             |
+| ---------------- | -------------------- | -------- | ------------------------------------------------------- |
+| `baseUrl`        | `string`             | Yes      | Base URL for all API requests                           |
+| `defaultOptions` | `SpooshOptionsInput` | No       | Default options (headers, credentials, transport, etc.) |
 
 ### Type Parameters
 
@@ -106,6 +106,15 @@ const spoosh = new Spoosh<ApiSchema, Error>("/api", {
 }).use([cachePlugin(), invalidationPlugin()]);
 ```
 
+You can set `transport: "xhr"` to use XMLHttpRequest instead of the Fetch API. When using XHR transport, TypeScript narrows the available options to only XHR-compatible fields.
+
+```typescript
+const spoosh = new Spoosh<ApiSchema, Error>("/api", {
+  transport: "xhr",
+  credentials: "include",
+}).use([cachePlugin(), invalidationPlugin()]);
+```
+
 ---
 
 ## createClient
@@ -122,8 +131,8 @@ const api = createClient<ApiSchema>({
 const { data } = await api("users").GET();
 ```
 
-| Option           | Type                 | Description                   |
-| ---------------- | -------------------- | ----------------------------- |
-| `baseUrl`        | `string`             | Base URL for all API requests |
-| `defaultOptions` | `RequestInit`        | Default fetch options         |
-| `middlewares`    | `SpooshMiddleware[]` | Request/response middlewares  |
+| Option           | Type                 | Description                                             |
+| ---------------- | -------------------- | ------------------------------------------------------- |
+| `baseUrl`        | `string`             | Base URL for all API requests                           |
+| `defaultOptions` | `SpooshOptionsInput` | Default options (headers, credentials, transport, etc.) |
+| `middlewares`    | `SpooshMiddleware[]` | Request/response middlewares                            |

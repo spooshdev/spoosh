@@ -47,6 +47,12 @@ type SpooshXhrOptions = SharedSpooshOptions & {
   transport: "xhr";
 };
 
+/**
+ * Constructor-level options with transport-aware type narrowing.
+ *
+ * When `transport` is `"xhr"`, fetch-only fields (e.g. `mode`, `cache`, `redirect`) are
+ * excluded from autocomplete since they have no effect on XMLHttpRequest.
+ */
 export type SpooshOptionsInput = SpooshFetchOptions | SpooshXhrOptions;
 
 type BaseRequestOptions = {

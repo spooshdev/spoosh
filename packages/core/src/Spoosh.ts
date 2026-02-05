@@ -57,7 +57,7 @@ export class Spoosh<
    * Creates a new Spoosh instance.
    *
    * @param baseUrl - The base URL for all API requests (e.g., '/api' or 'https://api.example.com')
-   * @param defaultOptions - Optional default options applied to all requests (headers, credentials, etc.)
+   * @param defaultOptions - Optional default options applied to all requests (headers, credentials, transport, etc.)
    * @param plugins - Internal parameter used by the `.use()` method. Do not pass directly.
    *
    * @example
@@ -68,6 +68,12 @@ export class Spoosh<
    * // With default headers
    * const client = new Spoosh<ApiSchema, Error>('/api', {
    *   headers: { 'X-API-Key': 'secret' }
+   * });
+   *
+   * // With XHR transport (narrows available options to XHR-compatible fields)
+   * const client = new Spoosh<ApiSchema, Error>('/api', {
+   *   transport: 'xhr',
+   *   credentials: 'include',
    * });
    * ```
    */

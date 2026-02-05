@@ -52,9 +52,9 @@ await trigger({ clearCache: true });
 await trigger({ clearCache: true, invalidate: "*" });
 ```
 
-| Option       | Type      | Description                                       |
-| ------------ | --------- | ------------------------------------------------- |
-| `clearCache` | `boolean` | Clear all cached data after mutation succeeds     |
+| Option       | Type      | Description                                   |
+| ------------ | --------- | --------------------------------------------- |
+| `clearCache` | `boolean` | Clear all cached data after mutation succeeds |
 
 ## Instance API
 
@@ -76,7 +76,7 @@ function handleUserSwitch() {
 }
 ```
 
-| Method                             | Description                                     |
-| ---------------------------------- | ----------------------------------------------- |
+| Method                             | Description                                       |
+| ---------------------------------- | ------------------------------------------------- |
 | `clearCache()`                     | Clears all cached data without triggering refetch |
 | `clearCache({ refetchAll: true })` | Clears cache and triggers all queries to refetch  |
