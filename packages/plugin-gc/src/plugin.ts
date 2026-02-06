@@ -43,6 +43,10 @@ function runGarbageCollection(
 
   if (maxAge !== undefined) {
     for (const { key, entry } of entries) {
+      if (stateManager.getSubscribersCount(key) > 0) {
+        continue;
+      }
+
       const age = now - entry.state.timestamp;
 
       if (age > maxAge) {
@@ -54,14 +58,17 @@ function runGarbageCollection(
 
   if (maxEntries !== undefined) {
     const currentEntries = stateManager.getAllCacheEntries();
+    const gcCandidates = currentEntries.filter(
+      ({ key }) => stateManager.getSubscribersCount(key) === 0
+    );
     const excess = currentEntries.length - maxEntries;
 
     if (excess > 0) {
-      const sorted = currentEntries.sort(
+      const sorted = gcCandidates.sort(
         (a, b) => a.entry.state.timestamp - b.entry.state.timestamp
       );
 
-      for (let i = 0; i < excess; i++) {
+      for (let i = 0; i < Math.min(excess, sorted.length); i++) {
         const entry = sorted[i];
 
         if (entry) {

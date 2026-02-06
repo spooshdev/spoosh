@@ -1,5 +1,9 @@
 # @spoosh/plugin-gc
 
+## 0.1.6
+
+- Prevent garbage collection for active listeners
+
 ## 0.1.5
 
 - Update documentation URLs to new `/docs/{framework}` format

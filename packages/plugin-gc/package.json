@@ -1,6 +1,6 @@
 {
   "name": "@spoosh/plugin-gc",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Garbage collection plugin for Spoosh cache with time and size-based cleanup",
   "license": "MIT",
   "repository": {
@@ -41,7 +41,7 @@
     "format": "prettier --write 'src/**/*.ts'"
   },
   "peerDependencies": {
-    "@spoosh/core": ">=0.4.0"
+    "@spoosh/core": ">=0.10.2"
   },
   "devDependencies": {
     "@spoosh/core": "workspace:*",

@@ -352,6 +352,169 @@ describe("gcPlugin", () => {
     });
   });
 
+  describe("subscriber awareness", () => {
+    it("should NOT delete entries with active subscribers (maxAge)", () => {
+      const stateManager = createStateManager();
+
+      vi.setSystemTime(new Date(0));
+      stateManager.setCache("subscribed-entry", {
+        state: {
+          data: "subscribed",
+          error: undefined,
+          timestamp: 0,
+        },
+        tags: [],
+      });
+      stateManager.setCache("unsubscribed-entry", {
+        state: {
+          data: "unsubscribed",
+          error: undefined,
+          timestamp: 0,
+        },
+        tags: [],
+      });
+
+      stateManager.subscribeCache("subscribed-entry", () => {});
+
+      const plugin = gcPlugin({ maxAge: 3000 });
+      const context = createMockInstanceApiContext(stateManager);
+      const exports = plugin.instanceApi!(context) as GcPluginExports;
+
+      vi.setSystemTime(new Date(5000));
+      const removed = exports.runGc();
+
+      expect(removed).toBe(1);
+      expect(stateManager.getCache("subscribed-entry")).toBeDefined();
+      expect(stateManager.getCache("unsubscribed-entry")).toBeUndefined();
+    });
+
+    it("should delete entries after subscribers unsubscribe", () => {
+      const stateManager = createStateManager();
+
+      vi.setSystemTime(new Date(0));
+      stateManager.setCache("entry", {
+        state: {
+          data: "data",
+          error: undefined,
+          timestamp: 0,
+        },
+        tags: [],
+      });
+
+      const unsubscribe = stateManager.subscribeCache("entry", () => {});
+
+      const plugin = gcPlugin({ maxAge: 3000 });
+      const context = createMockInstanceApiContext(stateManager);
+      const exports = plugin.instanceApi!(context) as GcPluginExports;
+
+      vi.setSystemTime(new Date(5000));
+      let removed = exports.runGc();
+
+      expect(removed).toBe(0);
+      expect(stateManager.getCache("entry")).toBeDefined();
+
+      unsubscribe();
+      removed = exports.runGc();
+
+      expect(removed).toBe(1);
+      expect(stateManager.getCache("entry")).toBeUndefined();
+    });
+
+    it("should NOT delete entries with active subscribers (maxEntries)", () => {
+      const stateManager = createStateManager();
+
+      stateManager.setCache("entry1-subscribed", {
+        state: {
+          data: "1",
+          error: undefined,
+          timestamp: 1000,
+        },
+        tags: [],
+      });
+      stateManager.setCache("entry2", {
+        state: {
+          data: "2",
+          error: undefined,
+          timestamp: 2000,
+        },
+        tags: [],
+      });
+      stateManager.setCache("entry3", {
+        state: {
+          data: "3",
+          error: undefined,
+          timestamp: 3000,
+        },
+        tags: [],
+      });
+
+      stateManager.subscribeCache("entry1-subscribed", () => {});
+
+      const plugin = gcPlugin({ maxEntries: 2 });
+      const context = createMockInstanceApiContext(stateManager);
+      const exports = plugin.instanceApi!(context) as GcPluginExports;
+
+      const removed = exports.runGc();
+
+      expect(removed).toBe(1);
+      expect(stateManager.getCache("entry1-subscribed")).toBeDefined();
+      expect(stateManager.getCache("entry2")).toBeUndefined();
+      expect(stateManager.getCache("entry3")).toBeDefined();
+    });
+
+    it("should not count subscriber-protected entries against limit when removing", () => {
+      const stateManager = createStateManager();
+
+      stateManager.setCache("entry1-subscribed", {
+        state: {
+          data: "1",
+          error: undefined,
+          timestamp: 1000,
+        },
+        tags: [],
+      });
+      stateManager.setCache("entry2-subscribed", {
+        state: {
+          data: "2",
+          error: undefined,
+          timestamp: 2000,
+        },
+        tags: [],
+      });
+      stateManager.setCache("entry3", {
+        state: {
+          data: "3",
+          error: undefined,
+          timestamp: 3000,
+        },
+        tags: [],
+      });
+      stateManager.setCache("entry4", {
+        state: {
+          data: "4",
+          error: undefined,
+          timestamp: 4000,
+        },
+        tags: [],
+      });
+
+      stateManager.subscribeCache("entry1-subscribed", () => {});
+      stateManager.subscribeCache("entry2-subscribed", () => {});
+
+      const plugin = gcPlugin({ maxEntries: 2 });
+      const context = createMockInstanceApiContext(stateManager);
+      const exports = plugin.instanceApi!(context) as GcPluginExports;
+
+      const removed = exports.runGc();
+
+      expect(removed).toBe(2);
+      expect(stateManager.getCache("entry1-subscribed")).toBeDefined();
+      expect(stateManager.getCache("entry2-subscribed")).toBeDefined();
+      expect(stateManager.getCache("entry3")).toBeUndefined();
+      expect(stateManager.getCache("entry4")).toBeUndefined();
+    });
+  });
+
   describe("edge cases", () => {
     it("should handle empty cache", () => {
       const stateManager = createStateManager();
