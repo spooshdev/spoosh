@@ -9,6 +9,8 @@
 - **Changed `createClient` API signature** from `createClient(config)` to `createClient(baseUrl, defaultOptions?)` to match the `Spoosh` class style.
 - Changed `PluginContext.path` from `string[]` to `string` for simpler plugin API.
 - Renamed `PluginContext.requestOptions` to `PluginContext.request` for cleaner API.
+- Changed `CreateOperationOptions.path` and `CreateInfiniteReadOptions.path` from `string[]` to `string` for consistency.
+- Changed `StateManager.createQueryKey` to accept `path: string` instead of `path: string[]`.
 
 ### Other Changes
 

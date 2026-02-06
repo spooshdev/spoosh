@@ -171,7 +171,7 @@ export function createInjectWrite<
       const tags = resolveTags(triggerOptions, resolvedPath);
 
       const queryKey = stateManager.createQueryKey({
-        path: pathSegments,
+        path: selectedEndpoint.path,
         method: selectedEndpoint.method,
         options: triggerOptions,
       });
@@ -186,7 +186,7 @@ export function createInjectWrite<
 
         const controller = createOperationController<TData, TError>({
           operationType: "write",
-          path: pathSegments,
+          path: selectedEndpoint.path,
           method: selectedEndpoint.method as
             | "POST"
             | "PUT"

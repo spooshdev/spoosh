@@ -126,7 +126,7 @@ export function createUseInfiniteRead<
     mergerRef.current = merger;
 
     const queryKey = stateManager.createQueryKey({
-      path: pathSegments,
+      path: capturedCall.path,
       method: capturedCall.method,
       options: baseOptionsForKey,
     });
@@ -146,7 +146,7 @@ export function createUseInfiniteRead<
           TError,
           TRequest
         >({
-          path: pathSegments,
+          path: capturedCall.path,
           method: capturedCall.method as "GET",
           tags: resolvedTags,
           initialRequest,

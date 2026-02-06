@@ -46,7 +46,7 @@ export type InfiniteReadController<TData, TItem, TError> = {
 };
 
 export type CreateInfiniteReadOptions<TData, TItem, TError, TRequest> = {
-  path: string[];
+  path: string;
   method: HttpMethod;
   tags: string[];
   initialRequest: InfiniteRequestOptions;
@@ -71,7 +71,7 @@ export type CreateInfiniteReadOptions<TData, TItem, TError, TRequest> = {
 };
 
 function createTrackerKey(
-  path: string[],
+  path: string,
   method: string,
   baseOptions: object
 ): string {
@@ -84,7 +84,7 @@ function createTrackerKey(
 }
 
 function createPageKey(
-  path: string[],
+  path: string,
   method: string,
   baseOptions: object,
   pageRequest: InfiniteRequestOptions
@@ -297,7 +297,7 @@ export function createInfiniteReadController<
   const createContext = (pageKey: string): PluginContext => {
     return pluginExecutor.createContext({
       operationType: "infiniteRead",
-      path: path.join("/"),
+      path,
       method,
       queryKey: pageKey,
       tags,

@@ -286,7 +286,7 @@ describe("injectRead", () => {
       const { injectRead, stateManager } = createTestHooks();
 
       const queryKey = stateManager.createQueryKey({
-        path: ["posts"],
+        path: "posts",
         method: "GET",
         options: undefined,
       });
@@ -331,7 +331,7 @@ describe("injectRead", () => {
       const initialCallCount = calls.length;
 
       const queryKey = stateManager.createQueryKey({
-        path: ["posts"],
+        path: "posts",
         method: "GET",
         options: undefined,
       });

@@ -241,7 +241,7 @@ describe("useRead", () => {
       const { useRead, stateManager } = createTestHooks();
 
       const queryKey = stateManager.createQueryKey({
-        path: ["posts"],
+        path: "posts",
         method: "GET",
         options: undefined,
       });
@@ -266,7 +266,7 @@ describe("useRead", () => {
       setResponseDelay(100);
 
       const queryKey = stateManager.createQueryKey({
-        path: ["posts"],
+        path: "posts",
         method: "GET",
         options: undefined,
       });
@@ -305,7 +305,7 @@ describe("useRead", () => {
       const initialCallCount = calls.length;
 
       const queryKey = stateManager.createQueryKey({
-        path: ["posts"],
+        path: "posts",
         method: "GET",
         options: undefined,
       });

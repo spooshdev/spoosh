@@ -123,7 +123,7 @@ export function createUseWrite<
     const pathSegments = selectedEndpoint.path.split("/").filter(Boolean);
 
     const queryKey = stateManager.createQueryKey({
-      path: pathSegments,
+      path: selectedEndpoint.path,
       method: selectedEndpoint.method,
       options: undefined,
     });
@@ -137,7 +137,7 @@ export function createUseWrite<
       controllerRef.current = {
         controller: createOperationController<TData, TError>({
           operationType: "write",
-          path: pathSegments,
+          path: selectedEndpoint.path,
           method: selectedEndpoint.method as
             | "POST"
             | "PUT"

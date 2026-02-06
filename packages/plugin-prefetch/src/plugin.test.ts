@@ -143,7 +143,7 @@ describe("prefetchPlugin", () => {
       );
 
       const queryKey = stateManager.createQueryKey({
-        path: ["posts"],
+        path: "posts",
         method: "GET",
         options: undefined,
       });
@@ -179,7 +179,7 @@ describe("prefetchPlugin", () => {
       expect(result.error).toEqual(errorResponse);
 
       const queryKey = stateManager.createQueryKey({
-        path: ["posts"],
+        path: "posts",
         method: "GET",
         options: undefined,
       });
@@ -266,7 +266,7 @@ describe("prefetchPlugin", () => {
       expect(api("users/:id").GET).toHaveBeenCalled();
 
       const queryKey = stateManager.createQueryKey({
-        path: ["users", ":id"],
+        path: "users/:id",
         method: "GET",
         options: { params: { id: "1" } },
       });
@@ -358,7 +358,7 @@ describe("prefetchPlugin", () => {
       });
 
       const queryKey = stateManager.createQueryKey({
-        path: ["posts"],
+        path: "posts",
         method: "GET",
         options: undefined,
       });
@@ -479,7 +479,7 @@ describe("prefetchPlugin", () => {
       prefetch((apiProxy) => (apiProxy as unknown as MockApi)("posts").GET());
 
       const queryKey = stateManager.createQueryKey({
-        path: ["posts"],
+        path: "posts",
         method: "GET",
         options: undefined,
       });
@@ -520,7 +520,7 @@ describe("prefetchPlugin", () => {
       prefetch((apiProxy) => (apiProxy as unknown as MockApi)("posts").GET());
 
       const queryKey = stateManager.createQueryKey({
-        path: ["posts"],
+        path: "posts",
         method: "GET",
         options: undefined,
       });
@@ -562,7 +562,7 @@ describe("prefetchPlugin", () => {
       );
 
       const queryKey = stateManager.createQueryKey({
-        path: ["posts"],
+        path: "posts",
         method: "GET",
         options: undefined,
       });
@@ -645,7 +645,7 @@ describe("prefetchPlugin", () => {
       );
 
       const queryKey = stateManager.createQueryKey({
-        path: ["posts"],
+        path: "posts",
         method: "GET",
         options: undefined,
       });
@@ -742,7 +742,7 @@ describe("prefetchPlugin", () => {
       expect(result.status).toBe(0);
 
       const queryKey = stateManager.createQueryKey({
-        path: ["posts"],
+        path: "posts",
         method: "GET",
         options: undefined,
       });

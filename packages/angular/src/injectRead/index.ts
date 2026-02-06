@@ -158,11 +158,9 @@ export function createInjectRead<
         currentSubscription();
       }
 
-      const pathSegments = capturedCall.path.split("/").filter(Boolean);
-
       const controller = createOperationController<TData, TError>({
         operationType: "read",
-        path: pathSegments,
+        path: capturedCall.path,
         method: capturedCall.method as "GET",
         tags: resolvedTags,
         requestOptions: capturedCall.options as
@@ -269,7 +267,7 @@ export function createInjectRead<
       initialResolvedPath
     );
     const initialQueryKey = stateManager.createQueryKey({
-      path: initialPathSegments,
+      path: initialCapturedCall.path,
       method: initialCapturedCall.method,
       options: initialCapturedCall.options,
     });
@@ -305,7 +303,7 @@ export function createInjectRead<
         );
 
         const queryKey = stateManager.createQueryKey({
-          path: pathSegments,
+          path: capturedCall.path,
           method: capturedCall.method,
           options: capturedCall.options,
         });
@@ -469,7 +467,7 @@ export function createInjectRead<
 
       const pathSegments = capturedCall.path.split("/").filter(Boolean);
       const newQueryKey = stateManager.createQueryKey({
-        path: pathSegments,
+        path: capturedCall.path,
         method: capturedCall.method,
         options: mergedOptions,
       });

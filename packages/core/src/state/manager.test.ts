@@ -47,7 +47,7 @@ describe("createStateManager", () => {
       const manager2 = createStateManager();
 
       const key = manager1.createQueryKey({
-        path: ["users"],
+        path: "users",
         method: "GET",
       });
 
@@ -62,7 +62,7 @@ describe("createStateManager", () => {
     it("should generate a key from path and method", () => {
       const manager = createStateManager();
       const key = manager.createQueryKey({
-        path: ["users", "123"],
+        path: "users/123",
         method: "GET",
       });
 
@@ -74,7 +74,7 @@ describe("createStateManager", () => {
     it("should include options in the key", () => {
       const manager = createStateManager();
       const key = manager.createQueryKey({
-        path: ["users"],
+        path: "users",
         method: "GET",
         options: { page: 1, limit: 10 },
       });
@@ -86,8 +86,8 @@ describe("createStateManager", () => {
     it("should generate different keys for different paths", () => {
       const manager = createStateManager();
 
-      const key1 = manager.createQueryKey({ path: ["users"], method: "GET" });
-      const key2 = manager.createQueryKey({ path: ["posts"], method: "GET" });
+      const key1 = manager.createQueryKey({ path: "users", method: "GET" });
+      const key2 = manager.createQueryKey({ path: "posts", method: "GET" });
 
       expect(key1).not.toBe(key2);
     });
@@ -95,8 +95,8 @@ describe("createStateManager", () => {
     it("should generate different keys for different methods", () => {
       const manager = createStateManager();
 
-      const key1 = manager.createQueryKey({ path: ["users"], method: "GET" });
-      const key2 = manager.createQueryKey({ path: ["users"], method: "POST" });
+      const key1 = manager.createQueryKey({ path: "users", method: "GET" });
+      const key2 = manager.createQueryKey({ path: "users", method: "POST" });
 
       expect(key1).not.toBe(key2);
     });
@@ -105,12 +105,12 @@ describe("createStateManager", () => {
       const manager = createStateManager();
 
       const key1 = manager.createQueryKey({
-        path: ["users"],
+        path: "users",
         method: "GET",
         options: { page: 1 },
       });
       const key2 = manager.createQueryKey({
-        path: ["users"],
+        path: "users",
         method: "GET",
         options: { page: 2 },
       });
@@ -122,12 +122,12 @@ describe("createStateManager", () => {
       const manager = createStateManager();
 
       const key1 = manager.createQueryKey({
-        path: ["users"],
+        path: "users",
         method: "GET",
         options: { a: 1, b: 2 },
       });
       const key2 = manager.createQueryKey({
-        path: ["users"],
+        path: "users",
         method: "GET",
         options: { b: 2, a: 1 },
       });
@@ -138,7 +138,7 @@ describe("createStateManager", () => {
     it("should handle undefined options", () => {
       const manager = createStateManager();
       const key = manager.createQueryKey({
-        path: ["users"],
+        path: "users",
         method: "GET",
         options: undefined,
       });
@@ -150,7 +150,7 @@ describe("createStateManager", () => {
     it("should handle empty path array", () => {
       const manager = createStateManager();
       const key = manager.createQueryKey({
-        path: [],
+        path: "",
         method: "GET",
       });
 
@@ -161,7 +161,7 @@ describe("createStateManager", () => {
     it("should handle nested options objects", () => {
       const manager = createStateManager();
       const key = manager.createQueryKey({
-        path: ["users"],
+        path: "users",
         method: "GET",
         options: { filter: { status: "active", role: "admin" } },
       });
@@ -282,7 +282,7 @@ describe("createStateManager", () => {
     it("should generate selfTag from key path", () => {
       const manager = createStateManager();
       const key = manager.createQueryKey({
-        path: ["posts", "1", "comments"],
+        path: "posts/1/comments",
         method: "GET",
       });
 
@@ -527,7 +527,7 @@ describe("createStateManager", () => {
     it("should return entries matching the selfTag", () => {
       const manager = createStateManager();
       const key = manager.createQueryKey({
-        path: ["users", "123"],
+        path: "users/123",
         method: "GET",
       });
 
@@ -541,7 +541,7 @@ describe("createStateManager", () => {
     it("should return empty array if no selfTag matches", () => {
       const manager = createStateManager();
       const key = manager.createQueryKey({
-        path: ["users", "123"],
+        path: "users/123",
         method: "GET",
       });
 
@@ -555,11 +555,11 @@ describe("createStateManager", () => {
       const manager = createStateManager();
 
       const key1 = manager.createQueryKey({
-        path: ["users", "123"],
+        path: "users/123",
         method: "GET",
       });
       const key2 = manager.createQueryKey({
-        path: ["users", "123"],
+        path: "users/123",
         method: "GET",
         options: { include: "profile" },
       });
@@ -791,7 +791,7 @@ describe("createStateManager", () => {
     it("should handle special characters in path", () => {
       const manager = createStateManager();
       const key = manager.createQueryKey({
-        path: ["users", "email@example.com"],
+        path: "users/email@example.com",
         method: "GET",
       });
 
@@ -839,7 +839,7 @@ describe("createStateManager", () => {
     it("should handle null values in options", () => {
       const manager = createStateManager();
       const key = manager.createQueryKey({
-        path: ["users"],
+        path: "users",
         method: "GET",
         options: { filter: null },
       });
@@ -852,7 +852,7 @@ describe("createStateManager", () => {
     it("should handle array values in options", () => {
       const manager = createStateManager();
       const key = manager.createQueryKey({
-        path: ["users"],
+        path: "users",
         method: "GET",
         options: { ids: [1, 2, 3] },
       });

@@ -6,7 +6,7 @@ import type { SpooshResponse } from "../types/response.types";
 
 function createTestController<TData = unknown, TError = unknown>(options?: {
   tags?: string[];
-  path?: string[];
+  path?: string;
   method?: "GET" | "POST";
   fetchFn?: () => Promise<SpooshResponse<TData, TError>>;
 }) {
@@ -16,7 +16,7 @@ function createTestController<TData = unknown, TError = unknown>(options?: {
 
   const controller = createOperationController<TData, TError>({
     operationType: "read",
-    path: options?.path ?? ["posts"],
+    path: options?.path ?? "posts",
     method: options?.method ?? "GET",
     tags: options?.tags ?? ["posts"],
     stateManager,
@@ -44,7 +44,7 @@ describe("createOperationController", () => {
       await controller.execute();
 
       const queryKey = stateManager.createQueryKey({
-        path: ["posts"],
+        path: "posts",
         method: "GET",
       });
       const cached = stateManager.getCache(queryKey);
@@ -58,7 +58,7 @@ describe("createOperationController", () => {
       });
 
       const queryKey = stateManager.createQueryKey({
-        path: ["posts"],
+        path: "posts",
         method: "GET",
       });
 
@@ -79,7 +79,7 @@ describe("createOperationController", () => {
       });
 
       const queryKey = stateManager.createQueryKey({
-        path: ["posts"],
+        path: "posts",
         method: "GET",
       });
 
@@ -98,7 +98,7 @@ describe("createOperationController", () => {
       });
 
       const queryKey = stateManager.createQueryKey({
-        path: ["posts"],
+        path: "posts",
         method: "GET",
       });
 
@@ -121,7 +121,7 @@ describe("createOperationController", () => {
       await controller.execute();
 
       const queryKey = stateManager.createQueryKey({
-        path: ["posts"],
+        path: "posts",
         method: "GET",
       });
       const cached = stateManager.getCache(queryKey);
@@ -135,7 +135,7 @@ describe("createOperationController", () => {
       });
 
       const queryKey = stateManager.createQueryKey({
-        path: ["posts"],
+        path: "posts",
         method: "GET",
       });
 
@@ -159,7 +159,7 @@ describe("createOperationController", () => {
 
       const readController = createOperationController({
         operationType: "read",
-        path: ["posts"],
+        path: "posts",
         method: "GET",
         tags: ["posts"],
         stateManager,
@@ -174,7 +174,7 @@ describe("createOperationController", () => {
 
       const writeController = createOperationController({
         operationType: "write",
-        path: ["posts"],
+        path: "posts",
         method: "POST",
         tags: ["posts"],
         stateManager,
@@ -188,7 +188,7 @@ describe("createOperationController", () => {
       });
 
       const readQueryKey = stateManager.createQueryKey({
-        path: ["posts"],
+        path: "posts",
         method: "GET",
       });
 
@@ -213,7 +213,7 @@ describe("createOperationController", () => {
       const eventEmitter = createEventEmitter();
       const pluginExecutor = createPluginExecutor([]);
 
-      const createReadController = (path: string[]) =>
+      const createReadController = (path: string) =>
         createOperationController({
           operationType: "read",
           path,
@@ -224,20 +224,20 @@ describe("createOperationController", () => {
           pluginExecutor,
           fetchFn: async () => ({
             status: 200,
-            data: { path: path.join("/") },
+            data: { path },
             error: undefined,
           }),
         });
 
-      const listController = createReadController(["posts"]);
-      const detailController = createReadController(["posts", "1"]);
+      const listController = createReadController("posts");
+      const detailController = createReadController("posts/1");
 
       const listKey = stateManager.createQueryKey({
-        path: ["posts"],
+        path: "posts",
         method: "GET",
       });
       const detailKey = stateManager.createQueryKey({
-        path: ["posts", "1"],
+        path: "posts/1",
         method: "GET",
       });
 
@@ -292,7 +292,7 @@ describe("createOperationController", () => {
       const { controller, stateManager } = createTestController();
 
       const queryKey = stateManager.createQueryKey({
-        path: ["posts"],
+        path: "posts",
         method: "GET",
       });
 

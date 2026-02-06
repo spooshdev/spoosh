@@ -231,7 +231,7 @@ describe("debugPlugin", () => {
     it("should log cache entries when logCache is true", async () => {
       const stateManager = createStateManager();
       const queryKey = stateManager.createQueryKey({
-        path: ["users", "1"],
+        path: "users/1",
         method: "GET",
       });
       stateManager.setCache(queryKey, {
@@ -260,7 +260,7 @@ describe("debugPlugin", () => {
     it("should not log cache entries when logCache is false", async () => {
       const stateManager = createStateManager();
       const queryKey = stateManager.createQueryKey({
-        path: ["users", "1"],
+        path: "users/1",
         method: "GET",
       });
       stateManager.setCache(queryKey, {
@@ -530,7 +530,7 @@ describe("debugPlugin", () => {
       const plugin = debugPlugin({ enabled: true });
       const stateManager = createStateManager();
       const queryKey = stateManager.createQueryKey({
-        path: ["users", "1"],
+        path: "users/1",
         method: "GET",
       });
 
@@ -556,7 +556,7 @@ describe("debugPlugin", () => {
       const plugin = debugPlugin({ enabled: true });
       const stateManager = createStateManager();
       const queryKey = stateManager.createQueryKey({
-        path: ["users", "1"],
+        path: "users/1",
         method: "GET",
       });
 

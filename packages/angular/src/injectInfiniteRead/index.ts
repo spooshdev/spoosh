@@ -224,8 +224,6 @@ export function createInjectInfiniteRead<
           }
         | undefined;
 
-      const pathSegments = capturedCall.path.split("/").filter(Boolean);
-
       const baseOptionsForKey = {
         ...(capturedCall.options as object),
         query: undefined,
@@ -245,7 +243,7 @@ export function createInjectInfiniteRead<
         TError,
         TRequest
       >({
-        path: pathSegments,
+        path: capturedCall.path,
         method: capturedCall.method as "GET",
         tags: resolvedTags,
         initialRequest,
@@ -365,7 +363,7 @@ export function createInjectInfiniteRead<
       body: undefined,
     };
     const initialQueryKey = stateManager.createQueryKey({
-      path: initialPathSegments,
+      path: initialCapturedCall.path,
       method: initialCapturedCall.method,
       options: initialBaseOptionsForKey,
     });
@@ -400,7 +398,7 @@ export function createInjectInfiniteRead<
         };
 
         const queryKey = stateManager.createQueryKey({
-          path: pathSegments,
+          path: capturedCall.path,
           method: capturedCall.method,
           options: baseOptionsForKey,
         });

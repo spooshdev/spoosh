@@ -21,8 +21,8 @@ export function createInitialState<TData, TError>(): OperationState<
 
 function generateSelfTagFromKey(key: string): string | undefined {
   try {
-    const parsed = JSON.parse(key) as { path?: string[] };
-    return parsed.path?.join("/");
+    const parsed = JSON.parse(key) as { path?: string };
+    return parsed.path;
   } catch {
     return undefined;
   }
@@ -30,7 +30,7 @@ function generateSelfTagFromKey(key: string): string | undefined {
 
 export type StateManager = {
   createQueryKey: (params: {
-    path: string[];
+    path: string;
     method: string;
     options?: unknown;
   }) => string;

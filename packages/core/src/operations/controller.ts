@@ -47,7 +47,7 @@ export type OperationController<TData = unknown, TError = unknown> = {
 
 export type CreateOperationOptions<TData, TError> = {
   operationType: OperationType;
-  path: string[];
+  path: string;
   method: HttpMethod;
   tags: string[];
   requestOptions?: AnyRequestOptions;
@@ -102,7 +102,7 @@ export function createOperationController<TData, TError>(
 
     return pluginExecutor.createContext({
       operationType,
-      path: path.join("/"),
+      path,
       method,
       queryKey,
       tags: resolvedTags,

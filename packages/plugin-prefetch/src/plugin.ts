@@ -113,7 +113,7 @@ export function prefetchPlugin(
         const resolvedTags = resolveTags({ tags }, resolvedPath);
 
         const queryKey = stateManager.createQueryKey({
-          path: pathSegments,
+          path: callPath,
           method: callMethod,
           options: callOptions,
         });

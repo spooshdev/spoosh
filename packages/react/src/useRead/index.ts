@@ -137,7 +137,7 @@ export function createUseRead<
     const resolvedTags = resolveTags({ tags }, resolvedPath);
 
     const queryKey = stateManager.createQueryKey({
-      path: pathSegments,
+      path: capturedCall.path,
       method: capturedCall.method,
       options: capturedCall.options,
     });
@@ -170,7 +170,7 @@ export function createUseRead<
     if (!controllerRef.current || baseQueryKeyChanged) {
       const controller = createOperationController<TData, TError>({
         operationType: "read",
-        path: pathSegments,
+        path: capturedCall.path,
         method: capturedCall.method as "GET",
         tags: resolvedTags,
         requestOptions: capturedCall.options as
@@ -335,7 +335,7 @@ export function createUseRead<
         };
 
         const newQueryKey = stateManager.createQueryKey({
-          path: pathSegments,
+          path: capturedCall.path,
           method: capturedCall.method,
           options: mergedOptions,
         });
@@ -352,7 +352,7 @@ export function createUseRead<
 
         const newController = createOperationController<TData, TError>({
           operationType: "read",
-          path: pathSegments,
+          path: capturedCall.path,
           method: capturedCall.method as "GET",
           tags: newResolvedTags,
           requestOptions: mergedOptions,
