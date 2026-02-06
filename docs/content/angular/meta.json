@@ -5,8 +5,8 @@
     "getting-started",
     "core",
     "injects",
+    "guides",
     "plugins",
-    "type-adapters",
-    "guides"
+    "type-adapters"
   ]
 }
