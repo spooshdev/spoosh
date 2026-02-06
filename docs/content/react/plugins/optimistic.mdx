@@ -8,7 +8,7 @@ The optimistic plugin updates the UI immediately before the server responds. If 
 ## Installation
 
 ```package-install
-@spoosh/plugin-optimistic @spoosh/plugin-invalidation
+@spoosh/plugin-cache @spoosh/plugin-invalidation @spoosh/plugin-optimistic
 ```
 
 > **Note:** This plugin requires `@spoosh/plugin-invalidation` as a peer dependency.
@@ -17,8 +17,10 @@ The optimistic plugin updates the UI immediately before the server responds. If 
 
 ```typescript
 import { Spoosh } from "@spoosh/core";
-import { optimisticPlugin } from "@spoosh/plugin-optimistic";
+import { cachePlugin } from "@spoosh/plugin-cache";
+import { deduplicationPlugin } from "@spoosh/plugin-deduplication";
 import { invalidationPlugin } from "@spoosh/plugin-invalidation";
+import { optimisticPlugin } from "@spoosh/plugin-optimistic";
 
 const client = new Spoosh<ApiSchema, Error>("/api").use([
   cachePlugin({ staleTime: 5000 }),
@@ -28,27 +30,65 @@ const client = new Spoosh<ApiSchema, Error>("/api").use([
 ]);
 ```
 
-## Basic Optimistic Update
+## Basic Optimistic Delete
 
-Use the chained DSL to define optimistic updates:
+Remove an item from a cached list immediately, before the server confirms:
 
 ```typescript
-const { trigger } = useWrite((api) => api("posts/:id").DELETE);
+function PostList() {
+  const { data, meta } = useRead((api) => api("posts").GET());
+  const { trigger } = useWrite((api) => api("posts/:id").DELETE);
 
-trigger({
-  params: { id },
-  optimistic: (api) =>
-    api("posts")
-      .GET()
-      .UPDATE_CACHE((posts) => posts.filter((p) => p.id !== id)),
-});
+  const handleDelete = (id: number) => {
+    trigger({
+      params: { id },
+      optimistic: (api) =>
+        api("posts")
+          .GET()
+          .UPDATE_CACHE((posts) => posts.filter((p) => p.id !== id)),
+    });
+  };
+
+  return (
+    <div>
+      {meta.isOptimistic && <span>Saving...</span>}
+      <ul>
+        {data?.map((post) => (
+          <li key={post.id}>
+            {post.title}
+            <button onClick={() => handleDelete(post.id)}>Delete</button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
 ```
 
 The `UPDATE_CACHE` function receives the current cached data and returns the optimistically updated data.
 
-## Update with Response Data
+## Optimistic Create
 
-Use `ON_SUCCESS` to update cache with the actual response:
+Prepend a new item to the list before the server responds:
+
+```typescript
+const { trigger } = useWrite((api) => api("posts").POST);
+
+trigger({
+  body: { title: "Draft Post", content: "..." },
+  optimistic: (api) =>
+    api("posts")
+      .GET()
+      .UPDATE_CACHE((posts) => [
+        { id: Date.now(), title: "Draft Post", content: "..." },
+        ...posts,
+      ]),
+});
+```
+
+## Using Response Data
+
+Use `ON_SUCCESS` to update the cache with the actual server response instead of fabricated data:
 
 ```typescript
 const { trigger } = useWrite((api) => api("posts").POST);
@@ -63,34 +103,122 @@ trigger({
 });
 ```
 
-## Multiple Targets
+The second argument to `UPDATE_CACHE` is the mutation response, available after the server responds successfully.
 
-Update multiple caches at once by returning an array:
+## Updating Multiple Caches
+
+Return an array to update several cache entries at once:
 
 ```typescript
 trigger({
+  params: { id },
   optimistic: (api) => [
     api("posts")
       .GET()
       .UPDATE_CACHE((posts) => posts.filter((p) => p.id !== id)),
     api("stats")
       .GET()
-      .UPDATE_CACHE((stats) => ({ ...stats, count: stats.count - 1 })),
+      .UPDATE_CACHE((stats) => ({ ...stats, postCount: stats.postCount - 1 })),
   ],
 });
 ```
 
-## Filter by Request Params
+## Filtering Cache Entries
 
-Use `WHERE` to only update specific cache entries:
+When the same endpoint is called with different parameters, multiple cache entries exist. Use `WHERE` to target specific entries based on their request parameters:
+
+```typescript
+// If you have multiple cached queries:
+// - useRead((api) => api("posts").GET({ query: { page: 1 } }))
+// - useRead((api) => api("posts").GET({ query: { page: 2 } }))
+// - useRead((api) => api("posts").GET({ query: { category: "tech" } }))
+
+// Only prepend to page 1 results
+trigger({
+  body: newPost,
+  optimistic: (api) =>
+    api("posts")
+      .GET()
+      .WHERE((request) => request.query?.page === 1)
+      .UPDATE_CACHE((posts) => [newPost, ...posts]),
+});
+```
+
+Without `WHERE`, all cached entries for that endpoint would be updated. The `request` parameter in the callback contains the original request's `query`, `params`, and `body`:
+
+```typescript
+// Only update cache for a specific category
+trigger({
+  body: newPost,
+  optimistic: (api) =>
+    api("posts")
+      .GET()
+      .WHERE((request) => request.query?.category === newPost.category)
+      .UPDATE_CACHE((posts) => [newPost, ...posts]),
+});
+```
+
+## Detecting Optimistic State
+
+The `meta.isOptimistic` flag indicates whether displayed data came from an optimistic update:
+
+```typescript
+function PostList() {
+  const { data, meta } = useRead((api) => api("posts").GET());
+
+  return (
+    <div>
+      {meta.isOptimistic && <div>Changes pending...</div>}
+      {data?.map((post) => <PostCard key={post.id} post={post} />)}
+    </div>
+  );
+}
+```
+
+## Controlling Rollback
+
+By default, optimistic updates roll back on error. Use `NO_ROLLBACK` to keep the optimistic state:
 
 ```typescript
 trigger({
   optimistic: (api) =>
     api("posts")
       .GET()
-      .WHERE((request) => request.query?.page === 1)
-      .UPDATE_CACHE((posts, newPost) => [newPost!, ...posts]),
+      .NO_ROLLBACK()
+      .UPDATE_CACHE((posts) => [...posts, newPost]),
+});
+```
+
+Handle errors manually with `ON_ERROR`:
+
+```typescript
+trigger({
+  optimistic: (api) =>
+    api("posts")
+      .GET()
+      .ON_ERROR((error) => {
+        showToast(`Failed to save: ${error.message}`);
+      })
+      .UPDATE_CACHE((posts) => [...posts, newPost]),
+});
+```
+
+## Combining with Invalidation
+
+By default, optimistic updates set invalidation to `"none"` to prevent the server response from overwriting your optimistic data prematurely. To enable invalidation alongside optimistic updates:
+
+```typescript
+const { trigger } = useWrite((api) => api("posts/:id").DELETE);
+
+trigger({
+  params: { id },
+  optimistic: (api) =>
+    api("posts")
+      .GET()
+      .UPDATE_CACHE((posts) => posts.filter((p) => p.id !== id)),
+  // "all" invalidates tags from the mutation path (posts/:id),
+  // not the optimistic target path (posts)
+  invalidate: "all",
 });
 ```
 
@@ -129,55 +257,3 @@ The `useRead` hook returns plugin metadata via the `meta` property:
 | Property            | Type      | Description                                         |
 | ------------------- | --------- | --------------------------------------------------- |
 | `meta.isOptimistic` | `boolean` | `true` if current data is from an optimistic update |
-
-```typescript
-function PostList() {
-  const { data, meta } = useRead((api) => api("posts").GET());
-
-  return (
-    <div>
-      {meta.isOptimistic && <span>Saving...</span>}
-      <ul>
-        {data?.map((post) => (
-          <li key={post.id}>{post.title}</li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-```
-
-## Auto-Invalidation Behavior
-
-By default, when using optimistic updates, invalidation mode is set to `"none"` for that request to prevent immediate cache invalidation from overwriting your optimistic data.
-
-If you want auto-invalidation to still happen, set it explicitly:
-
-```typescript
-// Invalidate all related tags (full hierarchy)
-trigger({
-  optimistic: (api) =>
-    api("posts")
-      .GET()
-      .UPDATE_CACHE((posts) => [...posts]),
-  invalidate: "all",
-});
-
-// Invalidate only the exact endpoint tag
-trigger({
-  optimistic: (api) =>
-    api("posts")
-      .GET()
-      .UPDATE_CACHE((posts) => [...posts]),
-  invalidate: "self",
-});
-
-// Target specific tags manually
-trigger({
-  optimistic: (api) =>
-    api("posts")
-      .GET()
-      .UPDATE_CACHE((posts) => [...posts]),
-  invalidate: ["posts", "stats", "dashboard"],
-});
-```
