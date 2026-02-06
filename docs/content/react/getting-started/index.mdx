@@ -82,7 +82,7 @@ Now you can use the hooks in your components:
 import { useRead } from "../api/client";
 
 export function UserList() {
-  const { data, loading, error, refetch } = useRead((api) =>
+  const { data, loading, error, trigger } = useRead((api) =>
     api("users").GET()
   );
 
@@ -91,7 +91,7 @@ export function UserList() {
 
   return (
     <div>
-      <button onClick={refetch}>Refresh</button>
+      <button onClick={trigger}>Refresh</button>
       <ul>
         {data?.map((user) => (
           <li key={user.id}>{user.name}</li>

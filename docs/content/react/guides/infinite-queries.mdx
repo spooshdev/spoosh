@@ -1,0 +1,261 @@
+---
+title: Infinite Queries
+description: Load more data as the user scrolls with useInfiniteRead
+---
+
+`useInfiniteRead` is designed for infinite scroll interfaces where new data appends to an ever-growing list as the user scrolls down.
+
+> For complete API reference, see [useInfiniteRead](/docs/react/hooks/use-infinite-read).
+
+## How It Works
+
+`useInfiniteRead` doesn't assume any specific response shape — you tell it how to read your API's response via callback functions. The `nextPageRequest` function returns only the fields that change between pages. These are automatically merged with the original request, so you don't need to spread existing query parameters.
+
+Given an API that returns:
+
+```json
+{
+  "items": [
+    { "id": 1, "title": "Post 1" },
+    { "id": 2, "title": "Post 2" }
+  ],
+  "meta": { "page": 1, "hasMore": true }
+}
+```
+
+You map those fields in the options:
+
+```typescript
+const { data, canFetchNext, fetchNext, fetchingNext } = useInfiniteRead(
+  (api) => api("posts").GET({ query: { page: 1, limit: 20 } }),
+  {
+    canFetchNext: ({ response }) => response?.meta.hasMore ?? false,
+    nextPageRequest: ({ response }) => ({
+      query: { page: (response?.meta.page ?? 0) + 1 },
+    }),
+    merger: (allResponses) => allResponses.flatMap((r) => r.items),
+  }
+);
+```
+
+Since the original request already has `{ page: 1, limit: 20 }`, returning `{ query: { page: 2 } }` from `nextPageRequest` merges into `{ page: 2, limit: 20 }` automatically.
+
+### The `merger` Function
+
+As pages load, each raw response is collected into an array. The `merger` function receives all raw responses and combines them into a single flat list that `data` returns:
+
+```typescript
+// After loading 3 pages, allResponses contains:
+// [
+//   { items: [{id:1}, {id:2}], meta: {page:1, hasMore:true} },
+//   { items: [{id:3}, {id:4}], meta: {page:2, hasMore:true} },
+//   { items: [{id:5}],         meta: {page:3, hasMore:false} },
+// ]
+
+merger: (allResponses) => allResponses.flatMap((r) => r.items),
+// data → [{id:1}, {id:2}, {id:3}, {id:4}, {id:5}]
+```
+
+If you need access to the raw responses (e.g., for page metadata), use `allResponses` from the hook return:
+
+```typescript
+const { data, allResponses } = useInfiniteRead(...);
+
+// data        → merged flat list from merger()
+// allResponses → array of raw API responses per page
+```
+
+## Basic Setup
+
+```typescript
+function PostFeed() {
+  const { data, loading, canFetchNext, fetchNext, fetchingNext } =
+    useInfiniteRead(
+      (api) => api("posts").GET({ query: { page: 1, limit: 20 } }),
+      {
+        canFetchNext: ({ response }) => response?.meta.hasMore ?? false,
+        nextPageRequest: ({ response }) => ({
+          query: { page: (response?.meta.page ?? 0) + 1 },
+        }),
+        merger: (allResponses) => allResponses.flatMap((r) => r.items),
+      }
+    );
+
+  if (loading) return <div>Loading...</div>;
+
+  return (
+    <div>
+      {data?.map((post) => <PostCard key={post.id} post={post} />)}
+
+      {canFetchNext && (
+        <button onClick={fetchNext} disabled={fetchingNext}>
+          {fetchingNext ? "Loading..." : "Load More"}
+        </button>
+      )}
+    </div>
+  );
+}
+```
+
+## Auto-Loading with Intersection Observer
+
+Replace the "Load More" button with automatic loading when the user scrolls near the bottom:
+
+```typescript
+import { useRef, useEffect } from "react";
+
+function InfinitePostFeed() {
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  const { data, loading, canFetchNext, fetchNext, fetchingNext } =
+    useInfiniteRead(
+      (api) => api("posts").GET({ query: { page: 1, limit: 20 } }),
+      {
+        canFetchNext: ({ response }) => response?.meta.hasMore ?? false,
+        nextPageRequest: ({ response }) => ({
+          query: { page: (response?.meta.page ?? 0) + 1 },
+        }),
+        merger: (allResponses) => allResponses.flatMap((r) => r.items),
+      }
+    );
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && canFetchNext && !fetchingNext) {
+          fetchNext();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(sentinel);
+
+    return () => observer.disconnect();
+  }, [canFetchNext, fetchingNext, fetchNext]);
+
+  if (loading) return <div>Loading...</div>;
+
+  return (
+    <div>
+      {data?.map((post) => <PostCard key={post.id} post={post} />)}
+      <div ref={sentinelRef}>
+        {fetchingNext && <div>Loading more...</div>}
+      </div>
+    </div>
+  );
+}
+```
+
+## Cursor-Based Scrolling
+
+For APIs that return a cursor instead of page numbers:
+
+```json
+{
+  "items": [{ "id": 10, "title": "Post 10" }],
+  "nextCursor": "abc123"
+}
+```
+
+```typescript
+const { data, canFetchNext, fetchNext, fetchingNext } = useInfiniteRead(
+  (api) => api("feed").GET({ query: { limit: 20 } }),
+  {
+    canFetchNext: ({ response }) => !!response?.nextCursor,
+    nextPageRequest: ({ response }) => ({
+      query: { cursor: response?.nextCursor },
+    }),
+    merger: (allResponses) => allResponses.flatMap((r) => r.items),
+  }
+);
+```
+
+## Bidirectional Scrolling
+
+Load content in both directions — useful for chat threads or timelines where the user starts in the middle:
+
+```typescript
+const {
+  data,
+  canFetchNext,
+  canFetchPrev,
+  fetchNext,
+  fetchPrev,
+  fetchingNext,
+  fetchingPrev,
+} = useInfiniteRead(
+  (api) => api("messages").GET({ query: { page: 5, limit: 20 } }),
+  {
+    canFetchNext: ({ response }) => response?.meta.hasMore ?? false,
+    nextPageRequest: ({ response }) => ({
+      query: { page: (response?.meta.page ?? 0) + 1 },
+    }),
+    canFetchPrev: ({ response }) => (response?.meta.page ?? 1) > 1,
+    prevPageRequest: ({ response }) => ({
+      query: { page: (response?.meta.page ?? 2) - 1 },
+    }),
+    merger: (allResponses) => allResponses.flatMap((r) => r.messages),
+  }
+);
+```
+
+```typescript
+function MessageThread() {
+  return (
+    <div>
+      {canFetchPrev && (
+        <button onClick={fetchPrev} disabled={fetchingPrev}>
+          Load Older
+        </button>
+      )}
+
+      {data?.map((msg) => <Message key={msg.id} message={msg} />)}
+
+      {canFetchNext && (
+        <button onClick={fetchNext} disabled={fetchingNext}>
+          Load Newer
+        </button>
+      )}
+    </div>
+  );
+}
+```
+
+## Combining with Plugins
+
+`useInfiniteRead` works with plugins like cache and deduplication. Each page is cached independently, and deduplication prevents duplicate requests when scrolling quickly:
+
+```typescript
+const client = new Spoosh<ApiSchema, Error>("/api").use([
+  cachePlugin({ staleTime: 5000 }),
+  deduplicationPlugin(),
+  invalidationPlugin(),
+]);
+```
+
+When a mutation invalidates tags that match infinite scroll queries, all loaded pages are refetched automatically.
+
+## Refetching All Pages
+
+Use the `trigger` function to reload all currently loaded pages from the beginning:
+
+```typescript
+const { data, trigger } = useInfiniteRead(
+  (api) => api("posts").GET({ query: { page: 1, limit: 20 } }),
+  {
+    canFetchNext: ({ response }) => response?.meta.hasMore ?? false,
+    nextPageRequest: ({ response }) => ({
+      query: { page: (response?.meta.page ?? 0) + 1 },
+    }),
+    merger: (allResponses) => allResponses.flatMap((r) => r.items),
+  }
+);
+
+// Refetch all loaded pages
+<button onClick={trigger}>Refresh All</button>
+```

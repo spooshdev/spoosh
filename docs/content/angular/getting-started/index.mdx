@@ -92,7 +92,7 @@ import { injectRead } from "../api/client";
       <div>Error: {{ query.error()!.message }}</div>
     } @else {
       <div>
-        <button (click)="query.refetch()">Refresh</button>
+        <button (click)="query.trigger()">Refresh</button>
         <ul>
           @for (user of query.data(); track user.id) {
             <li>{{ user.name }}</li>

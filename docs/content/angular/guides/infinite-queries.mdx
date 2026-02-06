@@ -1,0 +1,292 @@
+---
+title: Infinite Queries
+description: Load more data as the user scrolls with injectInfiniteRead
+---
+
+`injectInfiniteRead` is designed for infinite scroll interfaces where new data appends to an ever-growing list as the user scrolls down. All return values are Angular Signals.
+
+> For complete API reference, see [injectInfiniteRead](/docs/angular/injects/inject-infinite-read).
+
+## How It Works
+
+`injectInfiniteRead` doesn't assume any specific response shape — you tell it how to read your API's response via callback functions. The `nextPageRequest` function returns only the fields that change between pages. These are automatically merged with the original request, so you don't need to spread existing query parameters.
+
+Given an API that returns:
+
+```json
+{
+  "items": [
+    { "id": 1, "title": "Post 1" },
+    { "id": 2, "title": "Post 2" }
+  ],
+  "meta": { "page": 1, "hasMore": true }
+}
+```
+
+You map those fields in the options:
+
+```typescript
+private posts = injectInfiniteRead(
+  (api) => api("posts").GET({ query: { page: 1, limit: 20 } }),
+  {
+    canFetchNext: ({ response }) => response?.meta.hasMore ?? false,
+    nextPageRequest: ({ response }) => ({
+      query: { page: (response?.meta.page ?? 0) + 1 },
+    }),
+    merger: (allResponses) => allResponses.flatMap((r) => r.items),
+  }
+);
+```
+
+Since the original request already has `{ page: 1, limit: 20 }`, returning `{ query: { page: 2 } }` from `nextPageRequest` merges into `{ page: 2, limit: 20 }` automatically.
+
+### The `merger` Function
+
+As pages load, each raw response is collected into an array. The `merger` function receives all raw responses and combines them into a single flat list that `data` returns:
+
+```typescript
+// After loading 3 pages, allResponses contains:
+// [
+//   { items: [{id:1}, {id:2}], meta: {page:1, hasMore:true} },
+//   { items: [{id:3}, {id:4}], meta: {page:2, hasMore:true} },
+//   { items: [{id:5}],         meta: {page:3, hasMore:false} },
+// ]
+
+merger: (allResponses) => allResponses.flatMap((r) => r.items),
+// data → [{id:1}, {id:2}, {id:3}, {id:4}, {id:5}]
+```
+
+If you need access to the raw responses (e.g., for page metadata), use `allResponses` from the inject return:
+
+```typescript
+private posts = injectInfiniteRead(...);
+
+data = this.posts.data;               // merged flat list from merger()
+allResponses = this.posts.allResponses; // array of raw API responses per page
+```
+
+## Basic Setup
+
+```typescript
+@Component({
+  selector: "app-post-feed",
+  template: `
+    @if (loading()) {
+      <div>Loading...</div>
+    } @else {
+      @for (post of data(); track post.id) {
+        <app-post-card [post]="post" />
+      }
+
+      @if (canFetchNext()) {
+        <button (click)="fetchNext()" [disabled]="fetchingNext()">
+          {{ fetchingNext() ? "Loading..." : "Load More" }}
+        </button>
+      }
+    }
+  `,
+})
+export class PostFeedComponent {
+  private posts = injectInfiniteRead(
+    (api) => api("posts").GET({ query: { page: 1, limit: 20 } }),
+    {
+      canFetchNext: ({ response }) => response?.meta.hasMore ?? false,
+      nextPageRequest: ({ response }) => ({
+        query: { page: (response?.meta.page ?? 0) + 1 },
+      }),
+      merger: (allResponses) => allResponses.flatMap((r) => r.items),
+    }
+  );
+
+  data = this.posts.data;
+  loading = this.posts.loading;
+  canFetchNext = this.posts.canFetchNext;
+  fetchNext = this.posts.fetchNext;
+  fetchingNext = this.posts.fetchingNext;
+}
+```
+
+## Auto-Loading with Intersection Observer
+
+Replace the "Load More" button with automatic loading when the user scrolls near the bottom:
+
+```typescript
+@Component({
+  selector: "app-infinite-post-feed",
+  template: `
+    @if (loading()) {
+      <div>Loading...</div>
+    } @else {
+      @for (post of data(); track post.id) {
+        <app-post-card [post]="post" />
+      }
+      <div #sentinel>
+        @if (fetchingNext()) {
+          <div>Loading more...</div>
+        }
+      </div>
+    }
+  `,
+})
+export class InfinitePostFeedComponent implements AfterViewInit, OnDestroy {
+  @ViewChild("sentinel") sentinelRef!: ElementRef<HTMLDivElement>;
+
+  private observer: IntersectionObserver | null = null;
+
+  private posts = injectInfiniteRead(
+    (api) => api("posts").GET({ query: { page: 1, limit: 20 } }),
+    {
+      canFetchNext: ({ response }) => response?.meta.hasMore ?? false,
+      nextPageRequest: ({ response }) => ({
+        query: { page: (response?.meta.page ?? 0) + 1 },
+      }),
+      merger: (allResponses) => allResponses.flatMap((r) => r.items),
+    }
+  );
+
+  data = this.posts.data;
+  loading = this.posts.loading;
+  fetchingNext = this.posts.fetchingNext;
+
+  ngAfterViewInit() {
+    this.observer = new IntersectionObserver(
+      (entries) => {
+        if (
+          entries[0].isIntersecting &&
+          this.posts.canFetchNext() &&
+          !this.posts.fetchingNext()
+        ) {
+          this.posts.fetchNext();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    this.observer.observe(this.sentinelRef.nativeElement);
+  }
+
+  ngOnDestroy() {
+    this.observer?.disconnect();
+  }
+}
+```
+
+## Cursor-Based Scrolling
+
+For APIs that return a cursor instead of page numbers:
+
+```json
+{
+  "items": [{ "id": 10, "title": "Post 10" }],
+  "nextCursor": "abc123"
+}
+```
+
+```typescript
+private feed = injectInfiniteRead(
+  (api) => api("feed").GET({ query: { limit: 20 } }),
+  {
+    canFetchNext: ({ response }) => !!response?.nextCursor,
+    nextPageRequest: ({ response }) => ({
+      query: { cursor: response?.nextCursor },
+    }),
+    merger: (allResponses) => allResponses.flatMap((r) => r.items),
+  }
+);
+```
+
+## Bidirectional Scrolling
+
+Load content in both directions — useful for chat threads or timelines where the user starts in the middle:
+
+```typescript
+@Component({
+  selector: "app-message-thread",
+  template: `
+    @if (canFetchPrev()) {
+      <button (click)="fetchPrev()" [disabled]="fetchingPrev()">
+        Load Older
+      </button>
+    }
+
+    @for (msg of data(); track msg.id) {
+      <app-message [message]="msg" />
+    }
+
+    @if (canFetchNext()) {
+      <button (click)="fetchNext()" [disabled]="fetchingNext()">
+        Load Newer
+      </button>
+    }
+  `,
+})
+export class MessageThreadComponent {
+  private messages = injectInfiniteRead(
+    (api) => api("messages").GET({ query: { page: 5, limit: 20 } }),
+    {
+      canFetchNext: ({ response }) => response?.meta.hasMore ?? false,
+      nextPageRequest: ({ response }) => ({
+        query: { page: (response?.meta.page ?? 0) + 1 },
+      }),
+      canFetchPrev: ({ response }) => (response?.meta.page ?? 1) > 1,
+      prevPageRequest: ({ response }) => ({
+        query: { page: (response?.meta.page ?? 2) - 1 },
+      }),
+      merger: (allResponses) => allResponses.flatMap((r) => r.messages),
+    }
+  );
+
+  data = this.messages.data;
+  canFetchNext = this.messages.canFetchNext;
+  canFetchPrev = this.messages.canFetchPrev;
+  fetchNext = this.messages.fetchNext;
+  fetchPrev = this.messages.fetchPrev;
+  fetchingNext = this.messages.fetchingNext;
+  fetchingPrev = this.messages.fetchingPrev;
+}
+```
+
+## Combining with Plugins
+
+`injectInfiniteRead` works with plugins like cache and deduplication. Each page is cached independently, and deduplication prevents duplicate requests when scrolling quickly:
+
+```typescript
+const client = new Spoosh<ApiSchema, Error>("/api").use([
+  cachePlugin({ staleTime: 5000 }),
+  deduplicationPlugin(),
+  invalidationPlugin(),
+]);
+```
+
+When a mutation invalidates tags that match infinite scroll queries, all loaded pages are refetched automatically.
+
+## Refetching All Pages
+
+Use the `trigger` function to reload all currently loaded pages from the beginning:
+
+```typescript
+@Component({
+  selector: "app-post-feed",
+  template: `
+    <button (click)="refresh()">Refresh All</button>
+    @for (post of data(); track post.id) {
+      <app-post-card [post]="post" />
+    }
+  `,
+})
+export class PostFeedComponent {
+  private posts = injectInfiniteRead(
+    (api) => api("posts").GET({ query: { page: 1, limit: 20 } }),
+    {
+      canFetchNext: ({ response }) => response?.meta.hasMore ?? false,
+      nextPageRequest: ({ response }) => ({
+        query: { page: (response?.meta.page ?? 0) + 1 },
+      }),
+      merger: (allResponses) => allResponses.flatMap((r) => r.items),
+    }
+  );
+
+  data = this.posts.data;
+  refresh = this.posts.trigger;
+}
+```
