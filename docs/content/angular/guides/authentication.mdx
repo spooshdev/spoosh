@@ -1,0 +1,226 @@
+---
+title: Authentication
+description: Managing tokens, headers, and auth flows
+---
+
+This guide covers common authentication patterns with Spoosh in Angular.
+
+## Static Headers
+
+Set a static token when creating the client:
+
+```typescript
+const client = new Spoosh<ApiSchema, Error>("/api", {
+  headers: {
+    Authorization: "Bearer my-static-token",
+  },
+}).use([cachePlugin({ staleTime: 5000 }), invalidationPlugin()]);
+```
+
+## Dynamic Headers
+
+The `headers` option accepts a function that runs before each request. Use this to read tokens from localStorage or state:
+
+```typescript
+const client = new Spoosh<ApiSchema, Error>("/api", {
+  headers: () => {
+    const token = localStorage.getItem("accessToken");
+
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  },
+}).use([cachePlugin({ staleTime: 5000 }), invalidationPlugin()]);
+```
+
+### Async Headers
+
+The function can also be async — useful when tokens need to be fetched or decrypted:
+
+```typescript
+const client = new Spoosh<ApiSchema, Error>("/api", {
+  headers: async () => {
+    const token = await getTokenFromSecureStorage();
+
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  },
+}).use([cachePlugin({ staleTime: 5000 }), invalidationPlugin()]);
+```
+
+## Cookie Authentication
+
+For cookie-based auth (session cookies, HttpOnly cookies), set `credentials: "include"`:
+
+```typescript
+const client = new Spoosh<ApiSchema, Error>("/api", {
+  credentials: "include",
+}).use([cachePlugin({ staleTime: 5000 }), invalidationPlugin()]);
+```
+
+Cookies are automatically sent with every request. No manual header management needed.
+
+## Token Refresh
+
+Check if the access token is expired before each request. If expired, refresh it and update localStorage:
+
+```typescript
+import { SpooshPlugin } from "@spoosh/core";
+
+function isTokenExpired(token: string): boolean {
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    return payload.exp * 1000 < Date.now();
+  } catch {
+    return true;
+  }
+}
+
+async function refreshAccessToken(): Promise<string | null> {
+  const refreshToken = localStorage.getItem("refreshToken");
+
+  if (!refreshToken) return null;
+
+  const res = await fetch("/api/auth/refresh", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ refreshToken }),
+  });
+
+  if (!res.ok) return null;
+
+  const { accessToken, refreshToken: newRefreshToken } = await res.json();
+  localStorage.setItem("accessToken", accessToken);
+  localStorage.setItem("refreshToken", newRefreshToken);
+
+  return accessToken;
+}
+
+function tokenRefreshPlugin(): SpooshPlugin {
+  // Shared promise to prevent multiple concurrent refresh calls.
+  // When several requests detect an expired token at the same time,
+  // they all await the same promise instead of each triggering a refresh.
+  let refreshPromise: Promise<string | null> | null = null;
+
+  return {
+    name: "token-refresh",
+    operations: ["read", "write", "infiniteRead"],
+    middleware: async (context, next) => {
+      let token = localStorage.getItem("accessToken");
+
+      if (token && isTokenExpired(token)) {
+        // Only start a new refresh if one isn't already in progress
+        if (!refreshPromise) {
+          refreshPromise = refreshAccessToken().finally(() => {
+            refreshPromise = null;
+          });
+        }
+
+        // All concurrent requests wait for the same refresh
+        token = await refreshPromise;
+      }
+
+      if (token) {
+        context.setHeaders({ Authorization: `Bearer ${token}` });
+      }
+
+      return next();
+    },
+  };
+}
+```
+
+Use it in your client:
+
+```typescript
+const client = new Spoosh<ApiSchema, Error>("/api").use([
+  tokenRefreshPlugin(),
+  cachePlugin({ staleTime: 5000 }),
+  invalidationPlugin(),
+]);
+```
+
+## Handling Unauthorized Responses
+
+Use `afterResponse` to globally handle 403 (forbidden) errors — for example, redirecting to login:
+
+```typescript
+function authErrorPlugin(): SpooshPlugin {
+  return {
+    name: "auth-error",
+    operations: ["read", "write", "infiniteRead"],
+    afterResponse: (context, response) => {
+      if (response.status === 403) {
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+        window.location.href = "/login";
+      }
+    },
+  };
+}
+```
+
+```typescript
+const client = new Spoosh<ApiSchema, Error>("/api").use([
+  tokenRefreshPlugin(),
+  authErrorPlugin(),
+  cachePlugin({ staleTime: 5000 }),
+  invalidationPlugin(),
+]);
+```
+
+Unlike `middleware`, `afterResponse` runs after every response — even when other plugins return early from cache. See [Middleware](/docs/angular/plugin-development/middleware) for more details.
+
+## Clearing State on Logout
+
+Combine `clearCache` and `invalidate("*")` to wipe all cached data:
+
+```typescript
+import { createAngularSpoosh } from "@spoosh/angular";
+
+const { injectWrite, clearCache } = createAngularSpoosh(client);
+
+@Component({
+  selector: "app-logout-button",
+  template: `<button (click)="handleLogout()">Logout</button>`,
+})
+export class LogoutButtonComponent {
+  private logoutWriter = injectWrite((api) => api("auth/logout").POST);
+
+  async handleLogout() {
+    await this.logoutWriter.trigger({ clearCache: true, invalidate: "*" });
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    window.location.href = "/login";
+  }
+}
+```
+
+For scenarios where you don't have a logout endpoint, use the instance `clearCache` directly:
+
+```typescript
+@Component({
+  selector: "app-logout-button",
+  template: `<button (click)="handleLogout()">Logout</button>`,
+})
+export class LogoutButtonComponent {
+  handleLogout() {
+    clearCache();
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    window.location.href = "/login";
+  }
+}
+```
+
+## Per-Request Headers
+
+Override headers for a specific request:
+
+```typescript
+private adminAction = injectWrite((api) => api("admin/action").POST);
+
+async performAction() {
+  await this.adminAction.trigger({
+    body: { action: "reset" },
+    headers: { Authorization: "Bearer admin-token" },
+  });
+}
+```
