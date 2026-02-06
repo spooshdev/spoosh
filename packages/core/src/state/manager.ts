@@ -69,6 +69,9 @@ export type StateManager = {
   /** Get the number of cache entries */
   getSize: () => number;
 
+  /** Get the number of active subscribers for a cache key */
+  getSubscribersCount: (key: string) => number;
+
   /** Set a pending promise for a query key (for deduplication) */
   setPendingPromise: (
     key: string,
@@ -252,6 +255,10 @@ export function createStateManager(): StateManager {
 
     getSize() {
       return cache.size;
+    },
+
+    getSubscribersCount(key: string) {
+      return subscribers.get(key)?.size ?? 0;
     },
 
     setPendingPromise(key, promise) {

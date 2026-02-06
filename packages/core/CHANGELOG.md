@@ -1,5 +1,9 @@
 # @spoosh/core
 
+## 0.10.2
+
+- Expose `getSubscribersCount` method in listen controllers to get current number of subscribers
+
 ## 0.10.1
 
 - Fix invalidation not working properly when using initial data.
