@@ -99,7 +99,7 @@ export function debugPlugin(config: DebugPluginConfig = {}): SpooshPlugin<{
       queryKey: context.queryKey,
       requestTimestamp: context.requestTimestamp,
       tags: context.tags,
-      requestOptions: context.requestOptions,
+      requestOptions: context.request,
       state: {
         data: cached?.state.data,
         error: cached?.state.error,
@@ -133,7 +133,7 @@ export function debugPlugin(config: DebugPluginConfig = {}): SpooshPlugin<{
     console.groupCollapsed(label);
     console.log("Query Key:", context.queryKey);
     console.log("Tags:", context.tags);
-    console.log("Request Options:", context.requestOptions);
+    console.log("Request Options:", context.request);
     console.log("Cache State:", cached?.state);
 
     if (response) {

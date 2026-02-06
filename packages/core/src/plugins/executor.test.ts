@@ -17,7 +17,7 @@ function createMockContext(
     queryKey: "test-key",
     tags: ["test"],
     requestTimestamp: Date.now(),
-    requestOptions: { headers: {} },
+    request: { headers: {} },
     metadata: new Map(),
     stateManager,
     eventEmitter,
@@ -670,7 +670,7 @@ describe("createPluginExecutor", () => {
         queryKey: "test-key",
         tags: ["test"],
         requestTimestamp: Date.now(),
-        requestOptions: { headers: {} },
+        request: { headers: {} },
         metadata: new Map(),
         stateManager,
         eventEmitter,
@@ -680,7 +680,7 @@ describe("createPluginExecutor", () => {
       expect(typeof context.plugins.get).toBe("function");
     });
 
-    it("allows direct mutation of requestOptions.headers", () => {
+    it("allows direct mutation of request.headers", () => {
       const executor = createPluginExecutor([]);
       const stateManager = createStateManager();
       const eventEmitter = createEventEmitter();
@@ -692,22 +692,22 @@ describe("createPluginExecutor", () => {
         queryKey: "test-key",
         tags: ["test"],
         requestTimestamp: Date.now(),
-        requestOptions: { headers: {} },
+        request: { headers: {} },
         metadata: new Map(),
         stateManager,
         eventEmitter,
       });
 
-      context.requestOptions.headers = {
-        ...context.requestOptions.headers,
+      context.request.headers = {
+        ...context.request.headers,
         "Content-Type": "application/json",
       };
-      context.requestOptions.headers = {
-        ...context.requestOptions.headers,
+      context.request.headers = {
+        ...context.request.headers,
         Authorization: "Bearer token",
       };
 
-      expect(context.requestOptions.headers).toEqual({
+      expect(context.request.headers).toEqual({
         "Content-Type": "application/json",
         Authorization: "Bearer token",
       });
@@ -729,7 +729,7 @@ describe("createPluginExecutor", () => {
         queryKey: "test-key",
         tags: ["test"],
         requestTimestamp: Date.now(),
-        requestOptions: { headers: {} },
+        request: { headers: {} },
         metadata: new Map(),
         stateManager,
         eventEmitter,
@@ -754,7 +754,7 @@ describe("createPluginExecutor", () => {
         queryKey: "test-key",
         tags: ["test"],
         requestTimestamp: Date.now(),
-        requestOptions: { headers: {} },
+        request: { headers: {} },
         metadata: new Map(),
         stateManager,
         eventEmitter,
@@ -776,7 +776,7 @@ describe("createPluginExecutor", () => {
         queryKey: "test-key",
         tags: ["test"],
         requestTimestamp: Date.now(),
-        requestOptions: { headers: {} },
+        request: { headers: {} },
         metadata: new Map(),
         stateManager,
         eventEmitter,

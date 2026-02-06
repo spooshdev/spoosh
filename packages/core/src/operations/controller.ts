@@ -108,7 +108,7 @@ export function createOperationController<TData, TError>(
       tags: resolvedTags,
       requestTimestamp,
       hookId,
-      requestOptions: {
+      request: {
         ...initialRequestOptions,
         ...requestOptions,
         headers: resolvedHeaders ?? {},
@@ -169,13 +169,13 @@ export function createOperationController<TData, TError>(
 
       const coreFetch = async (): Promise<SpooshResponse<TData, TError>> => {
         abortController = new AbortController();
-        context.requestOptions.signal = abortController.signal;
+        context.request.signal = abortController.signal;
 
         const fetchPromise = (async (): Promise<
           SpooshResponse<TData, TError>
         > => {
           try {
-            const response = await fetchFn(context.requestOptions);
+            const response = await fetchFn(context.request);
 
             return response;
           } catch (err) {

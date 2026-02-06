@@ -65,7 +65,7 @@ describe("debouncePlugin", () => {
         stateManager,
         eventEmitter,
         queryKey: '{"method":"GET","path":["users"],"query":{"search":"a"}}',
-        requestOptions: { query: { search: "a" } },
+        request: { query: { search: "a" } },
         pluginOptions: { debounce: 300 },
       });
       const next = vi.fn().mockResolvedValue({ data: [], status: 200 });
@@ -88,7 +88,7 @@ describe("debouncePlugin", () => {
         stateManager,
         eventEmitter,
         queryKey: '{"method":"GET","path":["users"],"query":{"search":"a"}}',
-        requestOptions: { query: { search: "a" } },
+        request: { query: { search: "a" } },
         pluginOptions: { debounce: 300 },
       });
 
@@ -100,7 +100,7 @@ describe("debouncePlugin", () => {
         stateManager,
         eventEmitter,
         queryKey: '{"method":"GET","path":["users"],"query":{"search":"ab"}}',
-        requestOptions: { query: { search: "ab" } },
+        request: { query: { search: "ab" } },
         pluginOptions: { debounce: 300 },
       });
 
@@ -140,7 +140,7 @@ describe("debouncePlugin", () => {
         stateManager,
         eventEmitter,
         queryKey: '{"method":"GET","path":["users"],"query":{"search":"ab"}}',
-        requestOptions: { query: { search: "ab" } },
+        request: { query: { search: "ab" } },
         pluginOptions: { debounce: 300 },
       });
       const next = vi.fn();
@@ -163,7 +163,7 @@ describe("debouncePlugin", () => {
         stateManager,
         eventEmitter,
         queryKey: '{"method":"GET","path":["users"],"query":{"search":"ab"}}',
-        requestOptions: { query: { search: "ab" } },
+        request: { query: { search: "ab" } },
         pluginOptions: { debounce: 300 },
       });
 
@@ -198,7 +198,7 @@ describe("debouncePlugin", () => {
         stateManager,
         eventEmitter,
         queryKey,
-        requestOptions: { query: { search: "abc" } },
+        request: { query: { search: "abc" } },
         pluginOptions: { debounce: 300 },
       });
       const next = vi.fn();
@@ -221,7 +221,7 @@ describe("debouncePlugin", () => {
         stateManager,
         eventEmitter,
         queryKey: '{"method":"GET","path":["users"],"query":{"search":"test"}}',
-        requestOptions: { query: { search: "test" } },
+        request: { query: { search: "test" } },
         pluginOptions: { debounce: 500 },
       });
       const next = vi.fn();
@@ -252,7 +252,7 @@ describe("debouncePlugin", () => {
         stateManager,
         eventEmitter,
         queryKey: '{"method":"GET","path":["search"],"query":{"q":"h"}}',
-        requestOptions: { query: { q: "h" } },
+        request: { query: { q: "h" } },
         pluginOptions: { debounce: 200 },
       });
       await plugin.middleware!(context1, next);
@@ -263,7 +263,7 @@ describe("debouncePlugin", () => {
         stateManager,
         eventEmitter,
         queryKey: '{"method":"GET","path":["search"],"query":{"q":"he"}}',
-        requestOptions: { query: { q: "he" } },
+        request: { query: { q: "he" } },
         pluginOptions: { debounce: 200 },
       });
       await plugin.middleware!(context2, next);
@@ -274,7 +274,7 @@ describe("debouncePlugin", () => {
         stateManager,
         eventEmitter,
         queryKey: '{"method":"GET","path":["search"],"query":{"q":"hel"}}',
-        requestOptions: { query: { q: "hel" } },
+        request: { query: { q: "hel" } },
         pluginOptions: { debounce: 200 },
       });
       await plugin.middleware!(context3, next);
@@ -300,7 +300,7 @@ describe("debouncePlugin", () => {
         eventEmitter,
         forceRefetch: true,
         queryKey: '{"method":"GET","path":["users"],"query":{"search":"test"}}',
-        requestOptions: { query: { search: "test" } },
+        request: { query: { search: "test" } },
         pluginOptions: { debounce: 300 },
       });
       const expectedResponse = { data: [{ id: 1 }], status: 200 };
@@ -323,7 +323,7 @@ describe("debouncePlugin", () => {
         eventEmitter,
         forceRefetch: true,
         queryKey: '{"method":"GET","path":["users"],"query":{"search":"test"}}',
-        requestOptions: { query: { search: "test" } },
+        request: { query: { search: "test" } },
         pluginOptions: { debounce: 300 },
       });
       const next = vi.fn().mockResolvedValue({ data: [], status: 200 });
@@ -348,7 +348,7 @@ describe("debouncePlugin", () => {
         stateManager,
         eventEmitter,
         queryKey: '{"method":"GET","path":["users"],"query":{"page":1}}',
-        requestOptions: { query: { page: 1 } },
+        request: { query: { page: 1 } },
         pluginOptions: { debounce: debounceFn },
       });
       const next = vi.fn().mockResolvedValue({ data: [], status: 200 });
@@ -363,7 +363,7 @@ describe("debouncePlugin", () => {
         stateManager,
         eventEmitter,
         queryKey: '{"method":"GET","path":["users"],"query":{"page":2}}',
-        requestOptions: { query: { page: 2 } },
+        request: { query: { page: 2 } },
         pluginOptions: { debounce: debounceFn },
       });
 
@@ -386,7 +386,7 @@ describe("debouncePlugin", () => {
         stateManager,
         eventEmitter,
         queryKey: '{"method":"GET","path":["users"],"query":{"search":"x"}}',
-        requestOptions: { query: { search: "x" } },
+        request: { query: { search: "x" } },
         pluginOptions: { debounce: debounceFn },
       });
       const next = vi.fn();
@@ -411,7 +411,7 @@ describe("debouncePlugin", () => {
         stateManager,
         eventEmitter,
         queryKey: '{"method":"GET","path":["users"],"query":{"search":"x"}}',
-        requestOptions: { query: { search: "x" } },
+        request: { query: { search: "x" } },
         pluginOptions: { debounce: debounceFn },
       });
       const expectedResponse = { data: [], status: 200 };
@@ -435,7 +435,7 @@ describe("debouncePlugin", () => {
         eventEmitter,
         path: "users/1",
         queryKey: '{"method":"GET","path":["users","1"]}',
-        requestOptions: { params: { id: 1 } },
+        request: { params: { id: 1 } },
         pluginOptions: { debounce: debounceFn },
       });
       const next = vi.fn().mockResolvedValue({ data: [], status: 200 });
@@ -448,7 +448,7 @@ describe("debouncePlugin", () => {
         eventEmitter,
         path: "users/1",
         queryKey: '{"method":"GET","path":["users","2"]}',
-        requestOptions: { params: { id: 2 } },
+        request: { params: { id: 2 } },
         pluginOptions: { debounce: debounceFn },
       });
 
@@ -472,7 +472,7 @@ describe("debouncePlugin", () => {
         eventEmitter,
         operationType: "infiniteRead",
         queryKey: '{"method":"GET","path":["posts"],"query":{"cursor":"abc"}}',
-        requestOptions: { query: { cursor: "abc" } },
+        request: { query: { cursor: "abc" } },
         pluginOptions: { debounce: 250 },
       });
       const next = vi.fn();
@@ -505,7 +505,7 @@ describe("debouncePlugin", () => {
         path: "api/search",
         method: "GET",
         queryKey: '{"method":"GET","path":["api","search"],"query":{"q":"a"}}',
-        requestOptions: { query: { q: "a" } },
+        request: { query: { q: "a" } },
         pluginOptions: { debounce: 200 },
       });
       await plugin.middleware!(context1, next);
@@ -516,7 +516,7 @@ describe("debouncePlugin", () => {
         path: "api/users",
         method: "GET",
         queryKey: '{"method":"GET","path":["api","users"],"query":{"q":"b"}}',
-        requestOptions: { query: { q: "b" } },
+        request: { query: { q: "b" } },
         pluginOptions: { debounce: 200 },
       });
       await plugin.middleware!(context2, next);
@@ -548,7 +548,7 @@ describe("debouncePlugin", () => {
         path: "api/data",
         method: "GET",
         queryKey: '{"method":"GET","path":["api","data"]}',
-        requestOptions: {},
+        request: {},
         pluginOptions: { debounce: 200 },
       });
       await plugin.middleware!(getContext, next);
@@ -559,7 +559,7 @@ describe("debouncePlugin", () => {
         path: "api/data",
         method: "POST",
         queryKey: '{"method":"POST","path":["api","data"]}',
-        requestOptions: {},
+        request: {},
         pluginOptions: { debounce: 200 },
       });
       await plugin.middleware!(postContext, next);
@@ -593,7 +593,7 @@ describe("debouncePlugin", () => {
       const context = createMockContext({
         stateManager,
         eventEmitter,
-        requestOptions: undefined as unknown as Record<string, unknown>,
+        request: undefined as unknown as Record<string, unknown>,
         pluginOptions: { debounce: 200 },
       });
       const next = vi.fn();

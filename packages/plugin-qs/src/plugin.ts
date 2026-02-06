@@ -52,7 +52,7 @@ export function qsPlugin(config: QsPluginConfig = {}): SpooshPlugin<{
     operations: ["read", "write", "infiniteRead"],
 
     middleware: async (context, next) => {
-      const query = context.requestOptions.query;
+      const query = context.request.query;
 
       if (!query || Object.keys(query).length === 0) {
         return next();
@@ -74,8 +74,8 @@ export function qsPlugin(config: QsPluginConfig = {}): SpooshPlugin<{
         string
       >;
 
-      context.requestOptions = {
-        ...context.requestOptions,
+      context.request = {
+        ...context.request,
         query: flatQuery,
       };
 

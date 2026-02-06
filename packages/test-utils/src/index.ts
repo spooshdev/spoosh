@@ -48,7 +48,7 @@ export type MockContextOptions<TData = unknown, TError = unknown> = {
 
   state?: Partial<OperationState<TData, TError>>;
 
-  requestOptions?: Record<string, unknown>;
+  request?: Record<string, unknown>;
 
   /** Custom metadata map for the context */
   metadata?: Map<string, unknown>;
@@ -74,7 +74,7 @@ export function createMockContext<TData = unknown, TError = unknown>(
     pluginOptions,
     forceRefetch,
     hookId,
-    requestOptions = {},
+    request = {},
     metadata = new Map(),
     plugins = { get: vi.fn() },
   } = options;
@@ -86,7 +86,7 @@ export function createMockContext<TData = unknown, TError = unknown>(
     queryKey,
     tags,
     requestTimestamp: Date.now(),
-    requestOptions,
+    request,
     metadata,
     stateManager,
     eventEmitter,

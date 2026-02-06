@@ -35,8 +35,8 @@ export function progressPlugin(): SpooshPlugin<{
           ? pluginOptions.progress
           : ({} as ProgressOptions);
 
-      context.requestOptions = {
-        ...context.requestOptions,
+      context.request = {
+        ...context.request,
         transport: "xhr",
         transportOptions: {
           onProgress: (event: ProgressEvent, xhr: XMLHttpRequest) => {

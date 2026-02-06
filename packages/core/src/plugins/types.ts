@@ -47,7 +47,7 @@ export type PluginContext = {
   /** Unique identifier for the hook instance. Persists across queryKey changes within the same hook. */
   readonly hookId?: string;
 
-  requestOptions: PluginRequestOptions;
+  request: PluginRequestOptions;
   metadata: Map<string, unknown>;
 
   stateManager: StateManager;

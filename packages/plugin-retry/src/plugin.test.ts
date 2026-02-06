@@ -31,7 +31,7 @@ describe("retryPlugin", () => {
 
       await plugin.middleware!(context, next);
 
-      expect(context.requestOptions.retries).toBe(3);
+      expect(context.request.retries).toBe(3);
     });
 
     it("should use default retryDelay of 1000ms", async () => {
@@ -41,7 +41,7 @@ describe("retryPlugin", () => {
 
       await plugin.middleware!(context, next);
 
-      expect(context.requestOptions.retryDelay).toBe(1000);
+      expect(context.request.retryDelay).toBe(1000);
     });
   });
 
@@ -53,7 +53,7 @@ describe("retryPlugin", () => {
 
       await plugin.middleware!(context, next);
 
-      expect(context.requestOptions.retries).toBe(5);
+      expect(context.request.retries).toBe(5);
     });
 
     it("should use custom retryDelay from config", async () => {
@@ -63,7 +63,7 @@ describe("retryPlugin", () => {
 
       await plugin.middleware!(context, next);
 
-      expect(context.requestOptions.retryDelay).toBe(2000);
+      expect(context.request.retryDelay).toBe(2000);
     });
 
     it("should disable retries when set to false", async () => {
@@ -73,7 +73,7 @@ describe("retryPlugin", () => {
 
       await plugin.middleware!(context, next);
 
-      expect(context.requestOptions.retries).toBe(false);
+      expect(context.request.retries).toBe(false);
     });
   });
 
@@ -87,7 +87,7 @@ describe("retryPlugin", () => {
 
       await plugin.middleware!(context, next);
 
-      expect(context.requestOptions.retries).toBe(10);
+      expect(context.request.retries).toBe(10);
     });
 
     it("should override retryDelay with request option", async () => {
@@ -99,7 +99,7 @@ describe("retryPlugin", () => {
 
       await plugin.middleware!(context, next);
 
-      expect(context.requestOptions.retryDelay).toBe(5000);
+      expect(context.request.retryDelay).toBe(5000);
     });
 
     it("should disable retries with request option", async () => {
@@ -111,7 +111,7 @@ describe("retryPlugin", () => {
 
       await plugin.middleware!(context, next);
 
-      expect(context.requestOptions.retries).toBe(false);
+      expect(context.request.retries).toBe(false);
     });
 
     it("should use 0 retries when explicitly set", async () => {
@@ -123,7 +123,7 @@ describe("retryPlugin", () => {
 
       await plugin.middleware!(context, next);
 
-      expect(context.requestOptions.retries).toBe(0);
+      expect(context.request.retries).toBe(0);
     });
   });
 
@@ -140,10 +140,10 @@ describe("retryPlugin", () => {
       expect(result).toEqual(expectedResponse);
     });
 
-    it("should preserve existing requestOptions", async () => {
+    it("should preserve existing request", async () => {
       const plugin = retryPlugin();
       const context = createMockContext({
-        requestOptions: {
+        request: {
           headers: { "X-Custom": "value" },
         },
       });
@@ -151,9 +151,9 @@ describe("retryPlugin", () => {
 
       await plugin.middleware!(context, next);
 
-      expect(context.requestOptions.headers).toEqual({ "X-Custom": "value" });
-      expect(context.requestOptions.retries).toBe(3);
-      expect(context.requestOptions.retryDelay).toBe(1000);
+      expect(context.request.headers).toEqual({ "X-Custom": "value" });
+      expect(context.request.retries).toBe(3);
+      expect(context.request.retryDelay).toBe(1000);
     });
 
     it("should handle error responses", async () => {
@@ -180,7 +180,7 @@ describe("retryPlugin", () => {
 
       await plugin.middleware!(context, next);
 
-      expect(context.requestOptions.retries).toBe(2);
+      expect(context.request.retries).toBe(2);
       expect(next).toHaveBeenCalled();
     });
   });
@@ -197,8 +197,8 @@ describe("retryPlugin", () => {
 
       await plugin.middleware!(context, next);
 
-      expect(context.requestOptions.retries).toBe(4);
-      expect(context.requestOptions.retryDelay).toBe(500);
+      expect(context.request.retries).toBe(4);
+      expect(context.request.retryDelay).toBe(500);
     });
   });
 
@@ -211,8 +211,8 @@ describe("retryPlugin", () => {
 
       await plugin.middleware!(context, next);
 
-      expect(context.requestOptions.retries).toBe(3);
-      expect(context.requestOptions.retryDelay).toBe(1000);
+      expect(context.request.retries).toBe(3);
+      expect(context.request.retryDelay).toBe(1000);
       expect(next).toHaveBeenCalledTimes(1);
     });
 
@@ -226,8 +226,8 @@ describe("retryPlugin", () => {
         networkError
       );
 
-      expect(context.requestOptions.retries).toBe(2);
-      expect(context.requestOptions.retryDelay).toBe(500);
+      expect(context.request.retries).toBe(2);
+      expect(context.request.retryDelay).toBe(500);
     });
   });
 
@@ -239,7 +239,7 @@ describe("retryPlugin", () => {
 
       await plugin.middleware!(context, next);
 
-      expect(context.requestOptions.retries).toBe(5);
+      expect(context.request.retries).toBe(5);
     });
 
     it("should set exact retry count from request option override", async () => {
@@ -251,7 +251,7 @@ describe("retryPlugin", () => {
 
       await plugin.middleware!(context, next);
 
-      expect(context.requestOptions.retries).toBe(7);
+      expect(context.request.retries).toBe(7);
     });
 
     it("should support large retry counts", async () => {
@@ -261,7 +261,7 @@ describe("retryPlugin", () => {
 
       await plugin.middleware!(context, next);
 
-      expect(context.requestOptions.retries).toBe(100);
+      expect(context.request.retries).toBe(100);
     });
   });
 
@@ -273,7 +273,7 @@ describe("retryPlugin", () => {
 
       await plugin.middleware!(context, next);
 
-      expect(context.requestOptions.retryDelay).toBe(2000);
+      expect(context.request.retryDelay).toBe(2000);
     });
 
     it("should support small delays", async () => {
@@ -283,7 +283,7 @@ describe("retryPlugin", () => {
 
       await plugin.middleware!(context, next);
 
-      expect(context.requestOptions.retryDelay).toBe(100);
+      expect(context.request.retryDelay).toBe(100);
     });
 
     it("should support large delays", async () => {
@@ -293,7 +293,7 @@ describe("retryPlugin", () => {
 
       await plugin.middleware!(context, next);
 
-      expect(context.requestOptions.retryDelay).toBe(30000);
+      expect(context.request.retryDelay).toBe(30000);
     });
 
     it("should allow per-request delay override", async () => {
@@ -305,7 +305,7 @@ describe("retryPlugin", () => {
 
       await plugin.middleware!(context, next);
 
-      expect(context.requestOptions.retryDelay).toBe(3000);
+      expect(context.request.retryDelay).toBe(3000);
     });
   });
 
@@ -317,7 +317,7 @@ describe("retryPlugin", () => {
 
       await plugin.middleware!(context, next);
 
-      expect(context.requestOptions.retries).toBe(false);
+      expect(context.request.retries).toBe(false);
     });
 
     it("should set retries to false via request option", async () => {
@@ -329,7 +329,7 @@ describe("retryPlugin", () => {
 
       await plugin.middleware!(context, next);
 
-      expect(context.requestOptions.retries).toBe(false);
+      expect(context.request.retries).toBe(false);
     });
 
     it("should still set retryDelay even when retries is false", async () => {
@@ -339,8 +339,8 @@ describe("retryPlugin", () => {
 
       await plugin.middleware!(context, next);
 
-      expect(context.requestOptions.retries).toBe(false);
-      expect(context.requestOptions.retryDelay).toBe(2000);
+      expect(context.request.retries).toBe(false);
+      expect(context.request.retryDelay).toBe(2000);
     });
   });
 
@@ -450,8 +450,8 @@ describe("retryPlugin", () => {
 
       await plugin.middleware!(context, next);
 
-      expect(context.requestOptions.retries).toBe(3);
-      expect(context.requestOptions.retryDelay).toBe(1000);
+      expect(context.request.retries).toBe(3);
+      expect(context.request.retryDelay).toBe(1000);
     });
 
     it("should handle empty pluginOptions", async () => {
@@ -463,8 +463,8 @@ describe("retryPlugin", () => {
 
       await plugin.middleware!(context, next);
 
-      expect(context.requestOptions.retries).toBe(3);
-      expect(context.requestOptions.retryDelay).toBe(1000);
+      expect(context.request.retries).toBe(3);
+      expect(context.request.retryDelay).toBe(1000);
     });
 
     it("should handle zero retryDelay", async () => {
@@ -474,7 +474,7 @@ describe("retryPlugin", () => {
 
       await plugin.middleware!(context, next);
 
-      expect(context.requestOptions.retryDelay).toBe(0);
+      expect(context.request.retryDelay).toBe(0);
     });
 
     it("should handle both retries and retryDelay from config", async () => {
@@ -484,8 +484,8 @@ describe("retryPlugin", () => {
 
       await plugin.middleware!(context, next);
 
-      expect(context.requestOptions.retries).toBe(5);
-      expect(context.requestOptions.retryDelay).toBe(2500);
+      expect(context.request.retries).toBe(5);
+      expect(context.request.retryDelay).toBe(2500);
     });
 
     it("should handle both retries and retryDelay from pluginOptions", async () => {
@@ -497,8 +497,8 @@ describe("retryPlugin", () => {
 
       await plugin.middleware!(context, next);
 
-      expect(context.requestOptions.retries).toBe(8);
-      expect(context.requestOptions.retryDelay).toBe(3000);
+      expect(context.request.retries).toBe(8);
+      expect(context.request.retryDelay).toBe(3000);
     });
 
     it("should handle mixed config and pluginOptions", async () => {
@@ -510,8 +510,8 @@ describe("retryPlugin", () => {
 
       await plugin.middleware!(context, next);
 
-      expect(context.requestOptions.retries).toBe(10);
-      expect(context.requestOptions.retryDelay).toBe(1000);
+      expect(context.request.retries).toBe(10);
+      expect(context.request.retryDelay).toBe(1000);
     });
   });
 });

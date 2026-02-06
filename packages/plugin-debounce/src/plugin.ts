@@ -99,10 +99,10 @@ export function debouncePlugin(): SpooshPlugin<{
         return next();
       }
 
-      const { queryKey, requestOptions, path, method } = context;
+      const { queryKey, request, path, method } = context;
       const stableKey = `${path}:${method}`;
 
-      const opts = requestOptions as
+      const opts = request as
         | (RequestOptionsSnapshot & Record<string, unknown>)
         | undefined;
 

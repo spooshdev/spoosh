@@ -1,5 +1,9 @@
 # @spoosh/plugin-retry
 
+## 0.1.7
+
+- Renamed `PluginContext.requestOptions` to `PluginContext.request` for cleaner API
+
 ## 0.1.6
 
 - Update documentation URLs to new `/docs/{framework}` format

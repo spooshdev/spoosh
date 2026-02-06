@@ -303,7 +303,7 @@ export function createInfiniteReadController<
       tags,
       requestTimestamp: Date.now(),
       hookId,
-      requestOptions: { headers: {} },
+      request: { headers: {} },
       metadata: new Map(),
       pluginOptions,
       stateManager,

@@ -215,7 +215,7 @@ export function createInjectRead<
       try {
         const execOptions = overrideOptions
           ? {
-              ...currentController?.getContext().requestOptions,
+              ...currentController?.getContext().request,
               ...overrideOptions,
             }
           : undefined;

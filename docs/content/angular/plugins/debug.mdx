@@ -78,7 +78,7 @@ const client = new Spoosh<ApiSchema, Error>("/api").use([
 | `queryKey`         | `string`   | Unique query key                           |
 | `requestTimestamp` | `number`   | Request timestamp                          |
 | `tags`             | `string[]` | Cache tags                                 |
-| `requestOptions`   | `unknown`  | Request options                            |
+| `request`          | `unknown`  | Request options                            |
 | `state`            | `object`   | Current state (loading, data, error, etc.) |
 | `response`         | `object`   | Response data (if available)               |
 | `cacheEntries`     | `array`    | Cache entries (if logCache enabled)        |

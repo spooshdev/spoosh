@@ -1,5 +1,9 @@
 # @spoosh/plugin-qs
 
+## 0.2.3
+
+- Renamed `PluginContext.requestOptions` to `PluginContext.request` for cleaner API
+
 ## 0.2.2
 
 - Update documentation URLs to new `/docs/{framework}` format

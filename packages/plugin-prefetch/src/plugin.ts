@@ -129,7 +129,7 @@ export function prefetchPlugin(
           queryKey,
           tags: resolvedTags,
           requestTimestamp: Date.now(),
-          requestOptions: { headers: {}, ...(callOptions ?? {}) },
+          request: { headers: {}, ...(callOptions ?? {}) },
           metadata: new Map(),
           pluginOptions: options,
           stateManager,
@@ -137,7 +137,7 @@ export function prefetchPlugin(
         });
 
         const coreFetch = async (): Promise<SpooshResponse<TData, TError>> => {
-          pluginContext.requestOptions.signal = abortController.signal;
+          pluginContext.request.signal = abortController.signal;
 
           const updateState = (
             updater: Partial<OperationState<TData, TError>>
@@ -166,7 +166,7 @@ export function prefetchPlugin(
 
             const mergedOptions = {
               ...(callOptions as object),
-              ...pluginContext.requestOptions,
+              ...pluginContext.request,
             };
 
             const response = await method(mergedOptions);

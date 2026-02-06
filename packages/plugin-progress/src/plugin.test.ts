@@ -24,8 +24,8 @@ describe("progressPlugin", () => {
       await plugin.middleware!(context, next);
 
       expect(next).toHaveBeenCalled();
-      expect(context.requestOptions.transport).toBeUndefined();
-      expect(context.requestOptions.transportOptions).toBeUndefined();
+      expect(context.request.transport).toBeUndefined();
+      expect(context.request.transportOptions).toBeUndefined();
     });
 
     it("should pass through when pluginOptions is undefined", async () => {
@@ -36,7 +36,7 @@ describe("progressPlugin", () => {
       await plugin.middleware!(context, next);
 
       expect(next).toHaveBeenCalled();
-      expect(context.requestOptions.transport).toBeUndefined();
+      expect(context.request.transport).toBeUndefined();
     });
 
     it("should pass through when progress is false", async () => {
@@ -49,7 +49,7 @@ describe("progressPlugin", () => {
       await plugin.middleware!(context, next);
 
       expect(next).toHaveBeenCalled();
-      expect(context.requestOptions.transport).toBeUndefined();
+      expect(context.request.transport).toBeUndefined();
     });
   });
 
@@ -63,7 +63,7 @@ describe("progressPlugin", () => {
 
       await plugin.middleware!(context, next);
 
-      expect(context.requestOptions.transport).toBe("xhr");
+      expect(context.request.transport).toBe("xhr");
     });
 
     it("should set transportOptions with onProgress callback", async () => {
@@ -75,10 +75,9 @@ describe("progressPlugin", () => {
 
       await plugin.middleware!(context, next);
 
-      expect(context.requestOptions.transportOptions).toBeDefined();
+      expect(context.request.transportOptions).toBeDefined();
       expect(
-        (context.requestOptions.transportOptions as { onProgress: unknown })
-          .onProgress
+        (context.request.transportOptions as { onProgress: unknown }).onProgress
       ).toBeTypeOf("function");
     });
 
@@ -96,18 +95,18 @@ describe("progressPlugin", () => {
       expect(result).toEqual(expectedResponse);
     });
 
-    it("should preserve existing requestOptions", async () => {
+    it("should preserve existing request", async () => {
       const plugin = progressPlugin();
       const context = createMockContext({
         pluginOptions: { progress: true },
-        requestOptions: { headers: { "X-Custom": "value" } },
+        request: { headers: { "X-Custom": "value" } },
       });
       const next = vi.fn().mockResolvedValue({ data: {}, status: 200 });
 
       await plugin.middleware!(context, next);
 
-      expect(context.requestOptions.headers).toEqual({ "X-Custom": "value" });
-      expect(context.requestOptions.transport).toBe("xhr");
+      expect(context.request.headers).toEqual({ "X-Custom": "value" });
+      expect(context.request.transport).toBe("xhr");
     });
   });
 
@@ -122,7 +121,7 @@ describe("progressPlugin", () => {
 
       await plugin.middleware!(context, next);
 
-      const { onProgress } = context.requestOptions.transportOptions as {
+      const { onProgress } = context.request.transportOptions as {
         onProgress: (event: ProgressEvent, xhr: XMLHttpRequest) => void;
       };
 
@@ -155,7 +154,7 @@ describe("progressPlugin", () => {
 
       await plugin.middleware!(context, next);
 
-      const { onProgress } = context.requestOptions.transportOptions as {
+      const { onProgress } = context.request.transportOptions as {
         onProgress: (event: ProgressEvent, xhr: XMLHttpRequest) => void;
       };
 
@@ -189,7 +188,7 @@ describe("progressPlugin", () => {
 
       await plugin.middleware!(context, next);
 
-      expect(context.requestOptions.transport).toBe("xhr");
+      expect(context.request.transport).toBe("xhr");
     });
 
     it("should set transportOptions with onProgress callback", async () => {
@@ -201,10 +200,9 @@ describe("progressPlugin", () => {
 
       await plugin.middleware!(context, next);
 
-      expect(context.requestOptions.transportOptions).toBeDefined();
+      expect(context.request.transportOptions).toBeDefined();
       expect(
-        (context.requestOptions.transportOptions as { onProgress: unknown })
-          .onProgress
+        (context.request.transportOptions as { onProgress: unknown }).onProgress
       ).toBeTypeOf("function");
     });
   });
@@ -220,7 +218,7 @@ describe("progressPlugin", () => {
 
       await plugin.middleware!(context, next);
 
-      const { onProgress } = context.requestOptions.transportOptions as {
+      const { onProgress } = context.request.transportOptions as {
         onProgress: (event: ProgressEvent, xhr: XMLHttpRequest) => void;
       };
 
@@ -258,7 +256,7 @@ describe("progressPlugin", () => {
 
       await plugin.middleware!(context, next);
 
-      const { onProgress } = context.requestOptions.transportOptions as {
+      const { onProgress } = context.request.transportOptions as {
         onProgress: (event: ProgressEvent, xhr: XMLHttpRequest) => void;
       };
 
@@ -294,7 +292,7 @@ describe("progressPlugin", () => {
 
       await plugin.middleware!(context, next);
 
-      const { onProgress } = context.requestOptions.transportOptions as {
+      const { onProgress } = context.request.transportOptions as {
         onProgress: (event: ProgressEvent, xhr: XMLHttpRequest) => void;
       };
 
@@ -335,7 +333,7 @@ describe("progressPlugin", () => {
 
       await plugin.middleware!(context, next);
 
-      expect(context.requestOptions.transport).toBe("xhr");
+      expect(context.request.transport).toBe("xhr");
       expect(next).toHaveBeenCalled();
     });
   });
@@ -353,7 +351,7 @@ describe("progressPlugin", () => {
 
       await plugin.middleware!(context, next);
 
-      expect(context.requestOptions.transport).toBe("xhr");
+      expect(context.request.transport).toBe("xhr");
       expect(next).toHaveBeenCalled();
     });
   });

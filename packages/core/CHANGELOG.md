@@ -8,6 +8,7 @@
 - **Removed `middlewares` option** from `createClient` config. Migrate to plugin-based middleware.
 - **Changed `createClient` API signature** from `createClient(config)` to `createClient(baseUrl, defaultOptions?)` to match the `Spoosh` class style.
 - Changed `PluginContext.path` from `string[]` to `string` for simpler plugin API.
+- Renamed `PluginContext.requestOptions` to `PluginContext.request` for cleaner API.
 
 ### Other Changes
 

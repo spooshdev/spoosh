@@ -83,7 +83,7 @@ describe("debugPlugin", () => {
       expect(consoleLogSpy).toHaveBeenCalledWith("Tags:", context.tags);
       expect(consoleLogSpy).toHaveBeenCalledWith(
         "Request Options:",
-        context.requestOptions
+        context.request
       );
       expect(consoleLogSpy).toHaveBeenCalledWith("Cache State:", undefined);
       expect(consoleGroupEndSpy).toHaveBeenCalled();
@@ -400,7 +400,7 @@ describe("debugPlugin", () => {
           path: "users/1",
           queryKey: context.queryKey,
           tags: context.tags,
-          requestOptions: context.requestOptions,
+          requestOptions: context.request,
           state: expect.objectContaining({}),
           cacheEntries: expect.any(Array),
         })

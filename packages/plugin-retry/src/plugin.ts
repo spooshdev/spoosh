@@ -57,8 +57,8 @@ export function retryPlugin(config: RetryPluginConfig = {}): SpooshPlugin<{
       const retries = pluginOptions?.retries ?? defaultRetries;
       const retryDelay = pluginOptions?.retryDelay ?? defaultRetryDelay;
 
-      context.requestOptions = {
-        ...context.requestOptions,
+      context.request = {
+        ...context.request,
         retries,
         retryDelay,
       };

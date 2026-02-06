@@ -3,6 +3,7 @@
 ## 0.2.3
 
 - Changed `PluginContext.path` from `string[]` to `string` for simpler plugin API
+- Renamed `PluginContext.requestOptions` to `PluginContext.request` for cleaner API
 
 ## 0.2.2
 
