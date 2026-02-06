@@ -1,0 +1,10 @@
+{
+  "title": "Guides",
+  "defaultOpen": false,
+  "pages": [
+    "tags-and-invalidation",
+    "infinite-queries",
+    "authentication",
+    "error-handling"
+  ]
+}
