@@ -1,0 +1,141 @@
+---
+title: Error Handling
+description: Handle errors at every level of your application
+---
+
+Spoosh provides multiple layers for handling errors: per-inject, per-trigger, global plugins, and typed errors.
+
+## Basic Error Handling
+
+All Spoosh injects return an `error` signal:
+
+```typescript
+@Component({
+  selector: "app-user-profile",
+  template: `
+    @if (loading()) {
+      <div>Loading...</div>
+    } @else if (error()) {
+      <div>Failed to load profile: {{ error()?.message }}</div>
+    } @else {
+      <div>{{ data()?.name }}</div>
+    }
+  `,
+})
+export class UserProfileComponent {
+  private user = injectRead((api) =>
+    api("users/:id").GET({ params: { id: "1" } })
+  );
+
+  data = this.user.data;
+  loading = this.user.loading;
+  error = this.user.error;
+}
+```
+
+## Typed Errors
+
+Define a global error type through the second generic parameter on `Spoosh`. The type flows through to all injects automatically:
+
+```typescript
+interface ApiError {
+  message: string;
+  code: string;
+  details?: Record<string, string[]>;
+}
+
+const client = new Spoosh<ApiSchema, ApiError>("/api").use([...]);
+```
+
+### Per-Route Error Types
+
+Override the global error type for specific routes by adding an `error` field to your schema. Routes without `error` fall back to the global type:
+
+```typescript
+import { SpooshSchema } from "@spoosh/core";
+
+type ApiSchema = SpooshSchema<{
+  "users/:id": {
+    GET: {
+      data: User;
+      // No error field — uses global ApiError
+    };
+  };
+  "auth/login": {
+    POST: {
+      body: { email: string; password: string };
+      data: { token: string };
+      error: LoginError; // Overrides global ApiError
+    };
+  };
+}>;
+
+interface LoginError {
+  message: string;
+  code: "INVALID_CREDENTIALS" | "ACCOUNT_LOCKED" | "EMAIL_NOT_VERIFIED";
+  remainingAttempts?: number;
+}
+```
+
+## Per-Request Error Handling
+
+The `trigger` function returns a promise with both `data` and `error`, letting you handle errors inline with full type inference:
+
+```typescript
+@Component({
+  selector: "app-login-form",
+  template: `<form (ngSubmit)="handleSubmit()">...</form>`,
+})
+export class LoginFormComponent {
+  private loginWriter = injectWrite((api) => api("auth/login").POST);
+
+  async handleSubmit() {
+    const { data, error } = await this.loginWriter.trigger({
+      body: this.credentials,
+    });
+
+    if (error) {
+      // error is typed as LoginError (from schema)
+      if (error.code === "ACCOUNT_LOCKED") {
+        this.showLockedMessage();
+        return;
+      }
+      this.showToast(error.message);
+      return;
+    }
+
+    this.saveToken(data.token);
+    this.router.navigate(["/dashboard"]);
+  }
+}
+```
+
+## Global Error Handling
+
+Show a toast for all errors globally using a custom plugin:
+
+```typescript
+import { SpooshPlugin } from "@spoosh/core";
+
+function globalErrorPlugin(): SpooshPlugin {
+  return {
+    name: "global-error",
+    operations: ["read", "write", "infiniteRead"],
+    afterResponse: (context, response) => {
+      const error = response.error as ApiError | undefined;
+
+      if (error) {
+        showToast(`Request failed: ${error.message}`);
+      }
+    },
+  };
+}
+```
+
+```typescript
+const client = new Spoosh<ApiSchema, Error>("/api").use([
+  globalErrorPlugin(),
+  cachePlugin({ staleTime: 5000 }),
+  invalidationPlugin(),
+]);
+```

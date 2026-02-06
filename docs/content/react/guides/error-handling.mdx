@@ -1,0 +1,127 @@
+---
+title: Error Handling
+description: Handle errors at every level of your application
+---
+
+Spoosh provides multiple layers for handling errors: per-hook, per-trigger, global plugins, and typed errors.
+
+## Basic Error Handling
+
+All Spoosh hooks return an `error` property:
+
+```typescript
+function UserProfile() {
+  const { data, error, loading } = useRead(
+    (api) => api("users/:id").GET({ params: { id: "1" } })
+  );
+
+  if (loading) return <div>Loading...</div>;
+
+  if (error) {
+    return <div>Failed to load profile: {error.message}</div>;
+  }
+
+  return <div>{data?.name}</div>;
+}
+```
+
+## Typed Errors
+
+Define a global error type through the second generic parameter on `Spoosh`. The type flows through to all hooks automatically:
+
+```typescript
+interface ApiError {
+  message: string;
+  code: string;
+  details?: Record<string, string[]>;
+}
+
+const client = new Spoosh<ApiSchema, ApiError>("/api").use([...]);
+```
+
+### Per-Route Error Types
+
+Override the global error type for specific routes by adding an `error` field to your schema. Routes without `error` fall back to the global type:
+
+```typescript
+import { SpooshSchema } from "@spoosh/core";
+
+type ApiSchema = SpooshSchema<{
+  "users/:id": {
+    GET: {
+      data: User;
+      // No error field — uses global ApiError
+    };
+  };
+  "auth/login": {
+    POST: {
+      body: { email: string; password: string };
+      data: { token: string };
+      error: LoginError; // Overrides global ApiError
+    };
+  };
+}>;
+
+interface LoginError {
+  message: string;
+  code: "INVALID_CREDENTIALS" | "ACCOUNT_LOCKED" | "EMAIL_NOT_VERIFIED";
+  remainingAttempts?: number;
+}
+```
+
+## Per-Request Error Handling
+
+The `trigger` function returns a promise with both `data` and `error`, letting you handle errors inline with full type inference:
+
+```typescript
+function LoginForm() {
+  const { trigger } = useWrite((api) => api("auth/login").POST);
+
+  const handleSubmit = async () => {
+    const { data, error } = await trigger({ body: credentials });
+
+    if (error) {
+      // error is typed as LoginError (from schema)
+      if (error.code === "ACCOUNT_LOCKED") {
+        showLockedMessage();
+        return;
+      }
+      showToast(error.message);
+      return;
+    }
+
+    saveToken(data.token);
+    navigate("/dashboard");
+  };
+}
+```
+
+## Global Error Handling
+
+Show a toast for all errors globally using a custom plugin:
+
+```typescript
+import { SpooshPlugin } from "@spoosh/core";
+
+function globalErrorPlugin(): SpooshPlugin {
+  return {
+    name: "global-error",
+    operations: ["read", "write", "infiniteRead"],
+    afterResponse: (context, response) => {
+      const error = response.error as ApiError | undefined;
+
+      if (error) {
+        showToast(`Request failed: ${error.message}`);
+      }
+    },
+  };
+}
+```
+
+```typescript
+const client = new Spoosh<ApiSchema, Error>("/api").use([
+  globalErrorPlugin(),
+  cachePlugin({ staleTime: 5000 }),
+  invalidationPlugin(),
+]);
+```

@@ -6,6 +6,7 @@
     "core",
     "hooks",
     "plugins",
-    "type-adapters"
+    "type-adapters",
+    "guides"
   ]
 }

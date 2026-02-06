@@ -6,6 +6,7 @@
     "core",
     "injects",
     "plugins",
-    "type-adapters"
+    "type-adapters",
+    "guides"
   ]
 }
