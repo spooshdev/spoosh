@@ -9,6 +9,7 @@ import type {
   RetryReadResult,
   RetryWriteResult,
 } from "./types";
+import { clone } from "./cloneObject";
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -62,9 +63,25 @@ export function retryPlugin(config: RetryPluginConfig = {}): SpooshPlugin<{
 
       const maxRetries = retriesConfig === false ? 0 : retriesConfig;
 
+      if (!maxRetries || maxRetries < 0) {
+        return next();
+      }
+
+      const originalRequest = {
+        headers: clone(context.request.headers),
+        params: clone(context.request.params),
+        body: clone(context.request.body),
+      };
+
       let res: SpooshResponse<unknown, unknown>;
 
       for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        if (attempt > 0) {
+          context.request.headers = clone(originalRequest.headers);
+          context.request.params = clone(originalRequest.params);
+          context.request.body = clone(originalRequest.body);
+        }
+
         res = await next();
 
         if (isAbortError(res.error)) {
