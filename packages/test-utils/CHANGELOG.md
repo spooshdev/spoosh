@@ -1,5 +1,10 @@
 # @spoosh/test-utils
 
+## 0.1.7
+
+- Updated dependencies
+  - @spoosh/core@0.11.1
+
 ## 0.1.6
 
 - Changed `PluginContext.path` from `string[]` to `string` for simpler plugin API
