@@ -1,6 +1,6 @@
 {
   "name": "@spoosh/plugin-progress",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Upload and download progress tracking plugin for Spoosh via XHR transport",
   "license": "MIT",
   "repository": {
@@ -41,7 +41,7 @@
     "format": "prettier --write 'src/**/*.ts'"
   },
   "peerDependencies": {
-    "@spoosh/core": ">=0.11.1"
+    "@spoosh/core": ">=0.12.0"
   },
   "devDependencies": {
     "@spoosh/core": "workspace:*",

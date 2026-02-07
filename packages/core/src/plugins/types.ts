@@ -40,17 +40,21 @@ export type PluginContext = {
   readonly method: HttpMethod;
   readonly queryKey: string;
   readonly tags: string[];
-
-  /** Timestamp when this request was initiated. Useful for tracing and debugging. */
   readonly requestTimestamp: number;
 
-  /** Unique identifier for the hook instance. Persists across queryKey changes within the same hook. */
-  readonly hookId?: string;
+  /** Unique identifier for this usage instance. Persists across queryKey changes. */
+  readonly instanceId?: string;
 
+  /** Request options with resolved headers. Modify to customize the request (e.g., add headers, signal, body). */
   request: PluginRequestOptions;
+
+  /** Temporary storage for inter-plugin communication during a single request lifecycle. Data stored here doesn't persist beyond the request. */
   temp: Map<string, unknown>;
 
+  /** State manager for accessing and modifying cache entries. */
   stateManager: StateManager;
+
+  /** Event emitter for triggering refetch, invalidation, and other events. */
   eventEmitter: EventEmitter;
 
   /** Access other plugins' exported APIs */

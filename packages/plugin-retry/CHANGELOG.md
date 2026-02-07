@@ -1,5 +1,10 @@
 # @spoosh/plugin-retry
 
+## 0.1.9
+
+- Updated dependencies
+  - @spoosh/core@0.12.0
+
 ## 0.1.8
 
 - Updated dependencies

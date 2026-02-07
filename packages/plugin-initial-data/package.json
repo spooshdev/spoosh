@@ -1,6 +1,6 @@
 {
   "name": "@spoosh/plugin-initial-data",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "Initial data plugin for Spoosh - show data immediately before fetch completes",
   "license": "MIT",
   "repository": {
@@ -40,7 +40,7 @@
     "format": "prettier --write 'src/**/*.ts'"
   },
   "peerDependencies": {
-    "@spoosh/core": ">=0.11.1"
+    "@spoosh/core": ">=0.12.0"
   },
   "devDependencies": {
     "@spoosh/core": "workspace:*",

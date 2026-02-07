@@ -133,7 +133,7 @@ export function createInjectWrite<
       return selectorResult.selector;
     };
 
-    const hookId = `angular-${Math.random().toString(36).slice(2)}`;
+    const instanceId = `angular-${Math.random().toString(36).slice(2)}`;
     let currentQueryKey: string | null = null;
     let currentController: ReturnType<
       typeof createOperationController<TData, TError>
@@ -196,7 +196,7 @@ export function createInjectWrite<
           stateManager,
           eventEmitter,
           pluginExecutor,
-          hookId,
+          instanceId,
           fetchFn: async (fetchOpts: unknown) => {
             const pathMethods = (
               api as (path: string) => Record<string, unknown>

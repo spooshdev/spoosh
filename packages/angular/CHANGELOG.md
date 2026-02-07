@@ -1,5 +1,10 @@
 # @spoosh/angular
 
+## 0.6.5
+
+- Updated dependencies
+  - @spoosh/core@0.12.0
+
 ## 0.6.4
 
 - Updated dependencies

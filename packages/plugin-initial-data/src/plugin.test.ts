@@ -44,7 +44,7 @@ describe("initialDataPlugin", () => {
 
       const context = createMockContext({
         stateManager,
-        hookId: "hook-1",
+        instanceId: "hook-1",
         pluginOptions: { initialData },
       });
 
@@ -66,7 +66,7 @@ describe("initialDataPlugin", () => {
 
       const context = createMockContext({
         stateManager,
-        hookId: "hook-1",
+        instanceId: "hook-1",
         pluginOptions: { initialData },
       });
 
@@ -92,7 +92,7 @@ describe("initialDataPlugin", () => {
 
       const context = createMockContext({
         stateManager,
-        hookId: "hook-2",
+        instanceId: "hook-2",
         pluginOptions: { initialData },
       });
 
@@ -125,7 +125,7 @@ describe("initialDataPlugin", () => {
 
       const context = createMockContext({
         stateManager,
-        hookId: "hook-3",
+        instanceId: "hook-3",
         pluginOptions: { initialData },
       });
 
@@ -156,7 +156,7 @@ describe("initialDataPlugin", () => {
 
       const context = createMockContext({
         stateManager,
-        hookId: "hook-4",
+        instanceId: "hook-4",
         tags,
         pluginOptions: { initialData },
       });
@@ -187,7 +187,7 @@ describe("initialDataPlugin", () => {
 
       const context = createMockContext({
         stateManager,
-        hookId: "hook-5",
+        instanceId: "hook-5",
         pluginOptions: { initialData },
       });
 
@@ -209,7 +209,7 @@ describe("initialDataPlugin", () => {
 
       const context = createMockContext({
         stateManager,
-        hookId: "hook-6",
+        instanceId: "hook-6",
         pluginOptions: { initialData },
       });
 
@@ -231,7 +231,7 @@ describe("initialDataPlugin", () => {
 
       const context = createMockContext({
         stateManager,
-        hookId: "hook-7",
+        instanceId: "hook-7",
         pluginOptions: { initialData },
       });
 
@@ -256,7 +256,7 @@ describe("initialDataPlugin", () => {
 
       const context = createMockContext({
         stateManager,
-        hookId: "hook-8",
+        instanceId: "hook-8",
         pluginOptions: { initialData },
       });
 
@@ -286,7 +286,7 @@ describe("initialDataPlugin", () => {
 
       const context = createMockContext({
         stateManager,
-        hookId: "hook-9",
+        instanceId: "hook-9",
         pluginOptions: { initialData, refetchOnInitialData: false },
       });
 
@@ -307,7 +307,7 @@ describe("initialDataPlugin", () => {
 
       const context = createMockContext({
         stateManager,
-        hookId: "hook-10",
+        instanceId: "hook-10",
         pluginOptions: { initialData, refetchOnInitialData: false },
       });
 
@@ -326,7 +326,7 @@ describe("initialDataPlugin", () => {
 
       const context = createMockContext({
         stateManager,
-        hookId: "hook-11",
+        instanceId: "hook-11",
         pluginOptions: { initialData, refetchOnInitialData: true },
       });
 
@@ -347,7 +347,7 @@ describe("initialDataPlugin", () => {
 
       const context = createMockContext({
         stateManager,
-        hookId: "hook-12",
+        instanceId: "hook-12",
         pluginOptions: { initialData },
       });
 
@@ -369,7 +369,7 @@ describe("initialDataPlugin", () => {
 
       const context = createMockContext({
         stateManager,
-        hookId: "hook-13",
+        instanceId: "hook-13",
         pluginOptions: {},
       });
 
@@ -388,7 +388,7 @@ describe("initialDataPlugin", () => {
 
       const context = createMockContext({
         stateManager,
-        hookId: "hook-14",
+        instanceId: "hook-14",
         pluginOptions: undefined,
       });
 
@@ -410,7 +410,7 @@ describe("initialDataPlugin", () => {
 
       const context = createMockContext({
         stateManager,
-        hookId: "hook-15",
+        instanceId: "hook-15",
         pluginOptions: {},
       });
 
@@ -434,7 +434,7 @@ describe("initialDataPlugin", () => {
 
       const context = createMockContext({
         stateManager,
-        hookId: "hook-16",
+        instanceId: "hook-16",
         pluginOptions: {},
       });
 
@@ -459,7 +459,7 @@ describe("initialDataPlugin", () => {
 
       const context = createMockContext({
         stateManager,
-        hookId: "hook-17",
+        instanceId: "hook-17",
         operationType: "read",
         pluginOptions: { initialData },
       });
@@ -482,7 +482,7 @@ describe("initialDataPlugin", () => {
 
       const context = createMockContext({
         stateManager,
-        hookId: "hook-18",
+        instanceId: "hook-18",
         operationType: "infiniteRead",
         pluginOptions: { initialData },
       });
@@ -499,15 +499,15 @@ describe("initialDataPlugin", () => {
     });
   });
 
-  describe("hookId handling", () => {
-    it("should call next() directly when hookId is undefined", async () => {
+  describe("instanceId handling", () => {
+    it("should call next() directly when instanceId is undefined", async () => {
       const plugin = initialDataPlugin();
       const stateManager = createStateManager();
       const initialData = { id: 1 };
 
       const context = createMockContext({
         stateManager,
-        hookId: undefined,
+        instanceId: undefined,
         pluginOptions: { initialData },
       });
 
@@ -523,14 +523,14 @@ describe("initialDataPlugin", () => {
       expect(setCache).not.toHaveBeenCalled();
     });
 
-    it("should only apply initial data once per hookId", async () => {
+    it("should only apply initial data once per instanceId", async () => {
       const plugin = initialDataPlugin();
       const stateManager = createStateManager();
       const initialData = { id: 1 };
 
       const context1 = createMockContext({
         stateManager,
-        hookId: "hook-same",
+        instanceId: "hook-same",
         pluginOptions: { initialData },
       });
 
@@ -548,7 +548,7 @@ describe("initialDataPlugin", () => {
 
       const context2 = createMockContext({
         stateManager,
-        hookId: "hook-same",
+        instanceId: "hook-same",
         pluginOptions: { initialData },
       });
 
@@ -556,7 +556,7 @@ describe("initialDataPlugin", () => {
       expect(setCache).not.toHaveBeenCalled();
     });
 
-    it("should apply initial data for different hookIds", async () => {
+    it("should apply initial data for different instanceIds", async () => {
       const plugin = initialDataPlugin();
       const stateManager1 = createStateManager();
       const stateManager2 = createStateManager();
@@ -564,13 +564,13 @@ describe("initialDataPlugin", () => {
 
       const context1 = createMockContext({
         stateManager: stateManager1,
-        hookId: "hook-a",
+        instanceId: "hook-a",
         pluginOptions: { initialData },
       });
 
       const context2 = createMockContext({
         stateManager: stateManager2,
-        hookId: "hook-b",
+        instanceId: "hook-b",
         queryKey: '{"method":"GET","path":["users","2"]}',
         pluginOptions: { initialData: { id: 2 } },
       });
@@ -609,7 +609,7 @@ describe("initialDataPlugin", () => {
 
       const context = createMockContext({
         stateManager,
-        hookId: "hook-existing",
+        instanceId: "hook-existing",
         pluginOptions: { initialData },
       });
 
@@ -645,7 +645,7 @@ describe("initialDataPlugin", () => {
 
       const context = createMockContext({
         stateManager,
-        hookId: "hook-cached",
+        instanceId: "hook-cached",
         pluginOptions: { initialData },
       });
 
@@ -661,21 +661,21 @@ describe("initialDataPlugin", () => {
   });
 
   describe("lifecycle hooks", () => {
-    it("should clean up hookId on unmount", () => {
+    it("should clean up instanceId on unmount", () => {
       const plugin = initialDataPlugin();
 
       const context = createMockContext({
-        hookId: "hook-unmount",
+        instanceId: "hook-unmount",
       });
 
       expect(() => plugin.lifecycle?.onUnmount?.(context)).not.toThrow();
     });
 
-    it("should handle unmount without hookId", () => {
+    it("should handle unmount without instanceId", () => {
       const plugin = initialDataPlugin();
 
       const context = createMockContext({
-        hookId: undefined,
+        instanceId: undefined,
       });
 
       expect(() => plugin.lifecycle?.onUnmount?.(context)).not.toThrow();
@@ -688,7 +688,7 @@ describe("initialDataPlugin", () => {
 
       const context = createMockContext({
         stateManager,
-        hookId: "hook-remount",
+        instanceId: "hook-remount",
         pluginOptions: { initialData },
       });
 
@@ -707,7 +707,7 @@ describe("initialDataPlugin", () => {
       const stateManager2 = createStateManager();
       const context2 = createMockContext({
         stateManager: stateManager2,
-        hookId: "hook-remount",
+        instanceId: "hook-remount",
         pluginOptions: { initialData },
       });
 
@@ -725,7 +725,7 @@ describe("initialDataPlugin", () => {
 
       const context = createMockContext({
         stateManager,
-        hookId: "hook-null",
+        instanceId: "hook-null",
         pluginOptions: { initialData: null },
       });
 
@@ -753,7 +753,7 @@ describe("initialDataPlugin", () => {
 
       const context = createMockContext({
         stateManager,
-        hookId: "hook-empty",
+        instanceId: "hook-empty",
         pluginOptions: { initialData: {} },
       });
 
@@ -781,7 +781,7 @@ describe("initialDataPlugin", () => {
 
       const context = createMockContext({
         stateManager,
-        hookId: "hook-array",
+        instanceId: "hook-array",
         pluginOptions: { initialData: [] },
       });
 
@@ -824,7 +824,7 @@ describe("initialDataPlugin", () => {
 
       const context = createMockContext({
         stateManager,
-        hookId: "hook-nested",
+        instanceId: "hook-nested",
         pluginOptions: { initialData },
       });
 
@@ -852,7 +852,7 @@ describe("initialDataPlugin", () => {
 
       const context = createMockContext({
         stateManager,
-        hookId: "hook-string",
+        instanceId: "hook-string",
         pluginOptions: { initialData: "initial string" },
       });
 
@@ -880,7 +880,7 @@ describe("initialDataPlugin", () => {
 
       const context = createMockContext({
         stateManager,
-        hookId: "hook-number",
+        instanceId: "hook-number",
         pluginOptions: { initialData: 42 },
       });
 
@@ -908,7 +908,7 @@ describe("initialDataPlugin", () => {
 
       const context = createMockContext({
         stateManager,
-        hookId: "hook-false",
+        instanceId: "hook-false",
         pluginOptions: { initialData: false },
       });
 
@@ -936,7 +936,7 @@ describe("initialDataPlugin", () => {
 
       const context = createMockContext({
         stateManager,
-        hookId: "hook-zero",
+        instanceId: "hook-zero",
         pluginOptions: { initialData: 0 },
       });
 
@@ -964,7 +964,7 @@ describe("initialDataPlugin", () => {
 
       const context = createMockContext({
         stateManager,
-        hookId: "hook-empty-string",
+        instanceId: "hook-empty-string",
         pluginOptions: { initialData: "" },
       });
 

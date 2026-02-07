@@ -55,7 +55,7 @@ export function refetchPlugin(config: RefetchPluginConfig = {}): SpooshPlugin<{
   const isBrowser = typeof window !== "undefined";
 
   const setupFocusListener = (
-    hookId: string,
+    instanceId: string,
     queryKey: string,
     eventEmitter: EventEmitter
   ) => {
@@ -80,17 +80,17 @@ export function refetchPlugin(config: RefetchPluginConfig = {}): SpooshPlugin<{
     document.addEventListener("visibilitychange", visibilityHandler);
     window.addEventListener("focus", focusHandler);
 
-    const entry = listenersByHook.get(hookId) ?? { queryKey };
+    const entry = listenersByHook.get(instanceId) ?? { queryKey };
     entry.queryKey = queryKey;
     entry.focusCleanup = () => {
       document.removeEventListener("visibilitychange", visibilityHandler);
       window.removeEventListener("focus", focusHandler);
     };
-    listenersByHook.set(hookId, entry);
+    listenersByHook.set(instanceId, entry);
   };
 
   const setupReconnectListener = (
-    hookId: string,
+    instanceId: string,
     queryKey: string,
     eventEmitter: EventEmitter
   ) => {
@@ -105,34 +105,34 @@ export function refetchPlugin(config: RefetchPluginConfig = {}): SpooshPlugin<{
 
     window.addEventListener("online", handler);
 
-    const entry = listenersByHook.get(hookId) ?? { queryKey };
+    const entry = listenersByHook.get(instanceId) ?? { queryKey };
     entry.queryKey = queryKey;
     entry.reconnectCleanup = () => {
       window.removeEventListener("online", handler);
     };
-    listenersByHook.set(hookId, entry);
+    listenersByHook.set(instanceId, entry);
   };
 
-  const cleanupHook = (hookId: string) => {
-    const entry = listenersByHook.get(hookId);
+  const cleanupHook = (instanceId: string) => {
+    const entry = listenersByHook.get(instanceId);
 
     if (entry) {
       entry.focusCleanup?.();
       entry.reconnectCleanup?.();
-      listenersByHook.delete(hookId);
+      listenersByHook.delete(instanceId);
     }
   };
 
-  const hasFocusListener = (hookId: string): boolean => {
-    return listenersByHook.get(hookId)?.focusCleanup !== undefined;
+  const hasFocusListener = (instanceId: string): boolean => {
+    return listenersByHook.get(instanceId)?.focusCleanup !== undefined;
   };
 
-  const hasReconnectListener = (hookId: string): boolean => {
-    return listenersByHook.get(hookId)?.reconnectCleanup !== undefined;
+  const hasReconnectListener = (instanceId: string): boolean => {
+    return listenersByHook.get(instanceId)?.reconnectCleanup !== undefined;
   };
 
-  const removeFocusListener = (hookId: string) => {
-    const entry = listenersByHook.get(hookId);
+  const removeFocusListener = (instanceId: string) => {
+    const entry = listenersByHook.get(instanceId);
 
     if (entry?.focusCleanup) {
       entry.focusCleanup();
@@ -140,8 +140,8 @@ export function refetchPlugin(config: RefetchPluginConfig = {}): SpooshPlugin<{
     }
   };
 
-  const removeReconnectListener = (hookId: string) => {
-    const entry = listenersByHook.get(hookId);
+  const removeReconnectListener = (instanceId: string) => {
+    const entry = listenersByHook.get(instanceId);
 
     if (entry?.reconnectCleanup) {
       entry.reconnectCleanup();
@@ -155,9 +155,9 @@ export function refetchPlugin(config: RefetchPluginConfig = {}): SpooshPlugin<{
 
     lifecycle: {
       onMount(context) {
-        const { queryKey, eventEmitter, hookId } = context;
+        const { queryKey, eventEmitter, instanceId } = context;
 
-        if (!hookId) return;
+        if (!instanceId) return;
 
         const pluginOptions = context.pluginOptions as
           | RefetchReadOptions
@@ -169,18 +169,18 @@ export function refetchPlugin(config: RefetchPluginConfig = {}): SpooshPlugin<{
           pluginOptions?.refetchOnReconnect ?? refetchOnReconnect;
 
         if (shouldRefetchOnFocus) {
-          setupFocusListener(hookId, queryKey, eventEmitter);
+          setupFocusListener(instanceId, queryKey, eventEmitter);
         }
 
         if (shouldRefetchOnReconnect) {
-          setupReconnectListener(hookId, queryKey, eventEmitter);
+          setupReconnectListener(instanceId, queryKey, eventEmitter);
         }
       },
 
       onUpdate(context) {
-        const { queryKey, eventEmitter, hookId } = context;
+        const { queryKey, eventEmitter, instanceId } = context;
 
-        if (!hookId) return;
+        if (!instanceId) return;
 
         const pluginOptions = context.pluginOptions as
           | RefetchReadOptions
@@ -191,29 +191,32 @@ export function refetchPlugin(config: RefetchPluginConfig = {}): SpooshPlugin<{
         const shouldRefetchOnReconnect =
           pluginOptions?.refetchOnReconnect ?? refetchOnReconnect;
 
-        const entry = listenersByHook.get(hookId);
+        const entry = listenersByHook.get(instanceId);
         const queryKeyChanged = entry && entry.queryKey !== queryKey;
 
         if (queryKeyChanged) {
-          cleanupHook(hookId);
+          cleanupHook(instanceId);
         }
 
-        if (shouldRefetchOnFocus && !hasFocusListener(hookId)) {
-          setupFocusListener(hookId, queryKey, eventEmitter);
-        } else if (!shouldRefetchOnFocus && hasFocusListener(hookId)) {
-          removeFocusListener(hookId);
+        if (shouldRefetchOnFocus && !hasFocusListener(instanceId)) {
+          setupFocusListener(instanceId, queryKey, eventEmitter);
+        } else if (!shouldRefetchOnFocus && hasFocusListener(instanceId)) {
+          removeFocusListener(instanceId);
         }
 
-        if (shouldRefetchOnReconnect && !hasReconnectListener(hookId)) {
-          setupReconnectListener(hookId, queryKey, eventEmitter);
-        } else if (!shouldRefetchOnReconnect && hasReconnectListener(hookId)) {
-          removeReconnectListener(hookId);
+        if (shouldRefetchOnReconnect && !hasReconnectListener(instanceId)) {
+          setupReconnectListener(instanceId, queryKey, eventEmitter);
+        } else if (
+          !shouldRefetchOnReconnect &&
+          hasReconnectListener(instanceId)
+        ) {
+          removeReconnectListener(instanceId);
         }
       },
 
       onUnmount(context) {
-        if (context.hookId) {
-          cleanupHook(context.hookId);
+        if (context.instanceId) {
+          cleanupHook(context.instanceId);
         }
       },
     },

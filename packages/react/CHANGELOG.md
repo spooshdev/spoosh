@@ -1,5 +1,10 @@
 # @spoosh/react
 
+## 0.7.5
+
+- Updated dependencies
+  - @spoosh/core@0.12.0
+
 ## 0.7.4
 
 - Updated dependencies

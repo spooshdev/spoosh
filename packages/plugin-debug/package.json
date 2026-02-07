@@ -1,6 +1,6 @@
 {
   "name": "@spoosh/plugin-debug",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "Debug plugin for Spoosh - logs detailed request lifecycle information",
   "license": "MIT",
   "repository": {
@@ -40,7 +40,7 @@
     "format": "prettier --write 'src/**/*.ts'"
   },
   "peerDependencies": {
-    "@spoosh/core": ">=0.11.1"
+    "@spoosh/core": ">=0.12.0"
   },
   "devDependencies": {
     "@spoosh/core": "workspace:*",

@@ -67,7 +67,7 @@ export type CreateInfiniteReadOptions<TData, TItem, TError, TRequest> = {
   ) => Promise<SpooshResponse<TData, TError>>;
 
   /** Unique identifier for the hook instance. Persists across queryKey changes. */
-  hookId?: string;
+  instanceId?: string;
 };
 
 function createTrackerKey(
@@ -176,7 +176,7 @@ export function createInfiniteReadController<
     eventEmitter,
     pluginExecutor,
     fetchFn,
-    hookId,
+    instanceId,
   } = options;
 
   let pageKeys: string[] = [];
@@ -302,7 +302,7 @@ export function createInfiniteReadController<
       queryKey: pageKey,
       tags,
       requestTimestamp: Date.now(),
-      hookId,
+      instanceId,
       request: { headers: {} },
       temp: new Map(),
       pluginOptions,

@@ -1,5 +1,10 @@
 # @spoosh/plugin-progress
 
+## 0.1.3
+
+- Updated dependencies
+  - @spoosh/core@0.12.0
+
 ## 0.1.2
 
 - Updated dependencies

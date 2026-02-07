@@ -59,7 +59,7 @@ export type CreateOperationOptions<TData, TError> = {
   ) => Promise<SpooshResponse<TData, TError>>;
 
   /** Unique identifier for the hook instance. Persists across queryKey changes. */
-  hookId?: string;
+  instanceId?: string;
 };
 
 export function createOperationController<TData, TError>(
@@ -75,7 +75,7 @@ export function createOperationController<TData, TError>(
     eventEmitter,
     pluginExecutor,
     fetchFn,
-    hookId,
+    instanceId,
   } = options;
 
   const queryKey = stateManager.createQueryKey({
@@ -107,7 +107,7 @@ export function createOperationController<TData, TError>(
       queryKey,
       tags: resolvedTags,
       requestTimestamp,
-      hookId,
+      instanceId,
       request: {
         ...initialRequestOptions,
         ...requestOptions,

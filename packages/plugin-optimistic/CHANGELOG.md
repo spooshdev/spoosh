@@ -1,5 +1,10 @@
 # @spoosh/plugin-optimistic
 
+## 0.4.4
+
+- Updated dependencies
+  - @spoosh/core@0.12.0
+
 ## 0.4.3
 
 - Updated dependencies

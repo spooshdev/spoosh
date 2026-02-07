@@ -1,5 +1,10 @@
 # @spoosh/plugin-prefetch
 
+## 0.3.5
+
+- Updated dependencies
+  - @spoosh/core@0.12.0
+
 ## 0.3.4
 
 - Updated dependencies

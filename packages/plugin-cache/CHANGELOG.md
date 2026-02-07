@@ -1,5 +1,10 @@
 # @spoosh/plugin-cache
 
+## 0.3.4
+
+- Updated dependencies
+  - @spoosh/core@0.12.0
+
 ## 0.3.3
 
 - Updated dependencies

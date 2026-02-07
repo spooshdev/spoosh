@@ -129,7 +129,7 @@ export function createInjectRead<
     let prevContext: PluginContext | null = null;
     let isMounted = false;
 
-    const hookId = `angular-${Math.random().toString(36).slice(2)}`;
+    const instanceId = `angular-${Math.random().toString(36).slice(2)}`;
 
     const captureSelector = () => {
       const selectorResult: SelectorResult = {
@@ -169,7 +169,7 @@ export function createInjectRead<
         stateManager,
         eventEmitter,
         pluginExecutor,
-        hookId,
+        instanceId,
         fetchFn: async (fetchOpts: unknown) => {
           const pathMethods = (
             api as (path: string) => Record<string, unknown>

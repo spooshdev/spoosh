@@ -144,7 +144,7 @@ export function createInjectInfiniteRead<
       return selectorResult.call;
     };
 
-    const hookId = `angular-${Math.random().toString(36).slice(2)}`;
+    const instanceId = `angular-${Math.random().toString(36).slice(2)}`;
 
     const dataSignal = signal<TItem[] | undefined>(undefined);
     const allResponsesSignal = signal<TData[] | undefined>(undefined);
@@ -265,7 +265,7 @@ export function createInjectInfiniteRead<
         stateManager,
         eventEmitter,
         pluginExecutor,
-        hookId,
+        instanceId,
         fetchFn: async (
           opts: InfiniteRequestOptions,
           abortSignal: AbortSignal

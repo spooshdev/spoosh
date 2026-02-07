@@ -1,5 +1,10 @@
 # @spoosh/plugin-invalidation
 
+## 0.5.7
+
+- Updated dependencies
+  - @spoosh/core@0.12.0
+
 ## 0.5.6
 
 - Updated dependencies

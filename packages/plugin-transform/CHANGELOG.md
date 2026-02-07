@@ -1,5 +1,10 @@
 # @spoosh/plugin-transform
 
+## 0.5.3
+
+- Updated dependencies
+  - @spoosh/core@0.12.0
+
 ## 0.5.2
 
 - Updated dependencies

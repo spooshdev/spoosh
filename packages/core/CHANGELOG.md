@@ -1,5 +1,9 @@
 # @spoosh/core
 
+## 0.12.0
+
+- Renamed `PluginContext.hookId` to `PluginContext.instanceId` for framework-agnostic terminology.
+
 ## 0.11.1
 
 - Rename `metadata` to `temp` in internal plugin communication.
@@ -8,9 +12,9 @@
 
 ### Breaking Changes
 
-- **Removed legacy middleware system**: `createMiddleware`, `applyMiddlewares`, and `composeMiddlewares` functions have been removed. Use the plugin-based middleware system instead.
-- **Removed `middlewares` option** from `createClient` config. Migrate to plugin-based middleware.
-- **Changed `createClient` API signature** from `createClient(config)` to `createClient(baseUrl, defaultOptions?)` to match the `Spoosh` class style.
+- Removed legacy middleware system: `createMiddleware`, `applyMiddlewares`, and `composeMiddlewares` functions have been removed. Use the plugin-based middleware system instead.
+- Removed `middlewares` option from `createClient` config. Migrate to plugin-based middleware.
+- Changed `createClient` API signature from `createClient(config)` to `createClient(baseUrl, defaultOptions?)` to match the `Spoosh` class style.
 - Changed `PluginContext.path` from `string[]` to `string` for simpler plugin API.
 - Renamed `PluginContext.requestOptions` to `PluginContext.request` for cleaner API.
 - Changed `CreateOperationOptions.path` and `CreateInfiniteReadOptions.path` from `string[]` to `string` for consistency.

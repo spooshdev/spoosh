@@ -82,7 +82,7 @@ describe("refetchPlugin", () => {
       const eventEmitter = createMockEventEmitter();
       const context = createMockContext({
         eventEmitter,
-        hookId: "hook-1",
+        instanceId: "hook-1",
         queryKey: "test-query-key",
       });
 
@@ -106,7 +106,7 @@ describe("refetchPlugin", () => {
       const eventEmitter = createMockEventEmitter();
       const context = createMockContext({
         eventEmitter,
-        hookId: "hook-1",
+        instanceId: "hook-1",
         queryKey: "test-query-key",
       });
 
@@ -131,7 +131,7 @@ describe("refetchPlugin", () => {
       const eventEmitter = createMockEventEmitter();
       const context = createMockContext({
         eventEmitter,
-        hookId: "hook-1",
+        instanceId: "hook-1",
         queryKey: "test-query-key",
       });
 
@@ -150,7 +150,7 @@ describe("refetchPlugin", () => {
     it("should not add focus listeners when refetchOnFocus is false", () => {
       const plugin = refetchPlugin({ refetchOnFocus: false });
       const context = createMockContext({
-        hookId: "hook-1",
+        instanceId: "hook-1",
       });
 
       plugin.lifecycle?.onMount?.(context);
@@ -166,7 +166,7 @@ describe("refetchPlugin", () => {
       const eventEmitter = createMockEventEmitter();
       const context = createMockContext({
         eventEmitter,
-        hookId: "hook-1",
+        instanceId: "hook-1",
         queryKey: "test-query-key",
       });
 
@@ -188,7 +188,7 @@ describe("refetchPlugin", () => {
     it("should not add reconnect listeners when refetchOnReconnect is false", () => {
       const plugin = refetchPlugin({ refetchOnReconnect: false });
       const context = createMockContext({
-        hookId: "hook-1",
+        instanceId: "hook-1",
       });
 
       plugin.lifecycle!.onMount!(context);
@@ -204,7 +204,7 @@ describe("refetchPlugin", () => {
         refetchOnReconnect: true,
       });
       const context = createMockContext({
-        hookId: "hook-1",
+        instanceId: "hook-1",
       });
 
       plugin.lifecycle!.onMount!(context);
@@ -229,7 +229,7 @@ describe("refetchPlugin", () => {
         refetchOnReconnect: true,
       });
       const context = createMockContext({
-        hookId: "hook-1",
+        instanceId: "hook-1",
       });
 
       plugin.lifecycle!.onMount!(context);
@@ -249,13 +249,13 @@ describe("refetchPlugin", () => {
       );
     });
 
-    it("should not add listeners when hookId is undefined", () => {
+    it("should not add listeners when instanceId is undefined", () => {
       const plugin = refetchPlugin({
         refetchOnFocus: true,
         refetchOnReconnect: true,
       });
       const context = createMockContext({
-        hookId: undefined,
+        instanceId: undefined,
       });
 
       plugin.lifecycle!.onMount!(context);
@@ -264,13 +264,13 @@ describe("refetchPlugin", () => {
       expect(document.addEventListener).not.toHaveBeenCalled();
     });
 
-    it("should not attempt cleanup when hookId is undefined on unmount", () => {
+    it("should not attempt cleanup when instanceId is undefined on unmount", () => {
       const plugin = refetchPlugin({
         refetchOnFocus: true,
         refetchOnReconnect: true,
       });
       const context = createMockContext({
-        hookId: undefined,
+        instanceId: undefined,
       });
 
       plugin.lifecycle!.onUnmount!(context);
@@ -284,7 +284,7 @@ describe("refetchPlugin", () => {
     it("should not add any listeners when both options are disabled by default", () => {
       const plugin = refetchPlugin();
       const context = createMockContext({
-        hookId: "hook-1",
+        instanceId: "hook-1",
       });
 
       plugin.lifecycle!.onMount!(context);
@@ -296,7 +296,7 @@ describe("refetchPlugin", () => {
     it("should only add focus listeners when only refetchOnFocus is enabled", () => {
       const plugin = refetchPlugin({ refetchOnFocus: true });
       const context = createMockContext({
-        hookId: "hook-1",
+        instanceId: "hook-1",
       });
 
       plugin.lifecycle!.onMount!(context);
@@ -315,7 +315,7 @@ describe("refetchPlugin", () => {
     it("should only add reconnect listeners when only refetchOnReconnect is enabled", () => {
       const plugin = refetchPlugin({ refetchOnReconnect: true });
       const context = createMockContext({
-        hookId: "hook-1",
+        instanceId: "hook-1",
       });
 
       plugin.lifecycle!.onMount!(context);
@@ -333,7 +333,7 @@ describe("refetchPlugin", () => {
     it("should enable refetchOnFocus per-query even when disabled globally", () => {
       const plugin = refetchPlugin({ refetchOnFocus: false });
       const context = createMockContext({
-        hookId: "hook-1",
+        instanceId: "hook-1",
         pluginOptions: { refetchOnFocus: true },
       });
 
@@ -348,7 +348,7 @@ describe("refetchPlugin", () => {
     it("should disable refetchOnFocus per-query even when enabled globally", () => {
       const plugin = refetchPlugin({ refetchOnFocus: true });
       const context = createMockContext({
-        hookId: "hook-1",
+        instanceId: "hook-1",
         pluginOptions: { refetchOnFocus: false },
       });
 
@@ -360,7 +360,7 @@ describe("refetchPlugin", () => {
     it("should enable refetchOnReconnect per-query even when disabled globally", () => {
       const plugin = refetchPlugin({ refetchOnReconnect: false });
       const context = createMockContext({
-        hookId: "hook-1",
+        instanceId: "hook-1",
         pluginOptions: { refetchOnReconnect: true },
       });
 
@@ -375,7 +375,7 @@ describe("refetchPlugin", () => {
     it("should disable refetchOnReconnect per-query even when enabled globally", () => {
       const plugin = refetchPlugin({ refetchOnReconnect: true });
       const context = createMockContext({
-        hookId: "hook-1",
+        instanceId: "hook-1",
         pluginOptions: { refetchOnReconnect: false },
       });
 
@@ -389,7 +389,7 @@ describe("refetchPlugin", () => {
     it("should add focus listener when option changes to enabled", () => {
       const plugin = refetchPlugin({ refetchOnFocus: false });
       const context = createMockContext({
-        hookId: "hook-1",
+        instanceId: "hook-1",
         pluginOptions: { refetchOnFocus: false },
       });
 
@@ -397,7 +397,7 @@ describe("refetchPlugin", () => {
       expect(windowEventListeners.get("focus")).toBeUndefined();
 
       const updatedContext = createMockContext({
-        hookId: "hook-1",
+        instanceId: "hook-1",
         pluginOptions: { refetchOnFocus: true },
       });
 
@@ -412,14 +412,14 @@ describe("refetchPlugin", () => {
     it("should remove focus listener when option changes to disabled", () => {
       const plugin = refetchPlugin({ refetchOnFocus: true });
       const context = createMockContext({
-        hookId: "hook-1",
+        instanceId: "hook-1",
       });
 
       plugin.lifecycle!.onMount!(context);
       expect(windowEventListeners.get("focus")?.size).toBe(1);
 
       const updatedContext = createMockContext({
-        hookId: "hook-1",
+        instanceId: "hook-1",
         pluginOptions: { refetchOnFocus: false },
       });
 
@@ -434,7 +434,7 @@ describe("refetchPlugin", () => {
     it("should add reconnect listener when option changes to enabled", () => {
       const plugin = refetchPlugin({ refetchOnReconnect: false });
       const context = createMockContext({
-        hookId: "hook-1",
+        instanceId: "hook-1",
         pluginOptions: { refetchOnReconnect: false },
       });
 
@@ -442,7 +442,7 @@ describe("refetchPlugin", () => {
       expect(windowEventListeners.get("online")).toBeUndefined();
 
       const updatedContext = createMockContext({
-        hookId: "hook-1",
+        instanceId: "hook-1",
         pluginOptions: { refetchOnReconnect: true },
       });
 
@@ -457,14 +457,14 @@ describe("refetchPlugin", () => {
     it("should remove reconnect listener when option changes to disabled", () => {
       const plugin = refetchPlugin({ refetchOnReconnect: true });
       const context = createMockContext({
-        hookId: "hook-1",
+        instanceId: "hook-1",
       });
 
       plugin.lifecycle!.onMount!(context);
       expect(windowEventListeners.get("online")?.size).toBe(1);
 
       const updatedContext = createMockContext({
-        hookId: "hook-1",
+        instanceId: "hook-1",
         pluginOptions: { refetchOnReconnect: false },
       });
 
@@ -483,7 +483,7 @@ describe("refetchPlugin", () => {
       });
       const eventEmitter = createMockEventEmitter();
       const context = createMockContext({
-        hookId: "hook-1",
+        instanceId: "hook-1",
         queryKey: "old-query-key",
         eventEmitter,
       });
@@ -491,7 +491,7 @@ describe("refetchPlugin", () => {
       plugin.lifecycle!.onMount!(context);
 
       const updatedContext = createMockContext({
-        hookId: "hook-1",
+        instanceId: "hook-1",
         queryKey: "new-query-key",
         eventEmitter,
       });
@@ -508,10 +508,10 @@ describe("refetchPlugin", () => {
       });
     });
 
-    it("should not do anything when hookId is undefined", () => {
+    it("should not do anything when instanceId is undefined", () => {
       const plugin = refetchPlugin({ refetchOnFocus: true });
       const context = createMockContext({
-        hookId: undefined,
+        instanceId: undefined,
       });
 
       plugin.lifecycle!.onUpdate!(context, context);
@@ -522,19 +522,19 @@ describe("refetchPlugin", () => {
   });
 
   describe("multiple hook instances", () => {
-    it("should manage listeners independently for different hookIds", () => {
+    it("should manage listeners independently for different instanceIds", () => {
       const plugin = refetchPlugin({ refetchOnFocus: true });
       const eventEmitter1 = createMockEventEmitter();
       const eventEmitter2 = createMockEventEmitter();
 
       const context1 = createMockContext({
-        hookId: "hook-1",
+        instanceId: "hook-1",
         queryKey: "query-1",
         eventEmitter: eventEmitter1,
       });
 
       const context2 = createMockContext({
-        hookId: "hook-2",
+        instanceId: "hook-2",
         queryKey: "query-2",
         eventEmitter: eventEmitter2,
       });

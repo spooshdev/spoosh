@@ -1,5 +1,10 @@
 # @spoosh/plugin-nextjs
 
+## 0.1.7
+
+- Updated dependencies
+  - @spoosh/core@0.12.0
+
 ## 0.1.6
 
 - Updated dependencies

@@ -98,7 +98,7 @@ export function createUseWrite<
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     type TOptions = any;
 
-    const hookId = useId();
+    const instanceId = useId();
 
     const selectorResultRef = useRef<SelectorResult>({
       call: null,
@@ -147,7 +147,7 @@ export function createUseWrite<
           stateManager,
           eventEmitter,
           pluginExecutor,
-          hookId,
+          instanceId,
           fetchFn: async (fetchOpts) => {
             const pathMethods = (
               api as (path: string) => Record<string, unknown>

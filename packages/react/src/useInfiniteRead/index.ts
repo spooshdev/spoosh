@@ -65,7 +65,7 @@ export function createUseInfiniteRead<
       ...pluginOpts
     } = readOptions;
 
-    const hookId = useId();
+    const instanceId = useId();
 
     const selectorResultRef = useRef<SelectorResult>({
       call: null,
@@ -163,7 +163,7 @@ export function createUseInfiniteRead<
           stateManager,
           eventEmitter,
           pluginExecutor,
-          hookId,
+          instanceId,
           fetchFn: async (opts, signal) => {
             const pathMethods = (
               api as (path: string) => Record<string, unknown>

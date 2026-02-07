@@ -70,7 +70,7 @@ export function initialDataPlugin(): SpooshPlugin<{
         return response;
       }
 
-      if (!context.hookId) {
+      if (!context.instanceId) {
         const response = await next();
 
         if (!response.error) {
@@ -82,7 +82,7 @@ export function initialDataPlugin(): SpooshPlugin<{
         return response;
       }
 
-      if (initialDataAppliedFor.has(context.hookId)) {
+      if (initialDataAppliedFor.has(context.instanceId)) {
         const response = await next();
 
         if (!response.error) {
@@ -97,7 +97,7 @@ export function initialDataPlugin(): SpooshPlugin<{
       const cached = context.stateManager.getCache(context.queryKey);
 
       if (cached?.state?.data !== undefined) {
-        initialDataAppliedFor.add(context.hookId);
+        initialDataAppliedFor.add(context.instanceId);
 
         const response = await next();
 
@@ -110,7 +110,7 @@ export function initialDataPlugin(): SpooshPlugin<{
         return response;
       }
 
-      initialDataAppliedFor.add(context.hookId);
+      initialDataAppliedFor.add(context.instanceId);
 
       context.stateManager.setCache(context.queryKey, {
         state: {
@@ -142,8 +142,8 @@ export function initialDataPlugin(): SpooshPlugin<{
 
     lifecycle: {
       onUnmount(context) {
-        if (context.hookId) {
-          initialDataAppliedFor.delete(context.hookId);
+        if (context.instanceId) {
+          initialDataAppliedFor.delete(context.instanceId);
         }
       },
     },

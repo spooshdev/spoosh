@@ -44,7 +44,7 @@ export type MockContextOptions<TData = unknown, TError = unknown> = {
 
   forceRefetch?: boolean;
 
-  hookId?: string;
+  instanceId?: string;
 
   state?: Partial<OperationState<TData, TError>>;
 
@@ -73,7 +73,7 @@ export function createMockContext<TData = unknown, TError = unknown>(
     operationType = "read",
     pluginOptions,
     forceRefetch,
-    hookId,
+    instanceId,
     request = {},
     temp = new Map(),
     plugins = { get: vi.fn() },
@@ -93,7 +93,7 @@ export function createMockContext<TData = unknown, TError = unknown>(
     plugins,
     pluginOptions,
     forceRefetch,
-    hookId,
+    instanceId,
   } as unknown as PluginContext;
 }
 

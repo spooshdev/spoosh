@@ -1,5 +1,10 @@
 # @spoosh/plugin-throttle
 
+## 0.1.10
+
+- Updated dependencies
+  - @spoosh/core@0.12.0
+
 ## 0.1.9
 
 - Updated dependencies

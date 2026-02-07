@@ -1,6 +1,6 @@
 {
   "name": "@spoosh/plugin-invalidation",
-  "version": "0.5.6",
+  "version": "0.5.7",
   "description": "Cache invalidation plugin for Spoosh - auto-invalidates after mutations",
   "license": "MIT",
   "repository": {
@@ -40,7 +40,7 @@
     "format": "prettier --write 'src/**/*.ts'"
   },
   "peerDependencies": {
-    "@spoosh/core": ">=0.11.1"
+    "@spoosh/core": ">=0.12.0"
   },
   "devDependencies": {
     "@spoosh/core": "workspace:*",

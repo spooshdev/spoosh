@@ -1,5 +1,10 @@
 # @spoosh/plugin-debounce
 
+## 0.2.5
+
+- Updated dependencies
+  - @spoosh/core@0.12.0
+
 ## 0.2.4
 
 - Updated dependencies

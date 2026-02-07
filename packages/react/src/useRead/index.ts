@@ -106,7 +106,7 @@ export function createUseRead<
       ...pluginOpts
     } = (readOptions ?? {}) as BaseReadOptions & PluginOptions["read"];
 
-    const hookId = useId();
+    const instanceId = useId();
 
     const selectorResultRef = useRef<SelectorResult>({
       call: null,
@@ -179,7 +179,7 @@ export function createUseRead<
         stateManager,
         eventEmitter,
         pluginExecutor,
-        hookId,
+        instanceId,
         fetchFn: async (fetchOpts) => {
           const pathMethods = (
             api as (path: string) => Record<string, unknown>
@@ -359,7 +359,7 @@ export function createUseRead<
           stateManager,
           eventEmitter,
           pluginExecutor,
-          hookId,
+          instanceId,
           fetchFn: async (fetchOpts) => {
             const pathMethods = (
               api as (path: string) => Record<string, unknown>
@@ -413,7 +413,7 @@ export function createUseRead<
         stateManager,
         eventEmitter,
         pluginExecutor,
-        hookId,
+        instanceId,
         pluginOpts,
         api,
       ]
