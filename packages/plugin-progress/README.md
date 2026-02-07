@@ -16,7 +16,7 @@ npm install @spoosh/plugin-progress
 import { Spoosh } from "@spoosh/core";
 import { progressPlugin } from "@spoosh/plugin-progress";
 
-const client = new Spoosh<ApiSchema, Error>("/api").use([progressPlugin()]);
+const spoosh = new Spoosh<ApiSchema, Error>("/api").use([progressPlugin()]);
 
 // Enable per-request
 useRead((api) => api("files/:id").GET(), { progress: true });

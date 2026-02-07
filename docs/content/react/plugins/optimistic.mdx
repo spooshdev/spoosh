@@ -22,7 +22,7 @@ import { deduplicationPlugin } from "@spoosh/plugin-deduplication";
 import { invalidationPlugin } from "@spoosh/plugin-invalidation";
 import { optimisticPlugin } from "@spoosh/plugin-optimistic";
 
-const client = new Spoosh<ApiSchema, Error>("/api").use([
+const spoosh = new Spoosh<ApiSchema, Error>("/api").use([
   cachePlugin({ staleTime: 5000 }),
   deduplicationPlugin(),
   invalidationPlugin(),

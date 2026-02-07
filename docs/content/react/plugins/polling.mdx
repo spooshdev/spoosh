@@ -17,7 +17,7 @@ The polling plugin automatically refetches data at specified intervals.
 import { Spoosh } from "@spoosh/core";
 import { pollingPlugin } from "@spoosh/plugin-polling";
 
-const client = new Spoosh<ApiSchema, Error>("/api").use([pollingPlugin()]);
+const spoosh = new Spoosh<ApiSchema, Error>("/api").use([pollingPlugin()]);
 
 // Poll every 5 seconds
 useRead((api) => api("notifications").GET(), { pollingInterval: 5000 });

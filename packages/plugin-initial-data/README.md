@@ -16,7 +16,7 @@ npm install @spoosh/plugin-initial-data
 import { Spoosh } from "@spoosh/core";
 import { initialDataPlugin } from "@spoosh/plugin-initial-data";
 
-const client = new Spoosh<ApiSchema, Error>("/api").use([initialDataPlugin()]);
+const spoosh = new Spoosh<ApiSchema, Error>("/api").use([initialDataPlugin()]);
 
 const { data, isInitialData } = useRead((api) => api("posts").GET(), {
   initialData: prefetchedPosts,

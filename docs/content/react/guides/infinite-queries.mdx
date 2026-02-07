@@ -231,7 +231,7 @@ function MessageThread() {
 `useInfiniteRead` works with plugins like cache and deduplication. Each page is cached independently, and deduplication prevents duplicate requests when scrolling quickly:
 
 ```typescript
-const client = new Spoosh<ApiSchema, Error>("/api").use([
+const spoosh = new Spoosh<ApiSchema, Error>("/api").use([
   cachePlugin({ staleTime: 5000 }),
   deduplicationPlugin(),
   invalidationPlugin(),

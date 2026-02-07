@@ -16,7 +16,7 @@ npm install @spoosh/plugin-retry
 import { Spoosh } from "@spoosh/core";
 import { retryPlugin } from "@spoosh/plugin-retry";
 
-const client = new Spoosh<ApiSchema, Error>("/api").use([
+const spoosh = new Spoosh<ApiSchema, Error>("/api").use([
   retryPlugin({ retries: 3, retryDelay: 1000 }),
 ]);
 

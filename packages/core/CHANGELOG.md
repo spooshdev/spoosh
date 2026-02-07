@@ -209,7 +209,7 @@ const client = createSpoosh<Schema, Error, typeof plugins>({
 ```typescript
 import { Spoosh } from "@spoosh/core";
 
-const client = new Spoosh<Schema, Error>("/api").use([cachePlugin()]);
+const spoosh = new Spoosh<Schema, Error>("/api").use([cachePlugin()]);
 ```
 
 ### Improvements

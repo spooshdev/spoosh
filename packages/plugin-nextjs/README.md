@@ -30,7 +30,7 @@ import { Spoosh } from "@spoosh/core";
 import { nextjsPlugin } from "@spoosh/plugin-nextjs";
 import { invalidationPlugin } from "@spoosh/plugin-invalidation";
 
-const client = new Spoosh<ApiSchema, Error>("/api").use([
+const spoosh = new Spoosh<ApiSchema, Error>("/api").use([
   invalidationPlugin(),
   nextjsPlugin({ serverRevalidator: revalidateAction }),
 ]);
@@ -73,7 +73,7 @@ For apps that primarily fetch data on the client side, set `skipServerRevalidati
 import { Spoosh } from "@spoosh/core";
 import { nextjsPlugin } from "@spoosh/plugin-nextjs";
 
-const client = new Spoosh<ApiSchema, Error>("/api").use([
+const spoosh = new Spoosh<ApiSchema, Error>("/api").use([
   nextjsPlugin({
     serverRevalidator: revalidate,
     skipServerRevalidation: true,
@@ -98,7 +98,7 @@ For apps that rely heavily on server-side rendering or React Server Components, 
 import { Spoosh } from "@spoosh/core";
 import { nextjsPlugin } from "@spoosh/plugin-nextjs";
 
-const client = new Spoosh<ApiSchema, Error>("/api").use([
+const spoosh = new Spoosh<ApiSchema, Error>("/api").use([
   nextjsPlugin({
     serverRevalidator: revalidate,
   }),

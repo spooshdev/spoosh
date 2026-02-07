@@ -49,7 +49,7 @@ import { Spoosh } from "@spoosh/core";
 import { cachePlugin } from "@spoosh/plugin-cache";
 import { retryPlugin } from "@spoosh/plugin-retry";
 
-const client = new Spoosh<ApiSchema, Error>('/api')
+const spoosh = new Spoosh<ApiSchema, Error>('/api')
   .use([cachePlugin({ staleTime: 5000 }), retryPlugin({ retries: 3 })]);
 ```
 
@@ -68,7 +68,7 @@ type ApiSchema = {
   };
 };
 
-const client = new Spoosh<ApiSchema, Error>("/api")
+const spoosh = new Spoosh<ApiSchema, Error>("/api")
   .use([/* plugins */]);
 ```
 
@@ -109,7 +109,7 @@ type ApiSchema = {
   };
 };
 
-const client = new Spoosh<ApiSchema, Error>("/api")
+const spoosh = new Spoosh<ApiSchema, Error>("/api")
   .use([cachePlugin({ staleTime: 5000 })]);
 
 // Fully typed API calls
@@ -207,7 +207,7 @@ import { cachePlugin } from "@spoosh/plugin-cache";
 import { retryPlugin } from "@spoosh/plugin-retry";
 import { deduplicationPlugin } from "@spoosh/plugin-deduplication";
 
-const client = new Spoosh<ApiSchema, Error>("/api").use([
+const spoosh = new Spoosh<ApiSchema, Error>("/api").use([
   cachePlugin({ staleTime: 5000 }),
   retryPlugin({ retries: 3, retryDelay: 1000 }),
   deduplicationPlugin(),

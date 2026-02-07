@@ -10,7 +10,7 @@ This guide covers common authentication patterns with Spoosh.
 Set a static token when creating the client:
 
 ```typescript
-const client = new Spoosh<ApiSchema, Error>("/api", {
+const spoosh = new Spoosh<ApiSchema, Error>("/api", {
   headers: {
     Authorization: "Bearer my-static-token",
   },
@@ -22,7 +22,7 @@ const client = new Spoosh<ApiSchema, Error>("/api", {
 The `headers` option accepts a function that runs before each request. Use this to read tokens from localStorage or state:
 
 ```typescript
-const client = new Spoosh<ApiSchema, Error>("/api", {
+const spoosh = new Spoosh<ApiSchema, Error>("/api", {
   headers: () => {
     const token = localStorage.getItem("accessToken");
 
@@ -36,7 +36,7 @@ const client = new Spoosh<ApiSchema, Error>("/api", {
 The function can also be async — useful when tokens need to be fetched or decrypted:
 
 ```typescript
-const client = new Spoosh<ApiSchema, Error>("/api", {
+const spoosh = new Spoosh<ApiSchema, Error>("/api", {
   headers: async () => {
     const token = await getTokenFromSecureStorage();
 
@@ -50,7 +50,7 @@ const client = new Spoosh<ApiSchema, Error>("/api", {
 For cookie-based auth (session cookies, HttpOnly cookies), set `credentials: "include"`:
 
 ```typescript
-const client = new Spoosh<ApiSchema, Error>("/api", {
+const spoosh = new Spoosh<ApiSchema, Error>("/api", {
   credentials: "include",
 }).use([cachePlugin({ staleTime: 5000 }), invalidationPlugin()]);
 ```
@@ -142,7 +142,7 @@ function tokenRefreshPlugin(): SpooshPlugin {
 Use it in your client:
 
 ```typescript
-const client = new Spoosh<ApiSchema, Error>("/api").use([
+const spoosh = new Spoosh<ApiSchema, Error>("/api").use([
   tokenRefreshPlugin(),
   cachePlugin({ staleTime: 5000 }),
   invalidationPlugin(),
@@ -170,7 +170,7 @@ function authErrorPlugin(): SpooshPlugin {
 ```
 
 ```typescript
-const client = new Spoosh<ApiSchema, Error>("/api").use([
+const spoosh = new Spoosh<ApiSchema, Error>("/api").use([
   tokenRefreshPlugin(),
   authErrorPlugin(),
   cachePlugin({ staleTime: 5000 }),

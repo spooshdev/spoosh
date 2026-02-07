@@ -17,7 +17,7 @@ The cache plugin stores API responses and serves them instantly on subsequent re
 import { Spoosh } from "@spoosh/core";
 import { cachePlugin } from "@spoosh/plugin-cache";
 
-const client = new Spoosh<ApiSchema, Error>("/api").use([
+const spoosh = new Spoosh<ApiSchema, Error>("/api").use([
   cachePlugin({ staleTime: 5000 }),
 ]);
 ```
@@ -64,7 +64,7 @@ import { Spoosh } from "@spoosh/core";
 import { cachePlugin } from "@spoosh/plugin-cache";
 import { invalidationPlugin } from "@spoosh/plugin-invalidation";
 
-const client = new Spoosh<ApiSchema, Error>("/api").use([
+const spoosh = new Spoosh<ApiSchema, Error>("/api").use([
   cachePlugin({ staleTime: 5000 }),
   invalidationPlugin(),
 ]);

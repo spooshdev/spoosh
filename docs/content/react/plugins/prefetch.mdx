@@ -18,7 +18,7 @@ import { Spoosh } from "@spoosh/core";
 import { prefetchPlugin } from "@spoosh/plugin-prefetch";
 import { cachePlugin } from "@spoosh/plugin-cache";
 
-const client = new Spoosh<ApiSchema, Error>("/api").use([
+const spoosh = new Spoosh<ApiSchema, Error>("/api").use([
   prefetchPlugin(),
   cachePlugin({ staleTime: 5000 }),
 ]);

@@ -17,7 +17,7 @@ The throttle plugin limits how often a request can be made. Extra requests immed
 import { Spoosh } from "@spoosh/core";
 import { throttlePlugin } from "@spoosh/plugin-throttle";
 
-const client = new Spoosh<ApiSchema, Error>("/api").use([throttlePlugin()]);
+const spoosh = new Spoosh<ApiSchema, Error>("/api").use([throttlePlugin()]);
 
 // Max 1 request per second - extras return cached data
 const { data } = useRead((api) => api("expensive").GET(), { throttle: 1000 });
@@ -46,7 +46,7 @@ Register the throttle plugin at the end of your plugin list to ensure it blocks 
 ```typescript
 import { Spoosh } from "@spoosh/core";
 
-const client = new Spoosh<ApiSchema, Error>("/api").use([
+const spoosh = new Spoosh<ApiSchema, Error>("/api").use([
   cachePlugin({ staleTime: 5000 }),
   deduplicationPlugin(),
   invalidationPlugin(),

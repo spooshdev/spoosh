@@ -16,7 +16,7 @@ npm install @spoosh/plugin-refetch
 import { Spoosh } from "@spoosh/core";
 import { refetchPlugin } from "@spoosh/plugin-refetch";
 
-const client = new Spoosh<ApiSchema, Error>("/api").use([
+const spoosh = new Spoosh<ApiSchema, Error>("/api").use([
   refetchPlugin({
     refetchOnFocus: true,
     refetchOnReconnect: true,

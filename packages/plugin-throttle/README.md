@@ -16,7 +16,7 @@ npm install @spoosh/plugin-throttle
 import { Spoosh } from "@spoosh/core";
 import { throttlePlugin } from "@spoosh/plugin-throttle";
 
-const client = new Spoosh<ApiSchema, Error>("/api").use([
+const spoosh = new Spoosh<ApiSchema, Error>("/api").use([
   // ...otherPlugins,
   throttlePlugin(),
 ]);

@@ -20,7 +20,7 @@ import { cachePlugin } from "@spoosh/plugin-cache";
 import { invalidationPlugin } from "@spoosh/plugin-invalidation";
 import { deduplicationPlugin } from "@spoosh/plugin-deduplication";
 
-const client = new Spoosh<ApiSchema, Error>("/api").use([
+const spoosh = new Spoosh<ApiSchema, Error>("/api").use([
   cachePlugin({ staleTime: 5000 }),
   invalidationPlugin({ defaultMode: "all" }),
   deduplicationPlugin({ read: "in-flight" }),

@@ -91,7 +91,7 @@ import { deduplicationPlugin } from "@spoosh/plugin-deduplication";
 import { retryPlugin } from "@spoosh/plugin-retry";
 import { refetchPlugin } from "@spoosh/plugin-refetch";
 
-const client = new Spoosh<ApiSchema, Error>("/api").use([
+const spoosh = new Spoosh<ApiSchema, Error>("/api").use([
   cachePlugin({ staleTime: 5000 }),
   deduplicationPlugin(),
   invalidationPlugin(),
@@ -116,7 +116,7 @@ Most plugins work in any order. The exceptions are:
 - **`throttlePlugin`** - should be registered last to block all requests including force fetches
 
 ```typescript
-const client = new Spoosh<ApiSchema, Error>("/api").use([
+const spoosh = new Spoosh<ApiSchema, Error>("/api").use([
   cachePlugin({ staleTime: 5000 }), // Early - check cache first
   deduplicationPlugin(),
   invalidationPlugin(),

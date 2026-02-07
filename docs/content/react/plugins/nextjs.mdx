@@ -36,7 +36,7 @@ import { nextjsPlugin } from "@spoosh/plugin-nextjs";
 import { invalidationPlugin } from "@spoosh/plugin-invalidation";
 import { revalidateAction } from "@/app/actions";
 
-const client = new Spoosh<ApiSchema, Error>("/api").use([
+const spoosh = new Spoosh<ApiSchema, Error>("/api").use([
   cachePlugin({ staleTime: 5000 }),
   deduplicationPlugin(),
   invalidationPlugin(),
@@ -96,7 +96,7 @@ await trigger({
 For apps that primarily fetch data on the client, skip revalidation by default:
 
 ```typescript
-const client = new Spoosh<ApiSchema, Error>("/api").use([
+const spoosh = new Spoosh<ApiSchema, Error>("/api").use([
   nextjsPlugin({
     serverRevalidator: revalidateAction,
     skipServerRevalidation: true, // Skip by default
@@ -115,7 +115,7 @@ await trigger({
 For apps that rely heavily on server rendering, keep the default behavior:
 
 ```typescript
-const client = new Spoosh<ApiSchema, Error>("/api").use([
+const spoosh = new Spoosh<ApiSchema, Error>("/api").use([
   nextjsPlugin({
     serverRevalidator: revalidateAction,
     // skipServerRevalidation: false (default)

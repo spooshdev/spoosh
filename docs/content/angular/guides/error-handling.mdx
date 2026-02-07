@@ -44,7 +44,7 @@ interface ApiError {
   details?: Record<string, string[]>;
 }
 
-const client = new Spoosh<ApiSchema, ApiError>("/api").use([...]);
+const spoosh = new Spoosh<ApiSchema, ApiError>("/api").use([...]);
 ```
 
 ### Per-Route Error Types
@@ -133,7 +133,7 @@ function globalErrorPlugin(): SpooshPlugin {
 ```
 
 ```typescript
-const client = new Spoosh<ApiSchema, Error>("/api").use([
+const spoosh = new Spoosh<ApiSchema, Error>("/api").use([
   globalErrorPlugin(),
   cachePlugin({ staleTime: 5000 }),
   invalidationPlugin(),

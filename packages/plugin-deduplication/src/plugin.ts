@@ -23,7 +23,7 @@ import type {
  * ```ts
  * import { Spoosh } from "@spoosh/core";
  *
- * const client = new Spoosh<ApiSchema, Error>("/api")
+ * const spoosh = new Spoosh<ApiSchema, Error>("/api")
  *   .use([
  *     // ... other plugins
  *     deduplicationPlugin({ read: "in-flight" }),

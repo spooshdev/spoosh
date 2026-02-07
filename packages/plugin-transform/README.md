@@ -20,7 +20,7 @@ Response transforms produce a separate `transformedData` field in `meta` while p
 import { Spoosh } from "@spoosh/core";
 import { transformPlugin } from "@spoosh/plugin-transform";
 
-const client = new Spoosh<ApiSchema, Error>("/api").use([transformPlugin()]);
+const spoosh = new Spoosh<ApiSchema, Error>("/api").use([transformPlugin()]);
 
 const { data, meta } = useRead((api) => api("posts").GET(), {
   transform: (posts) => ({

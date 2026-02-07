@@ -24,7 +24,7 @@ import type {
  * import { Spoosh } from "@spoosh/core";
  * import { nextjsPlugin } from "@spoosh/plugin-nextjs";
  *
- * const client = new Spoosh<ApiSchema, Error>("/api")
+ * const spoosh = new Spoosh<ApiSchema, Error>("/api")
  *   .use([
  *     nextjsPlugin({
  *       serverRevalidator: async (tags, paths) => {

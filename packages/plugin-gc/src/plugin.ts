@@ -96,7 +96,7 @@ function runGarbageCollection(
  * ```ts
  * import { Spoosh } from "@spoosh/core";
  *
- * const client = new Spoosh<ApiSchema, Error>("/api")
+ * const spoosh = new Spoosh<ApiSchema, Error>("/api")
  *   .use([
  *     gcPlugin({
  *       maxAge: 60000,     // Remove entries older than 1 minute

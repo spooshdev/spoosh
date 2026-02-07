@@ -14,7 +14,7 @@ import type { SpooshOptions, SpooshOptionsInput } from "./types/request.types";
  *
  * @example Basic usage
  * ```ts
- * const client = new Spoosh<ApiSchema, Error>('/api')
+ * const spoosh = new Spoosh<ApiSchema, Error>('/api')
  *   .use([cachePlugin(), retryPlugin()]);
  *
  * const { api } = client;
@@ -23,7 +23,7 @@ import type { SpooshOptions, SpooshOptionsInput } from "./types/request.types";
  *
  * @example With default options
  * ```ts
- * const client = new Spoosh<ApiSchema, Error>('/api', {
+ * const spoosh = new Spoosh<ApiSchema, Error>('/api', {
  *   headers: { 'Authorization': 'Bearer token' }
  * }).use([cachePlugin()]);
  * ```
@@ -32,7 +32,7 @@ import type { SpooshOptions, SpooshOptionsInput } from "./types/request.types";
  * ```ts
  * import { createReactSpoosh } from '@spoosh/react';
  *
- * const client = new Spoosh<ApiSchema, Error>('/api')
+ * const spoosh = new Spoosh<ApiSchema, Error>('/api')
  *   .use([cachePlugin(), retryPlugin()]);
  *
  * const { useRead, useWrite } = createReactSpoosh(client);
@@ -63,15 +63,15 @@ export class Spoosh<
    * @example
    * ```ts
    * // Simple usage
-   * const client = new Spoosh<ApiSchema, Error>('/api');
+   * const spoosh = new Spoosh<ApiSchema, Error>('/api');
    *
    * // With default headers
-   * const client = new Spoosh<ApiSchema, Error>('/api', {
+   * const spoosh = new Spoosh<ApiSchema, Error>('/api', {
    *   headers: { 'X-API-Key': 'secret' }
    * });
    *
    * // With XHR transport (narrows available options to XHR-compatible fields)
-   * const client = new Spoosh<ApiSchema, Error>('/api', {
+   * const spoosh = new Spoosh<ApiSchema, Error>('/api', {
    *   transport: 'xhr',
    *   credentials: 'include',
    * });
@@ -99,7 +99,7 @@ export class Spoosh<
    *
    * @example Single use() call
    * ```ts
-   * const client = new Spoosh<Schema, Error>('/api')
+   * const spoosh = new Spoosh<Schema, Error>('/api')
    *   .use([cachePlugin(), retryPlugin(), debouncePlugin()]);
    * ```
    *
@@ -114,7 +114,7 @@ export class Spoosh<
    *
    * @example With plugin configuration
    * ```ts
-   * const client = new Spoosh<Schema, Error>('/api').use([
+   * const spoosh = new Spoosh<Schema, Error>('/api').use([
    *   cachePlugin({ staleTime: 5000 }),
    *   retryPlugin({ retries: 3, retryDelay: 1000 }),
    *   prefetchPlugin(),
@@ -179,7 +179,7 @@ export class Spoosh<
    *
    * @example
    * ```ts
-   * const client = new Spoosh<ApiSchema, Error>('/api').use([...]);
+   * const spoosh = new Spoosh<ApiSchema, Error>('/api').use([...]);
    * const { api } = client;
    *
    * // GET request

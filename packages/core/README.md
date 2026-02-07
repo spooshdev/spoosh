@@ -164,7 +164,7 @@ import { Spoosh } from "@spoosh/core";
 import { cachePlugin } from "@spoosh/plugin-cache";
 import { retryPlugin } from "@spoosh/plugin-retry";
 
-const client = new Spoosh<ApiSchema, Error>("/api", {
+const spoosh = new Spoosh<ApiSchema, Error>("/api", {
   headers: { Authorization: "Bearer token" },
 }).use([cachePlugin({ staleTime: 5000 }), retryPlugin({ retries: 3 })]);
 

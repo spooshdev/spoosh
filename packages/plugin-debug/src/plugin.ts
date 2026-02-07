@@ -33,21 +33,21 @@ type DebugPhase =
  * import { Spoosh } from "@spoosh/core";
  *
  * // Basic usage - logs all phases
- * const client = new Spoosh<ApiSchema, Error>("/api")
+ * const spoosh = new Spoosh<ApiSchema, Error>("/api")
  *   .use([
  *     // ... other plugins
  *     debugPlugin(),
  *   ]);
  *
  * // With cache logging
- * const client = new Spoosh<ApiSchema, Error>("/api")
+ * const spoosh = new Spoosh<ApiSchema, Error>("/api")
  *   .use([
  *     // ... other plugins
  *     debugPlugin({ logCache: true }),
  *   ]);
  *
  * // Custom logger with object shape
- * const client = new Spoosh<ApiSchema, Error>("/api")
+ * const spoosh = new Spoosh<ApiSchema, Error>("/api")
  *   .use([
  *     // ... other plugins
  *     debugPlugin({
@@ -58,7 +58,7 @@ type DebugPhase =
  *   ]);
  *
  * // Disable in production
- * const client = new Spoosh<ApiSchema, Error>("/api")
+ * const spoosh = new Spoosh<ApiSchema, Error>("/api")
  *   .use([
  *     // ... other plugins
  *     debugPlugin({ enabled: process.env.NODE_ENV === 'development' }),

@@ -16,7 +16,7 @@ npm install @spoosh/plugin-qs
 import { Spoosh } from "@spoosh/core";
 import { qsPlugin } from "@spoosh/plugin-qs";
 
-const client = new Spoosh<ApiSchema, Error>("/api").use([
+const spoosh = new Spoosh<ApiSchema, Error>("/api").use([
   qsPlugin({ arrayFormat: "brackets" }),
 ]);
 

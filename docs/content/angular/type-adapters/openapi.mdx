@@ -456,7 +456,7 @@ npx spoosh-openapi import old-api.json -o ./src/schema.ts --include-imports
 import { Spoosh } from "@spoosh/core";
 import type { ApiSchema } from "./schema";
 
-const client = new Spoosh<ApiSchema, Error>("https://api.example.com");
+const spoosh = new Spoosh<ApiSchema, Error>("https://api.example.com");
 ```
 
 ### 3. Generate Documentation

@@ -22,7 +22,7 @@ import { Spoosh } from "@spoosh/core";
 import { optimisticPlugin } from "@spoosh/plugin-optimistic";
 import { invalidationPlugin } from "@spoosh/plugin-invalidation";
 
-const client = new Spoosh<ApiSchema, Error>("/api").use([
+const spoosh = new Spoosh<ApiSchema, Error>("/api").use([
   invalidationPlugin(),
   optimisticPlugin(),
 ]);
