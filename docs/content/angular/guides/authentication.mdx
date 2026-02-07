@@ -59,10 +59,23 @@ Cookies are automatically sent with every request. No manual header management n
 
 ## Token Refresh
 
-Check if the access token is expired before each request. If expired, refresh it and update localStorage:
+Check if the access token is expired before each request. If expired, refresh it and update localStorage.
+
+You can use any HTTP client for the refresh call. This example uses [`createClient`](/docs/angular/core/client#createclient) for type-safe API calls:
 
 ```typescript
-import { SpooshPlugin } from "@spoosh/core";
+import { SpooshPlugin, createClient } from "@spoosh/core";
+
+// Define your API schema
+type ApiSchema = {
+  "auth/refresh": {
+    POST: {
+      data: { accessToken: string; refreshToken: string };
+      body: { refreshToken: string };
+    };
+  };
+  // ... other endpoints
+};
 
 function isTokenExpired(token: string): boolean {
   try {
@@ -73,24 +86,23 @@ function isTokenExpired(token: string): boolean {
   }
 }
 
+const api = createClient<ApiSchema>("/api");
+
 async function refreshAccessToken(): Promise<string | null> {
   const refreshToken = localStorage.getItem("refreshToken");
 
   if (!refreshToken) return null;
 
-  const res = await fetch("/api/auth/refresh", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ refreshToken }),
+  const { data } = await api("auth/refresh").POST({
+    body: { refreshToken },
   });
 
-  if (!res.ok) return null;
+  if (!data) return null;
 
-  const { accessToken, refreshToken: newRefreshToken } = await res.json();
-  localStorage.setItem("accessToken", accessToken);
-  localStorage.setItem("refreshToken", newRefreshToken);
+  localStorage.setItem("accessToken", data.accessToken);
+  localStorage.setItem("refreshToken", data.refreshToken);
 
-  return accessToken;
+  return data.accessToken;
 }
 
 function tokenRefreshPlugin(): SpooshPlugin {
