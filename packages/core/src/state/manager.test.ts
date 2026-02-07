@@ -578,11 +578,11 @@ describe("createStateManager", () => {
       const key = "test-key";
 
       manager.setCache(key, { state: createState({ data: "data" }) });
-      manager.setMeta(key, { isOptimistic: true, retryCount: 3 });
+      manager.setMeta(key, { isOptimistic: true, customValue: 42 });
 
       const cached = manager.getCache(key);
       expect(cached?.meta.get("isOptimistic")).toBe(true);
-      expect(cached?.meta.get("retryCount")).toBe(3);
+      expect(cached?.meta.get("customValue")).toBe(42);
     });
 
     it("should allow setCache to update tags on entry created by setMeta", () => {

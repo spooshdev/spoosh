@@ -3,6 +3,7 @@ import {
   generateTags,
   mergeHeaders,
   resolveRequestBody,
+  isAbortError,
 } from "./utils";
 import type {
   AnyRequestOptions,
@@ -13,13 +14,6 @@ import type {
 import type { Transport, TransportOption } from "./transport/types";
 import { fetchTransport } from "./transport/fetch";
 import { xhrTransport } from "./transport/xhr";
-
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-const isNetworkError = (err: unknown): boolean => err instanceof TypeError;
-
-const isAbortError = (err: unknown): boolean =>
-  err instanceof DOMException && err.name === "AbortError";
 
 export async function executeFetch<TData, TError>(
   baseUrl: string,
@@ -102,10 +96,6 @@ async function executeCoreFetch<TData, TError>(
 
   const inputFields = buildInputFields(requestOptions);
 
-  const maxRetries = requestOptions?.retries ?? 3;
-  const baseDelay = requestOptions?.retryDelay ?? 1000;
-  const retryCount = maxRetries === false ? 0 : maxRetries;
-
   const finalPath = path;
   const url = buildUrl(baseUrl, finalPath, requestOptions?.query);
 
@@ -167,55 +157,41 @@ async function executeCoreFetch<TData, TError>(
     requestOptions?.transport ?? defaultTransport
   );
 
-  let lastError: TError | undefined;
+  try {
+    const result = await resolvedTransport(
+      url,
+      fetchInit,
+      requestOptions?.transportOptions
+    );
 
-  for (let attempt = 0; attempt <= retryCount; attempt++) {
-    try {
-      const result = await resolvedTransport(
-        url,
-        fetchInit,
-        requestOptions?.transportOptions
-      );
-
-      if (result.ok) {
-        return {
-          status: result.status,
-          data: result.data as TData,
-          headers: result.headers,
-          error: undefined,
-          ...inputFields,
-        };
-      }
-
+    if (result.ok) {
       return {
         status: result.status,
-        error: result.data as TError,
+        data: result.data as TData,
         headers: result.headers,
-        data: undefined,
+        error: undefined,
         ...inputFields,
       };
-    } catch (err) {
-      if (isAbortError(err)) {
-        return {
-          status: 0,
-          error: err as TError,
-          data: undefined,
-          aborted: true,
-          ...inputFields,
-        };
-      }
-
-      lastError = err as TError;
-
-      if (isNetworkError(err) && attempt < retryCount) {
-        const delayMs = baseDelay * Math.pow(2, attempt);
-        await delay(delayMs);
-        continue;
-      }
-
-      return { status: 0, error: lastError, data: undefined, ...inputFields };
     }
-  }
 
-  return { status: 0, error: lastError!, data: undefined, ...inputFields };
+    return {
+      status: result.status,
+      error: result.data as TError,
+      headers: result.headers,
+      data: undefined,
+      ...inputFields,
+    };
+  } catch (err) {
+    if (isAbortError(err)) {
+      return {
+        status: 0,
+        error: err as TError,
+        data: undefined,
+        aborted: true,
+        ...inputFields,
+      };
+    }
+
+    return { status: 0, error: err as TError, data: undefined, ...inputFields };
+  }
 }

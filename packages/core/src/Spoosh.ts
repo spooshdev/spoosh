@@ -15,7 +15,7 @@ import type { SpooshOptions, SpooshOptionsInput } from "./types/request.types";
  * @example Basic usage
  * ```ts
  * const spoosh = new Spoosh<ApiSchema, Error>('/api')
- *   .use([cachePlugin(), retryPlugin()]);
+ *   .use([cachePlugin(), debugPlugin()]);
  *
  * const { api } = client;
  * const response = await api("posts").GET();
@@ -33,7 +33,7 @@ import type { SpooshOptions, SpooshOptionsInput } from "./types/request.types";
  * import { create } from '@spoosh/react';
  *
  * const spoosh = new Spoosh<ApiSchema, Error>('/api')
- *   .use([cachePlugin(), retryPlugin()]);
+ *   .use([cachePlugin(), prefetchPlugin()]);
  *
  * const { useRead, useWrite } = create(client);
  *
@@ -97,26 +97,10 @@ export class Spoosh<
    * @param plugins - Array of plugin instances to use
    * @returns A new Spoosh instance with the specified plugins
    *
-   * @example Single use() call
-   * ```ts
-   * const spoosh = new Spoosh<Schema, Error>('/api')
-   *   .use([cachePlugin(), retryPlugin(), debouncePlugin()]);
-   * ```
-   *
-   * @example Chaining use() calls (replaces plugins)
-   * ```ts
-   * const client1 = new Spoosh<Schema, Error>('/api')
-   *   .use([cachePlugin()]);
-   *
-   * // This replaces cachePlugin with retryPlugin
-   * const client2 = client1.use([retryPlugin()]);
-   * ```
-   *
-   * @example With plugin configuration
    * ```ts
    * const spoosh = new Spoosh<Schema, Error>('/api').use([
    *   cachePlugin({ staleTime: 5000 }),
-   *   retryPlugin({ retries: 3, retryDelay: 1000 }),
+   *   invalidationPlugin(),
    *   prefetchPlugin(),
    * ]);
    * ```

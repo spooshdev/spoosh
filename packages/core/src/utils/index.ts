@@ -25,3 +25,4 @@ export {
   type TagMode,
   type TagOptions,
 } from "./path-utils";
+export { isNetworkError, isAbortError } from "./errors";

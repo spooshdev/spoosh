@@ -30,7 +30,10 @@ export type CacheEntry<TData = unknown, TError = unknown> = {
 };
 
 /** RequestOptions in plugin context have headers already resolved to Record */
-export type PluginRequestOptions = Omit<AnyRequestOptions, "headers"> & {
+export type PluginRequestOptions = Omit<
+  AnyRequestOptions,
+  "headers" | "cache"
+> & {
   headers: Record<string, string>;
 };
 
@@ -89,12 +92,9 @@ export type PluginContextInput = Omit<PluginContext, "plugins">;
  *   return next();
  * }
  *
- * // Retry middleware - wrap and retry on error
+ * // Auth middleware - add authentication headers
  * middleware: async (context, next) => {
- *   for (let i = 0; i < 3; i++) {
- *     const result = await next();
- *     if (!result.error) return result;
- *   }
+ *   context.request.headers['Authorization'] = `Bearer ${getToken()}`;
  *   return next();
  * }
  * ```
@@ -174,7 +174,7 @@ export type PluginTypeConfig = {
  * Base interface for Spoosh plugins.
  *
  * Plugins can implement:
- * - `middleware`: Wraps the fetch flow for full control (intercept, retry, transform)
+ * - `middleware`: Wraps the fetch flow for full control (intercept, transform, modify)
  * - `afterResponse`: Called after every response, regardless of early returns
  * - `lifecycle`: Component lifecycle hooks (onMount, onUpdate, onUnmount)
  * - `exports`: Functions/variables accessible to other plugins

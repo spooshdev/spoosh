@@ -1,4 +1,5 @@
-import type { SpooshPlugin } from "@spoosh/core";
+import { isNetworkError, isAbortError } from "@spoosh/core";
+import type { SpooshPlugin, SpooshResponse } from "@spoosh/core";
 
 import type {
   RetryPluginConfig,
@@ -8,6 +9,8 @@ import type {
   RetryReadResult,
   RetryWriteResult,
 } from "./types";
+
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
  * Enables automatic retry for failed requests.
@@ -54,16 +57,30 @@ export function retryPlugin(config: RetryPluginConfig = {}): SpooshPlugin<{
         | RetryReadOptions
         | undefined;
 
-      const retries = pluginOptions?.retries ?? defaultRetries;
-      const retryDelay = pluginOptions?.retryDelay ?? defaultRetryDelay;
+      const retriesConfig = pluginOptions?.retries ?? defaultRetries;
+      const retryDelayConfig = pluginOptions?.retryDelay ?? defaultRetryDelay;
 
-      context.request = {
-        ...context.request,
-        retries,
-        retryDelay,
-      };
+      const maxRetries = retriesConfig === false ? 0 : retriesConfig;
 
-      return next();
+      let res: SpooshResponse<unknown, unknown>;
+
+      for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        res = await next();
+
+        if (isAbortError(res.error)) {
+          return res;
+        }
+
+        if (isNetworkError(res.error) && attempt < maxRetries) {
+          const delayMs = retryDelayConfig * Math.pow(2, attempt);
+          await delay(delayMs);
+          continue;
+        }
+
+        return res;
+      }
+
+      return res!;
     },
   };
 }

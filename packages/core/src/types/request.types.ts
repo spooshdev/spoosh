@@ -3,11 +3,6 @@ import type { HttpMethod } from "./common.types";
 import type { SpooshBody } from "../utils/body";
 import type { TransportOption } from "../transport/types";
 
-export type RetryConfig = {
-  retries?: number | false;
-  retryDelay?: number;
-};
-
 export type HeadersInitOrGetter =
   | HeadersInit
   | (() => HeadersInit | Promise<HeadersInit>);
@@ -92,7 +87,7 @@ export type AnyRequestOptions = BaseRequestOptions & {
 
   /** Transport-specific options passed through to the transport function. */
   transportOptions?: unknown;
-} & Partial<RetryConfig>;
+};
 
 type DynamicParamsOption = {
   params?: Record<string, string | number>;

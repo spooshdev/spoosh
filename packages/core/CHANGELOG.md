@@ -3,6 +3,7 @@
 ## 0.12.1
 
 - Add `priority` option in plugin interface to control execution order of plugins.
+- Remove retries logic from core.
 
 ## 0.12.0
 
