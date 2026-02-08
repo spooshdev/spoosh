@@ -5,9 +5,11 @@ import type {
   DevToolTheme,
   OperationTrace,
   PluginStepEvent,
+  DiffLine,
 } from "../types";
 import { injectStyles, removeStyles } from "./styles/inject";
 import { getThemeCSS, resolveTheme } from "./styles/theme";
+import { computeDiff } from "../store/diff";
 
 interface DevToolPanelOptions {
   store: DevToolStoreInterface;
@@ -29,6 +31,7 @@ export class DevToolPanel {
   private selectedTraceId: string | null = null;
   private activeTab: DetailTab = "data";
   private expandedSteps = new Set<string>();
+  private fullDiffViews = new Set<string>();
   private unsubscribe: (() => void) | null = null;
   private traceCount = 0;
   private showPassedPlugins = false;
@@ -471,24 +474,93 @@ export class DevToolPanel {
           ${step.reason ? `<span class="spoosh-plugin-reason">${this.escapeHtml(step.reason)}</span>` : ""}
           ${hasDiff ? `<span class="spoosh-plugin-expand">${isExpanded ? "▼" : "▶"}</span>` : ""}
         </div>
-        ${isExpanded && step.diff ? this.renderPluginDiff(step.diff) : ""}
+        ${isExpanded && step.diff ? this.renderPluginDiff(stepKey, step.diff) : ""}
       </div>
     `;
   }
 
-  private renderPluginDiff(diff: { before: unknown; after: unknown }): string {
+  private renderPluginDiff(
+    stepKey: string,
+    diff: { before: unknown; after: unknown }
+  ): string {
+    const showFull = this.fullDiffViews.has(stepKey);
+
+    const diffLines = computeDiff(diff.before, diff.after);
+
+    if (showFull) {
+      return `
+        <div class="spoosh-plugin-diff">
+          <div class="spoosh-diff-header">
+            <button class="spoosh-diff-toggle" data-action="toggle-diff-view" data-diff-key="${stepKey}">
+              Show changes only
+            </button>
+          </div>
+          <pre class="spoosh-diff-lines">${this.renderDiffLines(diffLines)}</pre>
+        </div>
+      `;
+    }
+
+    const linesWithContext = this.getDiffLinesWithContext(diffLines, 2);
+
+    if (linesWithContext.length === 0) {
+      return `<div class="spoosh-plugin-diff"><div class="spoosh-empty-tab">No changes</div></div>`;
+    }
+
     return `
       <div class="spoosh-plugin-diff">
-        <div class="spoosh-diff-block">
-          <div class="spoosh-diff-label removed">Before</div>
-          <pre class="spoosh-diff-json">${this.formatJson(diff.before)}</pre>
+        <div class="spoosh-diff-header">
+          <button class="spoosh-diff-toggle" data-action="toggle-diff-view" data-diff-key="${stepKey}">
+            Show full
+          </button>
         </div>
-        <div class="spoosh-diff-block">
-          <div class="spoosh-diff-label added">After</div>
-          <pre class="spoosh-diff-json">${this.formatJson(diff.after)}</pre>
-        </div>
+        <pre class="spoosh-diff-lines">${this.renderDiffLines(linesWithContext)}</pre>
       </div>
     `;
+  }
+
+  private getDiffLinesWithContext(
+    lines: DiffLine[],
+    contextSize: number
+  ): DiffLine[] {
+    const result: DiffLine[] = [];
+    const includeIndices = new Set<number>();
+
+    lines.forEach((line, i) => {
+      if (line.type !== "unchanged") {
+        for (
+          let j = Math.max(0, i - contextSize);
+          j <= Math.min(lines.length - 1, i + contextSize);
+          j++
+        ) {
+          includeIndices.add(j);
+        }
+      }
+    });
+
+    let lastIncluded = -2;
+    const sortedIndices = Array.from(includeIndices).sort((a, b) => a - b);
+
+    for (const i of sortedIndices) {
+      if (lastIncluded >= 0 && i > lastIncluded + 1) {
+        result.push({ type: "unchanged", content: "···" });
+      }
+      const line = lines[i];
+      if (line) result.push(line);
+      lastIncluded = i;
+    }
+
+    return result;
+  }
+
+  private renderDiffLines(lines: DiffLine[]): string {
+    return lines
+      .map((line) => {
+        const prefix =
+          line.type === "added" ? "+" : line.type === "removed" ? "-" : " ";
+        const className = `spoosh-diff-line-${line.type}`;
+        return `<div class="${className}"><span class="spoosh-diff-prefix">${prefix}</span>${this.highlightJson(line.content)}</div>`;
+      })
+      .join("");
   }
 
   private getActivePluginCount(trace: OperationTrace): number {
@@ -568,6 +640,18 @@ export class DevToolPanel {
       } else if (action === "toggle-passed") {
         this.showPassedPlugins = !this.showPassedPlugins;
         this.render();
+      } else if (action === "toggle-diff-view") {
+        const diffKey = target
+          .closest("[data-diff-key]")
+          ?.getAttribute("data-diff-key");
+        if (diffKey) {
+          if (this.fullDiffViews.has(diffKey)) {
+            this.fullDiffViews.delete(diffKey);
+          } else {
+            this.fullDiffViews.add(diffKey);
+          }
+          this.render();
+        }
       } else if (traceId && !action) {
         this.selectedTraceId = traceId;
         this.activeTab = "data";

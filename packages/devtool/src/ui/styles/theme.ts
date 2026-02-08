@@ -633,5 +633,64 @@ export function getThemeCSS(theme: DevToolTheme): string {
     .spoosh-syn-null {
       color: var(--spoosh-text-muted);
     }
+
+    .spoosh-diff-header {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 8px;
+    }
+
+    .spoosh-diff-toggle {
+      background: transparent;
+      border: 1px solid var(--spoosh-border);
+      color: var(--spoosh-text-muted);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s;
+    }
+
+    .spoosh-diff-toggle:hover {
+      border-color: var(--spoosh-text-muted);
+      color: var(--spoosh-text);
+    }
+
+    .spoosh-diff-lines {
+      background: var(--spoosh-surface);
+      border: 1px solid var(--spoosh-border);
+      border-radius: 6px;
+      padding: 8px 0;
+      margin: 0;
+      font-size: 11px;
+      line-height: 1.5;
+      overflow-x: auto;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .spoosh-diff-line-added {
+      background: rgba(63, 185, 80, 0.15);
+      color: ${theme.colors.success};
+      padding: 0 10px;
+    }
+
+    .spoosh-diff-line-removed {
+      background: rgba(248, 81, 73, 0.15);
+      color: ${theme.colors.error};
+      padding: 0 10px;
+    }
+
+    .spoosh-diff-line-unchanged {
+      color: var(--spoosh-text-muted);
+      padding: 0 10px;
+    }
+
+    .spoosh-diff-prefix {
+      display: inline-block;
+      width: 16px;
+      user-select: none;
+    }
   `;
 }
