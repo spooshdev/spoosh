@@ -456,18 +456,30 @@ export class DevToolPanel {
       (a, b) => a.timestamp - b.timestamp
     );
 
-    const stepsByPlugin = new Map<string, PluginStepEvent[]>();
+    const fetchStep = sortedSteps.find((s) => s.plugin === "fetch");
+    const fetchTimestamp = fetchStep?.timestamp ?? Infinity;
 
-    for (const step of sortedSteps) {
-      const existing = stepsByPlugin.get(step.plugin) || [];
+    const beforeFetchSteps = sortedSteps.filter(
+      (s) => s.plugin !== "fetch" && s.timestamp < fetchTimestamp
+    );
+    const afterFetchSteps = sortedSteps.filter(
+      (s) => s.plugin !== "fetch" && s.timestamp >= fetchTimestamp
+    );
+
+    const beforeFetchByPlugin = new Map<string, PluginStepEvent[]>();
+
+    for (const step of beforeFetchSteps) {
+      const existing = beforeFetchByPlugin.get(step.plugin) || [];
       existing.push(step);
-      stepsByPlugin.set(step.plugin, existing);
+      beforeFetchByPlugin.set(step.plugin, existing);
     }
 
-    const pluginsWithEvents = new Set(
-      sortedSteps.filter((s) => s.plugin !== "fetch").map((s) => s.plugin)
+    const pluginsWithBeforeEvents = new Set(
+      beforeFetchSteps.map((s) => s.plugin)
     );
-    const passedPlugins = knownPlugins.filter((p) => !pluginsWithEvents.has(p));
+    const passedPlugins = knownPlugins.filter(
+      (p) => !pluginsWithBeforeEvents.has(p)
+    );
 
     if (sortedSteps.length === 0 && knownPlugins.length === 0) {
       return `<div class="spoosh-empty-tab">No plugin events recorded</div>`;
@@ -476,7 +488,7 @@ export class DevToolPanel {
     const timelineItems: string[] = [];
 
     for (const pluginName of knownPlugins) {
-      const steps = stepsByPlugin.get(pluginName);
+      const steps = beforeFetchByPlugin.get(pluginName);
 
       if (steps && steps.length > 0) {
         for (const step of steps) {
@@ -487,9 +499,11 @@ export class DevToolPanel {
       }
     }
 
-    const fetchSteps = stepsByPlugin.get("fetch") || [];
+    if (fetchStep) {
+      timelineItems.push(this.renderTimelineStep(trace.id, fetchStep));
+    }
 
-    for (const step of fetchSteps) {
+    for (const step of afterFetchSteps) {
       timelineItems.push(this.renderTimelineStep(trace.id, step));
     }
 

@@ -8,6 +8,8 @@ import type {
   TransformOptions,
 } from "./types";
 
+const PLUGIN_NAME = "spoosh:transform";
+
 /**
  * Enables response data transformation.
  *
@@ -49,10 +51,12 @@ export function transformPlugin(): SpooshPlugin<{
   writeResult: TransformWriteResult;
 }> {
   return {
-    name: "spoosh:transform",
+    name: PLUGIN_NAME,
     operations: ["read", "write"],
 
     afterResponse: async (context, response) => {
+      const t = context.tracer?.(PLUGIN_NAME);
+
       const pluginOptions = context.pluginOptions as
         | TransformOptions
         | undefined;
@@ -64,6 +68,11 @@ export function transformPlugin(): SpooshPlugin<{
       }
 
       const transformedData = await responseTransformer(response.data);
+
+      t?.log("Transformed", {
+        color: "success",
+        diff: { before: response.data, after: transformedData },
+      });
 
       context.stateManager.setMeta(context.queryKey, {
         transformedData,

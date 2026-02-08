@@ -1,4 +1,5 @@
 import type { SpooshPlugin } from "@spoosh/core";
+
 import type {
   InitialDataReadOptions,
   InitialDataInfiniteReadOptions,
@@ -6,6 +7,8 @@ import type {
   InitialDataWriteOptions,
   InitialDataWriteResult,
 } from "./types";
+
+const PLUGIN_NAME = "spoosh:initialData";
 
 /**
  * Enables providing initial data for queries.
@@ -50,15 +53,19 @@ export function initialDataPlugin(): SpooshPlugin<{
   const initialDataAppliedFor = new Set<string>();
 
   return {
-    name: "spoosh:initialData",
+    name: PLUGIN_NAME,
     operations: ["read", "infiniteRead"],
 
     middleware: async (context, next) => {
+      const t = context.tracer?.(PLUGIN_NAME);
+
       const pluginOptions = context.pluginOptions as
         | InitialDataReadOptions
         | undefined;
 
       if (pluginOptions?.initialData === undefined) {
+        t?.skip("No initial data", { color: "muted" });
+
         const response = await next();
 
         if (!response.error) {
@@ -97,6 +104,7 @@ export function initialDataPlugin(): SpooshPlugin<{
       const cached = context.stateManager.getCache(context.queryKey);
 
       if (cached?.state?.data !== undefined) {
+        t?.skip("Cache exists", { color: "muted" });
         initialDataAppliedFor.add(context.instanceId);
 
         const response = await next();
@@ -112,6 +120,8 @@ export function initialDataPlugin(): SpooshPlugin<{
 
       initialDataAppliedFor.add(context.instanceId);
 
+      t?.log("Applied initial data", { color: "success" });
+
       context.stateManager.setCache(context.queryKey, {
         state: {
           data: pluginOptions.initialData,
@@ -126,8 +136,11 @@ export function initialDataPlugin(): SpooshPlugin<{
       });
 
       if (pluginOptions.refetchOnInitialData === false) {
+        t?.return("Skip refetch", { color: "info" });
         return { data: pluginOptions.initialData, status: 200 };
       }
+
+      t?.log("Background refetch", { color: "info" });
 
       const response = await next();
 

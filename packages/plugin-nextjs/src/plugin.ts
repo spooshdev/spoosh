@@ -1,4 +1,5 @@
 import type { SpooshPlugin } from "@spoosh/core";
+
 import type {
   NextjsPluginConfig,
   NextjsReadOptions,
@@ -7,6 +8,8 @@ import type {
   NextjsReadResult,
   NextjsWriteResult,
 } from "./types";
+
+const PLUGIN_NAME = "spoosh:nextjs";
 
 /**
  * Next.js integration plugin for server-side revalidation.
@@ -47,13 +50,19 @@ export function nextjsPlugin(config: NextjsPluginConfig = {}): SpooshPlugin<{
   const { serverRevalidator, skipServerRevalidation = false } = config;
 
   return {
-    name: "spoosh:nextjs",
+    name: PLUGIN_NAME,
     operations: ["write"],
 
     middleware: async (context, next) => {
+      const t = context.tracer?.(PLUGIN_NAME);
       const response = await next();
 
-      if (response.error || !serverRevalidator) {
+      if (response.error) {
+        return response;
+      }
+
+      if (!serverRevalidator) {
+        t?.skip("No revalidator", { color: "muted" });
         return response;
       }
 
@@ -65,13 +74,27 @@ export function nextjsPlugin(config: NextjsPluginConfig = {}): SpooshPlugin<{
         pluginOptions?.serverRevalidate ?? !skipServerRevalidation;
 
       if (!shouldRevalidate) {
+        t?.skip("Revalidation disabled", { color: "muted" });
         return response;
       }
 
       const revalidatePaths = pluginOptions?.revalidatePaths ?? [];
 
       if (context.tags.length > 0 || revalidatePaths.length > 0) {
+        const parts: string[] = [];
+
+        if (context.tags.length > 0) {
+          parts.push(`tags: ${context.tags.join(", ")}`);
+        }
+
+        if (revalidatePaths.length > 0) {
+          parts.push(`paths: ${revalidatePaths.join(", ")}`);
+        }
+
+        t?.log(`Revalidated ${parts.join("; ")}`, { color: "success" });
         await serverRevalidator(context.tags, revalidatePaths);
+      } else {
+        t?.skip("Nothing to revalidate", { color: "muted" });
       }
 
       return response;

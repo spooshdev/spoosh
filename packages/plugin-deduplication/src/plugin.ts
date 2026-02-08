@@ -1,4 +1,5 @@
 import type { SpooshPlugin, SpooshResponse } from "@spoosh/core";
+
 import type {
   DeduplicationConfig,
   DeduplicationReadOptions,
@@ -8,6 +9,8 @@ import type {
   DeduplicationWriteResult,
   DedupeMode,
 } from "./types";
+
+const PLUGIN_NAME = "spoosh:deduplication";
 
 /**
  * Prevents duplicate in-flight requests for the same query.
@@ -50,10 +53,12 @@ export function deduplicationPlugin(
   };
 
   return {
-    name: "spoosh:deduplication",
+    name: PLUGIN_NAME,
     operations: ["read", "infiniteRead", "write"],
 
     middleware: async (context, next) => {
+      const t = context.tracer?.(PLUGIN_NAME);
+
       const defaultMode =
         context.operationType === "write"
           ? resolvedConfig.write
@@ -71,10 +76,16 @@ export function deduplicationPlugin(
         );
 
         if (existingPromise) {
+          t?.return("Deduplicated (in-flight)", { color: "success" });
+
           return existingPromise as Promise<
             SpooshResponse<unknown, unknown>
           > as ReturnType<typeof next>;
         }
+      }
+
+      if (dedupeMode === false) {
+        t?.skip("Disabled", { color: "muted" });
       }
 
       return next();

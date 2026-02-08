@@ -9,6 +9,7 @@ import {
   resolvePath,
   resolveTags,
   createInitialState,
+  emitTraceEvent,
 } from "@spoosh/core";
 import type {
   PrefetchPluginConfig,
@@ -16,6 +17,8 @@ import type {
   PrefetchOptions,
 } from "./types";
 import { storePromiseInCache } from "./promise-cache";
+
+const PLUGIN_NAME = "spoosh:prefetch";
 
 /**
  * Provides prefetching capabilities to load data before it's needed.
@@ -72,7 +75,7 @@ export function prefetchPlugin(
   const { timeout } = config;
 
   return {
-    name: "spoosh:prefetch",
+    name: PLUGIN_NAME,
     operations: [],
 
     instanceApi(context: InstanceApiContext) {
@@ -203,8 +206,18 @@ export function prefetchPlugin(
         const existingPromise = stateManager.getPendingPromise(queryKey);
 
         if (existingPromise) {
+          emitTraceEvent(eventEmitter, PLUGIN_NAME, "Deduplicated", {
+            queryKey,
+            color: "muted",
+          });
+
           return existingPromise as Promise<SpooshResponse<TData, TError>>;
         }
+
+        emitTraceEvent(eventEmitter, PLUGIN_NAME, "Prefetching", {
+          queryKey,
+          color: "info",
+        });
 
         const fetchPromise = pluginExecutor.executeMiddleware(
           "read",
