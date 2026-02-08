@@ -4,163 +4,117 @@ import { type Framework } from "@/lib/source";
 const RAW_BASE =
   GITHUB_URL.replace("github.com", "raw.githubusercontent.com") +
   "/main/docs/content";
-const REACT_RAW_BASE = `${RAW_BASE}/react`;
-const ANGULAR_RAW_BASE = `${RAW_BASE}/angular`;
 
-const reactContent = `# Spoosh React
+function generateContent(framework: "react" | "angular"): string {
+  const RAW_BASE_PATH = `${RAW_BASE}/${framework}`;
+  const title = framework === "react" ? "React" : "Angular";
+  const hookType = framework === "react" ? "Hooks" : "Injects";
+
+  const hooksOrInjectsSection =
+    framework === "react"
+      ? `## Hooks
+
+- [Overview](${RAW_BASE_PATH}/hooks/index.mdx): React hooks overview
+- [useRead](${RAW_BASE_PATH}/hooks/use-read.mdx): Fetch data with automatic caching
+- [useWrite](${RAW_BASE_PATH}/hooks/use-write.mdx): Trigger mutations
+- [useInfiniteRead](${RAW_BASE_PATH}/hooks/use-infinite-read.mdx): Paginated data fetching`
+      : `## Injects
+
+- [Overview](${RAW_BASE_PATH}/injects/index.mdx): Angular inject functions overview
+- [injectRead](${RAW_BASE_PATH}/injects/inject-read.mdx): Fetch data with Signals
+- [injectWrite](${RAW_BASE_PATH}/injects/inject-write.mdx): Trigger mutations
+- [injectInfiniteRead](${RAW_BASE_PATH}/injects/inject-infinite-read.mdx): Paginated data fetching`;
+
+  const infiniteQueryHook =
+    framework === "react" ? "useInfiniteRead" : "injectInfiniteRead";
+
+  return `# Spoosh ${title}
 
 > Spoosh is a type-safe API toolkit with a powerful plugin system. Define your API schema once and get full TypeScript autocomplete everywhere.
 
 ## Docs
 
-- [Full Docs](https://spoosh.dev/docs/react/llms-full): Full React documentation.
+- [Full Docs](https://spoosh.dev/docs/${framework}/llms-full): Full ${title} documentation.
 
 ## Getting Started
 
-- [Overview](${REACT_RAW_BASE}/getting-started/index.mdx): Getting started overview
-- [Installation](${REACT_RAW_BASE}/getting-started/installation.mdx): Install and setup Spoosh
-- [First API Call](${REACT_RAW_BASE}/getting-started/first-api-call.mdx): Make your first API call
+- [Overview](${RAW_BASE_PATH}/getting-started/index.mdx): Getting started overview
+- [Installation](${RAW_BASE_PATH}/getting-started/installation.mdx): Install and setup Spoosh
+- [First API Call](${RAW_BASE_PATH}/getting-started/first-api-call.mdx): Make your first API call
 
 ## Core
 
-- [Overview](${REACT_RAW_BASE}/core/index.mdx): Core concepts overview
-- [Client](${REACT_RAW_BASE}/core/client.mdx): Creating and configuring clients
-- [Schema Definition](${REACT_RAW_BASE}/core/schema-definition.mdx): Define your API schema
-- [Response](${REACT_RAW_BASE}/core/response.mdx): Response format and handling
+- [Overview](${RAW_BASE_PATH}/core/index.mdx): Core concepts overview
+- [Client](${RAW_BASE_PATH}/core/client.mdx): Creating and configuring clients
+- [Schema Definition](${RAW_BASE_PATH}/core/schema-definition.mdx): Define your API schema
+- [Response](${RAW_BASE_PATH}/core/response.mdx): Response format and handling
 
-## Hooks
-
-- [Overview](${REACT_RAW_BASE}/hooks/index.mdx): React hooks overview
-- [useRead](${REACT_RAW_BASE}/hooks/use-read.mdx): Fetch data with automatic caching
-- [useWrite](${REACT_RAW_BASE}/hooks/use-write.mdx): Trigger mutations
-- [useInfiniteRead](${REACT_RAW_BASE}/hooks/use-infinite-read.mdx): Paginated data fetching
+${hooksOrInjectsSection}
 
 ## Type Adapters
 
-- [Hono](${REACT_RAW_BASE}/type-adapters/hono.mdx): Hono server type adapter
-- [Elysia](${REACT_RAW_BASE}/type-adapters/elysia.mdx): Elysia server type adapter
-- [OpenAPI](${REACT_RAW_BASE}/type-adapters/openapi.mdx): Bidirectional OpenAPI conversion
+- [Hono](${RAW_BASE_PATH}/type-adapters/hono.mdx): Hono server type adapter
+- [Elysia](${RAW_BASE_PATH}/type-adapters/elysia.mdx): Elysia server type adapter
+- [OpenAPI](${RAW_BASE_PATH}/type-adapters/openapi.mdx): Bidirectional OpenAPI conversion
 
 ## Plugins
 
-- [Overview](${REACT_RAW_BASE}/plugins/index.mdx): Plugin system overview
+- [Overview](${RAW_BASE_PATH}/plugins/index.mdx): Plugin system overview
 
 ### Data Fetching
-- [Cache](${REACT_RAW_BASE}/plugins/cache.mdx): In-memory caching with stale-while-revalidate
-- [Deduplication](${REACT_RAW_BASE}/plugins/deduplication.mdx): Prevent duplicate concurrent requests
-- [Prefetch](${REACT_RAW_BASE}/plugins/prefetch.mdx): Preload data before navigation
-- [Initial Data](${REACT_RAW_BASE}/plugins/initial-data.mdx): SSR hydration support
-- [GC](${REACT_RAW_BASE}/plugins/gc.mdx): Garbage collection for cache management
+- [Cache](${RAW_BASE_PATH}/plugins/cache.mdx): In-memory caching with stale-while-revalidate
+- [Deduplication](${RAW_BASE_PATH}/plugins/deduplication.mdx): Prevent duplicate concurrent requests
+- [Prefetch](${RAW_BASE_PATH}/plugins/prefetch.mdx): Preload data before navigation
+- [Initial Data](${RAW_BASE_PATH}/plugins/initial-data.mdx): SSR hydration support
+- [GC](${RAW_BASE_PATH}/plugins/gc.mdx): Garbage collection for cache management
 
 ### Mutations
-- [Invalidation](${REACT_RAW_BASE}/plugins/invalidation.mdx): Auto-refresh queries after mutations
-- [Optimistic](${REACT_RAW_BASE}/plugins/optimistic.mdx): Optimistic updates for instant UI feedback
+- [Invalidation](${RAW_BASE_PATH}/plugins/invalidation.mdx): Auto-refresh queries after mutations
+- [Optimistic](${RAW_BASE_PATH}/plugins/optimistic.mdx): Optimistic updates for instant UI feedback
 
 ### Resilience
-- [Retry](${REACT_RAW_BASE}/plugins/retry.mdx): Automatic retry with exponential backoff
-- [Throttle](${REACT_RAW_BASE}/plugins/throttle.mdx): Rate limiting for API calls
-- [Debounce](${REACT_RAW_BASE}/plugins/debounce.mdx): Debounce rapid requests
+- [Retry](${RAW_BASE_PATH}/plugins/retry.mdx): Automatic retry with exponential backoff
+- [Throttle](${RAW_BASE_PATH}/plugins/throttle.mdx): Rate limiting for API calls
+- [Debounce](${RAW_BASE_PATH}/plugins/debounce.mdx): Debounce rapid requests
 
 ### Real-time
-- [Polling](${REACT_RAW_BASE}/plugins/polling.mdx): Periodic data refresh
-- [Refetch](${REACT_RAW_BASE}/plugins/refetch.mdx): Refetch on window focus or reconnect
+- [Polling](${RAW_BASE_PATH}/plugins/polling.mdx): Periodic data refresh
+- [Refetch](${RAW_BASE_PATH}/plugins/refetch.mdx): Refetch on window focus or reconnect
 
 ### Data Transformation
-- [Transform](${REACT_RAW_BASE}/plugins/transform.mdx): Transform response data
-- [QS](${REACT_RAW_BASE}/plugins/qs.mdx): Query string serialization for nested objects
+- [Transform](${RAW_BASE_PATH}/plugins/transform.mdx): Transform response data
+- [QS](${RAW_BASE_PATH}/plugins/qs.mdx): Query string serialization for nested objects
 
 ### Framework Integration
-- [Next.js](${REACT_RAW_BASE}/plugins/nextjs.mdx): Server-side cache revalidation
+- [Next.js](${RAW_BASE_PATH}/plugins/nextjs.mdx): Server-side cache revalidation
 
 ### Upload/Download
-- [Progress](${REACT_RAW_BASE}/plugins/progress.mdx): Upload/download progress tracking via XHR
+- [Progress](${RAW_BASE_PATH}/plugins/progress.mdx): Upload/download progress tracking via XHR
 
 ### Developer Tools
-- [Debug](${REACT_RAW_BASE}/plugins/debug.mdx): Debug logging for development
+- [Debug](${RAW_BASE_PATH}/plugins/debug.mdx): Debug logging for development
+
+## Plugin Development
+
+- [Overview](${RAW_BASE_PATH}/plugin-development/index.mdx): Building custom plugins
+- [Middleware Patterns](${RAW_BASE_PATH}/plugin-development/advanced/patterns.mdx): Intercepting and transforming requests
+- [After Response](${RAW_BASE_PATH}/plugin-development/advanced/after-response.mdx): Side effects that always run
+- [Lifecycle Hooks](${RAW_BASE_PATH}/plugin-development/advanced/lifecycle.mdx): Component mount/unmount/update hooks
+- [Meta Storage](${RAW_BASE_PATH}/plugin-development/advanced/meta-storage.mdx): Storing user-facing metadata
+- [Plugin Communication](${RAW_BASE_PATH}/plugin-development/advanced/plugin-communication.mdx): Inter-plugin and intra-plugin communication
+- [Instance API](${RAW_BASE_PATH}/plugin-development/advanced/instance-api.mdx): Adding methods to create() return
+- [Type Safety](${RAW_BASE_PATH}/plugin-development/advanced/type-safety.mdx): Type-safe plugins and options
+- [Architecture](${RAW_BASE_PATH}/plugin-development/advanced/architecture.mdx): Plugin system architecture
+- [Testing](${RAW_BASE_PATH}/plugin-development/advanced/testing.mdx): Testing custom plugins
 
 ## Guides
 
-- [Tags & Invalidation](${REACT_RAW_BASE}/guides/tags-and-invalidation.mdx): Tag modes, custom tags, invalidation strategies
-- [Infinite Queries](${REACT_RAW_BASE}/guides/infinite-queries.mdx): Infinite queries with useInfiniteRead
-- [Authentication](${REACT_RAW_BASE}/guides/authentication.mdx): Token management and auth flows
-- [Error Handling](${REACT_RAW_BASE}/guides/error-handling.mdx): Global, per-request, and typed errors
+- [Tags & Invalidation](${RAW_BASE_PATH}/guides/tags-and-invalidation.mdx): Tag modes, custom tags, invalidation strategies
+- [Infinite Queries](${RAW_BASE_PATH}/guides/infinite-queries.mdx): Infinite queries with ${infiniteQueryHook}
+- [Authentication](${RAW_BASE_PATH}/guides/authentication.mdx): Token management and auth flows
+- [Error Handling](${RAW_BASE_PATH}/guides/error-handling.mdx): Global, per-request, and typed errors
 `;
-
-const angularContent = `# Spoosh Angular
-
-> Spoosh is a type-safe API toolkit with a powerful plugin system. Define your API schema once and get full TypeScript autocomplete everywhere.
-
-## Docs
-
-- [Full Docs](https://spoosh.dev/docs/angular/llms-full): Full Angular documentation.
-
-## Getting Started
-
-- [Overview](${ANGULAR_RAW_BASE}/getting-started/index.mdx): Getting started overview
-- [Installation](${ANGULAR_RAW_BASE}/getting-started/installation.mdx): Install and setup Spoosh
-- [First API Call](${ANGULAR_RAW_BASE}/getting-started/first-api-call.mdx): Make your first API call
-
-## Core
-
-- [Overview](${ANGULAR_RAW_BASE}/core/index.mdx): Core concepts overview
-- [Client](${ANGULAR_RAW_BASE}/core/client.mdx): Creating and configuring clients
-- [Schema Definition](${ANGULAR_RAW_BASE}/core/schema-definition.mdx): Define your API schema
-- [Response](${ANGULAR_RAW_BASE}/core/response.mdx): Response format and handling
-
-## Injects
-
-- [Overview](${ANGULAR_RAW_BASE}/injects/index.mdx): Angular inject functions overview
-- [injectRead](${ANGULAR_RAW_BASE}/injects/inject-read.mdx): Fetch data with Signals
-- [injectWrite](${ANGULAR_RAW_BASE}/injects/inject-write.mdx): Trigger mutations
-- [injectInfiniteRead](${ANGULAR_RAW_BASE}/injects/inject-infinite-read.mdx): Paginated data fetching
-
-## Type Adapters
-
-- [Hono](${ANGULAR_RAW_BASE}/type-adapters/hono.mdx): Hono server type adapter
-- [Elysia](${ANGULAR_RAW_BASE}/type-adapters/elysia.mdx): Elysia server type adapter
-- [OpenAPI](${ANGULAR_RAW_BASE}/type-adapters/openapi.mdx): Bidirectional OpenAPI conversion
-
-## Plugins
-
-- [Overview](${ANGULAR_RAW_BASE}/plugins/index.mdx): Plugin system overview
-
-### Data Fetching
-- [Cache](${ANGULAR_RAW_BASE}/plugins/cache.mdx): In-memory caching with stale-while-revalidate
-- [Deduplication](${ANGULAR_RAW_BASE}/plugins/deduplication.mdx): Prevent duplicate concurrent requests
-- [Prefetch](${ANGULAR_RAW_BASE}/plugins/prefetch.mdx): Preload data before navigation
-- [Initial Data](${ANGULAR_RAW_BASE}/plugins/initial-data.mdx): SSR hydration support
-- [GC](${ANGULAR_RAW_BASE}/plugins/gc.mdx): Garbage collection for cache management
-
-### Mutations
-- [Invalidation](${ANGULAR_RAW_BASE}/plugins/invalidation.mdx): Auto-refresh queries after mutations
-- [Optimistic](${ANGULAR_RAW_BASE}/plugins/optimistic.mdx): Optimistic updates for instant UI feedback
-
-### Resilience
-- [Retry](${ANGULAR_RAW_BASE}/plugins/retry.mdx): Automatic retry with exponential backoff
-- [Throttle](${ANGULAR_RAW_BASE}/plugins/throttle.mdx): Rate limiting for API calls
-- [Debounce](${ANGULAR_RAW_BASE}/plugins/debounce.mdx): Debounce rapid requests
-
-### Real-time
-- [Polling](${ANGULAR_RAW_BASE}/plugins/polling.mdx): Periodic data refresh
-- [Refetch](${ANGULAR_RAW_BASE}/plugins/refetch.mdx): Refetch on window focus or reconnect
-
-### Data Transformation
-- [Transform](${ANGULAR_RAW_BASE}/plugins/transform.mdx): Transform response data
-- [QS](${ANGULAR_RAW_BASE}/plugins/qs.mdx): Query string serialization for nested objects
-
-### Upload/Download
-- [Progress](${ANGULAR_RAW_BASE}/plugins/progress.mdx): Upload/download progress tracking via XHR
-
-### Developer Tools
-- [Debug](${ANGULAR_RAW_BASE}/plugins/debug.mdx): Debug logging for development
-
-## Guides
-
-- [Tags & Invalidation](${ANGULAR_RAW_BASE}/guides/tags-and-invalidation.mdx): Tag modes, custom tags, invalidation strategies
-- [Infinite Queries](${ANGULAR_RAW_BASE}/guides/infinite-queries.mdx): Infinite queries with injectInfiniteRead
-- [Authentication](${ANGULAR_RAW_BASE}/guides/authentication.mdx): Token management and auth flows
-- [Error Handling](${ANGULAR_RAW_BASE}/guides/error-handling.mdx): Global, per-request, and typed errors
-`;
+}
 
 export const revalidate = false;
 
@@ -169,7 +123,9 @@ export async function GET(
   { params }: { params: Promise<{ framework: string }> }
 ) {
   const { framework } = await params;
-  const content = framework === "angular" ? angularContent : reactContent;
+  const content = generateContent(
+    framework === "angular" ? "angular" : "react"
+  );
 
   return new Response(content, {
     headers: {
