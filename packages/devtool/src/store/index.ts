@@ -13,11 +13,17 @@ export interface DevToolStoreConfig {
   maxHistory: number;
 }
 
+interface RegisteredPlugin {
+  name: string;
+  operations: string[];
+}
+
 export class DevToolStore implements DevToolStoreInterface {
   private traces = createRingBuffer<OperationTrace>(50);
   private activeTraces = new Map<string, OperationTrace>();
   private invalidations: InvalidationEvent[] = [];
   private subscribers = new Set<() => void>();
+  private registeredPlugins: RegisteredPlugin[] = [];
   private filters: DevToolFilters = {
     operationTypes: new Set(["read", "write", "infiniteRead"]),
     showSkipped: true,
@@ -26,6 +32,14 @@ export class DevToolStore implements DevToolStoreInterface {
 
   constructor(config: DevToolStoreConfig) {
     this.traces = createRingBuffer<OperationTrace>(config.maxHistory);
+  }
+
+  setRegisteredPlugins(
+    plugins: Array<{ name: string; operations: string[] }>
+  ): void {
+    this.registeredPlugins = plugins.filter(
+      (p) => !p.name.startsWith("spoosh:devtool")
+    );
   }
 
   startTrace(context: TraceContext): OperationTrace {
@@ -49,6 +63,7 @@ export class DevToolStore implements DevToolStoreInterface {
           stage: event.stage,
           timestamp,
           reason: event.meta?.reason,
+          color: event.meta?.color,
           diff: event.meta?.diff,
           meta: event.meta,
         });
@@ -145,6 +160,16 @@ export class DevToolStore implements DevToolStoreInterface {
   ): void {
     this.filters[key] = value;
     this.notify();
+  }
+
+  getKnownPlugins(operationType?: string): string[] {
+    if (!operationType) {
+      return this.registeredPlugins.map((p) => p.name);
+    }
+
+    return this.registeredPlugins
+      .filter((p) => p.operations.includes(operationType))
+      .map((p) => p.name);
   }
 
   subscribe(callback: () => void): () => void {

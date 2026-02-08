@@ -135,6 +135,15 @@ importers:
 
   packages/core: {}
 
+  packages/devtool:
+    devDependencies:
+      '@spoosh/core':
+        specifier: workspace:*
+        version: link:../core
+      '@spoosh/test-utils':
+        specifier: workspace:*
+        version: link:../test-utils
+
   packages/elysia:
     devDependencies:
       '@spoosh/core':
@@ -185,15 +194,6 @@ importers:
         version: link:../test-utils
 
   packages/plugin-debounce:
-    devDependencies:
-      '@spoosh/core':
-        specifier: workspace:*
-        version: link:../core
-      '@spoosh/test-utils':
-        specifier: workspace:*
-        version: link:../test-utils
-
-  packages/plugin-debug:
     devDependencies:
       '@spoosh/core':
         specifier: workspace:*

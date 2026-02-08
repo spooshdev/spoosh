@@ -31,6 +31,7 @@ export class DevToolPanel {
   private expandedSteps = new Set<string>();
   private unsubscribe: (() => void) | null = null;
   private traceCount = 0;
+  private showInactivePlugins = false;
 
   constructor(options: DevToolPanelOptions) {
     this.store = options.store;
@@ -309,21 +310,82 @@ export class DevToolPanel {
   }
 
   private renderPluginsTab(trace: OperationTrace): string {
-    if (trace.steps.length === 0) {
+    const knownPlugins = this.store.getKnownPlugins(trace.operationType);
+
+    if (knownPlugins.length === 0 && trace.steps.length === 0) {
       return `<div class="spoosh-empty-tab">No plugin events recorded</div>`;
     }
 
+    const stepsByPlugin = new Map<string, PluginStepEvent>();
+
+    for (const step of trace.steps) {
+      stepsByPlugin.set(step.plugin, step);
+    }
+
+    const allPlugins =
+      knownPlugins.length > 0 ? knownPlugins : trace.steps.map((s) => s.plugin);
+
+    const activePlugins = allPlugins.filter((name) => stepsByPlugin.has(name));
+    const inactivePlugins = allPlugins.filter(
+      (name) => !stepsByPlugin.has(name)
+    );
+    const inactiveCount = inactivePlugins.length;
+
+    const pluginsToShow = this.showInactivePlugins ? allPlugins : activePlugins;
+
+    if (pluginsToShow.length === 0 && !this.showInactivePlugins) {
+      return `
+        <div class="spoosh-plugins-header">
+          <button class="spoosh-toggle-inactive" data-action="toggle-inactive">
+            Show ${inactiveCount} inactive
+          </button>
+        </div>
+        <div class="spoosh-empty-tab">No plugins ran</div>
+      `;
+    }
+
     return `
+      ${
+        inactiveCount > 0
+          ? `
+        <div class="spoosh-plugins-header">
+          <button class="spoosh-toggle-inactive" data-action="toggle-inactive">
+            ${this.showInactivePlugins ? "Hide" : "Show"} ${inactiveCount} inactive
+          </button>
+        </div>
+      `
+          : ""
+      }
       <div class="spoosh-plugins-list">
-        ${trace.steps.map((step) => this.renderPluginStep(trace.id, step)).join("")}
+        ${pluginsToShow
+          .map((pluginName) => {
+            const step = stepsByPlugin.get(pluginName);
+            return this.renderPluginStep(trace.id, pluginName, step);
+          })
+          .join("")}
       </div>
     `;
   }
 
-  private renderPluginStep(traceId: string, step: PluginStepEvent): string {
-    const stepKey = `${traceId}:${step.plugin}:${step.timestamp}`;
+  private renderPluginStep(
+    traceId: string,
+    pluginName: string,
+    step: PluginStepEvent | undefined
+  ): string {
+    const isInactive = !step;
+    const stepKey = step
+      ? `${traceId}:${step.plugin}:${step.timestamp}`
+      : `${traceId}:${pluginName}:inactive`;
     const isExpanded = this.expandedSteps.has(stepKey);
-    const hasDiff = !!step.diff;
+    const hasDiff = !!step?.diff;
+
+    const colorMap: Record<string, string> = {
+      success: "var(--spoosh-success)",
+      warning: "var(--spoosh-warning)",
+      error: "var(--spoosh-error)",
+      info: "var(--spoosh-primary)",
+      muted: "var(--spoosh-text-muted)",
+    };
 
     const stageColors: Record<string, string> = {
       before: "var(--spoosh-primary)",
@@ -331,12 +393,33 @@ export class DevToolPanel {
       skip: "var(--spoosh-warning)",
     };
 
+    const dotColor = isInactive
+      ? "var(--spoosh-border)"
+      : step?.color
+        ? colorMap[step.color]
+        : stageColors[step?.stage || "before"] || "var(--spoosh-text-muted)";
+
+    const displayName = pluginName.replace("spoosh:", "");
+
+    if (isInactive) {
+      return `
+        <div class="spoosh-plugin-item inactive">
+          <div class="spoosh-plugin-header">
+            <div class="spoosh-plugin-status" style="background: ${dotColor}"></div>
+            <div class="spoosh-plugin-info">
+              <span class="spoosh-plugin-name">${displayName}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
     return `
       <div class="spoosh-plugin-item ${isExpanded ? "expanded" : ""}" data-step-key="${stepKey}">
         <div class="spoosh-plugin-header" data-action="toggle-step">
-          <div class="spoosh-plugin-status" style="background: ${stageColors[step.stage] || "var(--spoosh-text-muted)"}"></div>
+          <div class="spoosh-plugin-status" style="background: ${dotColor}"></div>
           <div class="spoosh-plugin-info">
-            <span class="spoosh-plugin-name">${step.plugin.replace("spoosh:", "")}</span>
+            <span class="spoosh-plugin-name">${displayName}</span>
             <span class="spoosh-plugin-stage">${step.stage}</span>
           </div>
           ${step.reason ? `<span class="spoosh-plugin-reason">${this.escapeHtml(step.reason)}</span>` : ""}
@@ -413,6 +496,9 @@ export class DevToolPanel {
         } else {
           this.expandedSteps.add(stepKey);
         }
+        this.render();
+      } else if (action === "toggle-inactive") {
+        this.showInactivePlugins = !this.showInactivePlugins;
         this.render();
       } else if (traceId && !action) {
         this.selectedTraceId = traceId;

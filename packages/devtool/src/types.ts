@@ -5,6 +5,7 @@ import type {
   EventEmitter,
   TraceEvent,
   TraceStage,
+  TraceColor,
 } from "@spoosh/core";
 
 export interface DevToolConfig {
@@ -76,6 +77,7 @@ export interface PluginStepEvent {
   timestamp: number;
   duration?: number;
   reason?: string;
+  color?: TraceColor;
   diff?: { before: unknown; after: unknown };
   meta?: Record<string, unknown>;
 }
@@ -135,6 +137,10 @@ export interface DevToolStoreInterface {
   getTraces(): OperationTrace[];
   getFilteredTraces(): OperationTrace[];
   getFilters(): DevToolFilters;
+  getKnownPlugins(operationType?: string): string[];
+  setRegisteredPlugins(
+    plugins: Array<{ name: string; operations: string[] }>
+  ): void;
   setFilter<K extends keyof DevToolFilters>(
     key: K,
     value: DevToolFilters[K]

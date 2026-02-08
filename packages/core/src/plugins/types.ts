@@ -492,6 +492,8 @@ export type InstancePluginExecutor = {
   ) => Promise<SpooshResponse<TData, TError>>;
 
   createContext: (input: PluginContextInput) => PluginContext;
+
+  getPlugins: () => readonly SpooshPlugin[];
 };
 
 /**
@@ -511,9 +513,9 @@ export type InstanceApiContext<TApi = unknown> = {
 export type TraceStage = "before" | "after" | "skip";
 
 /**
- * Intent of the operation for filtering in devtools.
+ * Color hint for devtools visualization.
  */
-export type TraceIntent = "read" | "write" | "side-effect";
+export type TraceColor = "success" | "warning" | "error" | "info" | "muted";
 
 /**
  * Structured trace event emitted by plugins.
@@ -526,16 +528,13 @@ export type TraceEvent = {
   /** Execution stage */
   stage: TraceStage;
 
-  /** Operation intent for filtering */
-  intent?: TraceIntent;
-
-  /** Optional data payload (before/after state) */
-  data?: unknown;
-
   /** Metadata including reason and computed diff */
   meta?: {
     /** Human-readable explanation of what happened */
     reason?: string;
+
+    /** Color hint for devtools (success=green, warning=yellow, error=red, info=blue) */
+    color?: TraceColor;
 
     /** Pre-computed diff (plugin decides when diffs matter) */
     diff?: { before: unknown; after: unknown };

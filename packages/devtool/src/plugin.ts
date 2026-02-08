@@ -138,6 +138,11 @@ export function devtool(
     },
 
     instanceApi(ctx) {
+      const plugins = ctx.pluginExecutor
+        .getPlugins()
+        .map((p) => ({ name: p.name, operations: [...p.operations] }));
+      store.setRegisteredPlugins(plugins);
+
       if (!globalPanel) {
         globalPanel = new DevToolPanel({
           store,

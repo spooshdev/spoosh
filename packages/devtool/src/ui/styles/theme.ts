@@ -458,6 +458,29 @@ export function getThemeCSS(theme: DevToolTheme): string {
       background: rgba(248, 81, 73, 0.05);
     }
 
+    .spoosh-plugins-header {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 12px;
+    }
+
+    .spoosh-toggle-inactive {
+      background: transparent;
+      border: 1px solid var(--spoosh-border);
+      color: var(--spoosh-text-muted);
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s;
+    }
+
+    .spoosh-toggle-inactive:hover {
+      border-color: var(--spoosh-text-muted);
+      color: var(--spoosh-text);
+    }
+
     .spoosh-plugins-list {
       display: flex;
       flex-direction: column;
@@ -469,6 +492,18 @@ export function getThemeCSS(theme: DevToolTheme): string {
       border: 1px solid var(--spoosh-border);
       border-radius: 8px;
       overflow: hidden;
+    }
+
+    .spoosh-plugin-item.inactive {
+      opacity: 0.4;
+    }
+
+    .spoosh-plugin-item.inactive .spoosh-plugin-header {
+      cursor: default;
+    }
+
+    .spoosh-plugin-item.inactive .spoosh-plugin-header:hover {
+      background: transparent;
     }
 
     .spoosh-plugin-header {
