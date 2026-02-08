@@ -13,6 +13,7 @@ import type {
 type OptimisticSnapshot = {
   key: string;
   previousData: unknown;
+  afterData: unknown;
 };
 
 /**
@@ -155,13 +156,15 @@ function applyOptimisticUpdate(
       continue;
     }
 
-    snapshots.push({ key, previousData: entry.state.data });
+    const afterData = target.updater(entry.state.data, undefined);
+
+    snapshots.push({ key, previousData: entry.state.data, afterData });
 
     stateManager.setCache(key, {
       previousData: entry.state.data,
       state: {
         ...entry.state,
-        data: target.updater(entry.state.data, undefined),
+        data: afterData,
       },
     });
 
@@ -207,6 +210,29 @@ function rollbackOptimistic(
       stateManager.setMeta(key, { isOptimistic: false });
     }
   }
+}
+
+function buildSnapshotDiff(
+  snapshots: OptimisticSnapshot[],
+  mode: "apply" | "rollback" = "apply"
+): { before: unknown; after: unknown } {
+  const first = snapshots[0]!;
+
+  if (snapshots.length === 1) {
+    return mode === "apply"
+      ? { before: first.previousData, after: first.afterData }
+      : { before: first.afterData, after: first.previousData };
+  }
+
+  return mode === "apply"
+    ? {
+        before: snapshots.map((s) => ({ key: s.key, data: s.previousData })),
+        after: snapshots.map((s) => ({ key: s.key, data: s.afterData })),
+      }
+    : {
+        before: snapshots.map((s) => ({ key: s.key, data: s.afterData })),
+        after: snapshots.map((s) => ({ key: s.key, data: s.previousData })),
+      };
 }
 
 /**
@@ -264,6 +290,8 @@ function rollbackOptimistic(
  * });
  * ```
  */
+const PLUGIN_NAME = "spoosh:optimistic";
+
 export function optimisticPlugin(): SpooshPlugin<{
   readOptions: OptimisticReadOptions;
   writeOptions: OptimisticWriteOptions;
@@ -272,17 +300,21 @@ export function optimisticPlugin(): SpooshPlugin<{
   writeResult: OptimisticWriteResult;
 }> {
   return {
-    name: "spoosh:optimistic",
+    name: PLUGIN_NAME,
     operations: ["write"],
     dependencies: ["spoosh:invalidation"],
 
     middleware: async (context, next) => {
+      const t = context.tracer?.(PLUGIN_NAME);
       const { stateManager } = context;
       const targets = resolveOptimisticTargets(context);
 
-      if (targets.length > 0) {
-        context.plugins.get("spoosh:invalidation")?.setDefaultMode("none");
+      if (targets.length === 0) {
+        t?.skip("No optimistic targets");
+        return next();
       }
+
+      context.plugins.get("spoosh:invalidation")?.setDefaultMode("none");
 
       const immediateTargets = targets.filter((t) => t.timing !== "onSuccess");
       const allSnapshots: OptimisticSnapshot[] = [];
@@ -290,6 +322,12 @@ export function optimisticPlugin(): SpooshPlugin<{
       for (const target of immediateTargets) {
         const snapshots = applyOptimisticUpdate(stateManager, target);
         allSnapshots.push(...snapshots);
+      }
+
+      if (allSnapshots.length > 0) {
+        t?.log(`Applied ${allSnapshots.length} immediate update(s)`, {
+          diff: buildSnapshotDiff(allSnapshots),
+        });
       }
 
       const response = await next();
@@ -301,6 +339,10 @@ export function optimisticPlugin(): SpooshPlugin<{
 
         if (shouldRollback && allSnapshots.length > 0) {
           rollbackOptimistic(stateManager, allSnapshots);
+          t?.log(`Rolled back ${allSnapshots.length} update(s)`, {
+            color: "warning",
+            diff: buildSnapshotDiff(allSnapshots, "rollback"),
+          });
         }
 
         for (const target of targets) {
@@ -314,8 +356,10 @@ export function optimisticPlugin(): SpooshPlugin<{
         }
 
         const onSuccessTargets = targets.filter(
-          (t) => t.timing === "onSuccess"
+          (target) => target.timing === "onSuccess"
         );
+
+        const onSuccessSnapshots: OptimisticSnapshot[] = [];
 
         for (const target of onSuccessTargets) {
           if (!target.updater) continue;
@@ -348,13 +392,28 @@ export function optimisticPlugin(): SpooshPlugin<{
               continue;
             }
 
+            const afterData = target.updater(entry.state.data, response.data);
+
+            onSuccessSnapshots.push({
+              key,
+              previousData: entry.state.data,
+              afterData,
+            });
+
             stateManager.setCache(key, {
               state: {
                 ...entry.state,
-                data: target.updater(entry.state.data, response.data),
+                data: afterData,
               },
             });
           }
+        }
+
+        if (onSuccessSnapshots.length > 0) {
+          t?.log(`Applied ${onSuccessSnapshots.length} onSuccess update(s)`, {
+            color: "success",
+            diff: buildSnapshotDiff(onSuccessSnapshots),
+          });
         }
       }
 
