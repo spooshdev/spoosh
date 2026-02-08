@@ -1,0 +1,543 @@
+---
+title: Lifecycle Hooks
+description: Managing state and resources across component lifecycles
+---
+
+Lifecycle hooks let your plugins react to component mount, update, and unmount events. They're essential for managing resources like timers, event listeners, and tracking per-hook state.
+
+**Why you need lifecycle hooks:**
+
+- Clean up resources when components unmount (timers, listeners, polling)
+- Track which hook instances are currently active
+- React to option changes (refetch when filters change)
+- Initialize state when a hook first mounts
+
+## Lifecycle Overview
+
+```typescript
+interface PluginLifecycle {
+  onMount?: (context: PluginContext) => void | Promise<void>;
+  onUpdate?: (
+    context: PluginContext,
+    previousContext: PluginContext
+  ) => void | Promise<void>;
+  onUnmount?: (context: PluginContext) => void | Promise<void>;
+}
+```
+
+### When Each Hook is Called
+
+| Hook        | React                | Angular              |
+| ----------- | -------------------- | -------------------- |
+| `onMount`   | Component mounts     | Inject executes      |
+| `onUpdate`  | Options/query change | Options/query change |
+| `onUnmount` | Component unmounts   | Component destroyed  |
+
+## State Tracking Patterns
+
+Plugins often need to track state per hook instance. Use `instanceId` for this.
+
+### Pattern: Set&lt;string&gt; for Boolean Tracking
+
+Use a `Set` when you need to track "is this hook doing X?":
+
+```typescript
+const initialDataAppliedFor = new Set<string>();
+
+return {
+  name: "spoosh:initialData",
+  operations: ["read", "infiniteRead"],
+
+  middleware: async (context, next) => {
+    if (!context.instanceId) {
+      return next();
+    }
+
+    if (initialDataAppliedFor.has(context.instanceId)) {
+      return next();
+    }
+
+    const pluginOptions = context.pluginOptions as
+      | InitialDataReadOptions
+      | undefined;
+
+    if (pluginOptions?.initialData === undefined) {
+      return next();
+    }
+
+    initialDataAppliedFor.add(context.instanceId);
+
+    context.stateManager.setCache(context.queryKey, {
+      state: {
+        data: pluginOptions.initialData,
+        error: undefined,
+        timestamp: Date.now(),
+      },
+      tags: context.tags,
+    });
+
+    return next();
+  },
+
+  lifecycle: {
+    onUnmount(context) {
+      if (context.instanceId) {
+        initialDataAppliedFor.delete(context.instanceId);
+      }
+    },
+  },
+};
+```
+
+**When to use:** Tracking "has this happened?" flags like:
+
+- Has initial data been applied?
+- Is this hook currently polling?
+- Has this hook been initialized?
+
+### Pattern: Map&lt;string, T&gt; for Associated Data
+
+Use a `Map` when you need to store data associated with each hook:
+
+```typescript
+const timeouts = new Map<string, ReturnType<typeof setTimeout>>();
+
+const clearPolling = (queryKey: string) => {
+  const timeout = timeouts.get(queryKey);
+
+  if (timeout) {
+    clearTimeout(timeout);
+    timeouts.delete(queryKey);
+  }
+};
+
+return {
+  name: "spoosh:polling",
+  operations: ["read", "infiniteRead"],
+
+  afterResponse(context, response) {
+    const pollingInterval = (
+      context.pluginOptions as PollingReadOptions | undefined
+    )?.pollingInterval;
+
+    if (!pollingInterval) return;
+
+    clearPolling(context.queryKey);
+
+    const timeout = setTimeout(() => {
+      timeouts.delete(context.queryKey);
+
+      context.eventEmitter.emit("refetch", {
+        queryKey: context.queryKey,
+        reason: "polling",
+      });
+    }, pollingInterval);
+
+    timeouts.set(context.queryKey, timeout);
+  },
+
+  lifecycle: {
+    onUnmount(context) {
+      clearPolling(context.queryKey);
+    },
+  },
+};
+```
+
+**When to use:** Storing resources like:
+
+- Timers (setTimeout/setInterval)
+- Event listeners cleanup functions
+- Subscriptions
+
+## CRITICAL: Why instanceId, Not queryKey
+
+**Problem:** Multiple components can share the same queryKey but have different lifecycles.
+
+```typescript
+@Component({
+  selector: "user-profile",
+  template: "<div>{{ data()?.name }}</div>",
+})
+export class UserProfile {
+  userId = input.required<string>();
+  data = injectRead((api) =>
+    api("users/:id").GET({ params: { id: this.userId() } })
+  );
+}
+
+@Component({
+  selector: "user-avatar",
+  template: '<img [src]="data()?.avatar" />',
+})
+export class UserAvatar {
+  userId = input.required<string>();
+  data = injectRead((api) =>
+    api("users/:id").GET({ params: { id: this.userId() } })
+  );
+}
+
+// Same queryKey, different instanceIds
+```
+
+**Wrong approach using queryKey:**
+
+```typescript
+const intervals = new Map<string, NodeJS.Timer>();
+
+lifecycle: {
+  onMount(context) {
+    const interval = setInterval(() => { /* ... */ }, 1000);
+    intervals.set(context.queryKey, interval);
+  },
+
+  onUnmount(context) {
+    const interval = intervals.get(context.queryKey);
+    if (interval) {
+      clearInterval(interval);
+      intervals.delete(context.queryKey);
+    }
+  },
+}
+
+// Timeline:
+// 1. UserProfile mounts → set interval #1 for queryKey
+// 2. UserAvatar mounts → overwrites with interval #2 for queryKey
+// 3. UserProfile unmounts → clears interval #2 (UserAvatar's interval!) ❌
+// 4. UserAvatar still mounted but no interval running ❌
+```
+
+**Correct approach using instanceId:**
+
+```typescript
+const intervals = new Map<string, NodeJS.Timer>();
+
+lifecycle: {
+  onMount(context) {
+    if (!context.instanceId) return;
+
+    const interval = setInterval(() => { /* ... */ }, 1000);
+    intervals.set(context.instanceId, interval);
+  },
+
+  onUnmount(context) {
+    if (!context.instanceId) return;
+
+    const interval = intervals.get(context.instanceId);
+    if (interval) {
+      clearInterval(interval);
+      intervals.delete(context.instanceId);
+    }
+  },
+}
+
+// Timeline:
+// 1. UserProfile mounts → set interval #1 for instanceId-1
+// 2. UserAvatar mounts → set interval #2 for instanceId-2
+// 3. UserProfile unmounts → clears interval #1 only ✅
+// 4. UserAvatar still has interval #2 running ✅
+```
+
+### When to Use instanceId vs queryKey
+
+| Operation             | Use                                         |
+| --------------------- | ------------------------------------------- |
+| **Cache operations**  | `queryKey` - All hooks share cache          |
+| **Per-hook tracking** | `instanceId` - Independent per hook         |
+| **Event listeners**   | `instanceId` - Each hook has own listeners  |
+| **Timers/Intervals**  | `instanceId` - Independent per hook         |
+| **Subscriptions**     | `instanceId` - Independent per hook         |
+| **Shared counters**   | `queryKey` - Count all hooks for this query |
+
+## Cleanup Pattern
+
+**Rule:** If you set up a resource in `onMount`, always clean it up in `onUnmount`.
+
+### Example: Event Listeners
+
+```typescript
+type CleanupFn = () => void;
+
+type HookListenerEntry = {
+  queryKey: string;
+  focusCleanup?: CleanupFn;
+  reconnectCleanup?: CleanupFn;
+};
+
+const listenersByHook = new Map<string, HookListenerEntry>();
+
+const setupFocusListener = (
+  instanceId: string,
+  queryKey: string,
+  eventEmitter: EventEmitter
+) => {
+  const visibilityHandler = () => {
+    if (document.visibilityState === "visible") {
+      eventEmitter.emit("refetch", {
+        queryKey,
+        reason: "focus",
+      });
+    }
+  };
+
+  document.addEventListener("visibilitychange", visibilityHandler);
+
+  const entry = listenersByHook.get(instanceId) ?? { queryKey };
+  entry.focusCleanup = () => {
+    document.removeEventListener("visibilitychange", visibilityHandler);
+  };
+  listenersByHook.set(instanceId, entry);
+};
+
+const cleanupHook = (instanceId: string) => {
+  const entry = listenersByHook.get(instanceId);
+
+  if (entry) {
+    entry.focusCleanup?.();
+    entry.reconnectCleanup?.();
+    listenersByHook.delete(instanceId);
+  }
+};
+
+lifecycle: {
+  onMount(context) {
+    if (!context.instanceId) return;
+
+    const pluginOptions = context.pluginOptions as RefetchReadOptions | undefined;
+    const shouldRefetchOnFocus = pluginOptions?.refetchOnFocus ?? true;
+
+    if (shouldRefetchOnFocus) {
+      setupFocusListener(context.instanceId, context.queryKey, context.eventEmitter);
+    }
+  },
+
+  onUnmount(context) {
+    if (context.instanceId) {
+      cleanupHook(context.instanceId);
+    }
+  },
+}
+```
+
+**Pattern breakdown:**
+
+1. Store cleanup function when setting up listeners
+2. Call cleanup function in onUnmount
+3. Handle multiple listeners with an object/map
+4. Always check instanceId
+
+### Example: Timer Cleanup
+
+```typescript
+const timers = new Map<string, NodeJS.Timer>();
+
+lifecycle: {
+  onMount(context) {
+    if (!context.instanceId) return;
+
+    const timer = setInterval(() => {
+      console.log("Polling", context.queryKey);
+    }, 5000);
+
+    timers.set(context.instanceId, timer);
+  },
+
+  onUnmount(context) {
+    if (!context.instanceId) return;
+
+    const timer = timers.get(context.instanceId);
+
+    if (timer) {
+      clearInterval(timer);
+      timers.delete(context.instanceId);
+    }
+  },
+}
+```
+
+## Handling Option Changes
+
+Use `onUpdate` to react to option changes.
+
+### Basic Pattern
+
+```typescript
+lifecycle: {
+  onUpdate(context, previousContext) {
+    if (previousContext.queryKey !== context.queryKey) {
+      console.log("Query changed");
+    }
+
+    const prevOptions = previousContext.pluginOptions as MyOptions | undefined;
+    const currOptions = context.pluginOptions as MyOptions | undefined;
+
+    if (prevOptions?.interval !== currOptions?.interval) {
+      console.log("Interval changed");
+    }
+  },
+}
+```
+
+### Example: Polling Interval Change
+
+```typescript
+lifecycle: {
+  onUpdate(context, previousContext) {
+    if (previousContext.queryKey !== context.queryKey) {
+      clearPolling(previousContext.queryKey);
+    }
+
+    const pollingInterval = (context.pluginOptions as PollingReadOptions | undefined)?.pollingInterval;
+
+    if (!pollingInterval) {
+      clearPolling(context.queryKey);
+      return;
+    }
+
+    const currentTimeout = timeouts.get(context.queryKey);
+
+    if (!currentTimeout) {
+      scheduleNextPoll(context);
+    }
+  },
+}
+```
+
+## Common Mistakes
+
+### ❌ Tracking by queryKey Instead of instanceId
+
+```typescript
+// WRONG
+const listeners = new Map<string, () => void>();
+
+lifecycle: {
+  onMount(context) {
+    const cleanup = setupListener(context.queryKey);
+    listeners.set(context.queryKey, cleanup);
+  },
+}
+```
+
+**Problem:** Multiple hooks with the same queryKey interfere with each other.
+
+### ❌ Not Checking for instanceId
+
+```typescript
+// WRONG
+lifecycle: {
+  onMount(context) {
+    trackedInstances.add(context.instanceId);
+  },
+}
+```
+
+**Solution:** Always guard
+
+```typescript
+// CORRECT
+lifecycle: {
+  onMount(context) {
+    if (context.instanceId) {
+      trackedInstances.add(context.instanceId);
+    }
+  },
+}
+```
+
+### ❌ Forgetting to Clean Up
+
+```typescript
+// WRONG
+lifecycle: {
+  onMount(context) {
+    setInterval(() => { /* ... */ }, 1000);
+  },
+}
+```
+
+**Solution:** Always clean up
+
+```typescript
+// CORRECT
+const timers = new Map<string, NodeJS.Timer>();
+
+lifecycle: {
+  onMount(context) {
+    if (!context.instanceId) return;
+
+    const timer = setInterval(() => { /* ... */ }, 1000);
+    timers.set(context.instanceId, timer);
+  },
+
+  onUnmount(context) {
+    if (!context.instanceId) return;
+
+    const timer = timers.get(context.instanceId);
+
+    if (timer) {
+      clearInterval(timer);
+      timers.delete(context.instanceId);
+    }
+  },
+}
+```
+
+## Best Practices
+
+### 1. Always Check instanceId
+
+```typescript
+lifecycle: {
+  onMount(context) {
+    if (!context.instanceId) return;
+
+    // ... rest of logic
+  },
+}
+```
+
+### 2. Use Appropriate Data Structure
+
+- `Set<string>` for boolean flags
+- `Map<string, T>` for associated data
+
+### 3. Store Cleanup Functions
+
+```typescript
+type CleanupFn = () => void;
+
+const cleanups = new Map<string, CleanupFn>();
+
+lifecycle: {
+  onMount(context) {
+    if (!context.instanceId) return;
+
+    const cleanup = setupResource();
+    cleanups.set(context.instanceId, cleanup);
+  },
+
+  onUnmount(context) {
+    if (!context.instanceId) return;
+
+    const cleanup = cleanups.get(context.instanceId);
+    cleanup?.();
+    cleanups.delete(context.instanceId);
+  },
+}
+```
+
+### 4. Handle Query Changes
+
+```typescript
+lifecycle: {
+  onUpdate(context, previousContext) {
+    if (!context.instanceId) return;
+
+    if (previousContext.queryKey !== context.queryKey) {
+      cleanupOld(previousContext.queryKey);
+      setupNew(context.queryKey);
+    }
+  },
+}
+```
