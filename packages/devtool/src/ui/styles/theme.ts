@@ -123,6 +123,34 @@ export function getThemeCSS(theme: DevToolTheme): string {
       transform: translateX(0);
     }
 
+    .spoosh-resize-handle {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 3px;
+      height: 100%;
+      cursor: ew-resize;
+      background: transparent;
+      transition: background 0.15s;
+      z-index: 10;
+    }
+
+    .spoosh-resize-handle:hover {
+      background: var(--spoosh-primary);
+    }
+
+    .spoosh-divider-handle {
+      width: 3px;
+      cursor: col-resize;
+      background: var(--spoosh-border);
+      transition: background 0.15s;
+      flex-shrink: 0;
+    }
+
+    .spoosh-divider-handle:hover {
+      background: var(--spoosh-primary);
+    }
+
     .spoosh-panel {
       display: flex;
       height: 100%;
@@ -131,7 +159,6 @@ export function getThemeCSS(theme: DevToolTheme): string {
     .spoosh-list-panel {
       width: 280px;
       min-width: 280px;
-      border-right: 1px solid var(--spoosh-border);
       display: flex;
       flex-direction: column;
       background: var(--spoosh-surface);
@@ -665,9 +692,8 @@ export function getThemeCSS(theme: DevToolTheme): string {
       margin: 0;
       font-size: 11px;
       line-height: 1.5;
-      overflow-x: auto;
-      max-height: 200px;
-      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
     }
 
     .spoosh-diff-line-added {

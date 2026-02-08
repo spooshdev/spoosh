@@ -17,7 +17,12 @@ export function formatQueryParams(
 
   if (entries.length === 0) return null;
 
-  return entries.map(([k, v]) => `${k}=${v ?? ""}`).join("&");
+  return entries
+    .map(
+      ([k, v]) =>
+        `${encodeURIComponent(k)}=${encodeURIComponent(String(v ?? ""))}`
+    )
+    .join("&");
 }
 
 function jsonReplacer(_key: string, value: unknown): unknown {

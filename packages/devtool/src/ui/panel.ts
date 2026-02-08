@@ -30,6 +30,7 @@ type DetailTab = "data" | "request" | "plugins";
 export class DevToolPanel {
   private fab: HTMLButtonElement | null = null;
   private sidebar: HTMLDivElement | null = null;
+  private resizeHandle: HTMLDivElement | null = null;
   private store: DevToolStoreInterface;
   private theme: DevToolTheme;
   private position: string;
@@ -41,11 +42,20 @@ export class DevToolPanel {
   private unsubscribe: (() => void) | null = null;
   private traceCount = 0;
   private showPassedPlugins = false;
+  private sidebarWidth = 700;
+  private listPanelWidth = 280;
+  private isResizing = false;
+  private isResizingDivider = false;
+  private boundHandleMouseMove: (e: MouseEvent) => void;
+  private boundHandleMouseUp: () => void;
+  private dividerHandle: HTMLDivElement | null = null;
 
   constructor(options: DevToolPanelOptions) {
     this.store = options.store;
     this.theme = resolveTheme(options.theme);
     this.position = options.position;
+    this.boundHandleMouseMove = this.handleMouseMove.bind(this);
+    this.boundHandleMouseUp = this.handleMouseUp.bind(this);
   }
 
   mount(): void {
@@ -62,6 +72,7 @@ export class DevToolPanel {
 
     this.sidebar = document.createElement("div");
     this.sidebar.id = "spoosh-devtool-sidebar";
+    this.sidebar.style.width = `${this.sidebarWidth}px`;
     document.body.appendChild(this.sidebar);
 
     this.unsubscribe = this.store.subscribe(() => {
@@ -109,15 +120,21 @@ export class DevToolPanel {
       : null;
 
     this.sidebar.innerHTML = `
+      <div class="spoosh-resize-handle"></div>
       <div class="spoosh-panel">
-        <div class="spoosh-list-panel">
+        <div class="spoosh-list-panel" style="width: ${this.listPanelWidth}px; min-width: ${this.listPanelWidth}px;">
           ${this.renderHeader(filters)}
           ${this.renderTraceList(traces)}
         </div>
+        <div class="spoosh-divider-handle"></div>
         ${selectedTrace ? this.renderDetailPanel(selectedTrace) : this.renderEmptyDetail()}
       </div>
     `;
 
+    this.resizeHandle = this.sidebar.querySelector(".spoosh-resize-handle");
+    this.dividerHandle = this.sidebar.querySelector(".spoosh-divider-handle");
+    this.setupResizeHandler();
+    this.setupDividerHandler();
     this.attachEvents();
   }
 
@@ -591,6 +608,73 @@ export class DevToolPanel {
     };
   }
 
+  private setupResizeHandler(): void {
+    if (!this.resizeHandle) return;
+
+    this.resizeHandle.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      this.isResizing = true;
+      document.body.style.cursor = "ew-resize";
+      document.body.style.userSelect = "none";
+      document.addEventListener("mousemove", this.boundHandleMouseMove);
+      document.addEventListener("mouseup", this.boundHandleMouseUp);
+    });
+  }
+
+  private setupDividerHandler(): void {
+    if (!this.dividerHandle) return;
+
+    this.dividerHandle.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      this.isResizingDivider = true;
+      document.body.style.cursor = "col-resize";
+      document.body.style.userSelect = "none";
+      document.addEventListener("mousemove", this.boundHandleMouseMove);
+      document.addEventListener("mouseup", this.boundHandleMouseUp);
+    });
+  }
+
+  private handleMouseMove(e: MouseEvent): void {
+    if (this.isResizing && this.sidebar) {
+      const newWidth = window.innerWidth - e.clientX;
+      const minWidth = 400;
+      const maxWidth = window.innerWidth - 100;
+
+      this.sidebarWidth = Math.min(Math.max(newWidth, minWidth), maxWidth);
+      this.sidebar.style.width = `${this.sidebarWidth}px`;
+    }
+
+    if (this.isResizingDivider && this.sidebar) {
+      const sidebarRect = this.sidebar.getBoundingClientRect();
+      const newListWidth = e.clientX - sidebarRect.left;
+      const minWidth = 200;
+      const maxWidth = this.sidebarWidth - 200;
+
+      this.listPanelWidth = Math.min(
+        Math.max(newListWidth, minWidth),
+        maxWidth
+      );
+
+      const listPanel = this.sidebar.querySelector(
+        ".spoosh-list-panel"
+      ) as HTMLElement;
+
+      if (listPanel) {
+        listPanel.style.width = `${this.listPanelWidth}px`;
+        listPanel.style.minWidth = `${this.listPanelWidth}px`;
+      }
+    }
+  }
+
+  private handleMouseUp(): void {
+    this.isResizing = false;
+    this.isResizingDivider = false;
+    document.body.style.cursor = "";
+    document.body.style.userSelect = "";
+    document.removeEventListener("mousemove", this.boundHandleMouseMove);
+    document.removeEventListener("mouseup", this.boundHandleMouseUp);
+  }
+
   open(): void {
     this.isOpen = true;
     this.sidebar?.classList.add("open");
@@ -632,10 +716,15 @@ export class DevToolPanel {
       this.unsubscribe = null;
     }
 
+    document.removeEventListener("mousemove", this.boundHandleMouseMove);
+    document.removeEventListener("mouseup", this.boundHandleMouseUp);
+
     this.fab?.remove();
     this.sidebar?.remove();
     this.fab = null;
     this.sidebar = null;
+    this.resizeHandle = null;
+    this.dividerHandle = null;
     removeStyles();
   }
 }
