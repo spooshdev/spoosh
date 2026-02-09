@@ -5,6 +5,7 @@ import type {
   EventTracer,
   TraceOptions,
   TraceStage,
+  DevtoolEvents,
 } from "@spoosh/core";
 
 import { DevToolStore } from "./store";
@@ -98,6 +99,7 @@ export function devtool(
       );
 
       const trace = store.startTrace(context, resolvedPath);
+      context.temp.set("devtool:traceId", trace.id);
 
       const createRequestTracer = (plugin: string): RequestTracer => {
         const step = (
@@ -130,6 +132,7 @@ export function devtool(
 
       if (isDebounced) {
         store.discardTrace(trace.id);
+        context.temp.delete("devtool:traceId");
       } else {
         store.endTrace(trace.id, response as SpooshResponse<unknown, unknown>);
       }
@@ -182,9 +185,29 @@ export function devtool(
         });
       });
 
-      ctx.eventEmitter.on("devtool:event", (event) => {
-        store.addEvent(event);
-      });
+      ctx.eventEmitter.on<DevtoolEvents["spoosh:devtool-event"]>(
+        "spoosh:devtool-event",
+        (event) => {
+          store.addEvent(event);
+        }
+      );
+
+      ctx.eventEmitter.on<DevtoolEvents["spoosh:request-complete"]>(
+        "spoosh:request-complete",
+        ({ context }) => {
+          const traceId = context.temp.get("devtool:traceId") as
+            | string
+            | undefined;
+
+          if (!traceId) return;
+
+          const cacheEntry = context.stateManager.getCache(context.queryKey);
+
+          if (cacheEntry?.meta && cacheEntry.meta.size > 0) {
+            store.setTraceMeta(traceId, Object.fromEntries(cacheEntry.meta));
+          }
+        }
+      );
 
       return {
         devtools: {

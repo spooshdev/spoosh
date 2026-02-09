@@ -100,6 +100,15 @@ export class DevToolStore implements DevToolStoreInterface {
     this.notify();
   }
 
+  setTraceMeta(traceId: string, meta: Record<string, unknown>): void {
+    const trace = this.getTrace(traceId);
+
+    if (trace) {
+      trace.meta = meta;
+      this.notify();
+    }
+  }
+
   getCurrentTrace(queryKey: string): OperationTrace | undefined {
     for (const trace of this.activeTraces.values()) {
       if (trace.queryKey === queryKey) {

@@ -26,13 +26,13 @@ export function renderPluginsTab(ctx: PluginsTabContext): string {
   } = ctx;
   const steps = trace.steps;
 
-  const fetchIndex = steps.findIndex((s) => s.plugin === "fetch");
+  const fetchIndex = steps.findIndex((s) => s.plugin === "spoosh:fetch");
   const fetchStep = fetchIndex >= 0 ? steps[fetchIndex] : undefined;
 
   const beforeFetchSteps =
     fetchIndex >= 0
       ? steps.slice(0, fetchIndex)
-      : steps.filter((s) => s.plugin !== "fetch");
+      : steps.filter((s) => s.plugin !== "spoosh:fetch");
   const afterFetchSteps = fetchIndex >= 0 ? steps.slice(fetchIndex + 1) : [];
 
   const beforeFetchByPlugin = new Map<string, PluginStepEvent[]>();

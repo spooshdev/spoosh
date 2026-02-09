@@ -1,4 +1,4 @@
-import type { RefetchEvent, StandaloneEvent } from "../plugins/types";
+import type { RefetchEvent } from "../plugins/types";
 
 type EventCallback<T = unknown> = (payload: T) => void;
 
@@ -19,16 +19,7 @@ export interface BuiltInEvents {
   refetch: RefetchEvent;
   invalidate: string[];
   refetchAll: void;
-  "devtool:event": StandaloneEvent;
 }
-
-/**
- * Resolves event payload type. Built-in events get their specific type,
- * custom events get `unknown` (or explicit type parameter).
- */
-type EventPayload<E extends string> = E extends keyof BuiltInEvents
-  ? BuiltInEvents[E]
-  : unknown;
 
 export type EventEmitter = {
   /**
@@ -45,10 +36,12 @@ export type EventEmitter = {
    * eventEmitter.on<MyPayload>("my-event", (payload) => { ... });
    * ```
    */
-  on<E extends string>(
+  on<E extends keyof BuiltInEvents>(
     event: E,
-    callback: EventCallback<EventPayload<E>>
+    callback: EventCallback<BuiltInEvents[E]>
   ): () => void;
+
+  on<T = unknown>(event: string, callback: EventCallback<T>): () => void;
 
   /**
    * Emit an event. Built-in events have type-safe payloads.
@@ -62,7 +55,12 @@ export type EventEmitter = {
    * eventEmitter.emit("my-event", myPayload);
    * ```
    */
-  emit<E extends string>(event: E, payload: EventPayload<E>): void;
+  emit<E extends keyof BuiltInEvents>(
+    event: E,
+    payload: BuiltInEvents[E]
+  ): void;
+
+  emit<T = unknown>(event: string, payload: T): void;
 
   off: (event: string, callback: EventCallback) => void;
   clear: () => void;

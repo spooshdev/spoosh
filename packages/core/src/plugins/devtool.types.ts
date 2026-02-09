@@ -3,6 +3,8 @@
  * These types are used by the devtool plugin and plugins that emit trace events.
  */
 
+import { PluginContext } from "./types";
+
 /**
  * Stage of plugin execution for tracing.
  */
@@ -160,6 +162,24 @@ export interface RequestTracer {
 }
 
 /**
+ * Event emitted after all afterResponse hooks complete.
+ * Used by devtools to capture meta snapshots.
+ */
+export interface RequestCompleteEvent {
+  context: PluginContext;
+  queryKey: string;
+}
+
+/**
+ * Internal events used by core and devtools. Not for public use.
+ * @internal
+ */
+export interface DevtoolEvents {
+  "spoosh:devtool-event": StandaloneEvent;
+  "spoosh:request-complete": RequestCompleteEvent;
+}
+
+/**
  * Event tracer API for standalone events not tied to a request lifecycle.
  * Created via `context.eventTracer?.(pluginName)`.
  * Use for async callbacks like polling, debounce completion, gc, etc.
@@ -175,6 +195,3 @@ export interface EventTracer {
   /** Emit a standalone event not tied to a request */
   emit(msg: string, options?: EventOptions): void;
 }
-
-/** @deprecated Use RequestTracer instead */
-export type PluginTracer = RequestTracer;

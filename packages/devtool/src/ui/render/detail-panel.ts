@@ -26,7 +26,7 @@ export interface DetailPanelContext {
 function getActivePluginCount(trace: OperationTrace): number {
   const activePlugins = new Set(
     trace.steps
-      .filter((step) => step.stage !== "skip" && step.plugin !== "fetch")
+      .filter((step) => step.stage !== "skip" && step.plugin !== "spoosh:fetch")
       .map((step) => step.plugin)
   );
   return activePlugins.size;

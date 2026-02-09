@@ -74,6 +74,7 @@ export interface OperationTrace extends PluginContext {
   duration?: number;
   steps: PluginStepEvent[];
   response?: SpooshResponse<unknown, unknown>;
+  meta?: Record<string, unknown>;
 
   addStep(event: TraceEvent, timestamp: number): void;
 }
@@ -118,6 +119,7 @@ export interface DevToolStoreInterface {
   startTrace(context: PluginContext, resolvedPath: string): OperationTrace;
   endTrace(traceId: string, response?: SpooshResponse<unknown, unknown>): void;
   discardTrace(traceId: string): void;
+  setTraceMeta(traceId: string, meta: Record<string, unknown>): void;
   getCurrentTrace(queryKey: string): OperationTrace | undefined;
   getTrace(traceId: string): OperationTrace | undefined;
   getTraces(): OperationTrace[];

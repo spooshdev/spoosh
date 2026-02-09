@@ -1,21 +1,8 @@
 import type { OperationTrace } from "../../../types";
 import { formatJson } from "../../utils";
 
-export function getMetaFromCache(
-  trace: OperationTrace
-): Record<string, unknown> | null {
-  const cacheEntry = trace.stateManager.getCache(trace.queryKey);
-
-  if (!cacheEntry?.meta || cacheEntry.meta.size === 0) {
-    return null;
-  }
-
-  return Object.fromEntries(cacheEntry.meta);
-}
-
 export function getMetaCount(trace: OperationTrace): number {
-  const meta = getMetaFromCache(trace);
-  return meta ? Object.keys(meta).length : 0;
+  return trace.meta ? Object.keys(trace.meta).length : 0;
 }
 
 export function renderMetaTab(trace: OperationTrace): string {
@@ -30,7 +17,7 @@ export function renderMetaTab(trace: OperationTrace): string {
     `;
   }
 
-  const meta = getMetaFromCache(trace);
+  const meta = trace.meta;
 
   if (!meta || Object.keys(meta).length === 0) {
     return `<div class="spoosh-empty-tab">No meta data from plugins</div>`;

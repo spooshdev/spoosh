@@ -22,12 +22,12 @@ const STAGE_COLORS: Record<string, string> = {
   return: "var(--spoosh-success)",
   log: "var(--spoosh-primary)",
   skip: "var(--spoosh-text-muted)",
-  fetch: "var(--spoosh-warning)",
+  "spoosh:fetch": "var(--spoosh-warning)",
 };
 
 export function renderTimelineStep(ctx: TimelineStepContext): string {
   const { traceId, step, isExpanded, fullDiffViews } = ctx;
-  const isFetch = step.plugin === "fetch";
+  const isFetch = step.plugin === "spoosh:fetch";
   const isSkip = step.stage === "skip";
   const stepKey = `${traceId}:${step.plugin}:${step.timestamp}`;
   const hasDiff =

@@ -4,6 +4,7 @@ import type {
   PluginAccessor,
   PluginContext,
   PluginContextInput,
+  DevtoolEvents,
 } from "./types";
 import type { SpooshResponse } from "../types/response.types";
 
@@ -142,7 +143,7 @@ export function createPluginExecutor(
         .map((p) => p.middleware!);
 
       const tracedCoreFetch = async () => {
-        const fetchTracer = context.tracer?.("fetch");
+        const fetchTracer = context.tracer?.("spoosh:fetch");
         fetchTracer?.log("Network request");
         return coreFetch();
       };
@@ -173,6 +174,11 @@ export function createPluginExecutor(
           }
         }
       }
+
+      context.eventEmitter.emit<DevtoolEvents["spoosh:request-complete"]>(
+        "spoosh:request-complete",
+        { context, queryKey: context.queryKey }
+      );
 
       return response;
     },
