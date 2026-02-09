@@ -5,10 +5,11 @@ import { getLogo } from "../utils";
 export interface HeaderRenderContext {
   filters: { operationTypes: Set<OperationType> };
   showSettings: boolean;
+  searchQuery: string;
 }
 
 export function renderHeader(ctx: HeaderRenderContext): string {
-  const { filters, showSettings } = ctx;
+  const { filters, showSettings, searchQuery } = ctx;
 
   return `
     <div class="spoosh-header">
@@ -34,6 +35,13 @@ export function renderHeader(ctx: HeaderRenderContext): string {
           </svg>
         </button>
       </div>
+    </div>
+    <div class="spoosh-search">
+      <svg class="spoosh-search-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/>
+        <path d="M21 21l-4.35-4.35"/>
+      </svg>
+      <input type="text" class="spoosh-search-input" placeholder="Search path, method..." value="${searchQuery}">
     </div>
     <div class="spoosh-filters">
       ${(["read", "write", "infiniteRead"] as const)

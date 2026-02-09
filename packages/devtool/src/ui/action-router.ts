@@ -16,10 +16,12 @@ export type ActionIntent =
   | { type: "toggle-passed" }
   | { type: "change-setting"; setting: string; value: boolean }
   | { type: "dismiss-settings" }
-  | { type: "copy-query-key"; queryKey: string };
+  | { type: "copy-query-key"; queryKey: string }
+  | { type: "search"; query: string };
 
 export interface ActionRouterCallbacks {
   onRender: () => void;
+  onPartialRender: () => void;
   onClose: () => void;
 }
 
@@ -33,7 +35,7 @@ export function createActionRouter(
   store: DevToolStoreInterface,
   callbacks: ActionRouterCallbacks
 ): ActionRouter {
-  const { onRender, onClose } = callbacks;
+  const { onRender, onPartialRender, onClose } = callbacks;
   function parseIntent(event: MouseEvent | Event): ActionIntent | null {
     const target = event.target as HTMLElement;
 
@@ -125,6 +127,14 @@ export function createActionRouter(
       return { type: "change-setting", setting, value: checkbox.checked };
     }
 
+    if (
+      target.classList.contains("spoosh-search-input") &&
+      event.type === "input"
+    ) {
+      const input = target as HTMLInputElement;
+      return { type: "search", query: input.value };
+    }
+
     return null;
   }
 
@@ -186,6 +196,11 @@ export function createActionRouter(
 
       case "copy-query-key":
         navigator.clipboard.writeText(intent.queryKey);
+        return;
+
+      case "search":
+        viewModel.setSearchQuery(intent.query);
+        onPartialRender();
         return;
     }
 

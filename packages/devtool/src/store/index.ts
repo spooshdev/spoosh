@@ -128,14 +128,26 @@ export class DevToolStore implements DevToolStoreInterface {
     return [...completed, ...active];
   }
 
-  getFilteredTraces(): OperationTrace[] {
-    if (this.filters.operationTypes.size === 0) {
-      return this.getTraces();
+  getFilteredTraces(searchQuery?: string): OperationTrace[] {
+    let traces = this.getTraces();
+
+    if (this.filters.operationTypes.size > 0) {
+      traces = traces.filter((trace) =>
+        this.filters.operationTypes.has(trace.operationType)
+      );
     }
 
-    return this.getTraces().filter((trace) =>
-      this.filters.operationTypes.has(trace.operationType)
-    );
+    if (searchQuery && searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      traces = traces.filter(
+        (trace) =>
+          trace.path.toLowerCase().includes(query) ||
+          trace.queryKey.toLowerCase().includes(query) ||
+          trace.method.toLowerCase().includes(query)
+      );
+    }
+
+    return traces;
   }
 
   getActiveCount(): number {

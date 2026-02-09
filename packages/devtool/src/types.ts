@@ -121,7 +121,7 @@ export interface DevToolStoreInterface {
   getCurrentTrace(queryKey: string): OperationTrace | undefined;
   getTrace(traceId: string): OperationTrace | undefined;
   getTraces(): OperationTrace[];
-  getFilteredTraces(): OperationTrace[];
+  getFilteredTraces(searchQuery?: string): OperationTrace[];
   getActiveCount(): number;
   getFilters(): DevToolFilters;
   getKnownPlugins(operationType?: string): string[];

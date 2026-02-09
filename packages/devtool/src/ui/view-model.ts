@@ -16,6 +16,7 @@ export interface ViewModelState {
   sidebarWidth: number;
   listPanelWidth: number;
   requestsPanelHeight: number;
+  searchQuery: string;
 }
 
 type Listener = () => void;
@@ -34,6 +35,7 @@ const DEFAULT_STATE: ViewModelState = {
   sidebarWidth: 700,
   listPanelWidth: 280,
   requestsPanelHeight: 0.8,
+  searchQuery: "",
 };
 
 export interface ViewModel {
@@ -56,6 +58,7 @@ export interface ViewModel {
   setSidebarWidth(width: number): void;
   setListPanelWidth(width: number): void;
   setRequestsPanelHeight(ratio: number): void;
+  setSearchQuery(query: string): void;
 
   clearExpanded(): void;
   clearAll(store: DevToolStoreInterface): void;
@@ -90,6 +93,11 @@ export function createViewModel(): ViewModel {
         state = {
           ...state,
           showPassedPlugins: settings.showPassedPlugins ?? false,
+          sidebarWidth: settings.sidebarWidth ?? DEFAULT_STATE.sidebarWidth,
+          listPanelWidth:
+            settings.listPanelWidth ?? DEFAULT_STATE.listPanelWidth,
+          requestsPanelHeight:
+            settings.requestsPanelHeight ?? DEFAULT_STATE.requestsPanelHeight,
         };
       }
     } catch {
@@ -97,17 +105,28 @@ export function createViewModel(): ViewModel {
     }
   }
 
+  let saveTimeout: ReturnType<typeof setTimeout> | null = null;
+
   function saveSettings(): void {
-    try {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({
-          showPassedPlugins: state.showPassedPlugins,
-        })
-      );
-    } catch {
-      // Ignore localStorage errors
+    if (saveTimeout) {
+      clearTimeout(saveTimeout);
     }
+
+    saveTimeout = setTimeout(() => {
+      try {
+        localStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify({
+            showPassedPlugins: state.showPassedPlugins,
+            sidebarWidth: state.sidebarWidth,
+            listPanelWidth: state.listPanelWidth,
+            requestsPanelHeight: state.requestsPanelHeight,
+          })
+        );
+      } catch {
+        // Ignore localStorage errors
+      }
+    }, 300);
   }
 
   function notify(): void {
@@ -195,14 +214,22 @@ export function createViewModel(): ViewModel {
 
   function setSidebarWidth(width: number): void {
     state = { ...state, sidebarWidth: width };
+    saveSettings();
   }
 
   function setListPanelWidth(width: number): void {
     state = { ...state, listPanelWidth: width };
+    saveSettings();
   }
 
   function setRequestsPanelHeight(ratio: number): void {
     state = { ...state, requestsPanelHeight: ratio };
+    saveSettings();
+  }
+
+  function setSearchQuery(query: string): void {
+    state = { ...state, searchQuery: query };
+    notify();
   }
 
   function clearExpanded(): void {
@@ -255,6 +282,7 @@ export function createViewModel(): ViewModel {
     setSidebarWidth,
     setListPanelWidth,
     setRequestsPanelHeight,
+    setSearchQuery,
     clearExpanded,
     clearAll,
     toggleFilter,

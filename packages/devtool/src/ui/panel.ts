@@ -48,6 +48,8 @@ export class DevToolPanel {
 
     this.actionRouter = createActionRouter(this.viewModel, this.store, {
       onRender: () => this.renderImmediate(),
+      onPartialRender: () =>
+        this.renderScheduler.immediate(() => this.partialUpdate()),
       onClose: () => this.close(),
     });
   }
@@ -101,7 +103,7 @@ export class DevToolPanel {
     if (!this.sidebar) return;
 
     const state = this.viewModel.getState();
-    const traces = this.store.getFilteredTraces();
+    const traces = this.store.getFilteredTraces(state.searchQuery);
     const events = this.store.getEvents();
     const selectedTrace = state.selectedTraceId
       ? traces.find((t) => t.id === state.selectedTraceId)
@@ -261,7 +263,7 @@ export class DevToolPanel {
     const tabContent = this.sidebar.querySelector(".spoosh-tab-content");
     const savedScrollTop = tabContent?.scrollTop ?? 0;
 
-    const traces = this.store.getFilteredTraces();
+    const traces = this.store.getFilteredTraces(state.searchQuery);
     const events = this.store.getEvents();
     const filters = this.store.getFilters();
     const activeCount = this.store.getActiveCount();
@@ -286,7 +288,7 @@ export class DevToolPanel {
       <div class="spoosh-resize-handle"></div>
       <div class="spoosh-panel">
         <div class="spoosh-list-panel" style="width: ${state.listPanelWidth}px; min-width: ${state.listPanelWidth}px;">
-          ${renderHeader({ filters, showSettings: state.showSettings })}
+          ${renderHeader({ filters, showSettings: state.showSettings, searchQuery: state.searchQuery })}
           <div class="spoosh-list-content">
             <div class="spoosh-requests-section" style="flex: ${state.requestsPanelHeight};">
               <div class="spoosh-section-header">
@@ -386,6 +388,14 @@ export class DevToolPanel {
     };
 
     this.sidebar.onchange = (e) => {
+      const intent = this.actionRouter.parseIntent(e);
+
+      if (intent) {
+        this.actionRouter.dispatch(intent);
+      }
+    };
+
+    this.sidebar.oninput = (e) => {
       const intent = this.actionRouter.parseIntent(e);
 
       if (intent) {

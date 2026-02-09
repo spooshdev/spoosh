@@ -118,6 +118,35 @@ export const componentsCSS = `
     color: var(--spoosh-primary);
   }
 
+  /* ===== Search ===== */
+  .spoosh-search {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--spoosh-border);
+  }
+
+  .spoosh-search-icon {
+    color: var(--spoosh-text-muted);
+    flex-shrink: 0;
+  }
+
+  .spoosh-search-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--spoosh-text);
+    font-size: 11px;
+    font-family: inherit;
+    outline: none;
+  }
+
+  .spoosh-search-input::placeholder {
+    color: var(--spoosh-text-muted);
+    opacity: 0.6;
+  }
+
   /* ===== Section Header ===== */
   .spoosh-section-header {
     display: flex;
