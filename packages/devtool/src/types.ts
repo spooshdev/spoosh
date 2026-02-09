@@ -69,6 +69,7 @@ export interface OperationTrace extends PluginContext {
   id: string;
   path: string;
   startTime: number;
+  timestamp: number;
   endTime?: number;
   duration?: number;
   steps: PluginStepEvent[];
@@ -121,6 +122,7 @@ export interface DevToolStoreInterface {
   getTrace(traceId: string): OperationTrace | undefined;
   getTraces(): OperationTrace[];
   getFilteredTraces(): OperationTrace[];
+  getActiveCount(): number;
   getFilters(): DevToolFilters;
   getKnownPlugins(operationType?: string): string[];
   setRegisteredPlugins(

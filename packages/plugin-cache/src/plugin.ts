@@ -1,4 +1,4 @@
-import type { SpooshPlugin, InstanceApiContext } from "@spoosh/core";
+import type { SpooshPlugin } from "@spoosh/core";
 
 import type {
   CachePluginConfig,

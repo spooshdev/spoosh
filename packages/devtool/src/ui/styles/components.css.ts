@@ -145,6 +145,11 @@ export const componentsCSS = `
     color: var(--spoosh-text-muted);
   }
 
+  .spoosh-active-count {
+    color: var(--spoosh-primary);
+    font-weight: 600;
+  }
+
   /* ===== Trace List ===== */
   .spoosh-trace {
     display: flex;
@@ -284,7 +289,27 @@ export const componentsCSS = `
 
   .spoosh-detail-meta {
     display: flex;
+    align-items: center;
     gap: 6px;
+  }
+
+  /* ===== Copy Button ===== */
+  .spoosh-copy-btn {
+    background: transparent;
+    border: 1px solid var(--spoosh-border);
+    color: var(--spoosh-text-muted);
+    cursor: pointer;
+    padding: 3px 5px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+
+  .spoosh-copy-btn:hover {
+    background: var(--spoosh-border);
+    color: var(--spoosh-text);
   }
 
   .spoosh-detail-empty-hint {

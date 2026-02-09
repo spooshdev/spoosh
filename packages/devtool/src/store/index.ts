@@ -56,6 +56,7 @@ export class DevToolStore implements DevToolStoreInterface {
       id: crypto.randomUUID(),
       path: resolvedPath,
       startTime: performance.now(),
+      timestamp: Date.now(),
       steps: [],
       response: undefined,
 
@@ -131,6 +132,10 @@ export class DevToolStore implements DevToolStoreInterface {
     return this.getTraces().filter((trace) =>
       this.filters.operationTypes.has(trace.operationType)
     );
+  }
+
+  getActiveCount(): number {
+    return this.activeTraces.size;
   }
 
   getFilters(): DevToolFilters {

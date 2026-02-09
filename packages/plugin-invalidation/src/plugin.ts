@@ -1,8 +1,4 @@
-import type {
-  SpooshPlugin,
-  PluginContext,
-  InstanceApiContext,
-} from "@spoosh/core";
+import type { SpooshPlugin, PluginContext } from "@spoosh/core";
 
 import type {
   InvalidationPluginConfig,

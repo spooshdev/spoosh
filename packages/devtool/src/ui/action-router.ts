@@ -15,7 +15,8 @@ export type ActionIntent =
   | { type: "toggle-diff-view"; diffKey: string }
   | { type: "toggle-passed" }
   | { type: "change-setting"; setting: string; value: boolean }
-  | { type: "dismiss-settings" };
+  | { type: "dismiss-settings" }
+  | { type: "copy-query-key"; queryKey: string };
 
 export interface ActionRouterCallbacks {
   onRender: () => void;
@@ -62,6 +63,16 @@ export function createActionRouter(
 
     if (action === "clear") {
       return { type: "clear" };
+    }
+
+    if (action === "copy-query-key") {
+      const queryKey = target
+        .closest("[data-query-key]")
+        ?.getAttribute("data-query-key");
+
+      if (queryKey) {
+        return { type: "copy-query-key", queryKey };
+      }
     }
 
     if (action === "toggle-step" && stepKey) {
@@ -172,6 +183,10 @@ export function createActionRouter(
           viewModel.toggleSettings();
         }
         break;
+
+      case "copy-query-key":
+        navigator.clipboard.writeText(intent.queryKey);
+        return;
     }
 
     onRender();

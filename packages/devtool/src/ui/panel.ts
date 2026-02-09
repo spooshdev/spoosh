@@ -264,6 +264,7 @@ export class DevToolPanel {
     const traces = this.store.getFilteredTraces();
     const events = this.store.getEvents();
     const filters = this.store.getFilters();
+    const activeCount = this.store.getActiveCount();
     const selectedTrace = state.selectedTraceId
       ? traces.find((t) => t.id === state.selectedTraceId)
       : null;
@@ -290,7 +291,7 @@ export class DevToolPanel {
             <div class="spoosh-requests-section" style="flex: ${state.requestsPanelHeight};">
               <div class="spoosh-section-header">
                 <span class="spoosh-section-title">Requests</span>
-                <span class="spoosh-section-count">${traces.length}</span>
+                <span class="spoosh-section-count">${activeCount > 0 ? `<span class="spoosh-active-count">${activeCount}</span> / ` : ""}${traces.length}</span>
               </div>
               ${renderTraceList(traces, state.selectedTraceId)}
             </div>
