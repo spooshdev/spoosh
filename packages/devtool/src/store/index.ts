@@ -69,6 +69,7 @@ export class DevToolStore implements DevToolStoreInterface {
           reason: event.reason,
           color: event.color,
           diff: event.diff,
+          info: event.info,
         });
         notifyFn();
       },

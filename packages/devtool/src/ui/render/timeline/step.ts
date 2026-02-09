@@ -1,6 +1,7 @@
 import type { PluginStepEvent } from "../../../types";
 import { escapeHtml } from "../../utils";
 import { renderPluginDiff } from "./diff-view";
+import { renderTraceInfo } from "./info-view";
 
 export interface TimelineStepContext {
   traceId: string;
@@ -32,6 +33,8 @@ export function renderTimelineStep(ctx: TimelineStepContext): string {
   const hasDiff =
     step.diff &&
     JSON.stringify(step.diff.before) !== JSON.stringify(step.diff.after);
+  const hasInfo = step.info && step.info.length > 0;
+  const hasExpandableContent = hasDiff || hasInfo;
 
   const dotColor = step.color
     ? COLOR_MAP[step.color]
@@ -49,16 +52,24 @@ export function renderTimelineStep(ctx: TimelineStepContext): string {
     `;
   }
 
+  const expandedContent =
+    isExpanded && hasExpandableContent
+      ? `<div class="spoosh-plugin-details">
+          ${step.info ? renderTraceInfo(step.info) : ""}
+          ${hasDiff && step.diff ? renderPluginDiff({ stepKey, diff: step.diff, showFull: fullDiffViews.has(stepKey) }) : ""}
+        </div>`
+      : "";
+
   return `
     <div class="spoosh-timeline-step ${isSkip ? "skipped" : ""} ${isExpanded ? "expanded" : ""}" data-step-key="${stepKey}">
-      <div class="spoosh-timeline-step-header" ${hasDiff ? 'data-action="toggle-step"' : ""}>
+      <div class="spoosh-timeline-step-header" ${hasExpandableContent ? 'data-action="toggle-step"' : ""}>
         <div class="spoosh-timeline-dot" style="background: ${dotColor}"></div>
         <span class="spoosh-timeline-plugin">${displayName}</span>
         <span class="spoosh-timeline-stage">${step.stage}</span>
         ${step.reason ? `<span class="spoosh-timeline-reason">${escapeHtml(step.reason)}</span>` : ""}
-        ${hasDiff ? `<span class="spoosh-plugin-expand">${isExpanded ? "▼" : "▶"}</span>` : ""}
+        ${hasExpandableContent ? `<span class="spoosh-plugin-expand">${isExpanded ? "▼" : "▶"}</span>` : ""}
       </div>
-      ${isExpanded && step.diff ? renderPluginDiff({ stepKey, diff: step.diff, showFull: fullDiffViews.has(stepKey) }) : ""}
+      ${expandedContent}
     </div>
   `;
 }

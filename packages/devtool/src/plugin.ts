@@ -106,13 +106,7 @@ export function devtool(
           options?: TraceOptions
         ) => {
           trace.addStep(
-            {
-              plugin,
-              stage,
-              reason: msg,
-              color: options?.color,
-              diff: options?.diff,
-            },
+            { plugin, stage, reason: msg, ...options },
             performance.now()
           );
         };

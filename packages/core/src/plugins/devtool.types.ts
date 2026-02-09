@@ -32,6 +32,9 @@ export type TraceEvent = {
 
   /** Before/after diff with optional label */
   diff?: { before: unknown; after: unknown; label?: string };
+
+  /** Structured information to display (e.g., invalidated tags, cache keys) */
+  info?: Array<{ label: string; value: unknown }>;
 };
 
 /**
@@ -114,9 +117,12 @@ export type StandaloneEvent = {
 
 export type EventListener = (event: StandaloneEvent) => void;
 
+export type TraceInfo = { label: string; value: unknown };
+
 export type TraceOptions = {
   color?: TraceColor;
   diff?: { before: unknown; after: unknown; label?: string };
+  info?: TraceInfo[];
 };
 
 export type EventOptions = {

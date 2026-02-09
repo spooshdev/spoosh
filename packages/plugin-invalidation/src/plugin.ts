@@ -157,7 +157,10 @@ export function invalidationPlugin(
         }
 
         if (tags.length > 0) {
-          t?.log(`Invalidated: ${tags.join(", ")}`, { color: "info" });
+          t?.log("Invalidated tags", {
+            color: "info",
+            info: [{ label: "Tags", value: tags }],
+          });
           context.stateManager.markStale(tags);
           context.eventEmitter.emit("invalidate", tags);
         } else {

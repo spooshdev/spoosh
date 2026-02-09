@@ -48,6 +48,11 @@ export interface DiffLine {
  * Plugin step event stored in trace history.
  * Derived from TraceEvent emitted by plugins.
  */
+export interface TraceInfo {
+  label: string;
+  value: unknown;
+}
+
 export interface PluginStepEvent {
   traceId: string;
   plugin: string;
@@ -57,6 +62,7 @@ export interface PluginStepEvent {
   reason?: string;
   color?: TraceColor;
   diff?: { before: unknown; after: unknown; label?: string };
+  info?: TraceInfo[];
 }
 
 export interface OperationTrace extends PluginContext {

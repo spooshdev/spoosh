@@ -668,6 +668,41 @@ export const componentsCSS = `
     font-size: 11px;
   }
 
+  /* ===== Info Display ===== */
+  .spoosh-trace-info-section {
+    padding: 8px;
+    border-top: 1px solid var(--spoosh-border);
+    background: var(--spoosh-bg);
+  }
+
+  .spoosh-info-item {
+    margin-bottom: 8px;
+  }
+
+  .spoosh-info-item:last-child {
+    margin-bottom: 0;
+  }
+
+  .spoosh-info-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--spoosh-text-muted);
+    margin-bottom: 4px;
+  }
+
+  .spoosh-info-value {
+    background: var(--spoosh-surface);
+    border: 1px solid var(--spoosh-border);
+    border-radius: 4px;
+    padding: 6px;
+    margin: 0;
+    font-size: 10px;
+    line-height: 1.3;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
   /* ===== Diff Display ===== */
   .spoosh-diff-description {
     font-size: 10px;
