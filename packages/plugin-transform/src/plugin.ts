@@ -72,7 +72,11 @@ export function transformPlugin(): SpooshPlugin<{
 
       t?.log("Transformed", {
         color: "success",
-        diff: { before: response.data, after: transformedData },
+        diff: {
+          before: response.data,
+          after: transformedData,
+          label: "Transform applied to response data",
+        },
       });
 
       context.stateManager.setMeta(context.queryKey, {

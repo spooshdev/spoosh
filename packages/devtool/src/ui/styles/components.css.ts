@@ -669,6 +669,13 @@ export const componentsCSS = `
   }
 
   /* ===== Diff Display ===== */
+  .spoosh-diff-description {
+    font-size: 10px;
+    color: var(--spoosh-text-muted);
+    margin-bottom: 6px;
+    font-style: italic;
+  }
+
   .spoosh-diff-label {
     font-size: 9px;
     font-weight: 600;

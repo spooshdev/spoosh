@@ -30,8 +30,8 @@ export type TraceEvent = {
   /** Color hint for devtools (success=green, warning=yellow, error=red, info=blue) */
   color?: TraceColor;
 
-  /** Before/after diff */
-  diff?: { before: unknown; after: unknown };
+  /** Before/after diff with optional label */
+  diff?: { before: unknown; after: unknown; label?: string };
 };
 
 /**
@@ -116,7 +116,7 @@ export type EventListener = (event: StandaloneEvent) => void;
 
 export type TraceOptions = {
   color?: TraceColor;
-  diff?: { before: unknown; after: unknown };
+  diff?: { before: unknown; after: unknown; label?: string };
 };
 
 export type EventOptions = {

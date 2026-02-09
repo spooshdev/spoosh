@@ -6,7 +6,7 @@ import {
 
 export interface PluginDiffContext {
   stepKey: string;
-  diff: { before: unknown; after: unknown };
+  diff: { before: unknown; after: unknown; label?: string };
   showFull: boolean;
 }
 
@@ -17,9 +17,14 @@ export function renderPluginDiff(ctx: PluginDiffContext): string {
 
   const canToggle = diffLines.length !== linesWithContext.length;
 
+  const labelHtml = diff.label
+    ? `<div class="spoosh-diff-description">${diff.label}</div>`
+    : "";
+
   if (showFull) {
     return `
       <div class="spoosh-plugin-diff">
+        ${labelHtml}
         ${
           canToggle
             ? `
@@ -37,11 +42,12 @@ export function renderPluginDiff(ctx: PluginDiffContext): string {
   }
 
   if (linesWithContext.length === 0) {
-    return `<div class="spoosh-plugin-diff"><div class="spoosh-empty-tab">No changes</div></div>`;
+    return `<div class="spoosh-plugin-diff">${labelHtml}<div class="spoosh-empty-tab">No changes</div></div>`;
   }
 
   return `
     <div class="spoosh-plugin-diff">
+      ${labelHtml}
       ${
         canToggle
           ? `

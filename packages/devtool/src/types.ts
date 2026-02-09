@@ -56,7 +56,7 @@ export interface PluginStepEvent {
   duration?: number;
   reason?: string;
   color?: TraceColor;
-  diff?: { before: unknown; after: unknown };
+  diff?: { before: unknown; after: unknown; label?: string };
 }
 
 export interface OperationTrace extends PluginContext {

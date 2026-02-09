@@ -114,7 +114,11 @@ export function initialDataPlugin(): SpooshPlugin<{
 
       t?.log("Applied initial data", {
         color: "success",
-        diff: { before: undefined, after: pluginOptions.initialData },
+        diff: {
+          before: undefined,
+          after: pluginOptions.initialData,
+          label: "Set initial data to cache",
+        },
       });
 
       context.stateManager.setCache(context.queryKey, {

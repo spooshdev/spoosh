@@ -80,7 +80,11 @@ export function qsPlugin(config: QsPluginConfig = {}): SpooshPlugin<{
 
       t?.log("Serialized query", {
         color: "info",
-        diff: { before: query, after: flatQuery },
+        diff: {
+          before: query,
+          after: flatQuery,
+          label: "Serialize query params",
+        },
       });
 
       context.request = {

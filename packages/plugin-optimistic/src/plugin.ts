@@ -214,24 +214,33 @@ function rollbackOptimistic(
 
 function buildSnapshotDiff(
   snapshots: OptimisticSnapshot[],
-  mode: "apply" | "rollback" = "apply"
-): { before: unknown; after: unknown } {
+  mode: "apply" | "rollback" | "onSuccess" = "apply"
+): { before: unknown; after: unknown; label: string } {
   const first = snapshots[0]!;
 
+  const label =
+    mode === "apply"
+      ? "Optimistic update to cache"
+      : mode === "rollback"
+        ? "Rollback optimistic changes"
+        : "Apply onSuccess updates";
+
   if (snapshots.length === 1) {
-    return mode === "apply"
-      ? { before: first.previousData, after: first.afterData }
-      : { before: first.afterData, after: first.previousData };
+    return mode === "apply" || mode === "onSuccess"
+      ? { before: first.previousData, after: first.afterData, label }
+      : { before: first.afterData, after: first.previousData, label };
   }
 
-  return mode === "apply"
+  return mode === "apply" || mode === "onSuccess"
     ? {
         before: snapshots.map((s) => ({ key: s.key, data: s.previousData })),
         after: snapshots.map((s) => ({ key: s.key, data: s.afterData })),
+        label,
       }
     : {
         before: snapshots.map((s) => ({ key: s.key, data: s.afterData })),
         after: snapshots.map((s) => ({ key: s.key, data: s.previousData })),
+        label,
       };
 }
 
@@ -412,7 +421,7 @@ export function optimisticPlugin(): SpooshPlugin<{
         if (onSuccessSnapshots.length > 0) {
           t?.log(`Applied ${onSuccessSnapshots.length} onSuccess update(s)`, {
             color: "success",
-            diff: buildSnapshotDiff(onSuccessSnapshots),
+            diff: buildSnapshotDiff(onSuccessSnapshots, "onSuccess"),
           });
         }
       }
