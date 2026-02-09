@@ -31,11 +31,8 @@ export function progressPlugin(): SpooshPlugin<{
         | undefined;
 
       if (!pluginOptions?.progress) {
-        t?.skip("Disabled", { color: "muted" });
         return next();
       }
-
-      t?.log("Progress enabled", { color: "info" });
 
       const progressOptions =
         typeof pluginOptions.progress === "object"
@@ -59,7 +56,9 @@ export function progressPlugin(): SpooshPlugin<{
               }
             }
 
-            t?.log(`Progress: ${event.loaded}/${total}`, { color: "info" });
+            if (event.loaded && total) {
+              t?.log(`Progress: ${event.loaded}/${total}`, { color: "info" });
+            }
 
             context.stateManager.setMeta(context.queryKey, {
               progress: {

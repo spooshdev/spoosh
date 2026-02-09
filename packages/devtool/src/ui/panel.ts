@@ -49,6 +49,7 @@ export class DevToolPanel {
   private selectedTraceId: string | null = null;
   private activeTab: DetailTab = "data";
   private expandedSteps = new Set<string>();
+  private expandedGroups = new Set<string>();
   private fullDiffViews = new Set<string>();
   private unsubscribe: (() => void) | null = null;
   private traceCount = 0;
@@ -63,6 +64,10 @@ export class DevToolPanel {
   private boundHandleMouseUp: () => void;
   private dividerHandle: HTMLDivElement | null = null;
   private horizontalDivider: HTMLDivElement | null = null;
+  private renderScheduled = false;
+  private renderRAF: number | null = null;
+  private lastRenderTime = 0;
+  private pendingRenderTimeout: ReturnType<typeof setTimeout> | null = null;
 
   constructor(options: DevToolPanelOptions) {
     this.store = options.store;
@@ -134,11 +139,167 @@ export class DevToolPanel {
       }
 
       if (this.isOpen) {
-        this.render();
+        this.scheduleRender();
       }
     });
 
     this.render();
+  }
+
+  private scheduleRender(): void {
+    if (this.renderScheduled) return;
+
+    const now = performance.now();
+    const elapsed = now - this.lastRenderTime;
+    const minInterval = 150;
+
+    if (elapsed >= minInterval) {
+      this.renderScheduled = true;
+      this.renderRAF = requestAnimationFrame(() => {
+        this.renderScheduled = false;
+        this.renderRAF = null;
+        this.lastRenderTime = performance.now();
+        this.partialUpdate();
+      });
+    } else {
+      this.renderScheduled = true;
+      this.pendingRenderTimeout = setTimeout(() => {
+        this.renderScheduled = false;
+        this.pendingRenderTimeout = null;
+        this.lastRenderTime = performance.now();
+        this.partialUpdate();
+      }, minInterval - elapsed);
+    }
+  }
+
+  private renderImmediate(): void {
+    if (this.renderRAF !== null) {
+      cancelAnimationFrame(this.renderRAF);
+      this.renderRAF = null;
+    }
+
+    if (this.pendingRenderTimeout !== null) {
+      clearTimeout(this.pendingRenderTimeout);
+      this.pendingRenderTimeout = null;
+    }
+
+    this.renderScheduled = false;
+    this.lastRenderTime = performance.now();
+    this.render();
+  }
+
+  private partialUpdate(): void {
+    if (!this.sidebar) return;
+
+    const traces = this.store.getFilteredTraces();
+    const events = this.store.getEvents();
+    const selectedTrace = this.selectedTraceId
+      ? traces.find((t) => t.id === this.selectedTraceId)
+      : null;
+
+    const requestsSection = this.sidebar.querySelector(".spoosh-requests-section");
+    if (requestsSection) {
+      const header = requestsSection.querySelector(".spoosh-section-header");
+      if (header) {
+        const countEl = header.querySelector(".spoosh-section-count");
+        if (countEl) {
+          countEl.textContent = String(traces.length);
+        }
+      }
+
+      const existingList = requestsSection.querySelector(".spoosh-traces, .spoosh-empty");
+      if (existingList) {
+        if (traces.length === 0) {
+          existingList.outerHTML = `<div class="spoosh-empty">No requests yet</div>`;
+        } else {
+          existingList.outerHTML = `
+            <div class="spoosh-traces">
+              ${[...traces]
+                .reverse()
+                .map((trace) => this.renderTraceRow(trace))
+                .join("")}
+            </div>
+          `;
+        }
+      }
+    }
+
+    const eventsSection = this.sidebar.querySelector(".spoosh-events-section");
+    if (eventsSection) {
+      const header = eventsSection.querySelector(".spoosh-section-header");
+      if (header) {
+        const countEl = header.querySelector(".spoosh-section-count");
+        if (countEl) {
+          countEl.textContent = String(events.length);
+        }
+      }
+
+      const existingList = eventsSection.querySelector(".spoosh-events, .spoosh-empty");
+      if (existingList) {
+        if (events.length === 0) {
+          existingList.outerHTML = `<div class="spoosh-empty">No events yet</div>`;
+        } else {
+          existingList.outerHTML = `
+            <div class="spoosh-events">
+              ${[...events]
+                .reverse()
+                .map((event) => this.renderEventRow(event))
+                .join("")}
+            </div>
+          `;
+        }
+      }
+    }
+
+    if (selectedTrace) {
+      const isPending = selectedTrace.duration === undefined;
+      const hasError = !!selectedTrace.response?.error;
+      const tabContent = this.sidebar.querySelector(".spoosh-tab-content");
+      const savedScrollTop = tabContent?.scrollTop ?? 0;
+
+      const statusBadge = this.sidebar.querySelector(
+        ".spoosh-detail-meta .spoosh-badge:not(.neutral)"
+      );
+      if (statusBadge) {
+        const statusClass = isPending ? "pending" : hasError ? "error" : "success";
+        const statusLabel = isPending ? "Pending" : hasError ? "Error" : "Success";
+        statusBadge.className = `spoosh-badge ${statusClass}`;
+        statusBadge.textContent = statusLabel;
+      }
+
+      const durationBadge = this.sidebar.querySelector(
+        ".spoosh-detail-meta .spoosh-badge.neutral"
+      );
+      if (durationBadge) {
+        durationBadge.textContent = `${selectedTrace.duration?.toFixed(0) ?? "..."}ms`;
+      }
+
+      const dataTabBtn = this.sidebar.querySelector('[data-tab="data"]');
+      if (dataTabBtn) {
+        dataTabBtn.textContent = isPending ? "Fetching" : hasError ? "Error" : "Data";
+      }
+
+      const pluginCountMatch = this.getActivePluginCount(selectedTrace);
+      const pluginsTabBtn = this.sidebar.querySelector('[data-tab="plugins"]');
+      if (pluginsTabBtn) {
+        pluginsTabBtn.textContent = `Plugins ${pluginCountMatch > 0 ? `(${pluginCountMatch})` : ""}`;
+      }
+
+      if (tabContent) {
+        if (this.activeTab === "plugins") {
+          tabContent.innerHTML = this.renderPluginsTab(selectedTrace);
+        } else if (this.activeTab === "data") {
+          const currentlyShowingSpinner = tabContent.querySelector(".spoosh-spinner");
+          if (currentlyShowingSpinner && !isPending) {
+            tabContent.innerHTML = this.renderDataTab(selectedTrace);
+          }
+        }
+
+        if (savedScrollTop > 0) {
+          tabContent.scrollTop = savedScrollTop;
+        }
+      }
+    }
   }
 
   private updateBadge(): void {
@@ -162,6 +323,9 @@ export class DevToolPanel {
 
   private render(): void {
     if (!this.sidebar) return;
+
+    const tabContent = this.sidebar.querySelector(".spoosh-tab-content");
+    const savedScrollTop = tabContent?.scrollTop ?? 0;
 
     const traces = this.store.getFilteredTraces();
     const events = this.store.getEvents();
@@ -211,6 +375,14 @@ export class DevToolPanel {
     this.setupDividerHandler();
     this.setupHorizontalDividerHandler();
     this.attachEvents();
+
+    if (savedScrollTop > 0) {
+      const newTabContent = this.sidebar.querySelector(".spoosh-tab-content");
+
+      if (newTabContent) {
+        newTabContent.scrollTop = savedScrollTop;
+      }
+    }
   }
 
   private renderHeader(filters: {
@@ -599,11 +771,13 @@ export class DevToolPanel {
     const timelineItems: string[] = [];
 
     for (const pluginName of knownPlugins) {
-      const steps = beforeFetchByPlugin.get(pluginName);
+      const pluginSteps = beforeFetchByPlugin.get(pluginName);
 
-      if (steps && steps.length > 0) {
-        for (const step of steps) {
-          timelineItems.push(this.renderTimelineStep(trace.id, step));
+      if (pluginSteps && pluginSteps.length > 0) {
+        if (pluginSteps.length === 1) {
+          timelineItems.push(this.renderTimelineStep(trace.id, pluginSteps[0]!));
+        } else {
+          timelineItems.push(this.renderGroupedSteps(trace.id, pluginSteps));
         }
       } else if (this.showPassedPlugins) {
         timelineItems.push(this.renderPassedPlugin(pluginName));
@@ -614,8 +788,14 @@ export class DevToolPanel {
       timelineItems.push(this.renderTimelineStep(trace.id, fetchStep));
     }
 
-    for (const step of afterFetchSteps) {
-      timelineItems.push(this.renderTimelineStep(trace.id, step));
+    const groupedAfterSteps = this.groupConsecutiveSteps(afterFetchSteps);
+
+    for (const group of groupedAfterSteps) {
+      if (group.length === 1) {
+        timelineItems.push(this.renderTimelineStep(trace.id, group[0]!));
+      } else {
+        timelineItems.push(this.renderGroupedSteps(trace.id, group));
+      }
     }
 
     return `
@@ -742,6 +922,99 @@ export class DevToolPanel {
     `;
   }
 
+  private groupConsecutiveSteps(steps: PluginStepEvent[]): PluginStepEvent[][] {
+    if (steps.length === 0) return [];
+
+    const groups: PluginStepEvent[][] = [];
+    let currentGroup: PluginStepEvent[] = [steps[0]!];
+
+    for (let i = 1; i < steps.length; i++) {
+      const step = steps[i]!;
+      const prevStep = steps[i - 1]!;
+
+      if (step.plugin === prevStep.plugin) {
+        currentGroup.push(step);
+      } else {
+        groups.push(currentGroup);
+        currentGroup = [step];
+      }
+    }
+
+    groups.push(currentGroup);
+    return groups;
+  }
+
+  private renderGroupedSteps(
+    traceId: string,
+    steps: PluginStepEvent[]
+  ): string {
+    const firstStep = steps[0]!;
+    const lastStep = steps[steps.length - 1]!;
+    const groupKey = `${traceId}:group:${firstStep.plugin}:${firstStep.timestamp}`;
+    const isExpanded = this.expandedGroups.has(groupKey);
+    const displayName = firstStep.plugin.replace("spoosh:", "");
+
+    const colorMap: Record<string, string> = {
+      success: "var(--spoosh-success)",
+      warning: "var(--spoosh-warning)",
+      error: "var(--spoosh-error)",
+      info: "var(--spoosh-primary)",
+      muted: "var(--spoosh-text-muted)",
+    };
+
+    const stageColors: Record<string, string> = {
+      return: "var(--spoosh-success)",
+      log: "var(--spoosh-primary)",
+      skip: "var(--spoosh-text-muted)",
+      fetch: "var(--spoosh-warning)",
+    };
+
+    const dotColor = firstStep.color
+      ? colorMap[firstStep.color]
+      : stageColors[firstStep.stage] || "var(--spoosh-text-muted)";
+
+    const firstReason = firstStep.reason || "";
+    const lastReason = lastStep.reason || "";
+    const summaryReason =
+      firstReason && lastReason && firstReason !== lastReason
+        ? `${firstReason} → ${lastReason}`
+        : firstReason || lastReason;
+
+    if (isExpanded) {
+      const expandedItems = steps
+        .map((step) => this.renderTimelineStep(traceId, step))
+        .join("");
+
+      return `
+        <div class="spoosh-timeline-group expanded" data-group-key="${groupKey}">
+          <div class="spoosh-timeline-group-header" data-action="toggle-group">
+            <div class="spoosh-timeline-dot" style="background: ${dotColor}"></div>
+            <span class="spoosh-timeline-plugin">${displayName}</span>
+            <span class="spoosh-timeline-stage">${firstStep.stage}</span>
+            <span class="spoosh-timeline-group-count">${steps.length}×</span>
+            <span class="spoosh-plugin-expand">▼</span>
+          </div>
+          <div class="spoosh-timeline-group-items">
+            ${expandedItems}
+          </div>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="spoosh-timeline-group" data-group-key="${groupKey}">
+        <div class="spoosh-timeline-group-header" data-action="toggle-group">
+          <div class="spoosh-timeline-dot" style="background: ${dotColor}"></div>
+          <span class="spoosh-timeline-plugin">${displayName}</span>
+          <span class="spoosh-timeline-stage">${firstStep.stage}</span>
+          <span class="spoosh-timeline-group-count">${steps.length}×</span>
+          ${summaryReason ? `<span class="spoosh-timeline-reason">${escapeHtml(summaryReason)}</span>` : ""}
+          <span class="spoosh-plugin-expand">▶</span>
+        </div>
+      </div>
+    `;
+  }
+
   private getActivePluginCount(trace: OperationTrace): number {
     const activePlugins = new Set(
       trace.steps
@@ -753,6 +1026,17 @@ export class DevToolPanel {
 
   private attachEvents(): void {
     if (!this.sidebar) return;
+
+    this.sidebar.onmousedown = (e) => {
+      const target = e.target as HTMLElement;
+      const tab = target.closest("[data-tab]")?.getAttribute("data-tab");
+
+      if (tab) {
+        e.preventDefault();
+        this.activeTab = tab as DetailTab;
+        this.renderImmediate();
+      }
+    };
 
     this.sidebar.onclick = (e) => {
       const target = e.target as HTMLElement;
@@ -766,31 +1050,40 @@ export class DevToolPanel {
       const traceId = target
         .closest("[data-trace-id]")
         ?.getAttribute("data-trace-id");
-      const tab = target.closest("[data-tab]")?.getAttribute("data-tab");
       const stepKey = target
         .closest("[data-step-key]")
         ?.getAttribute("data-step-key");
+      const groupKey = target
+        .closest("[data-group-key]")
+        ?.getAttribute("data-group-key");
 
       if (action === "close") {
         this.close();
       } else if (action === "settings") {
         this.showSettings = !this.showSettings;
-        this.render();
+        this.renderImmediate();
       } else if (action === "clear") {
         this.store.clear();
         this.selectedTraceId = null;
         this.expandedSteps.clear();
-        this.render();
+        this.renderImmediate();
       } else if (action === "toggle-step" && stepKey) {
         if (this.expandedSteps.has(stepKey)) {
           this.expandedSteps.delete(stepKey);
         } else {
           this.expandedSteps.add(stepKey);
         }
-        this.render();
+        this.renderImmediate();
       } else if (action === "toggle-passed") {
         this.showPassedPlugins = !this.showPassedPlugins;
-        this.render();
+        this.renderImmediate();
+      } else if (action === "toggle-group" && groupKey) {
+        if (this.expandedGroups.has(groupKey)) {
+          this.expandedGroups.delete(groupKey);
+        } else {
+          this.expandedGroups.add(groupKey);
+        }
+        this.renderImmediate();
       } else if (action === "toggle-diff-view") {
         const diffKey = target
           .closest("[data-diff-key]")
@@ -801,15 +1094,12 @@ export class DevToolPanel {
           } else {
             this.fullDiffViews.add(diffKey);
           }
-          this.render();
+          this.renderImmediate();
         }
       } else if (traceId && !action) {
         this.selectedTraceId = traceId;
         this.expandedSteps.clear();
-        this.render();
-      } else if (tab) {
-        this.activeTab = tab as DetailTab;
-        this.render();
+        this.renderImmediate();
       } else if (filter) {
         const filters = this.store.getFilters();
         const newTypes = new Set(filters.operationTypes);
@@ -821,7 +1111,7 @@ export class DevToolPanel {
         }
 
         this.store.setFilter("operationTypes", newTypes);
-        this.render();
+        this.renderImmediate();
       }
     };
 
@@ -832,7 +1122,7 @@ export class DevToolPanel {
       if (setting === "showPassedPlugins") {
         this.showPassedPlugins = target.checked;
         this.saveSettings();
-        this.render();
+        this.renderImmediate();
       }
     };
   }
@@ -991,6 +1281,16 @@ export class DevToolPanel {
     if (this.unsubscribe) {
       this.unsubscribe();
       this.unsubscribe = null;
+    }
+
+    if (this.renderRAF !== null) {
+      cancelAnimationFrame(this.renderRAF);
+      this.renderRAF = null;
+    }
+
+    if (this.pendingRenderTimeout !== null) {
+      clearTimeout(this.pendingRenderTimeout);
+      this.pendingRenderTimeout = null;
     }
 
     document.removeEventListener("mousemove", this.boundHandleMouseMove);

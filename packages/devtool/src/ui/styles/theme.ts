@@ -705,8 +705,6 @@ export function getThemeCSS(theme: DevToolTheme): string {
 
     .spoosh-timeline-step-header:hover {
       background: var(--spoosh-surface);
-      margin: 0 -12px;
-      padding: 6px 12px;
     }
 
     .spoosh-timeline-dot {
@@ -734,6 +732,45 @@ export function getThemeCSS(theme: DevToolTheme): string {
       color: var(--spoosh-text-muted);
       font-size: 10px;
       text-align: right;
+    }
+
+    .spoosh-timeline-group {
+      border-bottom: 1px solid var(--spoosh-border);
+    }
+
+    .spoosh-timeline-group-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 0;
+      cursor: pointer;
+    }
+
+    .spoosh-timeline-group-header:hover {
+      background: var(--spoosh-surface);
+    }
+
+    .spoosh-timeline-group-count {
+      font-size: 9px;
+      padding: 1px 6px;
+      border-radius: 3px;
+      background: var(--spoosh-primary);
+      color: var(--spoosh-bg);
+      font-weight: 600;
+    }
+
+    .spoosh-timeline-group-items {
+      padding-left: 12px;
+      border-left: 2px solid var(--spoosh-border);
+      margin-left: 2px;
+    }
+
+    .spoosh-timeline-group-items .spoosh-timeline-step {
+      border-bottom: none;
+    }
+
+    .spoosh-timeline-group-items .spoosh-timeline-step-header {
+      padding: 4px 0;
     }
 
     .spoosh-timeline-fetch {
