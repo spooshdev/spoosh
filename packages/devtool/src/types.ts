@@ -14,9 +14,6 @@ export interface DevToolConfig {
   /** Enable or disable the devtool. Defaults to true. */
   enabled?: boolean;
 
-  /** Position of the floating icon. Defaults to 'bottom-right'. */
-  position?: "bottom-right" | "bottom-left" | "top-right" | "top-left";
-
   /** Maximum number of traces to keep in history. Defaults to 50. */
   maxHistory?: number;
 

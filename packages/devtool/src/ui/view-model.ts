@@ -4,6 +4,11 @@ import type { DevToolFilters, DevToolStoreInterface } from "../types";
 
 export type DetailTab = "data" | "request" | "plugins";
 export type ThemeMode = "light" | "dark";
+export type PositionMode =
+  | "bottom-right"
+  | "bottom-left"
+  | "top-right"
+  | "top-left";
 
 export interface ViewModelState {
   isOpen: boolean;
@@ -19,6 +24,7 @@ export interface ViewModelState {
   requestsPanelHeight: number;
   searchQuery: string;
   theme: ThemeMode;
+  position: PositionMode;
 }
 
 type Listener = () => void;
@@ -39,6 +45,7 @@ const DEFAULT_STATE: ViewModelState = {
   requestsPanelHeight: 0.8,
   searchQuery: "",
   theme: "dark",
+  position: "bottom-right",
 };
 
 export interface ViewModel {
@@ -58,6 +65,7 @@ export interface ViewModel {
   toggleDiffView(diffKey: string): void;
   togglePassedPlugins(): void;
   setTheme(theme: ThemeMode): void;
+  setPosition(position: PositionMode): void;
 
   setSidebarWidth(width: number): void;
   setListPanelWidth(width: number): void;
@@ -103,6 +111,7 @@ export function createViewModel(): ViewModel {
           requestsPanelHeight:
             settings.requestsPanelHeight ?? DEFAULT_STATE.requestsPanelHeight,
           theme: settings.theme ?? DEFAULT_STATE.theme,
+          position: settings.position ?? DEFAULT_STATE.position,
         };
       }
     } catch {
@@ -127,6 +136,7 @@ export function createViewModel(): ViewModel {
             listPanelWidth: state.listPanelWidth,
             requestsPanelHeight: state.requestsPanelHeight,
             theme: state.theme,
+            position: state.position,
           })
         );
       } catch {
@@ -244,6 +254,12 @@ export function createViewModel(): ViewModel {
     notify();
   }
 
+  function setPosition(position: PositionMode): void {
+    state = { ...state, position };
+    saveSettings();
+    notify();
+  }
+
   function clearExpanded(): void {
     mutableExpandedSteps.clear();
     mutableExpandedGroups.clear();
@@ -292,6 +308,7 @@ export function createViewModel(): ViewModel {
     toggleDiffView,
     togglePassedPlugins,
     setTheme,
+    setPosition,
     setSidebarWidth,
     setListPanelWidth,
     setRequestsPanelHeight,

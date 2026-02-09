@@ -1,5 +1,5 @@
 import type { OperationTrace } from "../../types";
-import type { DetailTab, ThemeMode } from "../view-model";
+import type { DetailTab, PositionMode, ThemeMode } from "../view-model";
 import { escapeHtml, formatTime } from "../utils";
 import { renderSettings } from "./settings";
 import { renderDataTab, renderRequestTab, renderPluginsTab } from "./tabs";
@@ -14,6 +14,7 @@ export interface DetailPanelContext {
   fullDiffViews: ReadonlySet<string>;
   knownPlugins: string[];
   theme: ThemeMode;
+  position: PositionMode;
 }
 
 function getActivePluginCount(trace: OperationTrace): number {
@@ -58,10 +59,11 @@ function renderTabContent(ctx: DetailPanelContext): string {
 }
 
 export function renderDetailPanel(ctx: DetailPanelContext): string {
-  const { trace, showSettings, activeTab, showPassedPlugins, theme } = ctx;
+  const { trace, showSettings, activeTab, showPassedPlugins, theme, position } =
+    ctx;
 
   if (showSettings) {
-    return renderSettings({ showPassedPlugins, theme });
+    return renderSettings({ showPassedPlugins, theme, position });
   }
 
   if (!trace) {
@@ -123,10 +125,11 @@ export function renderDetailPanel(ctx: DetailPanelContext): string {
 export function renderEmptyDetail(
   showSettings: boolean,
   showPassedPlugins: boolean,
-  theme: ThemeMode
+  theme: ThemeMode,
+  position: PositionMode
 ): string {
   if (showSettings) {
-    return renderSettings({ showPassedPlugins, theme });
+    return renderSettings({ showPassedPlugins, theme, position });
   }
 
   return `

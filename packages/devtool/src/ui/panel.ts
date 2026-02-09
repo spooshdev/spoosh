@@ -18,7 +18,6 @@ import { createViewModel } from "./view-model";
 
 interface DevToolPanelOptions {
   store: DevToolStoreInterface;
-  position: "bottom-right" | "bottom-left" | "top-right" | "top-left";
   showFloatingIcon: boolean;
 }
 
@@ -29,7 +28,6 @@ export class DevToolPanel {
   private sidebar: HTMLDivElement | null = null;
   private store: DevToolStoreInterface;
   private theme: DevToolTheme;
-  private position: string;
   private showFloatingIcon: boolean;
   private unsubscribe: (() => void) | null = null;
   private traceCount = 0;
@@ -42,7 +40,6 @@ export class DevToolPanel {
   constructor(options: DevToolPanelOptions) {
     this.store = options.store;
     this.theme = resolveTheme(this.viewModel.getState().theme);
-    this.position = options.position;
     this.showFloatingIcon = options.showFloatingIcon;
 
     this.actionRouter = createActionRouter(this.viewModel, this.store, {
@@ -51,6 +48,7 @@ export class DevToolPanel {
         this.renderScheduler.immediate(() => this.partialUpdate()),
       onClose: () => this.close(),
       onThemeChange: (theme) => this.setTheme(theme),
+      onPositionChange: (position) => this.setPosition(position),
     });
   }
 
@@ -68,7 +66,7 @@ export class DevToolPanel {
     if (this.showFloatingIcon) {
       this.fab = document.createElement("button");
       this.fab.id = "spoosh-devtool-fab";
-      this.fab.className = this.position;
+      this.fab.className = this.viewModel.getState().position;
       this.fab.innerHTML = getLogo(20, 18);
       this.fab.onclick = () => this.toggle();
       this.shadowRoot.appendChild(this.fab);
@@ -283,6 +281,7 @@ export class DevToolPanel {
         ? this.store.getKnownPlugins(selectedTrace.operationType)
         : [],
       theme: state.theme,
+      position: state.position,
     });
 
     this.sidebar.innerHTML = `
@@ -440,6 +439,12 @@ export class DevToolPanel {
 
     if (this.shadowRoot) {
       injectStyles(getThemeCSS(this.theme), this.shadowRoot);
+    }
+  }
+
+  setPosition(position: string): void {
+    if (this.fab) {
+      this.fab.className = position;
     }
   }
 

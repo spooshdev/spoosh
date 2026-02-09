@@ -39,12 +39,7 @@ let globalPanel: DevToolPanel | null = null;
 export function devtool(
   config: DevToolConfig = {}
 ): SpooshPlugin<{ instanceApi: DevToolInstanceApi }> {
-  const {
-    enabled = true,
-    position = "bottom-right",
-    maxHistory = 50,
-    showFloatingIcon = true,
-  } = config;
+  const { enabled = true, maxHistory = 50, showFloatingIcon = true } = config;
 
   if (!enabled || typeof window === "undefined") {
     return {
@@ -173,7 +168,6 @@ export function devtool(
       if (!globalPanel) {
         globalPanel = new DevToolPanel({
           store,
-          position,
           showFloatingIcon,
         });
         globalPanel.mount();

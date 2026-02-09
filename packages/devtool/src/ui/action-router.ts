@@ -1,7 +1,12 @@
 import type { OperationType } from "@spoosh/core";
 
 import type { DevToolStoreInterface } from "../types";
-import type { DetailTab, ThemeMode, ViewModel } from "./view-model";
+import type {
+  DetailTab,
+  PositionMode,
+  ThemeMode,
+  ViewModel,
+} from "./view-model";
 
 export type ActionIntent =
   | { type: "close" }
@@ -18,13 +23,15 @@ export type ActionIntent =
   | { type: "dismiss-settings" }
   | { type: "copy-query-key"; queryKey: string }
   | { type: "search"; query: string }
-  | { type: "change-theme"; theme: ThemeMode };
+  | { type: "change-theme"; theme: ThemeMode }
+  | { type: "change-position"; position: PositionMode };
 
 export interface ActionRouterCallbacks {
   onRender: () => void;
   onPartialRender: () => void;
   onClose: () => void;
   onThemeChange: (theme: ThemeMode) => void;
+  onPositionChange: (position: PositionMode) => void;
 }
 
 export interface ActionRouter {
@@ -37,7 +44,13 @@ export function createActionRouter(
   store: DevToolStoreInterface,
   callbacks: ActionRouterCallbacks
 ): ActionRouter {
-  const { onRender, onPartialRender, onClose, onThemeChange } = callbacks;
+  const {
+    onRender,
+    onPartialRender,
+    onClose,
+    onThemeChange,
+    onPositionChange,
+  } = callbacks;
   function parseIntent(event: MouseEvent | Event): ActionIntent | null {
     const target = event.target as HTMLElement;
 
@@ -129,6 +142,14 @@ export function createActionRouter(
       return { type: "change-theme", theme: select.value as ThemeMode };
     }
 
+    if (setting === "position") {
+      const select = target as HTMLSelectElement;
+      return {
+        type: "change-position",
+        position: select.value as PositionMode,
+      };
+    }
+
     if (setting) {
       const checkbox = target as HTMLInputElement;
       return { type: "change-setting", setting, value: checkbox.checked };
@@ -213,6 +234,11 @@ export function createActionRouter(
       case "change-theme":
         viewModel.setTheme(intent.theme);
         onThemeChange(intent.theme);
+        return;
+
+      case "change-position":
+        viewModel.setPosition(intent.position);
+        onPositionChange(intent.position);
         return;
     }
 
