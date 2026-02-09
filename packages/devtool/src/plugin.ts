@@ -10,7 +10,7 @@ import type {
 import { DevToolStore } from "./store";
 import { DevToolPanel } from "./ui/panel";
 import type { DevToolConfig, DevToolInstanceApi, DevToolTheme } from "./types";
-import { DedupeMode } from "@spoosh/plugin-deduplication";
+import type { DedupeMode } from "@spoosh/plugin-deduplication";
 
 function resolvePathWithParams(
   path: string,

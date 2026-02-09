@@ -243,7 +243,7 @@ export function cachePlugin(config: CachePluginConfig = {}): SpooshPlugin<{
       }
     },
 
-    instanceApi(context: InstanceApiContext) {
+    instanceApi(context) {
       const { stateManager, eventEmitter } = context;
 
       const clearCache = (options?: ClearCacheOptions): void => {

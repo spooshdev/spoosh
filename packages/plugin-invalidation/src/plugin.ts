@@ -170,7 +170,7 @@ export function invalidationPlugin(
       }
     },
 
-    instanceApi(context: InstanceApiContext) {
+    instanceApi(context) {
       const { stateManager, eventEmitter } = context;
       const et = context.eventTracer?.(PLUGIN_NAME);
 
