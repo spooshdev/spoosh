@@ -114,13 +114,40 @@ export class DevToolStore implements DevToolStoreInterface {
   }
 
   startTrace(context: PluginContext, resolvedPath: string): OperationTrace {
+    const now = performance.now();
+    const dedupeWindow = 100;
+
+    for (const trace of this.activeTraces.values()) {
+      if (
+        trace.queryKey === context.queryKey &&
+        now - trace.startTime < dedupeWindow
+      ) {
+        return trace;
+      }
+    }
+
+    const recentTraces = this.traces.toArray();
+
+    for (let i = recentTraces.length - 1; i >= 0; i--) {
+      const trace = recentTraces[i]!;
+
+      if (now - trace.startTime > dedupeWindow) break;
+
+      const isCacheHit =
+        trace.duration !== undefined && Math.round(trace.duration) === 0;
+
+      if (trace.queryKey === context.queryKey && isCacheHit) {
+        return trace;
+      }
+    }
+
     const notifyFn = () => this.notify();
 
     const trace: OperationTrace = {
       ...context,
       id: crypto.randomUUID(),
       path: resolvedPath,
-      startTime: performance.now(),
+      startTime: now,
       timestamp: Date.now(),
       steps: [],
       response: undefined,
