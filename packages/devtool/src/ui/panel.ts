@@ -10,6 +10,9 @@ import {
   renderDataTab,
   renderMetaTab,
   getMetaCount,
+  renderBottomBar,
+  renderCacheList,
+  renderCacheDetail,
 } from "./render";
 import { createRenderScheduler } from "./render-scheduler";
 import { createResizeController } from "./resize-controller";
@@ -55,6 +58,20 @@ export class DevToolPanel {
       onClose: () => this.close(),
       onThemeChange: (theme) => this.setTheme(theme),
       onPositionChange: (position) => this.setPosition(position),
+      onInvalidateCache: (key) => {
+        this.store.invalidateCacheEntry(key);
+        this.renderImmediate();
+      },
+      onDeleteCache: (key) => {
+        this.store.deleteCacheEntry(key);
+        this.viewModel.selectCacheEntry(null);
+        this.renderImmediate();
+      },
+      onClearAllCache: () => {
+        this.store.clearAllCache();
+        this.viewModel.selectCacheEntry(null);
+        this.renderImmediate();
+      },
     });
   }
 
@@ -112,6 +129,12 @@ export class DevToolPanel {
     if (!this.sidebar) return;
 
     const state = this.viewModel.getState();
+
+    if (state.activeView === "internal") {
+      this.partialUpdateInternal();
+      return;
+    }
+
     const traces = this.store.getFilteredTraces(state.searchQuery);
     const events = this.store.getEvents();
     const selectedTrace = state.selectedTraceId
@@ -259,6 +282,50 @@ export class DevToolPanel {
     }
   }
 
+  private partialUpdateInternal(): void {
+    if (!this.sidebar) return;
+
+    const state = this.viewModel.getState();
+    const cacheEntries = this.store.getCacheEntries(state.searchQuery);
+
+    const cacheSection = this.sidebar.querySelector(".spoosh-cache-section");
+
+    if (cacheSection) {
+      const countEl = cacheSection.querySelector(".spoosh-section-count");
+
+      if (countEl) {
+        countEl.textContent = String(cacheEntries.length);
+      }
+
+      const existingList = cacheSection.querySelector(
+        ".spoosh-cache-entries, .spoosh-empty"
+      );
+
+      if (existingList) {
+        existingList.outerHTML = renderCacheList({
+          entries: cacheEntries,
+          selectedKey: state.selectedCacheKey,
+          searchQuery: state.searchQuery,
+        });
+      }
+    }
+
+    const selectedEntry = state.selectedCacheKey
+      ? cacheEntries.find((e) => e.queryKey === state.selectedCacheKey)
+      : null;
+
+    if (selectedEntry) {
+      const detailPanel = this.sidebar.querySelector(".spoosh-detail-panel");
+
+      if (detailPanel) {
+        detailPanel.outerHTML = renderCacheDetail({
+          entry: selectedEntry,
+          activeTab: state.internalTab,
+        });
+      }
+    }
+  }
+
   private updateBadge(): void {
     if (!this.fab) return;
 
@@ -286,6 +353,33 @@ export class DevToolPanel {
     const tabContent = this.sidebar.querySelector(".spoosh-tab-content");
     const savedScrollTop = tabContent?.scrollTop ?? 0;
 
+    const mainContent =
+      state.activeView === "requests"
+        ? this.renderRequestsView()
+        : this.renderInternalView();
+
+    this.sidebar.innerHTML = `
+      <div class="spoosh-resize-handle"></div>
+      <div class="spoosh-panel">
+        ${mainContent}
+      </div>
+      ${renderBottomBar({ activeView: state.activeView })}
+    `;
+
+    this.setupResizeHandlers();
+    this.attachEvents();
+
+    if (savedScrollTop > 0) {
+      const newTabContent = this.sidebar.querySelector(".spoosh-tab-content");
+
+      if (newTabContent) {
+        newTabContent.scrollTop = savedScrollTop;
+      }
+    }
+  }
+
+  private renderRequestsView(): string {
+    const state = this.viewModel.getState();
     const traces = this.store.getFilteredTraces(state.searchQuery);
     const events = this.store.getEvents();
     const filters = this.store.getFilters();
@@ -309,44 +403,73 @@ export class DevToolPanel {
       position: state.position,
     });
 
-    this.sidebar.innerHTML = `
-      <div class="spoosh-resize-handle"></div>
-      <div class="spoosh-panel">
-        <div class="spoosh-list-panel" style="width: ${state.listPanelWidth}px; min-width: ${state.listPanelWidth}px;">
-          ${renderHeader({ filters, showSettings: state.showSettings, searchQuery: state.searchQuery })}
-          <div class="spoosh-list-content">
-            <div class="spoosh-requests-section" style="flex: ${state.requestsPanelHeight};">
-              <div class="spoosh-section-header">
-                <span class="spoosh-section-title">Requests</span>
-                <span class="spoosh-section-count">${activeCount > 0 ? `<span class="spoosh-active-count">${activeCount}</span> / ` : ""}${traces.length}</span>
-              </div>
-              ${renderTraceList(traces, state.selectedTraceId)}
+    return `
+      <div class="spoosh-list-panel" style="width: ${state.listPanelWidth}px; min-width: ${state.listPanelWidth}px;">
+        ${renderHeader({ filters, showSettings: state.showSettings, searchQuery: state.searchQuery })}
+        <div class="spoosh-list-content">
+          <div class="spoosh-requests-section" style="flex: ${state.requestsPanelHeight};">
+            <div class="spoosh-section-header">
+              <span class="spoosh-section-title">Requests</span>
+              <span class="spoosh-section-count">${activeCount > 0 ? `<span class="spoosh-active-count">${activeCount}</span> / ` : ""}${traces.length}</span>
             </div>
-            <div class="spoosh-horizontal-divider"></div>
-            <div class="spoosh-events-section" style="flex: ${1 - state.requestsPanelHeight};">
-              <div class="spoosh-section-header">
-                <span class="spoosh-section-title">Events</span>
-                <span class="spoosh-section-count">${events.length}</span>
-              </div>
-              ${renderEventList(events)}
+            ${renderTraceList(traces, state.selectedTraceId)}
+          </div>
+          <div class="spoosh-horizontal-divider"></div>
+          <div class="spoosh-events-section" style="flex: ${1 - state.requestsPanelHeight};">
+            <div class="spoosh-section-header">
+              <span class="spoosh-section-title">Events</span>
+              <span class="spoosh-section-count">${events.length}</span>
             </div>
+            ${renderEventList(events)}
           </div>
         </div>
-        <div class="spoosh-divider-handle"></div>
-        ${detailContent}
       </div>
+      <div class="spoosh-divider-handle"></div>
+      ${detailContent}
     `;
+  }
 
-    this.setupResizeHandlers();
-    this.attachEvents();
+  private renderInternalView(): string {
+    const state = this.viewModel.getState();
+    const cacheEntries = this.store.getCacheEntries(state.searchQuery);
+    const selectedEntry = state.selectedCacheKey
+      ? cacheEntries.find((e) => e.queryKey === state.selectedCacheKey)
+      : null;
 
-    if (savedScrollTop > 0) {
-      const newTabContent = this.sidebar.querySelector(".spoosh-tab-content");
+    const cacheDetail = renderCacheDetail({
+      entry: selectedEntry ?? null,
+      activeTab: state.internalTab,
+    });
 
-      if (newTabContent) {
-        newTabContent.scrollTop = savedScrollTop;
-      }
-    }
+    return `
+      <div class="spoosh-list-panel" style="width: ${state.listPanelWidth}px; min-width: ${state.listPanelWidth}px;">
+        ${renderHeader({ filters: this.store.getFilters(), showSettings: state.showSettings, searchQuery: state.searchQuery, hideFilters: true })}
+        <div class="spoosh-list-content">
+          <div class="spoosh-cache-section">
+            <div class="spoosh-section-header">
+              <span class="spoosh-section-title">Cache Entries</span>
+              <span class="spoosh-section-count">${cacheEntries.length}</span>
+            </div>
+            ${renderCacheList({
+              entries: cacheEntries,
+              selectedKey: state.selectedCacheKey,
+              searchQuery: state.searchQuery,
+            })}
+          </div>
+          ${
+            cacheEntries.length > 0
+              ? `<div class="spoosh-cache-clear-all">
+                  <button class="spoosh-cache-action-btn danger" data-action="clear-all-cache">
+                    Clear All Cache
+                  </button>
+                </div>`
+              : ""
+          }
+        </div>
+      </div>
+      <div class="spoosh-divider-handle"></div>
+      ${cacheDetail}
+    `;
   }
 
   private setupResizeHandlers(): void {
@@ -386,7 +509,9 @@ export class DevToolPanel {
   }): number {
     const activePlugins = new Set(
       trace.steps
-        .filter((step) => step.stage !== "skip" && step.plugin !== "spoosh:fetch")
+        .filter(
+          (step) => step.stage !== "skip" && step.plugin !== "spoosh:fetch"
+        )
         .map((step) => step.plugin)
     );
     return activePlugins.size;

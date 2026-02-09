@@ -161,6 +161,7 @@ export function devtool(
         .getPlugins()
         .map((p) => ({ name: p.name, operations: [...p.operations] }));
       store.setRegisteredPlugins(plugins);
+      store.setStateManager(ctx.stateManager);
 
       if (!globalPanel) {
         globalPanel = new DevToolPanel({

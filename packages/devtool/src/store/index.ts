@@ -3,9 +3,11 @@ import type {
   TraceEvent,
   PluginContext,
   StandaloneEvent,
+  StateManager,
 } from "@spoosh/core";
 
 import type {
+  CacheEntryDisplay,
   OperationTrace,
   InvalidationEvent,
   DevToolFilters,
@@ -15,6 +17,7 @@ import { createRingBuffer } from "./history";
 
 export interface DevToolStoreConfig {
   maxHistory: number;
+  stateManager?: StateManager;
 }
 
 interface RegisteredPlugin {
@@ -35,9 +38,62 @@ export class DevToolStore implements DevToolStoreInterface {
     showOnlyWithChanges: false,
   };
 
+  private stateManager: StateManager | undefined;
+
   constructor(config: DevToolStoreConfig) {
     this.traces = createRingBuffer<OperationTrace>(config.maxHistory);
     this.events = createRingBuffer<StandaloneEvent>(config.maxHistory * 2);
+    this.stateManager = config.stateManager;
+  }
+
+  setStateManager(stateManager: StateManager): void {
+    this.stateManager = stateManager;
+  }
+
+  getCacheEntries(searchQuery?: string): CacheEntryDisplay[] {
+    if (!this.stateManager) {
+      return [];
+    }
+
+    const entries = this.stateManager.getAllCacheEntries();
+    const query = searchQuery?.toLowerCase().trim();
+
+    return entries
+      .filter((e) => {
+        if (!query) return true;
+
+        return e.key.toLowerCase().includes(query);
+      })
+      .map((e) => ({
+        queryKey: e.key,
+        entry: e.entry,
+        subscriberCount: this.stateManager!.getSubscribersCount(e.key),
+      }));
+  }
+
+  invalidateCacheEntry(key: string): void {
+    if (!this.stateManager) return;
+
+    const entry = this.stateManager.getCache(key);
+
+    if (entry) {
+      this.stateManager.setCache(key, { stale: true });
+      this.notify();
+    }
+  }
+
+  deleteCacheEntry(key: string): void {
+    if (!this.stateManager) return;
+
+    this.stateManager.deleteCache(key);
+    this.notify();
+  }
+
+  clearAllCache(): void {
+    if (!this.stateManager) return;
+
+    this.stateManager.clear();
+    this.notify();
   }
 
   setRegisteredPlugins(

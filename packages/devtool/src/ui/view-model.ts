@@ -9,6 +9,8 @@ export type PositionMode =
   | "bottom-left"
   | "top-right"
   | "top-left";
+export type PanelView = "requests" | "internal";
+export type InternalTab = "data" | "meta" | "raw";
 
 export interface ViewModelState {
   isOpen: boolean;
@@ -25,6 +27,9 @@ export interface ViewModelState {
   searchQuery: string;
   theme: ThemeMode;
   position: PositionMode;
+  activeView: PanelView;
+  selectedCacheKey: string | null;
+  internalTab: InternalTab;
 }
 
 type Listener = () => void;
@@ -46,6 +51,9 @@ const DEFAULT_STATE: ViewModelState = {
   searchQuery: "",
   theme: "dark",
   position: "bottom-right",
+  activeView: "requests",
+  selectedCacheKey: null,
+  internalTab: "data",
 };
 
 export interface ViewModel {
@@ -77,6 +85,10 @@ export interface ViewModel {
 
   toggleFilter(filter: OperationType, store: DevToolStoreInterface): void;
   getFilters(store: DevToolStoreInterface): DevToolFilters;
+
+  setActiveView(view: PanelView): void;
+  selectCacheEntry(key: string | null): void;
+  setInternalTab(tab: InternalTab): void;
 }
 
 export function createViewModel(): ViewModel {
@@ -112,6 +124,7 @@ export function createViewModel(): ViewModel {
             settings.requestsPanelHeight ?? DEFAULT_STATE.requestsPanelHeight,
           theme: settings.theme ?? DEFAULT_STATE.theme,
           position: settings.position ?? DEFAULT_STATE.position,
+          activeView: settings.activeView ?? DEFAULT_STATE.activeView,
         };
       }
     } catch {
@@ -137,6 +150,7 @@ export function createViewModel(): ViewModel {
             requestsPanelHeight: state.requestsPanelHeight,
             theme: state.theme,
             position: state.position,
+            activeView: state.activeView,
           })
         );
       } catch {
@@ -294,6 +308,22 @@ export function createViewModel(): ViewModel {
     return store.getFilters();
   }
 
+  function setActiveView(view: PanelView): void {
+    state = { ...state, activeView: view };
+    saveSettings();
+    notify();
+  }
+
+  function selectCacheEntry(key: string | null): void {
+    state = { ...state, selectedCacheKey: key };
+    notify();
+  }
+
+  function setInternalTab(tab: InternalTab): void {
+    state = { ...state, internalTab: tab };
+    notify();
+  }
+
   return {
     getState,
     subscribe,
@@ -317,5 +347,8 @@ export function createViewModel(): ViewModel {
     clearAll,
     toggleFilter,
     getFilters,
+    setActiveView,
+    selectCacheEntry,
+    setInternalTab,
   };
 }

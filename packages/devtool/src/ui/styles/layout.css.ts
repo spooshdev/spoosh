@@ -14,6 +14,8 @@ export const layoutCSS = `
     color: var(--spoosh-text);
     transform: translateX(100%);
     box-shadow: -4px 0 24px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
   }
 
   #spoosh-devtool-sidebar.open {
@@ -61,7 +63,8 @@ export const layoutCSS = `
   /* ===== Main Panel Layout ===== */
   .spoosh-panel {
     display: flex;
-    height: 100%;
+    flex: 1;
+    min-height: 0;
   }
 
   .spoosh-list-panel {

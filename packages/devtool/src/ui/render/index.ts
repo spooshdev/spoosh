@@ -5,3 +5,5 @@ export * from "./settings";
 export * from "./detail-panel";
 export * from "./tabs";
 export * from "./timeline";
+export * from "./bottom-bar";
+export * from "./internal";

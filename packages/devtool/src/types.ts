@@ -1,4 +1,5 @@
 import type {
+  CacheEntry,
   OperationType,
   SpooshResponse,
   StateManager,
@@ -144,11 +145,26 @@ export interface DevToolStoreInterface {
   getEvents(): StandaloneEvent[];
   subscribe(callback: () => void): () => void;
   clear(): void;
+  setStateManager(stateManager: StateManager): void;
+  getCacheEntries(searchQuery?: string): CacheEntryDisplay[];
+  invalidateCacheEntry(key: string): void;
+  deleteCacheEntry(key: string): void;
+  clearAllCache(): void;
 }
 
 export type DetailTab = "data" | "request" | "meta" | "plugins";
 
+export type PanelView = "requests" | "internal";
+
+export type InternalTab = "data" | "meta" | "raw";
+
 export type TimelineScope = "request" | "operation" | "global";
+
+export interface CacheEntryDisplay {
+  queryKey: string;
+  entry: CacheEntry<unknown, unknown>;
+  subscriberCount: number;
+}
 
 export interface RenderContext {
   traces: OperationTrace[];

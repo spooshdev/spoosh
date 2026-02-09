@@ -6,10 +6,28 @@ export interface HeaderRenderContext {
   filters: { operationTypes: Set<OperationType> };
   showSettings: boolean;
   searchQuery: string;
+  hideFilters?: boolean;
 }
 
 export function renderHeader(ctx: HeaderRenderContext): string {
-  const { filters, showSettings, searchQuery } = ctx;
+  const { filters, showSettings, searchQuery, hideFilters } = ctx;
+
+  const filtersHtml = hideFilters
+    ? ""
+    : `
+    <div class="spoosh-filters">
+      ${(["read", "write", "infiniteRead"] as const)
+        .map((type) => {
+          const active = filters.operationTypes.has(type);
+          const label =
+            type === "infiniteRead"
+              ? "Infinite"
+              : type.charAt(0).toUpperCase() + type.slice(1);
+          return `<button class="spoosh-filter ${active ? "active" : ""}" data-filter="${type}">${label}</button>`;
+        })
+        .join("")}
+    </div>
+  `;
 
   return `
     <div class="spoosh-header">
@@ -41,19 +59,8 @@ export function renderHeader(ctx: HeaderRenderContext): string {
         <circle cx="11" cy="11" r="8"/>
         <path d="M21 21l-4.35-4.35"/>
       </svg>
-      <input type="text" class="spoosh-search-input" placeholder="Search path, method..." value="${searchQuery}">
+      <input type="text" class="spoosh-search-input" placeholder="Search..." value="${searchQuery}">
     </div>
-    <div class="spoosh-filters">
-      ${(["read", "write", "infiniteRead"] as const)
-        .map((type) => {
-          const active = filters.operationTypes.has(type);
-          const label =
-            type === "infiniteRead"
-              ? "Infinite"
-              : type.charAt(0).toUpperCase() + type.slice(1);
-          return `<button class="spoosh-filter ${active ? "active" : ""}" data-filter="${type}">${label}</button>`;
-        })
-        .join("")}
-    </div>
+    ${filtersHtml}
   `;
 }
