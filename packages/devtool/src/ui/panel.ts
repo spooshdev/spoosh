@@ -14,7 +14,11 @@ import { createResizeController } from "./resize-controller";
 import { injectStyles, removeStyles } from "./styles/inject";
 import { getThemeCSS, resolveTheme } from "./styles/theme";
 import { getLogo } from "./utils";
-import { createViewModel } from "./view-model";
+import { createViewModel, type PositionMode } from "./view-model";
+
+function isLeftPosition(position: PositionMode): boolean {
+  return position === "bottom-left" || position === "top-left";
+}
 
 interface DevToolPanelOptions {
   store: DevToolStoreInterface;
@@ -74,6 +78,11 @@ export class DevToolPanel {
 
     this.sidebar = document.createElement("div");
     this.sidebar.id = "spoosh-devtool-sidebar";
+
+    if (isLeftPosition(this.viewModel.getState().position)) {
+      this.sidebar.classList.add("left");
+    }
+
     this.resizeController.updateSidebarDOM(this.sidebar);
     this.shadowRoot.appendChild(this.sidebar);
 
@@ -442,9 +451,17 @@ export class DevToolPanel {
     }
   }
 
-  setPosition(position: string): void {
+  setPosition(position: PositionMode): void {
     if (this.fab) {
       this.fab.className = position;
+    }
+
+    if (this.sidebar) {
+      if (isLeftPosition(position)) {
+        this.sidebar.classList.add("left");
+      } else {
+        this.sidebar.classList.remove("left");
+      }
     }
   }
 

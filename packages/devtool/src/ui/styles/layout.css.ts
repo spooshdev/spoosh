@@ -20,6 +20,25 @@ export const layoutCSS = `
     transform: translateX(0);
   }
 
+  /* Left-side sidebar positioning */
+  #spoosh-devtool-sidebar.left {
+    right: auto;
+    left: 0;
+    border-left: none;
+    border-right: 1px solid var(--spoosh-border);
+    transform: translateX(-100%);
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15);
+  }
+
+  #spoosh-devtool-sidebar.left.open {
+    transform: translateX(0);
+  }
+
+  #spoosh-devtool-sidebar.left .spoosh-resize-handle {
+    left: auto;
+    right: 0;
+  }
+
   /* ===== Scrollbar Styling ===== */
   #spoosh-devtool-sidebar ::-webkit-scrollbar {
     width: 6px;
