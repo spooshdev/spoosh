@@ -31,6 +31,10 @@ declare module "@spoosh/core" {
   interface PluginExportsRegistry {
     "spoosh:deduplication": {
       getConfig: () => { read: DedupeMode; write: DedupeMode };
+      isDedupeEnabled: (
+        operationType: string,
+        pluginOptions?: { dedupe?: DedupeMode }
+      ) => boolean;
     };
   }
 }

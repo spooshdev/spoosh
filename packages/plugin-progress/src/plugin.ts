@@ -9,6 +9,8 @@ import type {
   ProgressOptions,
 } from "./types";
 
+const PLUGIN_NAME = "spoosh:progress";
+
 export function progressPlugin(): SpooshPlugin<{
   readOptions: ProgressReadOptions;
   writeOptions: ProgressWriteOptions;
@@ -17,10 +19,12 @@ export function progressPlugin(): SpooshPlugin<{
   writeResult: ProgressWriteResult;
 }> {
   return {
-    name: "spoosh:progress",
+    name: PLUGIN_NAME,
     operations: ["read", "write", "infiniteRead"],
 
     middleware: async (context, next) => {
+      const t = context.tracer?.(PLUGIN_NAME);
+
       const pluginOptions = context.pluginOptions as
         | ProgressReadOptions
         | ProgressWriteOptions
@@ -50,6 +54,10 @@ export function progressPlugin(): SpooshPlugin<{
               if (headerVal) {
                 total = parseInt(headerVal, 10);
               }
+            }
+
+            if (event.loaded && total) {
+              t?.log(`Progress: ${event.loaded}/${total}`, { color: "info" });
             }
 
             context.stateManager.setMeta(context.queryKey, {

@@ -68,6 +68,7 @@ function createMockPluginExecutor(
       return coreFetch();
     }),
     getPlugins: vi.fn().mockReturnValue([]),
+    registerContextEnhancer: vi.fn(),
     createContext: vi.fn().mockImplementation((input) => ({
       ...input,
       headers: {},

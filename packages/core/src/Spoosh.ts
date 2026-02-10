@@ -90,12 +90,12 @@ export class Spoosh<
   /**
    * Adds plugins to the Spoosh instance.
    *
-   * Returns a **new** Spoosh instance with updated plugin types (immutable pattern).
-   * Each call to `.use()` replaces the previous plugins rather than adding to them.
+   * Returns a configured Spoosh instance with the specified plugins.
+   * Can only be called once - the returned instance does not have `.use()`.
    *
    * @template TNewPlugins - The const tuple type of the new plugins array
    * @param plugins - Array of plugin instances to use
-   * @returns A new Spoosh instance with the specified plugins
+   * @returns A configured Spoosh instance (without `.use()` method)
    *
    * ```ts
    * const spoosh = new Spoosh<Schema, Error>('/api').use([
@@ -107,7 +107,7 @@ export class Spoosh<
    */
   use<const TNewPlugins extends PluginArray>(
     plugins: TNewPlugins
-  ): Spoosh<TSchema, TError, TNewPlugins> {
+  ): Omit<Spoosh<TSchema, TError, TNewPlugins>, "use"> {
     return new Spoosh<TSchema, TError, TNewPlugins>(
       this.baseUrl,
       this.defaultOptions as SpooshOptionsInput,
@@ -135,6 +135,7 @@ export class Spoosh<
       });
       const stateManager = createStateManager();
       const eventEmitter = createEventEmitter();
+
       const pluginExecutor = createPluginExecutor([...this._plugins]);
 
       this._instance = {

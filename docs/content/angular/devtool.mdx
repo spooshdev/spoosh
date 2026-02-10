@@ -1,0 +1,151 @@
+---
+title: Devtool
+description: Visual debugging panel for Spoosh
+---
+
+The devtool plugin provides a visual debugging panel that shows every request, plugin step, and cached state in your browser.
+
+## Installation
+
+```package-install
+@spoosh/devtool
+```
+
+## Usage
+
+```typescript
+import { Spoosh } from "@spoosh/core";
+import { devtool } from "@spoosh/devtool";
+
+const spoosh = new Spoosh<ApiSchema, Error>("/api").use([
+  devtool(),
+  // other plugins...
+]);
+```
+
+A floating icon appears in the corner. Click it to open the panel.
+
+## Features
+
+| Feature                | Description                                                        |
+| ---------------------- | ------------------------------------------------------------------ |
+| **Request Timeline**   | See every request with timing, status, and duration                |
+| **Plugin Steps**       | Watch middleware execution order with before/after diffs           |
+| **State Inspector**    | Browse cache entries, subscriber counts, refetch or delete         |
+| **Event Log**          | View invalidations, refetch triggers, custom plugin events         |
+| **Status Badges**      | Pending, success, error, stale, fresh indicators                   |
+| **Filter & Search**    | Filter by operation type, search by path or query key              |
+| **Keyboard Shortcuts** | Navigate with keyboard (Esc, arrows, Ctrl+K, etc.)                 |
+| **Resizable Panel**    | Drag to resize sidebar and split panels                            |
+| **Theme Switching**    | Dark and light mode                                                |
+| **Position Config**    | Button position (corners) and sidebar position (right/left/bottom) |
+| **Sensitive Headers**  | Toggle to reveal/hide auth headers with eye icon                   |
+| **Export/Import**      | Save traces as JSON, import for analysis                           |
+| **Settings**           | Max history size, auto-follow, show/hide passed plugins            |
+
+## Options
+
+```typescript
+devtool({
+  enabled: true,
+  showFloatingIcon: true,
+  sensitiveHeaders: ["authorization", "cookie", "x-api-key"],
+});
+```
+
+| Option             | Type       | Default                                         | Description                         |
+| ------------------ | ---------- | ----------------------------------------------- | ----------------------------------- |
+| `enabled`          | `boolean`  | `true`                                          | Enable or disable the devtool       |
+| `showFloatingIcon` | `boolean`  | `true`                                          | Show floating icon in corner        |
+| `sensitiveHeaders` | `string[]` | `["authorization", "cookie", "x-api-key", ...]` | Headers to redact in UI and exports |
+
+## Programmatic API
+
+Access devtool functions through `create()`:
+
+```typescript
+// spoosh.ts
+import { create } from "@spoosh/angular";
+
+const spoosh = new Spoosh<ApiSchema, Error>("/api").use([devtool()]);
+export const { injectRead, devtools } = create(spoosh);
+
+// app.component.ts
+import { devtools } from "./spoosh";
+
+@Component({ ... })
+export class AppComponent {
+  toggleDevtools() {
+    devtools.toggle();
+  }
+
+  clearTraces() {
+    devtools.clearTraces();
+  }
+
+  exportTraces() {
+    const traces = devtools.exportTraces();
+    console.log(traces);
+  }
+}
+```
+
+| Method                 | Description                    |
+| ---------------------- | ------------------------------ |
+| `toggle()`             | Open or close the panel        |
+| `clearTraces()`        | Clear all recorded traces      |
+| `exportTraces()`       | Get traces as JSON array       |
+| `toggleFloatingIcon()` | Show or hide the floating icon |
+
+## Keyboard Shortcuts
+
+| Shortcut        | Action         |
+| --------------- | -------------- |
+| `Esc`           | Close panel    |
+| `Ctrl/Cmd + K`  | Focus search   |
+| `↑` / `↓`       | Navigate items |
+| `1` / `2` / `3` | Switch views   |
+| `Ctrl/Cmd + E`  | Export traces  |
+| `Ctrl/Cmd + L`  | Clear traces   |
+
+## Production
+
+The plugin automatically disables itself when:
+
+- `enabled: false` is set
+- Running on server (SSR)
+
+```typescript
+devtool({
+  enabled: !environment.production,
+});
+```
+
+## Plugin Tracing
+
+When devtool is enabled, plugins can emit trace events to show what they're doing. See [Tracing](/docs/angular/plugin-development/advanced/tracing) for full documentation.
+
+```typescript
+function myPlugin(): SpooshPlugin {
+  return {
+    name: "my-app:my-plugin",
+    operations: ["read"],
+
+    middleware: async (context, next) => {
+      const t = context.tracer?.("my-app:my-plugin");
+
+      t?.log("Checking cache");
+      t?.return("Cache hit");
+      t?.skip("Already in progress");
+
+      return next();
+    },
+
+    setup(context) {
+      const et = context.eventTracer?.("my-app:my-plugin");
+
+      et?.emit("Plugin initialized");
+    },
+  };
+}
+```

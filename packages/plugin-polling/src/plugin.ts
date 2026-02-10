@@ -1,4 +1,9 @@
-import type { SpooshPlugin, PluginContext, SpooshResponse } from "@spoosh/core";
+import type {
+  SpooshPlugin,
+  PluginContext,
+  SpooshResponse,
+  EventTracer,
+} from "@spoosh/core";
 
 import type {
   PollingReadOptions,
@@ -7,6 +12,8 @@ import type {
   PollingReadResult,
   PollingWriteResult,
 } from "./types";
+
+const PLUGIN_NAME = "spoosh:polling";
 
 /**
  * Enables automatic polling for queries at configurable intervals.
@@ -45,13 +52,22 @@ export function pollingPlugin(): SpooshPlugin<{
   writeResult: PollingWriteResult;
 }> {
   const timeouts = new Map<string, ReturnType<typeof setTimeout>>();
+  const eventTracers = new Map<string, EventTracer>();
 
-  const clearPolling = (queryKey: string) => {
+  const clearPolling = (queryKey: string, reason?: string) => {
     const timeout = timeouts.get(queryKey);
 
     if (timeout) {
       clearTimeout(timeout);
       timeouts.delete(queryKey);
+
+      const et = eventTracers.get(queryKey);
+
+      if (et && reason) {
+        et.emit(reason, { queryKey });
+      }
+
+      eventTracers.delete(queryKey);
     }
   };
 
@@ -60,6 +76,7 @@ export function pollingPlugin(): SpooshPlugin<{
     response?: SpooshResponse<unknown, unknown>
   ) => {
     const { queryKey, eventEmitter } = context;
+    const et = context.eventTracer?.(PLUGIN_NAME);
 
     const pluginOptions = context.pluginOptions as
       | PollingReadOptions
@@ -75,12 +92,29 @@ export function pollingPlugin(): SpooshPlugin<{
         ? pollingInterval(source?.data, source?.error)
         : pollingInterval;
 
-    if (resolvedInterval === false || resolvedInterval <= 0) return;
+    if (resolvedInterval === false || resolvedInterval <= 0) {
+      et?.emit("Polling disabled", { queryKey, color: "muted" });
+      return;
+    }
 
     clearPolling(queryKey);
 
+    if (et) {
+      eventTracers.set(queryKey, et);
+    }
+
+    et?.emit(`Scheduled next poll in ${resolvedInterval}ms`, {
+      queryKey,
+      color: "info",
+      meta: { interval: resolvedInterval },
+    });
+
     const timeout = setTimeout(() => {
       timeouts.delete(queryKey);
+
+      const storedTracer = eventTracers.get(queryKey);
+
+      storedTracer?.emit("Poll triggered", { queryKey, color: "success" });
 
       eventEmitter.emit("refetch", {
         queryKey,
@@ -92,7 +126,7 @@ export function pollingPlugin(): SpooshPlugin<{
   };
 
   return {
-    name: "spoosh:polling",
+    name: PLUGIN_NAME,
     operations: ["read", "infiniteRead"],
 
     afterResponse(context, response) {
@@ -102,7 +136,7 @@ export function pollingPlugin(): SpooshPlugin<{
     lifecycle: {
       onUpdate(context, previousContext) {
         if (previousContext.queryKey !== context.queryKey) {
-          clearPolling(previousContext.queryKey);
+          clearPolling(previousContext.queryKey, "Query key changed");
         }
 
         const { queryKey } = context;
@@ -113,7 +147,7 @@ export function pollingPlugin(): SpooshPlugin<{
         const pollingInterval = pluginOptions?.pollingInterval;
 
         if (!pollingInterval) {
-          clearPolling(queryKey);
+          clearPolling(queryKey, "Polling disabled");
           return;
         }
 
@@ -125,7 +159,7 @@ export function pollingPlugin(): SpooshPlugin<{
       },
 
       onUnmount(context) {
-        clearPolling(context.queryKey);
+        clearPolling(context.queryKey, "Component unmounted");
       },
     },
   };

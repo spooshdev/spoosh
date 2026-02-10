@@ -1,0 +1,215 @@
+---
+title: Tracing
+description: Emit trace events for devtool visibility
+---
+
+When the [devtool](/docs/angular/devtool) plugin is enabled, your plugins can emit trace events to show what they're doing. This helps users understand request flow and debug issues.
+
+## Request Tracing (t)
+
+Use `context.tracer` to emit events during request processing. The convention is to name it `t`:
+
+```typescript
+function myPlugin(): SpooshPlugin {
+  return {
+    name: "my-app:my-plugin",
+    operations: ["read"],
+
+    middleware: async (context, next) => {
+      const t = context.tracer?.("my-app:my-plugin");
+
+      t?.log("Starting processing");
+
+      const cached = getFromCache(context.queryKey);
+
+      if (cached) {
+        t?.return("Cache hit");
+        return cached;
+      }
+
+      t?.log("Cache miss, fetching");
+      return next();
+    },
+  };
+}
+```
+
+### Methods
+
+| Method   | When to use                         |
+| -------- | ----------------------------------- |
+| `log`    | Informational step                  |
+| `return` | Middleware returns early            |
+| `skip`   | Middleware skips without processing |
+
+### Options
+
+All methods accept an optional second parameter:
+
+```typescript
+t?.log("Message", {
+  color: "blue",
+  diff: { before: oldValue, after: newValue, label: "Data" },
+  info: [{ label: "Count", value: 5 }],
+});
+```
+
+| Option  | Type                                           | Description                 |
+| ------- | ---------------------------------------------- | --------------------------- |
+| `color` | `"blue"` \| `"green"` \| `"yellow"` \| `"red"` | Step color in timeline      |
+| `diff`  | `{ before, after, label? }`                    | Show before/after diff view |
+| `info`  | `Array<{ label?, value }>`                     | Additional info to display  |
+
+### Showing Diffs
+
+Use `diff` to visualize data transformations:
+
+```typescript
+function transformPlugin(): SpooshPlugin {
+  return {
+    name: "my-app:transform",
+    operations: ["read"],
+
+    middleware: async (context, next) => {
+      const t = context.tracer?.("my-app:transform");
+      const response = await next();
+
+      if (response.data) {
+        const before = response.data;
+        const after = transformData(response.data);
+
+        t?.log("Transformed response", {
+          diff: { before, after, label: "Response Data" },
+        });
+
+        return { ...response, data: after };
+      }
+
+      return response;
+    },
+  };
+}
+```
+
+### Showing Info
+
+Use `info` to display additional metadata:
+
+```typescript
+t?.log("Retrying request", {
+  color: "yellow",
+  info: [
+    { label: "Attempt", value: attempt },
+    { label: "Max", value: maxRetries },
+    { label: "Delay", value: `${delay}ms` },
+  ],
+});
+```
+
+## Event Tracing (et)
+
+Use `context.eventTracer` for events outside of request lifecycle. The convention is to name it `et`:
+
+```typescript
+function myPlugin(): SpooshPlugin {
+  return {
+    name: "my-app:my-plugin",
+    operations: [],
+
+    setup(context) {
+      const et = context.eventTracer?.("my-app:my-plugin");
+
+      et?.emit("Plugin initialized");
+
+      // Listen for events
+      context.eventEmitter.on("someEvent", () => {
+        et?.emit("Received someEvent", { color: "blue" });
+      });
+    },
+  };
+}
+```
+
+### emit Options
+
+```typescript
+et?.emit("Message", {
+  color: "green",
+  queryKey: "users/123",
+  meta: { custom: "data" },
+});
+```
+
+| Option     | Type     | Description                    |
+| ---------- | -------- | ------------------------------ |
+| `color`    | `string` | Event color in event log       |
+| `queryKey` | `string` | Associate with specific query  |
+| `meta`     | `object` | Additional metadata to display |
+
+## When to Use Each
+
+| Scenario                 | Use  |
+| ------------------------ | ---- |
+| Inside `middleware`      | `t`  |
+| Inside `afterResponse`   | `t`  |
+| Inside `setup`           | `et` |
+| Inside `lifecycle` hooks | `et` |
+| Event listeners          | `et` |
+| Timers / intervals       | `et` |
+
+## Complete Example
+
+```typescript
+function cachePlugin(): SpooshPlugin {
+  const cache = new Map();
+
+  return {
+    name: "my-app:cache",
+    operations: ["read"],
+
+    setup(context) {
+      const et = context.eventTracer?.("my-app:cache");
+      et?.emit("Cache initialized");
+
+      context.eventEmitter.on("invalidate", (tags) => {
+        et?.emit(`Invalidated ${tags.length} tags`, {
+          color: "yellow",
+          meta: { tags },
+        });
+      });
+    },
+
+    middleware: async (context, next) => {
+      const t = context.tracer?.("my-app:cache");
+      const cached = cache.get(context.queryKey);
+
+      if (cached && !isStale(cached)) {
+        t?.return("Cache hit", {
+          color: "green",
+          info: [{ label: "Age", value: `${getAge(cached)}ms` }],
+        });
+        return cached.response;
+      }
+
+      t?.log("Cache miss");
+      const response = await next();
+
+      if (response.data) {
+        cache.set(context.queryKey, { response, timestamp: Date.now() });
+        t?.log("Cached response");
+      }
+
+      return response;
+    },
+  };
+}
+```
+
+## No Devtool? No Problem
+
+When devtool is not installed, `context.tracer` and `context.eventTracer` are `undefined`. Using optional chaining (`?.`) ensures your plugin works without devtool:
+
+```typescript
+const t = context.tracer?.("my-plugin");
+t?.log("This does nothing if devtool is not installed");
+```

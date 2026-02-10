@@ -1,6 +1,5 @@
 import type {
   SpooshPlugin,
-  InstanceApiContext,
   OperationState,
   SpooshResponse,
 } from "@spoosh/core";
@@ -16,6 +15,8 @@ import type {
   PrefetchOptions,
 } from "./types";
 import { storePromiseInCache } from "./promise-cache";
+
+const PLUGIN_NAME = "spoosh:prefetch";
 
 /**
  * Provides prefetching capabilities to load data before it's needed.
@@ -72,10 +73,10 @@ export function prefetchPlugin(
   const { timeout } = config;
 
   return {
-    name: "spoosh:prefetch",
+    name: PLUGIN_NAME,
     operations: [],
 
-    instanceApi(context: InstanceApiContext) {
+    instanceApi(context) {
       const { api, stateManager, eventEmitter, pluginExecutor } = context;
 
       const prefetch = async <TData = unknown, TError = unknown>(
@@ -201,10 +202,13 @@ export function prefetchPlugin(
         };
 
         const existingPromise = stateManager.getPendingPromise(queryKey);
+        const et = pluginContext.eventTracer?.(PLUGIN_NAME);
 
         if (existingPromise) {
           return existingPromise as Promise<SpooshResponse<TData, TError>>;
         }
+
+        et?.emit("Prefetching", { queryKey, color: "info" });
 
         const fetchPromise = pluginExecutor.executeMiddleware(
           "read",

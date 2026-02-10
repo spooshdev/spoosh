@@ -34,16 +34,6 @@ describe("Spoosh", () => {
       expect(spoosh2).not.toBe(spoosh1);
     });
 
-    it("replaces plugins on each use() call", () => {
-      const plugin1 = createMockPlugin("plugin-1");
-      const plugin2 = createMockPlugin("plugin-2");
-
-      const spoosh = new Spoosh("/api").use([plugin1]).use([plugin2]);
-
-      expect(spoosh.pluginExecutor.getPlugins()).toHaveLength(1);
-      expect(spoosh.pluginExecutor.getPlugins()[0]?.name).toBe("plugin-2");
-    });
-
     it("preserves baseUrl and defaultOptions", () => {
       const spoosh1 = new Spoosh("/api", { headers: { "X-Test": "value" } });
       const spoosh2 = spoosh1.use([createMockPlugin("test-plugin")]);
@@ -145,12 +135,11 @@ describe("Spoosh", () => {
   });
 
   describe("method chaining", () => {
-    it("supports chaining use() calls", () => {
+    it("supports use() call", () => {
       const plugin = createMockPlugin("test-plugin");
 
       const spoosh = new Spoosh("/api").use([plugin]);
 
-      expect(spoosh).toBeInstanceOf(Spoosh);
       expect(spoosh.pluginExecutor.getPlugins()).toHaveLength(1);
     });
 

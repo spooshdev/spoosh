@@ -10,6 +10,8 @@ import type {
   QsWriteResult,
 } from "./types";
 
+const PLUGIN_NAME = "spoosh:qs";
+
 const DEFAULT_OPTIONS = {
   arrayFormat: "brackets",
   allowDots: false,
@@ -48,13 +50,15 @@ export function qsPlugin(config: QsPluginConfig = {}): SpooshPlugin<{
   writeResult: QsWriteResult;
 }> {
   return {
-    name: "spoosh:qs",
+    name: PLUGIN_NAME,
     operations: ["read", "write", "infiniteRead"],
 
     middleware: async (context, next) => {
+      const t = context.tracer?.(PLUGIN_NAME);
       const query = context.request.query;
 
       if (!query || Object.keys(query).length === 0) {
+        t?.skip("No query params", { color: "muted" });
         return next();
       }
 
@@ -73,6 +77,15 @@ export function qsPlugin(config: QsPluginConfig = {}): SpooshPlugin<{
         string,
         string
       >;
+
+      t?.log("Serialized query", {
+        color: "info",
+        diff: {
+          before: query,
+          after: flatQuery,
+          label: "Serialize query params",
+        },
+      });
 
       context.request = {
         ...context.request,

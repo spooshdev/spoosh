@@ -119,7 +119,7 @@ export function createStateManager(): StateManager {
           existing.tags = entry.tags;
         }
 
-        if (entry.previousData !== undefined) {
+        if ("previousData" in entry) {
           existing.previousData = entry.previousData;
         }
 

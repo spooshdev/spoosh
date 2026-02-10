@@ -1,8 +1,4 @@
-import type {
-  SpooshPlugin,
-  PluginContext,
-  InstanceApiContext,
-} from "@spoosh/core";
+import type { SpooshPlugin, PluginContext } from "@spoosh/core";
 
 import type {
   InvalidationPluginConfig,
@@ -16,6 +12,7 @@ import type {
   InvalidationInstanceApi,
 } from "./types";
 
+const PLUGIN_NAME = "spoosh:invalidation";
 const INVALIDATION_DEFAULT_KEY = "invalidation:defaultMode";
 
 function resolveModeTags(
@@ -136,7 +133,7 @@ export function invalidationPlugin(
   const { defaultMode = "all" } = config;
 
   return {
-    name: "spoosh:invalidation",
+    name: PLUGIN_NAME,
     operations: ["write"],
 
     exports(context): InvalidationPluginExports {
@@ -148,33 +145,45 @@ export function invalidationPlugin(
     },
 
     afterResponse(context, response) {
+      const t = context.tracer?.(PLUGIN_NAME);
+
       if (!response.error) {
         const tags = resolveInvalidateTags(context, defaultMode);
 
         if (tags.includes("*")) {
+          t?.log("Refetch all", { color: "warning" });
           context.eventEmitter.emit("refetchAll", undefined);
           return;
         }
 
         if (tags.length > 0) {
+          t?.log("Invalidated tags", {
+            color: "info",
+            info: [{ label: "Tags", value: tags }],
+          });
           context.stateManager.markStale(tags);
           context.eventEmitter.emit("invalidate", tags);
+        } else {
+          t?.skip("No tags to invalidate", { color: "muted" });
         }
       }
     },
 
-    instanceApi(context: InstanceApiContext) {
+    instanceApi(context) {
       const { stateManager, eventEmitter } = context;
+      const et = context.eventTracer?.(PLUGIN_NAME);
 
       const invalidate = (input: string | string[]): void => {
         const tags = Array.isArray(input) ? input : [input];
 
         if (tags.includes("*")) {
+          et?.emit("Refetch all (manual)", { color: "warning" });
           eventEmitter.emit("refetchAll", undefined);
           return;
         }
 
         if (tags.length > 0) {
+          et?.emit(`Invalidated: ${tags.join(", ")}`, { color: "info" });
           stateManager.markStale(tags);
           eventEmitter.emit("invalidate", tags);
         }

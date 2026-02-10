@@ -4,6 +4,7 @@ import type {
   PluginAccessor,
   PluginContext,
   PluginContextInput,
+  DevtoolEvents,
 } from "./types";
 import type { SpooshResponse } from "../types/response.types";
 
@@ -32,8 +33,14 @@ export type PluginExecutor = {
 
   getPlugins: () => readonly SpooshPlugin[];
 
-  /** Creates a full PluginContext with plugins accessor injected */
+  /** Creates a full PluginContext with plugins accessor */
   createContext: (input: PluginContextInput) => PluginContext;
+
+  /**
+   * Register a function to enhance every PluginContext during creation.
+   * Call this during plugin setup to inject properties into all request contexts.
+   */
+  registerContextEnhancer: (enhancer: (context: PluginContext) => void) => void;
 };
 
 /**
@@ -74,6 +81,7 @@ export function createPluginExecutor(
   validateDependencies(initialPlugins);
   const plugins = sortByPriority(initialPlugins);
   const frozenPlugins = Object.freeze([...plugins]);
+  const contextEnhancers: ((context: PluginContext) => void)[] = [];
 
   const createPluginAccessor = (context: PluginContext): PluginAccessor => ({
     get(name: string) {
@@ -98,7 +106,7 @@ export function createPluginExecutor(
         continue;
       }
 
-      await handler(context as PluginContext);
+      await handler(context);
     }
   };
 
@@ -118,7 +126,7 @@ export function createPluginExecutor(
         continue;
       }
 
-      await handler(context as PluginContext, previousContext as PluginContext);
+      await handler(context, previousContext);
     }
   };
 
@@ -141,25 +149,24 @@ export function createPluginExecutor(
         .filter((p) => p.middleware)
         .map((p) => p.middleware!);
 
+      const tracedCoreFetch = async () => {
+        const fetchTracer = context.tracer?.("spoosh:fetch");
+        fetchTracer?.log("Network request");
+        return coreFetch();
+      };
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let response: SpooshResponse<any, any>;
 
       if (middlewares.length === 0) {
-        response = await coreFetch();
+        response = await tracedCoreFetch();
       } else {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         type NextFn = () => Promise<SpooshResponse<any, any>>;
 
         const chain: NextFn = middlewares.reduceRight<NextFn>(
-          (next, middleware) => {
-            return () =>
-              middleware(
-                context as PluginContext,
-                next as () => Promise<SpooshResponse<unknown, unknown>>
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              ) as Promise<SpooshResponse<any, any>>;
-          },
-          coreFetch
+          (next, middleware) => () => middleware(context, next),
+          tracedCoreFetch
         );
 
         response = await chain();
@@ -167,17 +174,18 @@ export function createPluginExecutor(
 
       for (const plugin of applicablePlugins) {
         if (plugin.afterResponse) {
-          const newResponse = await plugin.afterResponse(
-            context as PluginContext,
-            response as SpooshResponse<unknown, unknown>
-          );
+          const newResponse = await plugin.afterResponse(context, response);
 
           if (newResponse) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            response = newResponse as SpooshResponse<any, any>;
+            response = newResponse;
           }
         }
       }
+
+      context.eventEmitter.emit<DevtoolEvents["spoosh:request-complete"]>(
+        "spoosh:request-complete",
+        { context, queryKey: context.queryKey }
+      );
 
       return response;
     },
@@ -186,9 +194,18 @@ export function createPluginExecutor(
       return frozenPlugins;
     },
 
+    registerContextEnhancer(enhancer: (context: PluginContext) => void) {
+      contextEnhancers.push(enhancer);
+    },
+
     createContext(input: PluginContextInput) {
       const ctx = input as PluginContext;
       ctx.plugins = createPluginAccessor(ctx);
+
+      for (const enhancer of contextEnhancers) {
+        enhancer(ctx);
+      }
+
       return ctx;
     },
   };

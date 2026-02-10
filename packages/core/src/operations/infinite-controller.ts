@@ -294,7 +294,10 @@ export function createInfiniteReadController<
     );
   };
 
-  const createContext = (pageKey: string): PluginContext => {
+  const createContext = (
+    pageKey: string,
+    requestOptions?: InfiniteRequestOptions
+  ): PluginContext => {
     return pluginExecutor.createContext({
       operationType: "infiniteRead",
       path,
@@ -303,7 +306,14 @@ export function createInfiniteReadController<
       tags,
       requestTimestamp: Date.now(),
       instanceId,
-      request: { headers: {} },
+      request: {
+        headers: {},
+        query: requestOptions?.query as
+          | Record<string, string | number | boolean | undefined>
+          | undefined,
+        params: requestOptions?.params,
+        body: requestOptions?.body,
+      },
       temp: new Map(),
       pluginOptions,
       stateManager,
@@ -336,7 +346,7 @@ export function createInfiniteReadController<
     abortController = new AbortController();
     const signal = abortController.signal;
 
-    const context = createContext(pageKey);
+    const context = createContext(pageKey, mergedRequest);
 
     const coreFetch = async (): Promise<SpooshResponse<TData, TError>> => {
       const fetchPromise = (async (): Promise<
@@ -533,7 +543,7 @@ export function createInfiniteReadController<
       cachedState = computeState();
       subscribeToPages();
 
-      const context = createContext(trackerKey);
+      const context = createContext(trackerKey, initialRequest);
       pluginExecutor.executeLifecycle("onMount", "infiniteRead", context);
 
       refetchUnsubscribe = eventEmitter.on("refetch", (event) => {
@@ -556,7 +566,7 @@ export function createInfiniteReadController<
     },
 
     unmount() {
-      const context = createContext(trackerKey);
+      const context = createContext(trackerKey, initialRequest);
       pluginExecutor.executeLifecycle("onUnmount", "infiniteRead", context);
 
       pageSubscriptions.forEach((unsub) => unsub());
@@ -566,7 +576,7 @@ export function createInfiniteReadController<
     },
 
     update(previousContext) {
-      const context = createContext(trackerKey);
+      const context = createContext(trackerKey, initialRequest);
       pluginExecutor.executeUpdateLifecycle(
         "infiniteRead",
         context,
@@ -575,7 +585,7 @@ export function createInfiniteReadController<
     },
 
     getContext() {
-      return createContext(trackerKey);
+      return createContext(trackerKey, initialRequest);
     },
 
     setPluginOptions(opts) {

@@ -118,17 +118,17 @@ function tokenRefreshPlugin(): SpooshPlugin {
     // before checking cache, preventing stale token issues
     priority: -20,
     middleware: async (context, next) => {
+      const t = context.tracer?.("token-refresh");
       let token = localStorage.getItem("accessToken");
 
       if (token && isTokenExpired(token)) {
-        // Only start a new refresh if one isn't already in progress
         if (!refreshPromise) {
+          t?.log("Token expired, refreshing", { color: "yellow" });
           refreshPromise = refreshAccessToken().finally(() => {
             refreshPromise = null;
           });
         }
 
-        // All concurrent requests wait for the same refresh
         token = await refreshPromise;
       }
 
@@ -141,6 +141,8 @@ function tokenRefreshPlugin(): SpooshPlugin {
   };
 }
 ```
+
+The `t` variable is a [tracer](/docs/react/plugin-development/advanced/tracing) that emits events visible in [devtool](/docs/react/devtool). It's optional — if devtool isn't installed, `context.tracer` is `undefined`.
 
 Use it in your client:
 

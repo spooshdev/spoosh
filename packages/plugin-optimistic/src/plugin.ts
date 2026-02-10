@@ -1,4 +1,9 @@
-import type { SpooshPlugin, PluginContext, StateManager } from "@spoosh/core";
+import type {
+  SpooshPlugin,
+  PluginContext,
+  StateManager,
+  RequestTracer,
+} from "@spoosh/core";
 import { generateTags } from "@spoosh/core";
 import "@spoosh/plugin-invalidation";
 import type {
@@ -13,6 +18,7 @@ import type {
 type OptimisticSnapshot = {
   key: string;
   previousData: unknown;
+  afterData: unknown;
 };
 
 /**
@@ -122,7 +128,8 @@ function resolveOptimisticTargets(context: PluginContext): OptimisticTarget[] {
 
 function applyOptimisticUpdate(
   stateManager: StateManager,
-  target: OptimisticTarget
+  target: OptimisticTarget,
+  t?: RequestTracer
 ): OptimisticSnapshot[] {
   if (!target.updater) return [];
 
@@ -155,17 +162,24 @@ function applyOptimisticUpdate(
       continue;
     }
 
-    snapshots.push({ key, previousData: entry.state.data });
+    const afterData = target.updater(entry.state.data, undefined);
+
+    snapshots.push({ key, previousData: entry.state.data, afterData });
 
     stateManager.setCache(key, {
       previousData: entry.state.data,
       state: {
         ...entry.state,
-        data: target.updater(entry.state.data, undefined),
+        data: afterData,
       },
     });
 
     stateManager.setMeta(key, { isOptimistic: true });
+
+    t?.log("Marked as optimistic", {
+      color: "info",
+      info: [{ value: { isOptimistic: true } }],
+    });
   }
 
   return snapshots;
@@ -173,7 +187,8 @@ function applyOptimisticUpdate(
 
 function confirmOptimistic(
   stateManager: StateManager,
-  snapshots: OptimisticSnapshot[]
+  snapshots: OptimisticSnapshot[],
+  t?: RequestTracer
 ): void {
   for (const { key } of snapshots) {
     const entry = stateManager.getCache(key);
@@ -184,13 +199,19 @@ function confirmOptimistic(
       });
 
       stateManager.setMeta(key, { isOptimistic: false });
+
+      t?.log("Optimistic confirmed", {
+        color: "success",
+        info: [{ value: { isOptimistic: false } }],
+      });
     }
   }
 }
 
 function rollbackOptimistic(
   stateManager: StateManager,
-  snapshots: OptimisticSnapshot[]
+  snapshots: OptimisticSnapshot[],
+  t?: RequestTracer
 ): void {
   for (const { key, previousData } of snapshots) {
     const entry = stateManager.getCache(key);
@@ -205,8 +226,45 @@ function rollbackOptimistic(
       });
 
       stateManager.setMeta(key, { isOptimistic: false });
+
+      t?.log("Optimistic rolled back", {
+        color: "warning",
+        info: [{ value: { isOptimistic: false } }],
+      });
     }
   }
+}
+
+function buildSnapshotDiff(
+  snapshots: OptimisticSnapshot[],
+  mode: "apply" | "rollback" | "onSuccess" = "apply"
+): { before: unknown; after: unknown; label: string } {
+  const first = snapshots[0]!;
+
+  const label =
+    mode === "apply"
+      ? "Optimistic update to cache"
+      : mode === "rollback"
+        ? "Rollback optimistic changes"
+        : "Apply onSuccess updates";
+
+  if (snapshots.length === 1) {
+    return mode === "apply" || mode === "onSuccess"
+      ? { before: first.previousData, after: first.afterData, label }
+      : { before: first.afterData, after: first.previousData, label };
+  }
+
+  return mode === "apply" || mode === "onSuccess"
+    ? {
+        before: snapshots.map((s) => ({ key: s.key, data: s.previousData })),
+        after: snapshots.map((s) => ({ key: s.key, data: s.afterData })),
+        label,
+      }
+    : {
+        before: snapshots.map((s) => ({ key: s.key, data: s.afterData })),
+        after: snapshots.map((s) => ({ key: s.key, data: s.previousData })),
+        label,
+      };
 }
 
 /**
@@ -264,6 +322,8 @@ function rollbackOptimistic(
  * });
  * ```
  */
+const PLUGIN_NAME = "spoosh:optimistic";
+
 export function optimisticPlugin(): SpooshPlugin<{
   readOptions: OptimisticReadOptions;
   writeOptions: OptimisticWriteOptions;
@@ -272,24 +332,34 @@ export function optimisticPlugin(): SpooshPlugin<{
   writeResult: OptimisticWriteResult;
 }> {
   return {
-    name: "spoosh:optimistic",
+    name: PLUGIN_NAME,
     operations: ["write"],
     dependencies: ["spoosh:invalidation"],
 
     middleware: async (context, next) => {
+      const t = context.tracer?.(PLUGIN_NAME);
       const { stateManager } = context;
       const targets = resolveOptimisticTargets(context);
 
-      if (targets.length > 0) {
-        context.plugins.get("spoosh:invalidation")?.setDefaultMode("none");
+      if (targets.length === 0) {
+        t?.skip("No optimistic targets");
+        return next();
       }
+
+      context.plugins.get("spoosh:invalidation")?.setDefaultMode("none");
 
       const immediateTargets = targets.filter((t) => t.timing !== "onSuccess");
       const allSnapshots: OptimisticSnapshot[] = [];
 
       for (const target of immediateTargets) {
-        const snapshots = applyOptimisticUpdate(stateManager, target);
+        const snapshots = applyOptimisticUpdate(stateManager, target, t);
         allSnapshots.push(...snapshots);
+      }
+
+      if (allSnapshots.length > 0) {
+        t?.log(`Applied ${allSnapshots.length} immediate update(s)`, {
+          diff: buildSnapshotDiff(allSnapshots),
+        });
       }
 
       const response = await next();
@@ -300,7 +370,12 @@ export function optimisticPlugin(): SpooshPlugin<{
         );
 
         if (shouldRollback && allSnapshots.length > 0) {
-          rollbackOptimistic(stateManager, allSnapshots);
+          rollbackOptimistic(stateManager, allSnapshots, t);
+
+          t?.log(`Rolled back ${allSnapshots.length} update(s)`, {
+            color: "warning",
+            diff: buildSnapshotDiff(allSnapshots, "rollback"),
+          });
         }
 
         for (const target of targets) {
@@ -310,12 +385,14 @@ export function optimisticPlugin(): SpooshPlugin<{
         }
       } else {
         if (allSnapshots.length > 0) {
-          confirmOptimistic(stateManager, allSnapshots);
+          confirmOptimistic(stateManager, allSnapshots, t);
         }
 
         const onSuccessTargets = targets.filter(
-          (t) => t.timing === "onSuccess"
+          (target) => target.timing === "onSuccess"
         );
+
+        const onSuccessSnapshots: OptimisticSnapshot[] = [];
 
         for (const target of onSuccessTargets) {
           if (!target.updater) continue;
@@ -348,13 +425,28 @@ export function optimisticPlugin(): SpooshPlugin<{
               continue;
             }
 
+            const afterData = target.updater(entry.state.data, response.data);
+
+            onSuccessSnapshots.push({
+              key,
+              previousData: entry.state.data,
+              afterData,
+            });
+
             stateManager.setCache(key, {
               state: {
                 ...entry.state,
-                data: target.updater(entry.state.data, response.data),
+                data: afterData,
               },
             });
           }
+        }
+
+        if (onSuccessSnapshots.length > 0) {
+          t?.log(`Applied ${onSuccessSnapshots.length} onSuccess update(s)`, {
+            color: "success",
+            diff: buildSnapshotDiff(onSuccessSnapshots, "onSuccess"),
+          });
         }
       }
 

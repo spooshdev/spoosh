@@ -249,6 +249,25 @@ function trackingPlugin(): SpooshPlugin {
 }
 ```
 
+## One-Time Setup
+
+Sometimes your plugin needs to do something **once** when the app starts. Use `setup` for this:
+
+```typescript
+function startupLoggerPlugin(): SpooshPlugin {
+  return {
+    name: "my-app:startup-logger",
+    operations: ["read", "write"],
+
+    setup() {
+      console.log("🚀 Spoosh is ready!");
+    },
+  };
+}
+```
+
+That's it! The message appears once when your app starts. You can use `setup` to initialize global state, configure services, or log startup info.
+
 ## Plugin Properties
 
 Here are the main properties you can use in a plugin:
@@ -259,6 +278,7 @@ Here are the main properties you can use in a plugin:
   operations: string[];            // Required: ["read", "write", "infiniteRead"]
   priority?: number;               // Optional: execution order (lower runs first)
 
+  setup?: Function;                // Run once when app starts
   middleware?: Function;           // Intercept requests
   afterResponse?: Function;        // Run after responses
   lifecycle?: {                    // Handle component lifecycle
@@ -267,6 +287,7 @@ Here are the main properties you can use in a plugin:
     onUnmount?: Function;
   };
   exports?: Function;              // Provide APIs to other plugins
+  instanceApi?: Function;          // Add methods to create() result
 }
 ```
 
@@ -278,6 +299,7 @@ Want to learn more advanced techniques?
 - **[After Response](/docs/react/plugin-development/advanced/after-response)** - Side effects and transformations that always run
 - **[Meta Storage](/docs/react/plugin-development/advanced/meta-storage)** - Storing user-facing data for hook results
 - **[Plugin Communication](/docs/react/plugin-development/advanced/plugin-communication)** - How plugins share data and coordinate
+- **[Tracing](/docs/react/plugin-development/advanced/tracing)** - Emit trace events for devtool visibility
 - **[Lifecycle](/docs/react/plugin-development/advanced/lifecycle)** - Managing state, tracking instances, cleanup
 - **[Architecture](/docs/react/plugin-development/advanced/architecture)** - How plugins work internally, execution order, PluginContext
 - **[Type Safety](/docs/react/plugin-development/advanced/type-safety)** - Making your plugins type-safe with TypeScript

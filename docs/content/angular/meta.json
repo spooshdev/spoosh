@@ -6,6 +6,7 @@
     "core",
     "injects",
     "guides",
+    "devtool",
     "plugins",
     "type-adapters",
     "plugin-development"

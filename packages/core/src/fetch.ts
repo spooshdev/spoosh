@@ -157,6 +157,10 @@ async function executeCoreFetch<TData, TError>(
     requestOptions?.transport ?? defaultTransport
   );
 
+  if (requestOptions && headers) {
+    requestOptions.headers = headers;
+  }
+
   try {
     const result = await resolvedTransport(
       url,
@@ -174,9 +178,12 @@ async function executeCoreFetch<TData, TError>(
       };
     }
 
+    const error =
+      result.data !== undefined && result.data !== "" ? result.data : {};
+
     return {
       status: result.status,
-      error: result.data as TError,
+      error: error as TError,
       headers: result.headers,
       data: undefined,
       ...inputFields,

@@ -1,21 +1,41 @@
 import { createStateManager } from "@spoosh/test-utils";
-import type { StateManager, InstanceApiContext } from "@spoosh/core";
+import type {
+  StateManager,
+  InstanceApiContext,
+  SetupContext,
+} from "@spoosh/core";
 
 import { gcPlugin } from "./plugin";
 import type { GcPluginExports } from "./plugin";
 
-function createMockInstanceApiContext(
-  stateManager?: StateManager
-): InstanceApiContext {
-  return {
+function createMockContext(stateManager?: StateManager) {
+  const sm = stateManager ?? createStateManager();
+  const eventEmitter = {
+    on: vi.fn(),
+    off: vi.fn(),
+    emit: vi.fn(),
+    clear: vi.fn(),
+  };
+  const pluginExecutor = {
+    executeMiddleware: vi.fn(),
+    createContext: vi.fn(),
+    getPlugins: vi.fn(() => []),
+  };
+
+  const setupContext: SetupContext = {
+    stateManager: sm,
+    eventEmitter,
+    pluginExecutor,
+  } as unknown as SetupContext;
+
+  const instanceApiContext: InstanceApiContext = {
     api: {},
-    stateManager: stateManager ?? createStateManager(),
-    eventEmitter: { on: vi.fn(), off: vi.fn(), emit: vi.fn() },
-    pluginExecutor: {
-      executeMiddleware: vi.fn(),
-      createContext: vi.fn(),
-    },
+    stateManager: sm,
+    eventEmitter,
+    pluginExecutor,
   } as unknown as InstanceApiContext;
+
+  return { setupContext, instanceApiContext, stateManager: sm };
 }
 
 describe("gcPlugin", () => {
@@ -47,8 +67,12 @@ describe("gcPlugin", () => {
   describe("instanceApi initialization", () => {
     it("should return runGc function", () => {
       const plugin = gcPlugin();
-      const context = createMockInstanceApiContext();
-      const exports = plugin.instanceApi!(context) as GcPluginExports;
+      const { setupContext, instanceApiContext } = createMockContext();
+
+      plugin.setup?.(setupContext);
+      const exports = plugin.instanceApi!(
+        instanceApiContext
+      ) as GcPluginExports;
 
       expect(exports.runGc).toBeInstanceOf(Function);
     });
@@ -56,7 +80,8 @@ describe("gcPlugin", () => {
 
   describe("time-based cleanup (maxAge)", () => {
     it("should remove entries older than maxAge", () => {
-      const stateManager = createStateManager();
+      const { setupContext, instanceApiContext, stateManager } =
+        createMockContext();
 
       vi.setSystemTime(new Date(0));
       stateManager.setCache("old-entry", {
@@ -79,8 +104,10 @@ describe("gcPlugin", () => {
       });
 
       const plugin = gcPlugin({ maxAge: 3000 });
-      const context = createMockInstanceApiContext(stateManager);
-      const exports = plugin.instanceApi!(context) as GcPluginExports;
+      plugin.setup?.(setupContext);
+      const exports = plugin.instanceApi!(
+        instanceApiContext
+      ) as GcPluginExports;
 
       vi.setSystemTime(new Date(6000));
       const removed = exports.runGc();
@@ -91,7 +118,8 @@ describe("gcPlugin", () => {
     });
 
     it("should keep entries younger than maxAge", () => {
-      const stateManager = createStateManager();
+      const { setupContext, instanceApiContext, stateManager } =
+        createMockContext();
 
       vi.setSystemTime(new Date(5000));
       stateManager.setCache("entry", {
@@ -104,8 +132,10 @@ describe("gcPlugin", () => {
       });
 
       const plugin = gcPlugin({ maxAge: 10000 });
-      const context = createMockInstanceApiContext(stateManager);
-      const exports = plugin.instanceApi!(context) as GcPluginExports;
+      plugin.setup?.(setupContext);
+      const exports = plugin.instanceApi!(
+        instanceApiContext
+      ) as GcPluginExports;
 
       vi.setSystemTime(new Date(6000));
       const removed = exports.runGc();
@@ -115,7 +145,8 @@ describe("gcPlugin", () => {
     });
 
     it("should remove all entries when all are older than maxAge", () => {
-      const stateManager = createStateManager();
+      const { setupContext, instanceApiContext, stateManager } =
+        createMockContext();
 
       vi.setSystemTime(new Date(0));
       stateManager.setCache("entry1", {
@@ -136,8 +167,10 @@ describe("gcPlugin", () => {
       });
 
       const plugin = gcPlugin({ maxAge: 1000 });
-      const context = createMockInstanceApiContext(stateManager);
-      const exports = plugin.instanceApi!(context) as GcPluginExports;
+      plugin.setup?.(setupContext);
+      const exports = plugin.instanceApi!(
+        instanceApiContext
+      ) as GcPluginExports;
 
       vi.setSystemTime(new Date(2000));
       const removed = exports.runGc();
@@ -149,7 +182,8 @@ describe("gcPlugin", () => {
 
   describe("size-based cleanup (maxEntries)", () => {
     it("should remove oldest entries when exceeding maxEntries", () => {
-      const stateManager = createStateManager();
+      const { setupContext, instanceApiContext, stateManager } =
+        createMockContext();
 
       stateManager.setCache("entry1", {
         state: {
@@ -177,8 +211,10 @@ describe("gcPlugin", () => {
       });
 
       const plugin = gcPlugin({ maxEntries: 2 });
-      const context = createMockInstanceApiContext(stateManager);
-      const exports = plugin.instanceApi!(context) as GcPluginExports;
+      plugin.setup?.(setupContext);
+      const exports = plugin.instanceApi!(
+        instanceApiContext
+      ) as GcPluginExports;
 
       const removed = exports.runGc();
 
@@ -189,7 +225,8 @@ describe("gcPlugin", () => {
     });
 
     it("should not remove entries when under maxEntries", () => {
-      const stateManager = createStateManager();
+      const { setupContext, instanceApiContext, stateManager } =
+        createMockContext();
 
       stateManager.setCache("entry1", {
         state: {
@@ -209,8 +246,10 @@ describe("gcPlugin", () => {
       });
 
       const plugin = gcPlugin({ maxEntries: 5 });
-      const context = createMockInstanceApiContext(stateManager);
-      const exports = plugin.instanceApi!(context) as GcPluginExports;
+      plugin.setup?.(setupContext);
+      const exports = plugin.instanceApi!(
+        instanceApiContext
+      ) as GcPluginExports;
 
       const removed = exports.runGc();
 
@@ -219,7 +258,8 @@ describe("gcPlugin", () => {
     });
 
     it("should remove multiple entries to reach maxEntries", () => {
-      const stateManager = createStateManager();
+      const { setupContext, instanceApiContext, stateManager } =
+        createMockContext();
 
       for (let i = 1; i <= 5; i++) {
         stateManager.setCache(`entry${i}`, {
@@ -233,8 +273,10 @@ describe("gcPlugin", () => {
       }
 
       const plugin = gcPlugin({ maxEntries: 2 });
-      const context = createMockInstanceApiContext(stateManager);
-      const exports = plugin.instanceApi!(context) as GcPluginExports;
+      plugin.setup?.(setupContext);
+      const exports = plugin.instanceApi!(
+        instanceApiContext
+      ) as GcPluginExports;
 
       const removed = exports.runGc();
 
@@ -247,7 +289,8 @@ describe("gcPlugin", () => {
 
   describe("combined cleanup (maxAge + maxEntries)", () => {
     it("should apply both maxAge and maxEntries", () => {
-      const stateManager = createStateManager();
+      const { setupContext, instanceApiContext, stateManager } =
+        createMockContext();
 
       vi.setSystemTime(new Date(0));
       stateManager.setCache("very-old", {
@@ -286,8 +329,10 @@ describe("gcPlugin", () => {
       });
 
       const plugin = gcPlugin({ maxAge: 3000, maxEntries: 2 });
-      const context = createMockInstanceApiContext(stateManager);
-      const exports = plugin.instanceApi!(context) as GcPluginExports;
+      plugin.setup?.(setupContext);
+      const exports = plugin.instanceApi!(
+        instanceApiContext
+      ) as GcPluginExports;
 
       vi.setSystemTime(new Date(6000));
       const removed = exports.runGc();
@@ -301,8 +346,16 @@ describe("gcPlugin", () => {
   });
 
   describe("interval control", () => {
+    beforeEach(() => {
+      vi.stubGlobal("window", {});
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
     it("should run gc at specified interval", () => {
-      const stateManager = createStateManager();
+      const { setupContext, stateManager } = createMockContext();
 
       vi.setSystemTime(new Date(0));
       stateManager.setCache("entry", {
@@ -315,8 +368,7 @@ describe("gcPlugin", () => {
       });
 
       const plugin = gcPlugin({ maxAge: 5000, interval: 10000 });
-      const context = createMockInstanceApiContext(stateManager);
-      plugin.instanceApi!(context);
+      plugin.setup?.(setupContext);
 
       expect(stateManager.getCache("entry")).toBeDefined();
 
@@ -327,7 +379,7 @@ describe("gcPlugin", () => {
     });
 
     it("should use default interval of 60000ms", () => {
-      const stateManager = createStateManager();
+      const { setupContext, stateManager } = createMockContext();
 
       vi.setSystemTime(new Date(0));
       stateManager.setCache("entry", {
@@ -340,8 +392,7 @@ describe("gcPlugin", () => {
       });
 
       const plugin = gcPlugin({ maxAge: 30000 });
-      const context = createMockInstanceApiContext(stateManager);
-      plugin.instanceApi!(context);
+      plugin.setup?.(setupContext);
 
       vi.setSystemTime(new Date(31000));
       vi.advanceTimersByTime(59999);
@@ -354,7 +405,8 @@ describe("gcPlugin", () => {
 
   describe("subscriber awareness", () => {
     it("should NOT delete entries with active subscribers (maxAge)", () => {
-      const stateManager = createStateManager();
+      const { setupContext, instanceApiContext, stateManager } =
+        createMockContext();
 
       vi.setSystemTime(new Date(0));
       stateManager.setCache("subscribed-entry", {
@@ -377,8 +429,10 @@ describe("gcPlugin", () => {
       stateManager.subscribeCache("subscribed-entry", () => {});
 
       const plugin = gcPlugin({ maxAge: 3000 });
-      const context = createMockInstanceApiContext(stateManager);
-      const exports = plugin.instanceApi!(context) as GcPluginExports;
+      plugin.setup?.(setupContext);
+      const exports = plugin.instanceApi!(
+        instanceApiContext
+      ) as GcPluginExports;
 
       vi.setSystemTime(new Date(5000));
       const removed = exports.runGc();
@@ -389,7 +443,8 @@ describe("gcPlugin", () => {
     });
 
     it("should delete entries after subscribers unsubscribe", () => {
-      const stateManager = createStateManager();
+      const { setupContext, instanceApiContext, stateManager } =
+        createMockContext();
 
       vi.setSystemTime(new Date(0));
       stateManager.setCache("entry", {
@@ -404,8 +459,10 @@ describe("gcPlugin", () => {
       const unsubscribe = stateManager.subscribeCache("entry", () => {});
 
       const plugin = gcPlugin({ maxAge: 3000 });
-      const context = createMockInstanceApiContext(stateManager);
-      const exports = plugin.instanceApi!(context) as GcPluginExports;
+      plugin.setup?.(setupContext);
+      const exports = plugin.instanceApi!(
+        instanceApiContext
+      ) as GcPluginExports;
 
       vi.setSystemTime(new Date(5000));
       let removed = exports.runGc();
@@ -421,7 +478,8 @@ describe("gcPlugin", () => {
     });
 
     it("should NOT delete entries with active subscribers (maxEntries)", () => {
-      const stateManager = createStateManager();
+      const { setupContext, instanceApiContext, stateManager } =
+        createMockContext();
 
       stateManager.setCache("entry1-subscribed", {
         state: {
@@ -451,8 +509,10 @@ describe("gcPlugin", () => {
       stateManager.subscribeCache("entry1-subscribed", () => {});
 
       const plugin = gcPlugin({ maxEntries: 2 });
-      const context = createMockInstanceApiContext(stateManager);
-      const exports = plugin.instanceApi!(context) as GcPluginExports;
+      plugin.setup?.(setupContext);
+      const exports = plugin.instanceApi!(
+        instanceApiContext
+      ) as GcPluginExports;
 
       const removed = exports.runGc();
 
@@ -463,7 +523,8 @@ describe("gcPlugin", () => {
     });
 
     it("should not count subscriber-protected entries against limit when removing", () => {
-      const stateManager = createStateManager();
+      const { setupContext, instanceApiContext, stateManager } =
+        createMockContext();
 
       stateManager.setCache("entry1-subscribed", {
         state: {
@@ -502,8 +563,10 @@ describe("gcPlugin", () => {
       stateManager.subscribeCache("entry2-subscribed", () => {});
 
       const plugin = gcPlugin({ maxEntries: 2 });
-      const context = createMockInstanceApiContext(stateManager);
-      const exports = plugin.instanceApi!(context) as GcPluginExports;
+      plugin.setup?.(setupContext);
+      const exports = plugin.instanceApi!(
+        instanceApiContext
+      ) as GcPluginExports;
 
       const removed = exports.runGc();
 
@@ -517,11 +580,13 @@ describe("gcPlugin", () => {
 
   describe("edge cases", () => {
     it("should handle empty cache", () => {
-      const stateManager = createStateManager();
+      const { setupContext, instanceApiContext } = createMockContext();
 
       const plugin = gcPlugin({ maxAge: 1000, maxEntries: 10 });
-      const context = createMockInstanceApiContext(stateManager);
-      const exports = plugin.instanceApi!(context) as GcPluginExports;
+      plugin.setup?.(setupContext);
+      const exports = plugin.instanceApi!(
+        instanceApiContext
+      ) as GcPluginExports;
 
       const removed = exports.runGc();
 
@@ -529,7 +594,8 @@ describe("gcPlugin", () => {
     });
 
     it("should handle no options (no cleanup)", () => {
-      const stateManager = createStateManager();
+      const { setupContext, instanceApiContext, stateManager } =
+        createMockContext();
 
       stateManager.setCache("entry", {
         state: {
@@ -541,8 +607,10 @@ describe("gcPlugin", () => {
       });
 
       const plugin = gcPlugin();
-      const context = createMockInstanceApiContext(stateManager);
-      const exports = plugin.instanceApi!(context) as GcPluginExports;
+      plugin.setup?.(setupContext);
+      const exports = plugin.instanceApi!(
+        instanceApiContext
+      ) as GcPluginExports;
 
       vi.setSystemTime(new Date(999999999));
       const removed = exports.runGc();
@@ -552,7 +620,8 @@ describe("gcPlugin", () => {
     });
 
     it("should handle maxEntries of 0", () => {
-      const stateManager = createStateManager();
+      const { setupContext, instanceApiContext, stateManager } =
+        createMockContext();
 
       stateManager.setCache("entry", {
         state: {
@@ -564,8 +633,10 @@ describe("gcPlugin", () => {
       });
 
       const plugin = gcPlugin({ maxEntries: 0 });
-      const context = createMockInstanceApiContext(stateManager);
-      const exports = plugin.instanceApi!(context) as GcPluginExports;
+      plugin.setup?.(setupContext);
+      const exports = plugin.instanceApi!(
+        instanceApiContext
+      ) as GcPluginExports;
 
       const removed = exports.runGc();
 

@@ -1,26 +1,27 @@
 {
-  "name": "@spoosh/plugin-debug",
-  "version": "0.2.5",
-  "description": "Debug plugin for Spoosh - logs detailed request lifecycle information",
+  "name": "@spoosh/devtool",
+  "version": "0.1.0",
+  "description": "Visual debugging plugin for Spoosh - floating devtool panel with plugin execution visualization",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/spooshdev/spoosh.git",
-    "directory": "packages/plugin-debug"
+    "directory": "packages/devtool"
   },
   "bugs": {
     "url": "https://github.com/spooshdev/spoosh/issues"
   },
-  "homepage": "https://spoosh.dev/docs/react/plugins/debug",
+  "homepage": "https://spoosh.dev/docs/react/plugins/devtool",
   "publishConfig": {
     "access": "public"
   },
   "keywords": [
     "spoosh",
     "plugin",
+    "devtool",
     "debug",
     "api-client",
-    "logging"
+    "visualization"
   ],
   "files": [
     "dist"
@@ -40,10 +41,11 @@
     "format": "prettier --write 'src/**/*.ts'"
   },
   "peerDependencies": {
-    "@spoosh/core": ">=0.12.0"
+    "@spoosh/core": ">=0.12.1"
   },
   "devDependencies": {
     "@spoosh/core": "workspace:*",
+    "@spoosh/plugin-deduplication": "workspace:*",
     "@spoosh/test-utils": "workspace:*"
   }
 }

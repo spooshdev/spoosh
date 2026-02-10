@@ -404,7 +404,7 @@ describe("initialDataPlugin", () => {
       expect(setCache).not.toHaveBeenCalled();
     });
 
-    it("should set isInitialData to false when no initialData and successful fetch", async () => {
+    it("should not set isInitialData when no initialData and successful fetch", async () => {
       const plugin = initialDataPlugin();
       const stateManager = createStateManager();
 
@@ -423,9 +423,7 @@ describe("initialDataPlugin", () => {
 
       await plugin.middleware!(context, next);
 
-      expect(setMeta).toHaveBeenCalledWith(context.queryKey, {
-        isInitialData: false,
-      });
+      expect(setMeta).not.toHaveBeenCalled();
     });
 
     it("should not set isInitialData when no initialData and fetch returns error", async () => {

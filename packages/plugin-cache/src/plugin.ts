@@ -1,4 +1,4 @@
-import type { SpooshPlugin, InstanceApiContext } from "@spoosh/core";
+import type { SpooshPlugin } from "@spoosh/core";
 
 import type {
   CachePluginConfig,
@@ -10,6 +10,8 @@ import type {
   CacheInstanceApi,
   ClearCacheOptions,
 } from "./types";
+
+const PLUGIN_NAME = "spoosh:cache";
 
 /**
  * Enables caching for read operations with configurable stale time.
@@ -51,11 +53,13 @@ export function cachePlugin(config: CachePluginConfig = {}): SpooshPlugin<{
   const { staleTime: defaultStaleTime = 0 } = config;
 
   return {
-    name: "spoosh:cache",
+    name: PLUGIN_NAME,
     operations: ["read", "infiniteRead", "write"],
     priority: -10,
 
     middleware: async (context, next) => {
+      const t = context.tracer?.(PLUGIN_NAME);
+
       if (!context.forceRefetch) {
         const cached = context.stateManager.getCache(context.queryKey);
 
@@ -64,15 +68,32 @@ export function cachePlugin(config: CachePluginConfig = {}): SpooshPlugin<{
             | CacheReadOptions
             | undefined;
           const staleTime = pluginOptions?.staleTime ?? defaultStaleTime;
-          const isTimeStale = Date.now() - cached.state.timestamp > staleTime;
+          const age = Date.now() - cached.state.timestamp;
+          const isTimeStale = age > staleTime;
 
           if (!isTimeStale) {
+            t?.return("Cache hit", { color: "success" });
             return { data: cached.state.data, status: 200 };
           }
+
+          t?.log("Cache stale", { color: "warning" });
+          return next();
         }
+
+        if (cached?.stale) {
+          t?.log("Cache Stale", { color: "warning" });
+          return next();
+        }
+
+        t?.log("Cache miss", { color: "info" });
+        return next();
       }
 
-      return await next();
+      if (context.method === "GET") {
+        t?.log("Force refetch", { color: "info" });
+      }
+
+      return next();
     },
 
     afterResponse(context, response) {
@@ -82,12 +103,16 @@ export function cachePlugin(config: CachePluginConfig = {}): SpooshPlugin<{
           | undefined;
 
         if (pluginOptions?.clearCache) {
+          context
+            .tracer?.(PLUGIN_NAME)
+            ?.log("Cleared cache", { color: "muted" });
+
           context.stateManager.clear();
         }
       }
     },
 
-    instanceApi(context: InstanceApiContext) {
+    instanceApi(context) {
       const { stateManager, eventEmitter } = context;
 
       const clearCache = (options?: ClearCacheOptions): void => {

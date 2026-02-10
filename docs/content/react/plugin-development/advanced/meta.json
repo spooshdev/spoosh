@@ -6,6 +6,7 @@
     "lifecycle",
     "meta-storage",
     "plugin-communication",
+    "tracing",
     "instance-api",
     "type-safety",
     "architecture",
