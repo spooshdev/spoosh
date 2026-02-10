@@ -124,7 +124,6 @@ export function createViewModel(): ViewModel {
             settings.requestsPanelHeight ?? DEFAULT_STATE.requestsPanelHeight,
           theme: settings.theme ?? DEFAULT_STATE.theme,
           position: settings.position ?? DEFAULT_STATE.position,
-          activeView: settings.activeView ?? DEFAULT_STATE.activeView,
         };
       }
     } catch {
@@ -150,7 +149,6 @@ export function createViewModel(): ViewModel {
             requestsPanelHeight: state.requestsPanelHeight,
             theme: state.theme,
             position: state.position,
-            activeView: state.activeView,
           })
         );
       } catch {
@@ -310,7 +308,6 @@ export function createViewModel(): ViewModel {
 
   function setActiveView(view: PanelView): void {
     state = { ...state, activeView: view };
-    saveSettings();
     notify();
   }
 
