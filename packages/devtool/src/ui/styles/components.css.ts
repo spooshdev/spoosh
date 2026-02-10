@@ -921,6 +921,7 @@ export const componentsCSS = `
     padding: 12px 16px;
     border-bottom: 1px solid var(--spoosh-border);
     background: var(--spoosh-surface);
+    cursor: grab;
   }
 
   .spoosh-settings-title {

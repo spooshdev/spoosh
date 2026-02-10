@@ -917,6 +917,11 @@ export class DevToolPanel {
         return;
       }
 
+      if (target.classList.contains("spoosh-settings-header")) {
+        this.startSidebarDrag(e);
+        return;
+      }
+
       if (target.closest(".spoosh-detail-title")) {
         this.startSidebarDrag(e);
         return;
