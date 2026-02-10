@@ -149,7 +149,7 @@ export interface DevToolStoreInterface {
   clear(): void;
   setStateManager(stateManager: StateManager): void;
   getCacheEntries(searchQuery?: string): CacheEntryDisplay[];
-  invalidateCacheEntry(key: string): void;
+  refetchStateEntry(key: string): void;
   deleteCacheEntry(key: string): void;
   clearAllCache(): void;
   setMaxHistory(value: number): void;

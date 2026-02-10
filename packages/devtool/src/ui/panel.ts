@@ -74,8 +74,8 @@ export class DevToolPanel {
       onPositionChange: (position) => this.setPosition(position),
       onSidebarPositionChange: (position) => this.setSidebarPosition(position),
       onMaxHistoryChange: (value) => this.store.setMaxHistory(value),
-      onInvalidateState: (key) => {
-        this.store.invalidateCacheEntry(key);
+      onRefetchState: (key) => {
+        this.store.refetchStateEntry(key);
         this.renderImmediate();
       },
       onDeleteState: (key) => {

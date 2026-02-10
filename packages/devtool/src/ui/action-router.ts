@@ -34,7 +34,7 @@ export type ActionIntent =
   | { type: "switch-view"; view: PanelView }
   | { type: "select-state-entry"; key: string }
   | { type: "select-internal-tab"; tab: InternalTab }
-  | { type: "invalidate-state"; key: string }
+  | { type: "refetch-state"; key: string }
   | { type: "delete-state"; key: string }
   | { type: "clear-all-state" }
   | { type: "import-file" }
@@ -51,7 +51,7 @@ export interface ActionRouterCallbacks {
   onPositionChange: (position: PositionMode) => void;
   onSidebarPositionChange: (position: SidebarPosition) => void;
   onMaxHistoryChange: (value: number) => void;
-  onInvalidateState?: (key: string) => void;
+  onRefetchState?: (key: string) => void;
   onDeleteState?: (key: string) => void;
   onClearAllState?: () => void;
   onImportFile?: () => void;
@@ -77,7 +77,7 @@ export function createActionRouter(
     onPositionChange,
     onSidebarPositionChange,
     onMaxHistoryChange,
-    onInvalidateState,
+    onRefetchState,
     onDeleteState,
     onClearAllState,
     onImportFile,
@@ -169,8 +169,8 @@ export function createActionRouter(
       .closest("[data-state-key]")
       ?.getAttribute("data-state-key");
 
-    if (action === "invalidate-state" && stateKey) {
-      return { type: "invalidate-state", key: stateKey };
+    if (action === "refetch-state" && stateKey) {
+      return { type: "refetch-state", key: stateKey };
     }
 
     if (action === "delete-state" && stateKey) {
@@ -419,8 +419,8 @@ export function createActionRouter(
         viewModel.setInternalTab(intent.tab);
         break;
 
-      case "invalidate-state":
-        onInvalidateState?.(intent.key);
+      case "refetch-state":
+        onRefetchState?.(intent.key);
         break;
 
       case "delete-state":

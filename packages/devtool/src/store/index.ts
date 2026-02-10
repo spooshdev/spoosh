@@ -89,25 +89,10 @@ export class DevToolStore implements DevToolStoreInterface {
       }));
   }
 
-  invalidateCacheEntry(key: string): void {
-    if (!this.stateManager) return;
+  refetchStateEntry(key: string): void {
+    if (!this.eventEmitter) return;
 
-    const entry = this.stateManager.getCache(key);
-
-    if (entry) {
-      this.stateManager.setCache(key, { stale: true });
-
-      if (this.eventEmitter) {
-        const tags = entry.selfTag
-          ? [...new Set([entry.selfTag, ...entry.tags])]
-          : entry.tags;
-
-        if (tags.length > 0) {
-          this.eventEmitter.emit("invalidate", tags);
-        }
-      }
-    }
-
+    this.eventEmitter.emit("refetch", { queryKey: key, reason: "devtool" });
     this.notify();
   }
 

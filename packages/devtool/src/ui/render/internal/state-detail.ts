@@ -196,8 +196,8 @@ export function renderStateDetail(ctx: StateDetailContext): string {
       </div>
 
       <div class="spoosh-state-actions">
-        <button class="spoosh-state-action-btn" data-action="invalidate-state" data-state-key="${escapeHtml(entry.queryKey)}">
-          Invalidate
+        <button class="spoosh-state-action-btn" data-action="refetch-state" data-state-key="${escapeHtml(entry.queryKey)}">
+          Refetch
         </button>
         <button class="spoosh-state-action-btn danger" data-action="delete-state" data-state-key="${escapeHtml(entry.queryKey)}">
           Delete
