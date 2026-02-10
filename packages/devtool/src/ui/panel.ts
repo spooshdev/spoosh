@@ -372,7 +372,7 @@ export class DevToolPanel {
       <div class="spoosh-panel">
         ${mainContent}
       </div>
-      ${renderBottomBar({ activeView: state.activeView, sidebarPosition: state.sidebarPosition })}
+      ${renderBottomBar({ activeView: state.activeView, sidebarPosition: state.sidebarPosition, theme: state.theme })}
     `;
 
     this.setupResizeHandlers();

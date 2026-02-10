@@ -218,6 +218,19 @@ export const componentsCSS = `
     padding-left: 8px;
   }
 
+  .spoosh-trace.error {
+    background: rgba(248, 81, 73, 0.08);
+  }
+
+  .spoosh-trace.error:hover {
+    background: rgba(248, 81, 73, 0.12);
+  }
+
+  .spoosh-trace.error.selected {
+    background: rgba(248, 81, 73, 0.15);
+    border-left-color: var(--spoosh-error);
+  }
+
   .spoosh-trace-status {
     width: 8px;
     height: 8px;
@@ -251,7 +264,7 @@ export const componentsCSS = `
 
   /* Method colors - semantic naming */
   .method-GET { color: var(--spoosh-success); }
-  .method-POST { color: #8857ff; }
+  .method-POST { color: var(--spoosh-primary); }
   .method-PUT, .method-PATCH { color: var(--spoosh-warning); }
   .method-DELETE { color: var(--spoosh-error); }
 
@@ -264,8 +277,15 @@ export const componentsCSS = `
   }
 
   .spoosh-trace-query {
-    color: #8857ff;
+    color: var(--spoosh-text-muted);
     font-size: 10px;
+  }
+
+  .spoosh-trace-preview-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
   }
 
   .spoosh-trace-preview {
@@ -276,21 +296,14 @@ export const componentsCSS = `
     white-space: nowrap;
   }
 
-  .spoosh-trace-meta {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 2px;
-    flex-shrink: 0;
-  }
-
   .spoosh-trace-time {
     font-size: 9px;
-    padding: 2px 6px;
-    border-radius: 8px;
-    background: rgba(136, 87, 255, 0.15);
-    color: #8857ff;
+    padding: 0px 5px;
+    border-radius: 3px;
+    background: var(--spoosh-border);
+    color: var(--spoosh-text-muted);
     font-weight: 500;
+    flex-shrink: 0;
   }
 
   /* ===== Events List ===== */
@@ -989,6 +1002,12 @@ export const componentsCSS = `
     color: white;
   }
 
+  .spoosh-bottom-bar-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
   .spoosh-view-select {
     background: var(--spoosh-bg);
     border: 1px solid var(--spoosh-border);
@@ -1003,6 +1022,24 @@ export const componentsCSS = `
   .spoosh-view-select:focus {
     outline: none;
     border-color: var(--spoosh-primary);
+  }
+
+  .spoosh-theme-toggle {
+    background: transparent;
+    border: 1px solid var(--spoosh-border);
+    color: var(--spoosh-text-muted);
+    cursor: pointer;
+    padding: 3px 5px;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+
+  .spoosh-theme-toggle:hover {
+    background: var(--spoosh-border);
+    color: var(--spoosh-text);
   }
 
   /* ===== Cache Entry List ===== */

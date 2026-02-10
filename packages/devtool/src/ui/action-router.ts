@@ -224,6 +224,17 @@ export function createActionRouter(
       };
     }
 
+    const themeAction = target
+      .closest("[data-theme]")
+      ?.getAttribute("data-theme");
+
+    if (themeAction) {
+      return {
+        type: "change-theme",
+        theme: themeAction as ThemeMode,
+      };
+    }
+
     if (setting === "view" && isChangeEvent) {
       const select = target as HTMLSelectElement;
       return { type: "switch-view", view: select.value as PanelView };
@@ -313,7 +324,7 @@ export function createActionRouter(
       case "change-theme":
         viewModel.setTheme(intent.theme);
         onThemeChange(intent.theme);
-        return;
+        break;
 
       case "change-position":
         viewModel.setPosition(intent.position);
