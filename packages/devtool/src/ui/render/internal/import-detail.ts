@@ -68,9 +68,33 @@ function renderImportDataTab(trace: ExportedTrace): string {
   return renderCodeSection("Response Data", response.data ?? response);
 }
 
+function renderHeadersSection(headers: Record<string, string>): string {
+  const rows = Object.entries(headers)
+    .map(
+      ([name, value]) => `
+      <div class="spoosh-header-row">
+        <span class="spoosh-header-name">${escapeHtml(name)}</span>
+        <span class="spoosh-header-value">${escapeHtml(String(value))}</span>
+      </div>`
+    )
+    .join("");
+
+  return `
+    <div class="spoosh-data-section">
+      <div class="spoosh-data-label">Headers</div>
+      <div class="spoosh-headers-list">
+        ${rows}
+      </div>
+    </div>
+  `;
+}
+
 function renderImportRequestTab(trace: ExportedTrace): string {
   const request = trace.request as Record<string, unknown> | undefined;
-  const { query, body, params, headers } = (request ?? {}) as Record<string, unknown>;
+  const { query, body, params, headers } = (request ?? {}) as Record<
+    string,
+    unknown
+  >;
   const isReadOperation = trace.method === "GET";
   const hasTags = isReadOperation && trace.tags.length > 0;
   const hasParams =
@@ -92,7 +116,7 @@ function renderImportRequestTab(trace: ExportedTrace): string {
   }
 
   return `
-    ${hasHeaders ? renderCodeSection("Headers", headers) : ""}
+    ${hasHeaders ? renderHeadersSection(headers as Record<string, string>) : ""}
     ${hasTags ? renderCodeSection("Tags", trace.tags) : ""}
     ${hasParams ? renderCodeSection("Params", params) : ""}
     ${hasQuery ? renderCodeSection("Query", query) : ""}

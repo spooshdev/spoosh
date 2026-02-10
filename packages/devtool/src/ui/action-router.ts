@@ -119,6 +119,14 @@ export function createActionRouter(
       return { type: "export" };
     }
 
+    if (action === "toggle-sensitive-header") {
+      const wrap = target.closest(".spoosh-header-value-wrap");
+      if (wrap) {
+        wrap.classList.toggle("revealed");
+      }
+      return null;
+    }
+
     if (action === "copy") {
       const content = target
         .closest("[data-copy-content]")

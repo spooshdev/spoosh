@@ -585,6 +585,98 @@ export const componentsCSS = `
     background: rgba(210, 153, 34, 0.15);
   }
 
+  /* ===== Headers List ===== */
+  .spoosh-headers-list {
+    background: var(--spoosh-surface);
+    border: 1px solid var(--spoosh-border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .spoosh-header-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 4px 8px;
+    font-size: 11px;
+    line-height: 1.4;
+    border-bottom: 1px solid var(--spoosh-border);
+  }
+
+  .spoosh-header-row:last-child {
+    border-bottom: none;
+  }
+
+  .spoosh-header-name {
+    color: var(--spoosh-primary);
+    font-weight: 500;
+    flex-shrink: 0;
+  }
+
+  .spoosh-header-value {
+    color: var(--spoosh-text);
+    word-break: break-all;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .spoosh-header-value-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .spoosh-header-masked {
+    color: var(--spoosh-text-muted);
+    letter-spacing: 1px;
+  }
+
+  .spoosh-header-revealed {
+    display: none;
+    color: var(--spoosh-text);
+    word-break: break-all;
+  }
+
+  .spoosh-header-value-wrap.revealed .spoosh-header-masked {
+    display: none;
+  }
+
+  .spoosh-header-value-wrap.revealed .spoosh-header-revealed {
+    display: inline;
+  }
+
+  .spoosh-header-toggle {
+    background: transparent;
+    border: none;
+    color: var(--spoosh-text-muted);
+    cursor: pointer;
+    padding: 2px;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: color 0.15s;
+  }
+
+  .spoosh-header-toggle:hover {
+    color: var(--spoosh-text);
+  }
+
+  .spoosh-eye-hide {
+    display: none;
+  }
+
+  .spoosh-header-value-wrap.revealed .spoosh-eye-show {
+    display: none;
+  }
+
+  .spoosh-header-value-wrap.revealed .spoosh-eye-hide {
+    display: flex;
+  }
+
   /* ===== Plugins Header ===== */
   .spoosh-plugins-header {
     display: flex;

@@ -6,6 +6,16 @@ const copyIcon = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" st
   <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
 </svg>`;
 
+const eyeIcon = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+  <circle cx="12" cy="12" r="3"/>
+</svg>`;
+
+const eyeOffIcon = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+  <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/>
+  <line x1="1" y1="1" x2="23" y2="23"/>
+</svg>`;
+
 function renderDataSection(
   label: string,
   data: unknown,
@@ -44,19 +54,56 @@ function renderBody(body: unknown): string {
   return renderDataSection("Body", body, "json");
 }
 
-function redactHeaders(
-  headers: Record<string, string>,
-  sensitiveHeaders: Set<string>
-): Record<string, string> {
-  const redacted: Record<string, string> = {};
+function renderHeaderRow(
+  name: string,
+  value: string,
+  isSensitive: boolean
+): string {
+  const escapedName = escapeHtml(name);
+  const escapedValue = escapeHtml(value);
 
-  for (const [name, value] of Object.entries(headers)) {
-    redacted[name] = sensitiveHeaders.has(name.toLowerCase())
-      ? "••••••"
-      : value;
+  if (!isSensitive) {
+    return `
+      <div class="spoosh-header-row">
+        <span class="spoosh-header-name">${escapedName}</span>
+        <span class="spoosh-header-value">${escapedValue}</span>
+      </div>
+    `;
   }
 
-  return redacted;
+  return `
+    <div class="spoosh-header-row">
+      <span class="spoosh-header-name">${escapedName}</span>
+      <span class="spoosh-header-value-wrap">
+        <span class="spoosh-header-masked">••••••</span>
+        <span class="spoosh-header-revealed">${escapedValue}</span>
+        <button class="spoosh-header-toggle" data-action="toggle-sensitive-header" title="Toggle visibility">
+          <span class="spoosh-eye-show">${eyeIcon}</span>
+          <span class="spoosh-eye-hide">${eyeOffIcon}</span>
+        </button>
+      </span>
+    </div>
+  `;
+}
+
+function renderHeadersSection(
+  headers: Record<string, string>,
+  sensitiveHeaders: Set<string>
+): string {
+  const rows = Object.entries(headers)
+    .map(([name, value]) =>
+      renderHeaderRow(name, value, sensitiveHeaders.has(name.toLowerCase()))
+    )
+    .join("");
+
+  return `
+    <div class="spoosh-data-section">
+      <div class="spoosh-data-label">Headers</div>
+      <div class="spoosh-headers-list">
+        ${rows}
+      </div>
+    </div>
+  `;
 }
 
 export function renderRequestTab(
@@ -79,12 +126,8 @@ export function renderRequestTab(
     return `<div class="spoosh-empty-tab">No request data</div>`;
   }
 
-  const redactedHeaders = hasHeaders
-    ? redactHeaders(headers, sensitiveHeaders)
-    : undefined;
-
   return `
-    ${redactedHeaders ? renderDataSection("Headers", redactedHeaders) : ""}
+    ${hasHeaders ? renderHeadersSection(headers, sensitiveHeaders) : ""}
     ${hasTags ? renderDataSection("Tags", trace.tags) : ""}
     ${hasParams ? renderDataSection("Params", params) : ""}
     ${hasQuery ? renderDataSection("Query", query) : ""}
