@@ -187,53 +187,52 @@ export function devtool(
         globalPanel.mount();
       }
 
-      const unsubInvalidate = ctx.eventEmitter.on(
-        "invalidate",
-        (tags: string[]) => {
-          const affectedKeys = ctx.stateManager.getCacheEntriesByTags(tags);
-          const listenerCounts = affectedKeys.map(({ key }) => ({
-            key,
-            count: ctx.stateManager.getSubscribersCount(key),
-          }));
+      ctx.eventEmitter.on("invalidate", (tags: string[]) => {
+        const affectedKeys = ctx.stateManager.getCacheEntriesByTags(tags);
+        const listenerCounts = affectedKeys.map(({ key }) => ({
+          key,
+          count: ctx.stateManager.getSubscribersCount(key),
+        }));
 
-          store.recordInvalidation({
-            tags,
-            affectedKeys: listenerCounts,
-            totalListeners: listenerCounts.reduce((sum, k) => sum + k.count, 0),
-            timestamp: Date.now(),
-          });
+        store.recordInvalidation({
+          tags,
+          affectedKeys: listenerCounts,
+          totalListeners: listenerCounts.reduce((sum, k) => sum + k.count, 0),
+          timestamp: Date.now(),
+        });
+      });
+
+      ctx.eventEmitter.on<DevtoolEvents["spoosh:devtool-event"]>(
+        "spoosh:devtool-event",
+        (event) => {
+          store.addEvent(event);
         }
       );
 
-      const unsubDevtoolEvent = ctx.eventEmitter.on<
-        DevtoolEvents["spoosh:devtool-event"]
-      >("spoosh:devtool-event", (event) => {
-        store.addEvent(event);
-      });
+      ctx.eventEmitter.on<DevtoolEvents["spoosh:request-complete"]>(
+        "spoosh:request-complete",
+        ({ context }) => {
+          const traceId = context.temp.get("devtool:traceId") as
+            | string
+            | undefined;
 
-      const unsubRequestComplete = ctx.eventEmitter.on<
-        DevtoolEvents["spoosh:request-complete"]
-      >("spoosh:request-complete", ({ context }) => {
-        const traceId = context.temp.get("devtool:traceId") as
-          | string
-          | undefined;
+          if (!traceId) return;
 
-        if (!traceId) return;
+          const headers = context.request.headers as
+            | Record<string, string>
+            | undefined;
 
-        const headers = context.request.headers as
-          | Record<string, string>
-          | undefined;
+          if (headers && Object.keys(headers).length > 0) {
+            store.setTraceHeaders(traceId, { ...headers });
+          }
 
-        if (headers && Object.keys(headers).length > 0) {
-          store.setTraceHeaders(traceId, { ...headers });
+          const cacheEntry = context.stateManager.getCache(context.queryKey);
+
+          if (cacheEntry?.meta && cacheEntry.meta.size > 0) {
+            store.setTraceMeta(traceId, Object.fromEntries(cacheEntry.meta));
+          }
         }
-
-        const cacheEntry = context.stateManager.getCache(context.queryKey);
-
-        if (cacheEntry?.meta && cacheEntry.meta.size > 0) {
-          store.setTraceMeta(traceId, Object.fromEntries(cacheEntry.meta));
-        }
-      });
+      );
     },
 
     instanceApi() {
