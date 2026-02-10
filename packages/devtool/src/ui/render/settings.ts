@@ -9,7 +9,8 @@ export interface SettingsRenderContext {
 }
 
 export function renderSettings(ctx: SettingsRenderContext): string {
-  const { showPassedPlugins, theme, position, sidebarPosition, maxHistory } = ctx;
+  const { showPassedPlugins, theme, position, sidebarPosition, maxHistory } =
+    ctx;
 
   return `
     <div class="spoosh-detail-panel">

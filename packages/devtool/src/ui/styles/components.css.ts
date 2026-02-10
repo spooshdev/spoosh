@@ -98,11 +98,52 @@ export const componentsCSS = `
     display: flex;
     align-items: center;
     justify-content: center;
+    position: relative;
   }
 
   .spoosh-icon-btn.active {
     background: var(--spoosh-primary);
     color: white;
+  }
+
+  /* ===== Tooltips ===== */
+  .spoosh-icon-btn::after,
+  .spoosh-sidebar-pos-btn::after,
+  .spoosh-theme-toggle::after {
+    content: attr(title);
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 4px 8px;
+    background: var(--spoosh-text);
+    color: var(--spoosh-bg);
+    font-size: 10px;
+    font-weight: 500;
+    border-radius: 4px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.15s, visibility 0.15s;
+    pointer-events: none;
+    z-index: 100;
+  }
+
+  .spoosh-icon-btn:hover::after,
+  .spoosh-sidebar-pos-btn:hover::after,
+  .spoosh-theme-toggle:hover::after {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  /* Header buttons - tooltip below */
+  .spoosh-icon-btn::after {
+    top: calc(100% + 6px);
+  }
+
+  /* Bottom bar buttons - tooltip above */
+  .spoosh-sidebar-pos-btn::after,
+  .spoosh-theme-toggle::after {
+    bottom: calc(100% + 6px);
   }
 
   /* ===== Filters ===== */
@@ -979,6 +1020,7 @@ export const componentsCSS = `
   }
 
   .spoosh-sidebar-pos-btn {
+    position: relative;
     background: transparent;
     border: 1px solid var(--spoosh-border);
     color: var(--spoosh-text-muted);
@@ -1025,6 +1067,7 @@ export const componentsCSS = `
   }
 
   .spoosh-theme-toggle {
+    position: relative;
     background: transparent;
     border: 1px solid var(--spoosh-border);
     color: var(--spoosh-text-muted);

@@ -58,6 +58,7 @@ export class DevToolPanel {
       onPartialRender: () =>
         this.renderScheduler.immediate(() => this.partialUpdate()),
       onClose: () => this.close(),
+      onExport: () => this.exportTraces(),
       onThemeChange: (theme) => this.setTheme(theme),
       onPositionChange: (position) => this.setPosition(position),
       onSidebarPositionChange: (position) => this.setSidebarPosition(position),
@@ -588,6 +589,48 @@ export class DevToolPanel {
   close(): void {
     this.viewModel.close();
     this.sidebar?.classList.remove("open");
+  }
+
+  private exportTraces(): void {
+    const traces = this.store.getTraces();
+
+    if (traces.length === 0) {
+      return;
+    }
+
+    const exportData = traces.map((trace) => ({
+      id: trace.id,
+      queryKey: trace.queryKey,
+      operationType: trace.operationType,
+      method: trace.method,
+      path: trace.path,
+      timestamp: trace.timestamp,
+      duration: trace.duration,
+      request: trace.request,
+      response: trace.response,
+      meta: trace.meta,
+      steps: trace.steps.map((step) => ({
+        plugin: step.plugin,
+        stage: step.stage,
+        timestamp: step.timestamp,
+        duration: step.duration,
+        reason: step.reason,
+      })),
+    }));
+
+    const json = JSON.stringify(exportData, null, 2);
+    const blob = new Blob([json], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const filename = `spoosh-traces-${timestamp}.json`;
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+
+    URL.revokeObjectURL(url);
   }
 
   toggle(): void {

@@ -15,6 +15,7 @@ export type ActionIntent =
   | { type: "close" }
   | { type: "settings" }
   | { type: "clear" }
+  | { type: "export" }
   | { type: "select-trace"; traceId: string }
   | { type: "select-tab"; tab: DetailTab }
   | { type: "toggle-filter"; filter: OperationType }
@@ -41,6 +42,7 @@ export interface ActionRouterCallbacks {
   onRender: () => void;
   onPartialRender: () => void;
   onClose: () => void;
+  onExport: () => void;
   onThemeChange: (theme: ThemeMode) => void;
   onPositionChange: (position: PositionMode) => void;
   onSidebarPositionChange: (position: SidebarPosition) => void;
@@ -64,6 +66,7 @@ export function createActionRouter(
     onRender,
     onPartialRender,
     onClose,
+    onExport,
     onThemeChange,
     onPositionChange,
     onSidebarPositionChange,
@@ -102,6 +105,10 @@ export function createActionRouter(
 
     if (action === "clear") {
       return { type: "clear" };
+    }
+
+    if (action === "export") {
+      return { type: "export" };
     }
 
     if (action === "copy") {
@@ -280,6 +287,10 @@ export function createActionRouter(
       case "clear":
         viewModel.clearAll(store);
         break;
+
+      case "export":
+        onExport();
+        return;
 
       case "select-trace":
         viewModel.selectTrace(intent.traceId);

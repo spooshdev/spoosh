@@ -46,7 +46,12 @@ export function renderHeader(ctx: HeaderRenderContext): string {
         ${
           hideClear
             ? ""
-            : `<button class="spoosh-icon-btn" data-action="clear" title="Clear">
+            : `<button class="spoosh-icon-btn" data-action="export" title="Export traces">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                </svg>
+              </button>
+              <button class="spoosh-icon-btn" data-action="clear" title="Clear">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
                 </svg>

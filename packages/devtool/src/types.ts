@@ -94,10 +94,8 @@ export interface DevToolFilters {
 }
 
 export interface DevToolApi {
-  getHistory(): OperationTrace[];
-  clearHistory(): void;
-  setEnabled(value: boolean): void;
-  setTheme(theme: "light" | "dark" | DevToolTheme): void;
+  getTraces(): OperationTrace[];
+  clearTraces(): void;
   open(): void;
   close(): void;
   toggle(): void;

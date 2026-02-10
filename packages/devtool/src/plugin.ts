@@ -10,7 +10,7 @@ import type {
 
 import { DevToolStore } from "./store";
 import { DevToolPanel } from "./ui/panel";
-import type { DevToolConfig, DevToolInstanceApi, DevToolTheme } from "./types";
+import type { DevToolConfig, DevToolInstanceApi } from "./types";
 import type { DedupeMode } from "@spoosh/plugin-deduplication";
 
 function resolvePathWithParams(
@@ -213,11 +213,8 @@ export function devtool(
 
       return {
         devtools: {
-          getHistory: () => store.getTraces(),
-          clearHistory: () => store.clear(),
-          setEnabled: (value: boolean) => globalPanel?.setVisible(value),
-          setTheme: (newTheme: "light" | "dark" | DevToolTheme) =>
-            globalPanel?.setTheme(newTheme),
+          getTraces: () => store.getTraces(),
+          clearTraces: () => store.clear(),
           open: () => globalPanel?.open(),
           close: () => globalPanel?.close(),
           toggle: () => globalPanel?.toggle(),
