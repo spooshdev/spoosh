@@ -974,34 +974,11 @@ export class DevToolPanel {
   }
 
   private exportTraces(): void {
-    const traces = this.store.getTraces();
+    const exportData = this.store.exportTraces();
 
-    if (traces.length === 0) {
+    if (exportData.length === 0) {
       return;
     }
-
-    const exportData = traces.map((trace) => ({
-      id: trace.id,
-      queryKey: trace.queryKey,
-      operationType: trace.operationType,
-      method: trace.method,
-      path: trace.path,
-      timestamp: trace.timestamp,
-      duration: trace.duration,
-      request: trace.request,
-      response: trace.response,
-      meta: trace.meta,
-      steps: trace.steps.map((step) => ({
-        plugin: step.plugin,
-        stage: step.stage,
-        timestamp: step.timestamp,
-        duration: step.duration,
-        reason: step.reason,
-        color: step.color,
-        diff: step.diff,
-        info: step.info,
-      })),
-    }));
 
     const json = JSON.stringify(exportData, null, 2);
     const blob = new Blob([json], { type: "application/json" });

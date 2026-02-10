@@ -213,7 +213,7 @@ export function devtool(
 
       return {
         devtools: {
-          getTraces: () => store.getTraces(),
+          exportTraces: () => store.exportTraces(),
           clearTraces: () => store.clear(),
           open: () => globalPanel?.open(),
           close: () => globalPanel?.close(),

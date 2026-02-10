@@ -256,6 +256,33 @@ export class DevToolStore implements DevToolStoreInterface {
     return [...completed, ...active];
   }
 
+  exportTraces(): ExportedTrace[] {
+    const traces = this.getTraces();
+
+    return traces.map((trace) => ({
+      id: trace.id,
+      queryKey: trace.queryKey,
+      operationType: trace.operationType,
+      method: trace.method,
+      path: trace.path,
+      timestamp: trace.timestamp,
+      duration: trace.duration,
+      request: trace.request,
+      response: trace.response,
+      meta: trace.meta,
+      steps: trace.steps.map((step) => ({
+        plugin: step.plugin,
+        stage: step.stage,
+        timestamp: step.timestamp,
+        duration: step.duration,
+        reason: step.reason,
+        color: step.color,
+        diff: step.diff,
+        info: step.info,
+      })),
+    }));
+  }
+
   getFilteredTraces(searchQuery?: string): OperationTrace[] {
     let traces = this.getTraces();
 

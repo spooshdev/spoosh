@@ -94,7 +94,7 @@ export interface DevToolFilters {
 }
 
 export interface DevToolApi {
-  getTraces(): OperationTrace[];
+  exportTraces(): ExportedTrace[];
   clearTraces(): void;
   open(): void;
   close(): void;
@@ -122,6 +122,7 @@ export interface DevToolStoreInterface {
   getCurrentTrace(queryKey: string): OperationTrace | undefined;
   getTrace(traceId: string): OperationTrace | undefined;
   getTraces(): OperationTrace[];
+  exportTraces(): ExportedTrace[];
   getFilteredTraces(searchQuery?: string): OperationTrace[];
   getActiveCount(): number;
   getFilters(): DevToolFilters;
