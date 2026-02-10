@@ -24,9 +24,13 @@ export function createResizeController(viewModel: ViewModel): ResizeController {
     const state = viewModel.getState();
 
     if (isResizingSidebar && currentSidebar) {
-      const newWidth = window.innerWidth - e.clientX;
+      const isLeft = currentSidebar.classList.contains("left");
+      const newWidth = isLeft ? e.clientX : window.innerWidth - e.clientX;
       const minWidth = 400;
-      const maxWidth = window.innerWidth - 100;
+      const maxWidth = Math.min(
+        window.innerWidth - 40,
+        window.innerWidth * 0.9
+      );
       const clampedWidth = Math.min(Math.max(newWidth, minWidth), maxWidth);
 
       viewModel.setSidebarWidth(clampedWidth);
@@ -131,7 +135,8 @@ export function createResizeController(viewModel: ViewModel): ResizeController {
 
   function updateSidebarDOM(sidebar: HTMLElement): void {
     const state = viewModel.getState();
-    sidebar.style.width = `${state.sidebarWidth}px`;
+    const maxWidth = Math.min(state.sidebarWidth, window.innerWidth - 40);
+    sidebar.style.width = `${maxWidth}px`;
   }
 
   function updateDividerDOM(listPanel: HTMLElement): void {

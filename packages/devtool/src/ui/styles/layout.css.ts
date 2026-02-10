@@ -5,6 +5,7 @@ export const layoutCSS = `
     top: 0;
     right: 0;
     width: 700px;
+    max-width: calc(100vw - 40px);
     height: 100vh;
     background: var(--spoosh-bg);
     border-left: 1px solid var(--spoosh-border);
