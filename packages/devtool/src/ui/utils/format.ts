@@ -9,7 +9,7 @@ export function escapeHtml(str: string): string {
 export function formatTime(timestamp: number): string {
   const date = new Date(timestamp);
   return date.toLocaleTimeString("en-US", {
-    hour12: false,
+    hour12: true,
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",

@@ -1,5 +1,5 @@
 import type { ExportedTrace } from "../../../types";
-import { escapeHtml } from "../../utils";
+import { escapeHtml, formatTime } from "../../utils";
 
 export interface ImportListContext {
   traces: ExportedTrace[];
@@ -33,7 +33,7 @@ function renderImportTraceRow(
           <span class="spoosh-trace-path">${escapeHtml(trace.path)}</span>
         </div>
         <div class="spoosh-trace-preview-row">
-          <span class="spoosh-trace-preview">${escapeHtml(trace.operationType)}</span>
+          <span class="spoosh-trace-preview">${formatTime(trace.timestamp)}</span>
           <span class="spoosh-trace-time">${duration}ms</span>
         </div>
       </div>
