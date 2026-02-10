@@ -11,7 +11,7 @@ export type PositionMode =
   | "top-left";
 export type PanelView = "requests" | "cache" | "import";
 export type InternalTab = "data" | "meta" | "raw";
-export type SidebarPosition = "left" | "right";
+export type SidebarPosition = "left" | "right" | "bottom";
 
 export interface ViewModelState {
   isOpen: boolean;
@@ -23,6 +23,7 @@ export interface ViewModelState {
   fullDiffViews: ReadonlySet<string>;
   showPassedPlugins: boolean;
   sidebarWidth: number;
+  sidebarHeight: number;
   listPanelWidth: number;
   requestsPanelHeight: number;
   searchQuery: string;
@@ -51,6 +52,7 @@ const DEFAULT_STATE: ViewModelState = {
   fullDiffViews: new Set(),
   showPassedPlugins: false,
   sidebarWidth: 700,
+  sidebarHeight: 400,
   listPanelWidth: 280,
   requestsPanelHeight: 0.8,
   searchQuery: "",
@@ -86,6 +88,7 @@ export interface ViewModel {
   setSidebarPosition(position: SidebarPosition): void;
 
   setSidebarWidth(width: number): void;
+  setSidebarHeight(height: number): void;
   setListPanelWidth(width: number): void;
   setRequestsPanelHeight(ratio: number): void;
   setSearchQuery(query: string): void;
@@ -132,6 +135,7 @@ export function createViewModel(): ViewModel {
           ...state,
           showPassedPlugins: settings.showPassedPlugins ?? false,
           sidebarWidth: settings.sidebarWidth ?? DEFAULT_STATE.sidebarWidth,
+          sidebarHeight: settings.sidebarHeight ?? DEFAULT_STATE.sidebarHeight,
           listPanelWidth:
             settings.listPanelWidth ?? DEFAULT_STATE.listPanelWidth,
           requestsPanelHeight:
@@ -162,6 +166,7 @@ export function createViewModel(): ViewModel {
           JSON.stringify({
             showPassedPlugins: state.showPassedPlugins,
             sidebarWidth: state.sidebarWidth,
+            sidebarHeight: state.sidebarHeight,
             listPanelWidth: state.listPanelWidth,
             requestsPanelHeight: state.requestsPanelHeight,
             theme: state.theme,
@@ -261,6 +266,11 @@ export function createViewModel(): ViewModel {
 
   function setSidebarWidth(width: number): void {
     state = { ...state, sidebarWidth: width };
+    saveSettings();
+  }
+
+  function setSidebarHeight(height: number): void {
+    state = { ...state, sidebarHeight: height };
     saveSettings();
   }
 
@@ -383,6 +393,7 @@ export function createViewModel(): ViewModel {
     setPosition,
     setSidebarPosition,
     setSidebarWidth,
+    setSidebarHeight,
     setListPanelWidth,
     setRequestsPanelHeight,
     setSearchQuery,

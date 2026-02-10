@@ -41,6 +41,7 @@ export function renderSettings(ctx: SettingsRenderContext): string {
             <select class="spoosh-settings-select" data-setting="sidebarPosition">
               <option value="right" ${sidebarPosition === "right" ? "selected" : ""}>Right</option>
               <option value="left" ${sidebarPosition === "left" ? "selected" : ""}>Left</option>
+              <option value="bottom" ${sidebarPosition === "bottom" ? "selected" : ""}>Bottom</option>
             </select>
           </div>
         </div>

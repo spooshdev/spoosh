@@ -118,6 +118,8 @@ export class DevToolPanel {
 
     if (this.viewModel.getState().sidebarPosition === "left") {
       this.sidebar.classList.add("left");
+    } else if (this.viewModel.getState().sidebarPosition === "bottom") {
+      this.sidebar.classList.add("bottom");
     }
 
     this.resizeController.updateSidebarDOM(this.sidebar);
@@ -750,6 +752,7 @@ export class DevToolPanel {
   private startSidebarDrag(e: MouseEvent): void {
     e.preventDefault();
     const startX = e.clientX;
+    const startY = e.clientY;
     const currentPosition = this.viewModel.getState().sidebarPosition;
     let pendingPosition: SidebarPosition | null = null;
     let placeholder: HTMLDivElement | null = null;
@@ -758,29 +761,59 @@ export class DevToolPanel {
     document.body.style.userSelect = "none";
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
-      const dx = moveEvent.clientX - startX;
-      const threshold = 100;
-      const newPosition: SidebarPosition = dx < 0 ? "left" : "right";
-      const sidebarWidth = this.viewModel.getState().sidebarWidth;
+      const dragDx = moveEvent.clientX - startX;
+      const dragDy = moveEvent.clientY - startY;
+      const threshold = 50;
 
-      if (Math.abs(dx) >= threshold && newPosition !== currentPosition) {
-        if (pendingPosition !== newPosition) {
-          pendingPosition = newPosition;
+      if (Math.abs(dragDx) < threshold && Math.abs(dragDy) < threshold) {
+        pendingPosition = null;
+        placeholder?.remove();
+        placeholder = null;
+        return;
+      }
 
-          if (!placeholder) {
-            placeholder = document.createElement("div");
-            placeholder.className = "spoosh-drag-placeholder";
-            this.shadowRoot?.appendChild(placeholder);
-          }
+      const midX = window.innerWidth / 2;
+      const midY = window.innerHeight / 2;
+      const cursorX = moveEvent.clientX;
+      const cursorY = moveEvent.clientY;
 
+      let newPosition: SidebarPosition;
+
+      if (cursorY > midY) {
+        newPosition = "bottom";
+      } else if (cursorX < midX) {
+        newPosition = "left";
+      } else {
+        newPosition = "right";
+      }
+
+      if (pendingPosition !== newPosition) {
+        pendingPosition = newPosition;
+
+        if (!placeholder) {
+          placeholder = document.createElement("div");
+          placeholder.className = "spoosh-drag-placeholder";
+          this.shadowRoot?.appendChild(placeholder);
+        }
+
+        placeholder.classList.remove("bottom");
+        placeholder.style.width = "";
+        placeholder.style.height = "";
+        placeholder.style.left = "";
+        placeholder.style.right = "";
+
+        if (newPosition === "bottom") {
+          const sidebarHeight = this.viewModel.getState().sidebarHeight;
+          placeholder.classList.add("bottom");
+          placeholder.style.left = "0";
+          placeholder.style.right = "0";
+          placeholder.style.height = `${sidebarHeight}px`;
+        } else {
+          const sidebarWidth = this.viewModel.getState().sidebarWidth;
           placeholder.style.width = `${sidebarWidth}px`;
           placeholder.style.left = newPosition === "left" ? "0" : "";
           placeholder.style.right = newPosition === "right" ? "0" : "";
         }
-      } else {
-        pendingPosition = null;
-        placeholder?.remove();
-        placeholder = null;
       }
     };
 
@@ -1050,11 +1083,15 @@ export class DevToolPanel {
 
   setSidebarPosition(position: SidebarPosition): void {
     if (this.sidebar) {
+      this.sidebar.classList.remove("left", "bottom");
+
       if (position === "left") {
         this.sidebar.classList.add("left");
-      } else {
-        this.sidebar.classList.remove("left");
+      } else if (position === "bottom") {
+        this.sidebar.classList.add("bottom");
       }
+
+      this.resizeController.updateSidebarDOM(this.sidebar);
     }
   }
 

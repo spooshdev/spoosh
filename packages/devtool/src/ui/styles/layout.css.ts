@@ -42,6 +42,34 @@ export const layoutCSS = `
     right: 0;
   }
 
+  /* Bottom sidebar positioning */
+  #spoosh-devtool-sidebar.bottom {
+    top: auto;
+    right: 0;
+    left: 0;
+    bottom: 0;
+    width: 100vw;
+    max-width: 100vw;
+    height: 400px;
+    max-height: calc(100vh - 40px);
+    border-left: none;
+    border-top: 1px solid var(--spoosh-border);
+    transform: translateY(100%);
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.15);
+  }
+
+  #spoosh-devtool-sidebar.bottom.open {
+    transform: translateY(0);
+  }
+
+  #spoosh-devtool-sidebar.bottom .spoosh-resize-handle {
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 3px;
+    cursor: ns-resize;
+  }
+
   /* ===== Scrollbar Styling ===== */
   #spoosh-devtool-sidebar ::-webkit-scrollbar {
     width: 6px;
@@ -273,5 +301,13 @@ export const layoutCSS = `
     z-index: 999999;
     border-radius: 4px;
     pointer-events: none;
+  }
+
+  .spoosh-drag-placeholder.bottom {
+    top: auto;
+    bottom: 0;
+    left: 0;
+    width: 100vw;
+    height: auto;
   }
 `;

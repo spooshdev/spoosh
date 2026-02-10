@@ -24,17 +24,33 @@ export function createResizeController(viewModel: ViewModel): ResizeController {
     const state = viewModel.getState();
 
     if (isResizingSidebar && currentSidebar) {
-      const isLeft = currentSidebar.classList.contains("left");
-      const newWidth = isLeft ? e.clientX : window.innerWidth - e.clientX;
-      const minWidth = 400;
-      const maxWidth = Math.min(
-        window.innerWidth - 40,
-        window.innerWidth * 0.9
-      );
-      const clampedWidth = Math.min(Math.max(newWidth, minWidth), maxWidth);
+      if (currentSidebar.classList.contains("bottom")) {
+        const newHeight = window.innerHeight - e.clientY;
+        const minHeight = 200;
+        const maxHeight = Math.min(
+          window.innerHeight - 40,
+          window.innerHeight * 0.9
+        );
+        const clampedHeight = Math.min(
+          Math.max(newHeight, minHeight),
+          maxHeight
+        );
 
-      viewModel.setSidebarWidth(clampedWidth);
-      currentSidebar.style.width = `${clampedWidth}px`;
+        viewModel.setSidebarHeight(clampedHeight);
+        currentSidebar.style.height = `${clampedHeight}px`;
+      } else {
+        const isLeft = currentSidebar.classList.contains("left");
+        const newWidth = isLeft ? e.clientX : window.innerWidth - e.clientX;
+        const minWidth = 400;
+        const maxWidth = Math.min(
+          window.innerWidth - 40,
+          window.innerWidth * 0.9
+        );
+        const clampedWidth = Math.min(Math.max(newWidth, minWidth), maxWidth);
+
+        viewModel.setSidebarWidth(clampedWidth);
+        currentSidebar.style.width = `${clampedWidth}px`;
+      }
     }
 
     if (isResizingDivider && currentSidebar) {
@@ -102,7 +118,8 @@ export function createResizeController(viewModel: ViewModel): ResizeController {
       e.preventDefault();
       isResizingSidebar = true;
       currentSidebar = handle.closest("#spoosh-devtool-sidebar") as HTMLElement;
-      startResize("ew-resize");
+      const isBottom = currentSidebar?.classList.contains("bottom");
+      startResize(isBottom ? "ns-resize" : "ew-resize");
     });
   }
 
@@ -135,8 +152,16 @@ export function createResizeController(viewModel: ViewModel): ResizeController {
 
   function updateSidebarDOM(sidebar: HTMLElement): void {
     const state = viewModel.getState();
-    const maxWidth = Math.min(state.sidebarWidth, window.innerWidth - 40);
-    sidebar.style.width = `${maxWidth}px`;
+
+    if (state.sidebarPosition === "bottom") {
+      const maxHeight = Math.min(state.sidebarHeight, window.innerHeight - 40);
+      sidebar.style.height = `${maxHeight}px`;
+      sidebar.style.width = "";
+    } else {
+      const maxWidth = Math.min(state.sidebarWidth, window.innerWidth - 40);
+      sidebar.style.width = `${maxWidth}px`;
+      sidebar.style.height = "";
+    }
   }
 
   function updateDividerDOM(listPanel: HTMLElement): void {
