@@ -38,6 +38,62 @@ Prefer `middleware`, `afterResponse`, or `exports` unless you intentionally want
 
 </Callout>
 
+## setup vs instanceApi
+
+These two work together:
+
+| Feature       | setup                                 | instanceApi              |
+| ------------- | ------------------------------------- | ------------------------ |
+| **Runs when** | Once, when app starts                 | Once, when app starts    |
+| **Purpose**   | Initialize things (timers, listeners) | Return methods for users |
+| **Returns**   | Nothing                               | Object with methods      |
+
+**Think of it this way:**
+
+- `setup` = Start the engine
+- `instanceApi` = Give the user the steering wheel
+
+### Example: GC Plugin
+
+```typescript
+function gcPlugin(): SpooshPlugin {
+  let runGc: () => void; // Will be set in setup
+
+  return {
+    name: "my-app:gc",
+    operations: [],
+
+    // setup: Initialize the cleanup logic
+    setup({ stateManager }) {
+      runGc = () => {
+        // Clean old entries
+        stateManager.clear();
+      };
+
+      // Run cleanup every minute
+      setInterval(runGc, 60000);
+    },
+
+    // instanceApi: Let users trigger cleanup manually
+    instanceApi: () => ({
+      runGc() {
+        runGc?.();
+      },
+    }),
+  };
+}
+```
+
+**Usage:**
+
+```typescript
+const { runGc } = create(spoosh);
+
+// Automatic cleanup happens every minute (from setup)
+// User can also trigger it manually:
+runGc();
+```
+
 ## Basic Example
 
 ```typescript
