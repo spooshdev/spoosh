@@ -1,6 +1,6 @@
 import type { OperationType } from "@spoosh/core";
 
-import { getLogo } from "../utils";
+import { escapeHtml, getLogo } from "../utils";
 
 export interface HeaderRenderContext {
   filters: { operationTypes: Set<OperationType> };
@@ -69,7 +69,7 @@ export function renderHeader(ctx: HeaderRenderContext): string {
         <circle cx="11" cy="11" r="8"/>
         <path d="M21 21l-4.35-4.35"/>
       </svg>
-      <input type="text" class="spoosh-search-input" placeholder="Search..." value="${searchQuery}">
+      <input type="text" class="spoosh-search-input" placeholder="Search..." value="${escapeHtml(searchQuery)}">
     </div>
     ${filtersHtml}
   `;

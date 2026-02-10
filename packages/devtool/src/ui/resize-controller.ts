@@ -148,6 +148,8 @@ export function createResizeController(viewModel: ViewModel): ResizeController {
   function cleanup(): void {
     document.removeEventListener("mousemove", handleMouseMove);
     document.removeEventListener("mouseup", handleMouseUp);
+    currentSidebar = null;
+    currentListContent = null;
   }
 
   function updateSidebarDOM(sidebar: HTMLElement): void {

@@ -43,7 +43,7 @@ export function renderTraceRow(ctx: TraceRowContext): string {
       <div class="spoosh-trace-info">
         <div class="spoosh-trace-key-row">
           <span class="spoosh-trace-method method-${trace.method}">${trace.method}</span>
-          <span class="spoosh-trace-path">${trace.path}${queryParams ? `<span class="spoosh-trace-query">?${escapeHtml(queryParams)}</span>` : ""}</span>
+          <span class="spoosh-trace-path">${escapeHtml(trace.path)}${queryParams ? `<span class="spoosh-trace-query">?${escapeHtml(queryParams)}</span>` : ""}</span>
         </div>
         <div class="spoosh-trace-preview-row">
           <span class="spoosh-trace-preview">${escapeHtml(preview)}</span>

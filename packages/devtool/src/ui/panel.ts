@@ -25,7 +25,7 @@ import { createRenderScheduler } from "./render-scheduler";
 import { createResizeController } from "./resize-controller";
 import { injectStyles, removeStyles } from "./styles/inject";
 import { getThemeCSS, resolveTheme } from "./styles/theme";
-import { getLogo } from "./utils";
+import { escapeHtml, getLogo } from "./utils";
 import {
   createViewModel,
   type PositionMode,
@@ -48,6 +48,8 @@ export class DevToolPanel {
   private unsubscribe: (() => void) | null = null;
   private traceCount = 0;
   private lastSeenCount = 0;
+
+  private fabMouseDown: ((e: MouseEvent) => void) | null = null;
 
   private viewModel = createViewModel();
   private renderScheduler = createRenderScheduler();
@@ -600,7 +602,7 @@ export class DevToolPanel {
             ${
               hasSession
                 ? `<div class="spoosh-section-header">
-                    <span class="spoosh-section-title">${this.escapeHtml(session.filename)}</span>
+                    <span class="spoosh-section-title">${escapeHtml(session.filename)}</span>
                     <span class="spoosh-section-count">${traces.length}</span>
                   </div>`
                 : ""
@@ -763,14 +765,6 @@ export class DevToolPanel {
     }
 
     return false;
-  }
-
-  private escapeHtml(str: string): string {
-    return str
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
   }
 
   private setupResizeHandlers(): void {
@@ -1105,6 +1099,7 @@ export class DevToolPanel {
       }, 200);
     };
 
+    this.fabMouseDown = handleMouseDown;
     this.fab.addEventListener("mousedown", handleMouseDown);
   }
 
@@ -1161,6 +1156,11 @@ export class DevToolPanel {
 
     this.renderScheduler.cancel();
     this.resizeController.cleanup();
+
+    if (this.fab && this.fabMouseDown) {
+      this.fab.removeEventListener("mousedown", this.fabMouseDown);
+      this.fabMouseDown = null;
+    }
 
     this.shadowHost?.remove();
     this.shadowHost = null;

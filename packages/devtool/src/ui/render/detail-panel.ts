@@ -5,7 +5,7 @@ import type {
   SidebarPosition,
   ThemeMode,
 } from "../view-model";
-import { formatTime } from "../utils";
+import { escapeHtml, formatTime } from "../utils";
 import { renderSettings } from "./settings";
 import {
   renderDataTab,
@@ -120,7 +120,7 @@ export function renderDetailPanel(ctx: DetailPanelContext): string {
       <div class="spoosh-detail-header">
         <div class="spoosh-detail-title">
           <span class="spoosh-trace-method method-${trace.method}">${trace.method}</span>
-          <span class="spoosh-detail-path">${trace.path}</span>
+          <span class="spoosh-detail-path">${escapeHtml(trace.path)}</span>
         </div>
         <div class="spoosh-detail-meta">
           <span class="spoosh-badge ${statusClass}">${statusLabel}</span>
