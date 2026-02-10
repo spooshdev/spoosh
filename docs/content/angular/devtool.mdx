@@ -1,0 +1,169 @@
+---
+title: Devtool
+description: Visual debugging panel for Spoosh
+---
+
+The devtool plugin provides a visual debugging panel that shows every request, plugin step, and cached state in your browser.
+
+## Installation
+
+```package-install
+@spoosh/devtool
+```
+
+## Usage
+
+```typescript
+import { Spoosh } from "@spoosh/core";
+import { devtool } from "@spoosh/devtool";
+
+const spoosh = new Spoosh<ApiSchema, Error>("/api").use([
+  devtool(),
+  // other plugins...
+]);
+```
+
+A floating icon appears in the corner. Click it to open the panel.
+
+## Features
+
+### Request Timeline
+
+See every request with timing and status. Each request shows:
+
+- Operation type (read, write, infiniteRead)
+- HTTP method and path
+- Response status
+- Total duration
+
+Click any request to see details.
+
+### Plugin Steps
+
+Watch how each plugin processes requests in real-time:
+
+- See the order plugins execute
+- View what each plugin did (returned from cache, made request, etc.)
+- Inspect data transformations with before/after diffs
+- Identify which plugin caused a behavior
+
+### State Inspector
+
+Browse all cached data:
+
+- View current cache entries
+- See subscriber counts for each query
+- Inspect raw data and metadata
+- Manually refetch or delete entries
+
+### Event Log
+
+View events emitted by plugins:
+
+- Cache invalidations
+- Refetch triggers
+- Custom plugin events
+
+### Export/Import
+
+Save and share debugging sessions:
+
+- Export traces as JSON
+- Import traces from files
+- Share issues with your team
+
+## Options
+
+```typescript
+devtool({
+  enabled: true,
+  showFloatingIcon: true,
+  sensitiveHeaders: ["authorization", "cookie", "x-api-key"],
+});
+```
+
+| Option             | Type       | Default                                         | Description                         |
+| ------------------ | ---------- | ----------------------------------------------- | ----------------------------------- |
+| `enabled`          | `boolean`  | `true`                                          | Enable or disable the devtool       |
+| `showFloatingIcon` | `boolean`  | `true`                                          | Show floating icon in corner        |
+| `sensitiveHeaders` | `string[]` | `["authorization", "cookie", "x-api-key", ...]` | Headers to redact in UI and exports |
+
+## Programmatic API
+
+Access devtool functions through `create()`:
+
+```typescript
+// spoosh.ts
+import { create } from "@spoosh/angular";
+
+const spoosh = new Spoosh<ApiSchema, Error>("/api").use([devtool()]);
+export const { injectRead, devtools } = create(spoosh);
+
+// app.component.ts
+import { devtools } from "./spoosh";
+
+@Component({ ... })
+export class AppComponent {
+  toggleDevtools() {
+    devtools.toggle();
+  }
+
+  clearTraces() {
+    devtools.clearTraces();
+  }
+
+  exportTraces() {
+    const traces = devtools.exportTraces();
+    console.log(traces);
+  }
+}
+```
+
+| Method                 | Description                    |
+| ---------------------- | ------------------------------ |
+| `toggle()`             | Open or close the panel        |
+| `clearTraces()`        | Clear all recorded traces      |
+| `exportTraces()`       | Get traces as JSON array       |
+| `toggleFloatingIcon()` | Show or hide the floating icon |
+
+## Production
+
+The plugin automatically disables itself when:
+
+- `enabled: false` is set
+- Running on server (SSR)
+
+```typescript
+devtool({
+  enabled: !environment.production,
+});
+```
+
+## Plugin Tracing
+
+When devtool is enabled, plugins can emit trace events to show what they're doing. See [Tracing](/docs/angular/plugin-development/advanced/tracing) for full documentation.
+
+```typescript
+function myPlugin(): SpooshPlugin {
+  return {
+    name: "my-app:my-plugin",
+    operations: ["read"],
+
+    middleware: async (context, next) => {
+      const t = context.tracer?.("my-app:my-plugin");
+
+      t?.log("Checking cache");
+      t?.return("Cache hit");
+      t?.skip("Already in progress");
+
+      return next();
+    },
+
+    setup(context) {
+      const et = context.eventTracer?.("my-app:my-plugin");
+
+      et?.emit("Plugin initialized");
+    },
+  };
+}
+```
