@@ -145,27 +145,28 @@ export function invalidationPlugin(
     },
 
     afterResponse(context, response) {
-      if (response.error) return;
-
       const t = context.tracer?.(PLUGIN_NAME);
-      const tags = resolveInvalidateTags(context, defaultMode);
 
-      if (tags.length) {
-        t?.log("Invalidated tags", {
-          color: "warning",
-          info: [{ label: "Tags", value: tags }],
-        });
-      } else {
-        t?.skip("No tags to invalidate", { color: "muted" });
+      if (!response.error) {
+        const tags = resolveInvalidateTags(context, defaultMode);
+
+        if (tags.includes("*")) {
+          t?.log("Refetch all", { color: "warning" });
+          context.eventEmitter.emit("refetchAll", undefined);
+          return;
+        }
+
+        if (tags.length > 0) {
+          t?.log("Invalidated tags", {
+            color: "info",
+            info: [{ label: "Tags", value: tags }],
+          });
+          context.stateManager.markStale(tags);
+          context.eventEmitter.emit("invalidate", tags);
+        } else {
+          t?.skip("No tags to invalidate", { color: "muted" });
+        }
       }
-
-      if (tags.includes("*")) {
-        context.eventEmitter.emit("refetchAll", undefined);
-        return;
-      }
-
-      context.stateManager.markStale(tags);
-      context.eventEmitter.emit("invalidate", tags);
     },
 
     instanceApi(context) {

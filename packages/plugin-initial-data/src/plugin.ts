@@ -66,7 +66,15 @@ export function initialDataPlugin(): SpooshPlugin<{
       if (pluginOptions?.initialData === undefined) {
         t?.skip("No initial data", { color: "muted" });
 
-        return next();
+        const response = await next();
+
+        if (!response.error) {
+          context.stateManager.setMeta(context.queryKey, {
+            isInitialData: false,
+          });
+        }
+
+        return response;
       }
 
       if (!context.instanceId) {
