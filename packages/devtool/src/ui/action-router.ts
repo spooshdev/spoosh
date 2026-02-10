@@ -6,6 +6,7 @@ import type {
   InternalTab,
   PanelView,
   PositionMode,
+  SidebarPosition,
   ThemeMode,
   ViewModel,
 } from "./view-model";
@@ -27,6 +28,7 @@ export type ActionIntent =
   | { type: "search"; query: string }
   | { type: "change-theme"; theme: ThemeMode }
   | { type: "change-position"; position: PositionMode }
+  | { type: "change-sidebar-position"; position: SidebarPosition }
   | { type: "switch-view"; view: PanelView }
   | { type: "select-cache-entry"; key: string }
   | { type: "select-internal-tab"; tab: InternalTab }
@@ -40,6 +42,7 @@ export interface ActionRouterCallbacks {
   onClose: () => void;
   onThemeChange: (theme: ThemeMode) => void;
   onPositionChange: (position: PositionMode) => void;
+  onSidebarPositionChange: (position: SidebarPosition) => void;
   onInvalidateCache?: (key: string) => void;
   onDeleteCache?: (key: string) => void;
   onClearAllCache?: () => void;
@@ -61,6 +64,7 @@ export function createActionRouter(
     onClose,
     onThemeChange,
     onPositionChange,
+    onSidebarPositionChange,
     onInvalidateCache,
     onDeleteCache,
     onClearAllCache,
@@ -201,6 +205,25 @@ export function createActionRouter(
       };
     }
 
+    if (setting === "sidebarPosition" && isChangeEvent) {
+      const select = target as HTMLSelectElement;
+      return {
+        type: "change-sidebar-position",
+        position: select.value as SidebarPosition,
+      };
+    }
+
+    const sidebarAction = target
+      .closest("[data-sidebar-position]")
+      ?.getAttribute("data-sidebar-position");
+
+    if (sidebarAction) {
+      return {
+        type: "change-sidebar-position",
+        position: sidebarAction as SidebarPosition,
+      };
+    }
+
     if (setting === "view" && isChangeEvent) {
       const select = target as HTMLSelectElement;
       return { type: "switch-view", view: select.value as PanelView };
@@ -296,6 +319,11 @@ export function createActionRouter(
         viewModel.setPosition(intent.position);
         onPositionChange(intent.position);
         return;
+
+      case "change-sidebar-position":
+        viewModel.setSidebarPosition(intent.position);
+        onSidebarPositionChange(intent.position);
+        break;
 
       case "switch-view":
         viewModel.setActiveView(intent.view);

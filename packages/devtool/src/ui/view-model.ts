@@ -11,6 +11,7 @@ export type PositionMode =
   | "top-left";
 export type PanelView = "requests" | "cache";
 export type InternalTab = "data" | "meta" | "raw";
+export type SidebarPosition = "left" | "right";
 
 export interface ViewModelState {
   isOpen: boolean;
@@ -27,6 +28,7 @@ export interface ViewModelState {
   searchQuery: string;
   theme: ThemeMode;
   position: PositionMode;
+  sidebarPosition: SidebarPosition;
   activeView: PanelView;
   selectedCacheKey: string | null;
   internalTab: InternalTab;
@@ -51,6 +53,7 @@ const DEFAULT_STATE: ViewModelState = {
   searchQuery: "",
   theme: "dark",
   position: "bottom-right",
+  sidebarPosition: "right",
   activeView: "requests",
   selectedCacheKey: null,
   internalTab: "data",
@@ -74,6 +77,7 @@ export interface ViewModel {
   togglePassedPlugins(): void;
   setTheme(theme: ThemeMode): void;
   setPosition(position: PositionMode): void;
+  setSidebarPosition(position: SidebarPosition): void;
 
   setSidebarWidth(width: number): void;
   setListPanelWidth(width: number): void;
@@ -124,6 +128,8 @@ export function createViewModel(): ViewModel {
             settings.requestsPanelHeight ?? DEFAULT_STATE.requestsPanelHeight,
           theme: settings.theme ?? DEFAULT_STATE.theme,
           position: settings.position ?? DEFAULT_STATE.position,
+          sidebarPosition:
+            settings.sidebarPosition ?? DEFAULT_STATE.sidebarPosition,
         };
       }
     } catch {
@@ -149,6 +155,7 @@ export function createViewModel(): ViewModel {
             requestsPanelHeight: state.requestsPanelHeight,
             theme: state.theme,
             position: state.position,
+            sidebarPosition: state.sidebarPosition,
           })
         );
       } catch {
@@ -272,6 +279,12 @@ export function createViewModel(): ViewModel {
     notify();
   }
 
+  function setSidebarPosition(position: SidebarPosition): void {
+    state = { ...state, sidebarPosition: position };
+    saveSettings();
+    notify();
+  }
+
   function clearExpanded(): void {
     mutableExpandedSteps.clear();
     mutableExpandedGroups.clear();
@@ -336,6 +349,7 @@ export function createViewModel(): ViewModel {
     togglePassedPlugins,
     setTheme,
     setPosition,
+    setSidebarPosition,
     setSidebarWidth,
     setListPanelWidth,
     setRequestsPanelHeight,

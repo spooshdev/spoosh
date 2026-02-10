@@ -20,11 +20,11 @@ import { createResizeController } from "./resize-controller";
 import { injectStyles, removeStyles } from "./styles/inject";
 import { getThemeCSS, resolveTheme } from "./styles/theme";
 import { getLogo } from "./utils";
-import { createViewModel, type PositionMode } from "./view-model";
-
-function isLeftPosition(position: PositionMode): boolean {
-  return position === "bottom-left" || position === "top-left";
-}
+import {
+  createViewModel,
+  type PositionMode,
+  type SidebarPosition,
+} from "./view-model";
 
 interface DevToolPanelOptions {
   store: DevToolStoreInterface;
@@ -60,6 +60,7 @@ export class DevToolPanel {
       onClose: () => this.close(),
       onThemeChange: (theme) => this.setTheme(theme),
       onPositionChange: (position) => this.setPosition(position),
+      onSidebarPositionChange: (position) => this.setSidebarPosition(position),
       onInvalidateCache: (key) => {
         this.store.invalidateCacheEntry(key);
         this.renderImmediate();
@@ -100,7 +101,7 @@ export class DevToolPanel {
     this.sidebar = document.createElement("div");
     this.sidebar.id = "spoosh-devtool-sidebar";
 
-    if (isLeftPosition(this.viewModel.getState().position)) {
+    if (this.viewModel.getState().sidebarPosition === "left") {
       this.sidebar.classList.add("left");
     }
 
@@ -371,7 +372,7 @@ export class DevToolPanel {
       <div class="spoosh-panel">
         ${mainContent}
       </div>
-      ${renderBottomBar({ activeView: state.activeView })}
+      ${renderBottomBar({ activeView: state.activeView, sidebarPosition: state.sidebarPosition })}
     `;
 
     this.setupResizeHandlers();
@@ -409,6 +410,7 @@ export class DevToolPanel {
         : [],
       theme: state.theme,
       position: state.position,
+      sidebarPosition: state.sidebarPosition,
     });
 
     return `
@@ -449,6 +451,7 @@ export class DevToolPanel {
           showPassedPlugins: state.showPassedPlugins,
           theme: state.theme,
           position: state.position,
+          sidebarPosition: state.sidebarPosition,
         })
       : renderCacheDetail({
           entry: selectedEntry ?? null,
@@ -611,9 +614,11 @@ export class DevToolPanel {
     if (this.fab) {
       this.fab.className = position;
     }
+  }
 
+  setSidebarPosition(position: SidebarPosition): void {
     if (this.sidebar) {
-      if (isLeftPosition(position)) {
+      if (position === "left") {
         this.sidebar.classList.add("left");
       } else {
         this.sidebar.classList.remove("left");

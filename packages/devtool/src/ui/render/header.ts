@@ -32,10 +32,10 @@ export function renderHeader(ctx: HeaderRenderContext): string {
 
   return `
     <div class="spoosh-header">
-      <div class="spoosh-title">
+      <a class="spoosh-title" href="https://spoosh.dev" target="_blank" rel="noopener noreferrer">
         <span class="spoosh-logo">${getLogo(16, 14)}</span>
         <span>Spoosh</span>
-      </div>
+      </a>
       <div class="spoosh-actions">
         <button class="spoosh-icon-btn ${showSettings ? "active" : ""}" data-action="settings" title="Settings">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

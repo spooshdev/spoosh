@@ -1,13 +1,14 @@
-import type { PositionMode, ThemeMode } from "../view-model";
+import type { PositionMode, SidebarPosition, ThemeMode } from "../view-model";
 
 export interface SettingsRenderContext {
   showPassedPlugins: boolean;
   theme: ThemeMode;
   position: PositionMode;
+  sidebarPosition: SidebarPosition;
 }
 
 export function renderSettings(ctx: SettingsRenderContext): string {
-  const { showPassedPlugins, theme, position } = ctx;
+  const { showPassedPlugins, theme, position, sidebarPosition } = ctx;
 
   return `
     <div class="spoosh-detail-panel">
@@ -31,6 +32,13 @@ export function renderSettings(ctx: SettingsRenderContext): string {
               <option value="bottom-left" ${position === "bottom-left" ? "selected" : ""}>Bottom Left</option>
               <option value="top-right" ${position === "top-right" ? "selected" : ""}>Top Right</option>
               <option value="top-left" ${position === "top-left" ? "selected" : ""}>Top Left</option>
+            </select>
+          </div>
+          <div class="spoosh-settings-row">
+            <span class="spoosh-settings-label">Sidebar Position</span>
+            <select class="spoosh-settings-select" data-setting="sidebarPosition">
+              <option value="right" ${sidebarPosition === "right" ? "selected" : ""}>Right</option>
+              <option value="left" ${sidebarPosition === "left" ? "selected" : ""}>Left</option>
             </select>
           </div>
         </div>

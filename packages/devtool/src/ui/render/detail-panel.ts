@@ -1,5 +1,10 @@
 import type { OperationTrace } from "../../types";
-import type { DetailTab, PositionMode, ThemeMode } from "../view-model";
+import type {
+  DetailTab,
+  PositionMode,
+  SidebarPosition,
+  ThemeMode,
+} from "../view-model";
 import { formatTime } from "../utils";
 import { renderSettings } from "./settings";
 import {
@@ -21,6 +26,7 @@ export interface DetailPanelContext {
   knownPlugins: string[];
   theme: ThemeMode;
   position: PositionMode;
+  sidebarPosition: SidebarPosition;
 }
 
 function getActivePluginCount(trace: OperationTrace): number {
@@ -67,11 +73,23 @@ function renderTabContent(ctx: DetailPanelContext): string {
 }
 
 export function renderDetailPanel(ctx: DetailPanelContext): string {
-  const { trace, showSettings, activeTab, showPassedPlugins, theme, position } =
-    ctx;
+  const {
+    trace,
+    showSettings,
+    activeTab,
+    showPassedPlugins,
+    theme,
+    position,
+    sidebarPosition,
+  } = ctx;
 
   if (showSettings) {
-    return renderSettings({ showPassedPlugins, theme, position });
+    return renderSettings({
+      showPassedPlugins,
+      theme,
+      position,
+      sidebarPosition,
+    });
   }
 
   if (!trace) {
@@ -131,10 +149,16 @@ export function renderEmptyDetail(
   showSettings: boolean,
   showPassedPlugins: boolean,
   theme: ThemeMode,
-  position: PositionMode
+  position: PositionMode,
+  sidebarPosition: SidebarPosition
 ): string {
   if (showSettings) {
-    return renderSettings({ showPassedPlugins, theme, position });
+    return renderSettings({
+      showPassedPlugins,
+      theme,
+      position,
+      sidebarPosition,
+    });
   }
 
   return `
