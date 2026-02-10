@@ -40,7 +40,7 @@ let globalPanel: DevToolPanel | null = null;
 export function devtool(
   config: DevToolConfig = {}
 ): SpooshPlugin<{ instanceApi: DevToolInstanceApi }> {
-  const { enabled = true, maxHistory = 50, showFloatingIcon = true } = config;
+  const { enabled = true, showFloatingIcon = true } = config;
 
   if (!enabled || typeof window === "undefined") {
     return {
@@ -50,7 +50,7 @@ export function devtool(
   }
 
   if (!globalStore) {
-    globalStore = new DevToolStore({ maxHistory });
+    globalStore = new DevToolStore();
   }
 
   const store = globalStore;
@@ -215,9 +215,8 @@ export function devtool(
         devtools: {
           exportTraces: () => store.exportTraces(),
           clearTraces: () => store.clear(),
-          open: () => globalPanel?.open(),
-          close: () => globalPanel?.close(),
           toggle: () => globalPanel?.toggle(),
+          toggleFloatingIcon: () => globalPanel?.toggleFloatingIcon(),
         },
       };
     },

@@ -104,13 +104,15 @@ export class DevToolPanel {
 
     injectStyles(getThemeCSS(this.theme), this.shadowRoot);
 
-    if (this.showFloatingIcon) {
-      this.fab = document.createElement("button");
-      this.fab.id = "spoosh-devtool-fab";
-      this.fab.className = this.viewModel.getState().position;
-      this.fab.innerHTML = getLogo(20, 18);
-      this.setupFabDrag();
-      this.shadowRoot.appendChild(this.fab);
+    this.fab = document.createElement("button");
+    this.fab.id = "spoosh-devtool-fab";
+    this.fab.className = this.viewModel.getState().position;
+    this.fab.innerHTML = getLogo(20, 18);
+    this.setupFabDrag();
+    this.shadowRoot.appendChild(this.fab);
+
+    if (!this.showFloatingIcon) {
+      this.fab.style.display = "none";
     }
 
     this.sidebar = document.createElement("div");
@@ -1114,6 +1116,13 @@ export class DevToolPanel {
     if (!visible) {
       this.close();
     }
+  }
+
+  toggleFloatingIcon(): void {
+    if (!this.fab) return;
+
+    const isVisible = this.fab.style.display !== "none";
+    this.setVisible(!isVisible);
   }
 
   setTheme(theme: "light" | "dark" | DevToolTheme): void {

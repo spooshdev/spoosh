@@ -15,10 +15,7 @@ export interface DevToolConfig {
   /** Enable or disable the devtool. Defaults to true. */
   enabled?: boolean;
 
-  /** Maximum number of traces to keep in history. Defaults to 50. */
-  maxHistory?: number;
-
-  /** Show floating icon. If false, use devtools.open() manually. Defaults to true. */
+  /** Show floating icon. If false, use devtools.toggle() manually. Defaults to true. */
   showFloatingIcon?: boolean;
 }
 
@@ -96,9 +93,8 @@ export interface DevToolFilters {
 export interface DevToolApi {
   exportTraces(): ExportedTrace[];
   clearTraces(): void;
-  open(): void;
-  close(): void;
   toggle(): void;
+  toggleFloatingIcon(): void;
 }
 
 export interface DevToolInstanceApi {

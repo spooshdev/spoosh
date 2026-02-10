@@ -19,7 +19,6 @@ import type {
 import { createRingBuffer } from "./history";
 
 export interface DevToolStoreConfig {
-  maxHistory: number;
   stateManager?: StateManager;
 }
 
@@ -28,9 +27,11 @@ interface RegisteredPlugin {
   operations: string[];
 }
 
+const DEFAULT_MAX_HISTORY = 50;
+
 export class DevToolStore implements DevToolStoreInterface {
-  private traces = createRingBuffer<OperationTrace>(50);
-  private events = createRingBuffer<StandaloneEvent>(100);
+  private traces = createRingBuffer<OperationTrace>(DEFAULT_MAX_HISTORY);
+  private events = createRingBuffer<StandaloneEvent>(DEFAULT_MAX_HISTORY * 2);
   private activeTraces = new Map<string, OperationTrace>();
   private invalidations: InvalidationEvent[] = [];
   private subscribers = new Set<() => void>();
@@ -45,9 +46,7 @@ export class DevToolStore implements DevToolStoreInterface {
   private eventEmitter: EventEmitter | undefined;
   private importedSession: ImportedSession | null = null;
 
-  constructor(config: DevToolStoreConfig) {
-    this.traces = createRingBuffer<OperationTrace>(config.maxHistory);
-    this.events = createRingBuffer<StandaloneEvent>(config.maxHistory * 2);
+  constructor(config: DevToolStoreConfig = {}) {
     this.stateManager = config.stateManager;
   }
 
