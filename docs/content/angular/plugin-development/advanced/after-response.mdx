@@ -223,14 +223,20 @@ function timestampPlugin(): SpooshPlugin {
 
 **Note:** Returning `void` means "don't modify the response" (common for pure side effects).
 
-## Real-World Example: Debug Plugin
+## Real-World Example: Simple Logging Plugin
 
-The official debug plugin uses `afterResponse` to log all requests:
+Here's an example of a simple logging plugin using `afterResponse`:
+
+<Callout type="info">
+  For comprehensive debugging with a visual panel, plugin execution timeline,
+  and request inspection, use the official [Devtool](/docs/angular/devtool)
+  instead.
+</Callout>
 
 ```typescript
-function debugPlugin(): SpooshPlugin {
+function loggingPlugin(): SpooshPlugin {
   return {
-    name: "spoosh:debug",
+    name: "my-app:logging",
     operations: ["read", "write", "infiniteRead"],
 
     afterResponse(context, response) {
@@ -240,13 +246,9 @@ function debugPlugin(): SpooshPlugin {
       console.log("Operation:", context.operationType);
       console.log("Status:", response.status);
       console.log("Duration:", `${duration}ms`);
-      console.log("Query Key:", context.queryKey);
-      console.log("Tags:", context.tags);
 
       if (response.error) {
         console.error("Error:", response.error);
-      } else {
-        console.log("Data:", response.data);
       }
 
       console.groupEnd();

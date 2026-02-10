@@ -93,6 +93,7 @@ ${hooksOrInjectsSection}
 
 ### Developer Tools
 - [Debug](${RAW_BASE_PATH}/plugins/debug.mdx): Debug logging for development
+- [Devtool](${RAW_BASE_PATH}/devtool/index.mdx): Visual debugging panel with plugin execution visualization
 
 ## Plugin Development
 
@@ -113,6 +114,7 @@ ${hooksOrInjectsSection}
 - [Infinite Queries](${RAW_BASE_PATH}/guides/infinite-queries.mdx): Infinite queries with ${infiniteQueryHook}
 - [Authentication](${RAW_BASE_PATH}/guides/authentication.mdx): Token management and auth flows
 - [Error Handling](${RAW_BASE_PATH}/guides/error-handling.mdx): Global, per-request, and typed errors
+- [Lazy Loading](${RAW_BASE_PATH}/guides/lazy-loading.mdx): Control when data fetches with enabled and trigger
 `;
 }
 

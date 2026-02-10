@@ -34,7 +34,7 @@ Component Lifecycle (onMount, onUpdate, onUnmount)
 const spoosh = new Spoosh<ApiSchema, Error>("/api").use([
   cachePlugin(),
   retryPlugin(),
-  debugPlugin(),
+  devtool(),
 ]);
 ```
 
@@ -225,13 +225,13 @@ const spoosh = new Spoosh<ApiSchema, Error>("/api").use([
   retryPlugin(),
   throttlePlugin(),
   cachePlugin(),
-  debugPlugin(),
+  devtool(),
 ]);
 
 // Spoosh sorts to:
-// 1. cachePlugin (priority: -10)
-// 2. retryPlugin (priority: 0)
-// 3. debugPlugin (priority: 0, maintains registration order)
+// 1. devtool (priority: -100)
+// 2. cachePlugin (priority: -10)
+// 3. retryPlugin (priority: 0)
 // 4. throttlePlugin (priority: 100)
 ```
 

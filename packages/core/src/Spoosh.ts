@@ -15,7 +15,7 @@ import type { SpooshOptions, SpooshOptionsInput } from "./types/request.types";
  * @example Basic usage
  * ```ts
  * const spoosh = new Spoosh<ApiSchema, Error>('/api')
- *   .use([cachePlugin(), debugPlugin()]);
+ *   .use([cachePlugin(), devtool()]);
  *
  * const { api } = client;
  * const response = await api("posts").GET();
