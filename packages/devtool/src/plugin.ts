@@ -162,6 +162,7 @@ export function devtool(
         .map((p) => ({ name: p.name, operations: [...p.operations] }));
       store.setRegisteredPlugins(plugins);
       store.setStateManager(ctx.stateManager);
+      store.setEventEmitter(ctx.eventEmitter);
 
       if (!globalPanel) {
         globalPanel = new DevToolPanel({

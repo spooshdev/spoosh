@@ -4,6 +4,7 @@ import type {
   PluginContext,
   StandaloneEvent,
   StateManager,
+  EventEmitter,
 } from "@spoosh/core";
 
 import type {
@@ -39,6 +40,7 @@ export class DevToolStore implements DevToolStoreInterface {
   };
 
   private stateManager: StateManager | undefined;
+  private eventEmitter: EventEmitter | undefined;
 
   constructor(config: DevToolStoreConfig) {
     this.traces = createRingBuffer<OperationTrace>(config.maxHistory);
@@ -48,6 +50,10 @@ export class DevToolStore implements DevToolStoreInterface {
 
   setStateManager(stateManager: StateManager): void {
     this.stateManager = stateManager;
+  }
+
+  setEventEmitter(eventEmitter: EventEmitter): void {
+    this.eventEmitter = eventEmitter;
   }
 
   getCacheEntries(searchQuery?: string): CacheEntryDisplay[] {
@@ -87,8 +93,19 @@ export class DevToolStore implements DevToolStoreInterface {
 
     if (entry) {
       this.stateManager.setCache(key, { stale: true });
-      this.notify();
+
+      if (this.eventEmitter) {
+        const tags = entry.selfTag
+          ? [...new Set([entry.selfTag, ...entry.tags])]
+          : entry.tags;
+
+        if (tags.length > 0) {
+          this.eventEmitter.emit("invalidate", tags);
+        }
+      }
     }
+
+    this.notify();
   }
 
   deleteCacheEntry(key: string): void {
