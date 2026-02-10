@@ -549,7 +549,13 @@ export class DevToolPanel {
           sidebarPosition: state.sidebarPosition,
           maxHistory: state.maxHistory,
         })
-      : renderImportDetail({ trace: selectedTrace ?? null });
+      : renderImportDetail({
+          trace: selectedTrace ?? null,
+          activeTab: state.activeTab,
+          expandedSteps: state.expandedSteps,
+          expandedGroups: state.expandedGroups,
+          fullDiffViews: state.fullDiffViews,
+        });
 
     const hasSession = session !== null;
 
@@ -631,6 +637,10 @@ export class DevToolPanel {
       if (detailPanel) {
         detailPanel.outerHTML = renderImportDetail({
           trace: selectedTrace,
+          activeTab: state.activeTab,
+          expandedSteps: state.expandedSteps,
+          expandedGroups: state.expandedGroups,
+          fullDiffViews: state.fullDiffViews,
         });
       }
     }
@@ -811,6 +821,9 @@ export class DevToolPanel {
         timestamp: step.timestamp,
         duration: step.duration,
         reason: step.reason,
+        color: step.color,
+        diff: step.diff,
+        info: step.info,
       })),
     }));
 

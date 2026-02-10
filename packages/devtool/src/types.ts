@@ -186,6 +186,9 @@ export interface ExportedTrace {
     timestamp: number;
     duration?: number;
     reason?: string;
+    color?: string;
+    diff?: { before: unknown; after: unknown; label?: string };
+    info?: Array<{ label: string; value: unknown }>;
   }>;
 }
 
