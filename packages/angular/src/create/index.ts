@@ -45,14 +45,24 @@ export function create<
     typeof createInjectInfiniteRead<TSchema, TDefaultError, TPlugins>
   >[0]);
 
+  const plugins = (pluginExecutor as PluginExecutor).getPlugins();
+
+  const setupContext = {
+    stateManager,
+    eventEmitter,
+    pluginExecutor,
+  };
+
+  for (const plugin of plugins) {
+    plugin.setup?.(setupContext);
+  }
+
   const instanceApiContext = {
     api,
     stateManager,
     eventEmitter,
     pluginExecutor,
   };
-
-  const plugins = (pluginExecutor as PluginExecutor).getPlugins();
 
   const instanceApis = plugins.reduce(
     (acc, plugin) => {

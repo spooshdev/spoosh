@@ -59,13 +59,24 @@ export function create<
     pluginExecutor,
   });
 
+  const plugins = pluginExecutor.getPlugins();
+
+  const setupContext = {
+    stateManager,
+    eventEmitter,
+    pluginExecutor,
+  };
+
+  for (const plugin of plugins) {
+    plugin.setup?.(setupContext);
+  }
+
   const instanceApiContext = {
     api,
     stateManager,
     eventEmitter,
     pluginExecutor,
   };
-  const plugins = pluginExecutor.getPlugins();
 
   const instanceApis = plugins.reduce(
     (acc, plugin) => {

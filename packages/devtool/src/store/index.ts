@@ -86,7 +86,11 @@ export class DevToolStore implements DevToolStoreInterface {
         queryKey: e.key,
         entry: e.entry,
         subscriberCount: this.stateManager!.getSubscribersCount(e.key),
-      }));
+      }))
+      .sort(
+        (a, b) =>
+          (b.entry.state.timestamp ?? 0) - (a.entry.state.timestamp ?? 0)
+      );
   }
 
   refetchStateEntry(key: string): void {

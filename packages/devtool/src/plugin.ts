@@ -86,10 +86,6 @@ export function devtool(
     operations: ["read", "write", "infiniteRead"],
     priority: -100,
 
-    contextEnhancer(context) {
-      context.eventTracer = createEventTracer;
-    },
-
     middleware: async (context, next) => {
       const hasPendingPromise = context.stateManager.getPendingPromise(
         context.queryKey
@@ -168,8 +164,11 @@ export function devtool(
       },
     },
 
-    instanceApi(ctx) {
+    setup(ctx) {
       ctx.eventTracer = createEventTracer;
+      ctx.pluginExecutor.registerContextEnhancer((context) => {
+        context.eventTracer = createEventTracer;
+      });
 
       const plugins = ctx.pluginExecutor
         .getPlugins()
@@ -188,53 +187,56 @@ export function devtool(
         globalPanel.mount();
       }
 
-      ctx.eventEmitter.on("invalidate", (tags: string[]) => {
-        const affectedKeys = ctx.stateManager.getCacheEntriesByTags(tags);
-        const listenerCounts = affectedKeys.map(({ key }) => ({
-          key,
-          count: ctx.stateManager.getSubscribersCount(key),
-        }));
+      const unsubInvalidate = ctx.eventEmitter.on(
+        "invalidate",
+        (tags: string[]) => {
+          const affectedKeys = ctx.stateManager.getCacheEntriesByTags(tags);
+          const listenerCounts = affectedKeys.map(({ key }) => ({
+            key,
+            count: ctx.stateManager.getSubscribersCount(key),
+          }));
 
-        store.recordInvalidation({
-          tags,
-          affectedKeys: listenerCounts,
-          totalListeners: listenerCounts.reduce((sum, k) => sum + k.count, 0),
-          timestamp: Date.now(),
-        });
+          store.recordInvalidation({
+            tags,
+            affectedKeys: listenerCounts,
+            totalListeners: listenerCounts.reduce((sum, k) => sum + k.count, 0),
+            timestamp: Date.now(),
+          });
+        }
+      );
+
+      const unsubDevtoolEvent = ctx.eventEmitter.on<
+        DevtoolEvents["spoosh:devtool-event"]
+      >("spoosh:devtool-event", (event) => {
+        store.addEvent(event);
       });
 
-      ctx.eventEmitter.on<DevtoolEvents["spoosh:devtool-event"]>(
-        "spoosh:devtool-event",
-        (event) => {
-          store.addEvent(event);
+      const unsubRequestComplete = ctx.eventEmitter.on<
+        DevtoolEvents["spoosh:request-complete"]
+      >("spoosh:request-complete", ({ context }) => {
+        const traceId = context.temp.get("devtool:traceId") as
+          | string
+          | undefined;
+
+        if (!traceId) return;
+
+        const headers = context.request.headers as
+          | Record<string, string>
+          | undefined;
+
+        if (headers && Object.keys(headers).length > 0) {
+          store.setTraceHeaders(traceId, { ...headers });
         }
-      );
 
-      ctx.eventEmitter.on<DevtoolEvents["spoosh:request-complete"]>(
-        "spoosh:request-complete",
-        ({ context }) => {
-          const traceId = context.temp.get("devtool:traceId") as
-            | string
-            | undefined;
+        const cacheEntry = context.stateManager.getCache(context.queryKey);
 
-          if (!traceId) return;
-
-          const headers = context.request.headers as
-            | Record<string, string>
-            | undefined;
-
-          if (headers && Object.keys(headers).length > 0) {
-            store.setTraceHeaders(traceId, { ...headers });
-          }
-
-          const cacheEntry = context.stateManager.getCache(context.queryKey);
-
-          if (cacheEntry?.meta && cacheEntry.meta.size > 0) {
-            store.setTraceMeta(traceId, Object.fromEntries(cacheEntry.meta));
-          }
+        if (cacheEntry?.meta && cacheEntry.meta.size > 0) {
+          store.setTraceMeta(traceId, Object.fromEntries(cacheEntry.meta));
         }
-      );
+      });
+    },
 
+    instanceApi() {
       return {
         devtools: {
           exportTraces: () => store.exportTraces(),

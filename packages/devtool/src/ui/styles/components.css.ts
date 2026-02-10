@@ -669,6 +669,10 @@ export const componentsCSS = `
     display: none;
   }
 
+  .spoosh-eye-show {
+    display: flex;
+  }
+
   .spoosh-header-value-wrap.revealed .spoosh-eye-show {
     display: none;
   }

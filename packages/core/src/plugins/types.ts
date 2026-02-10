@@ -284,23 +284,36 @@ export interface SpooshPlugin<T extends PluginTypeConfig = PluginTypeConfig> {
   exports?: (context: PluginContext) => object;
 
   /**
-   * Enhance the plugin context during creation.
-   * Called for every context creation, allowing plugins to inject properties.
-   * Use this for adding tracers, debuggers, or other context-wide utilities.
+   * One-time initialization when the Spoosh instance is created.
+   * Use for setting up timers, event listeners, or other side effects.
+   * Runs before instanceApi is called.
    *
    * @example
    * ```ts
-   * contextEnhancer(context) {
-   *   context.tracer = (plugin) => createTracer(plugin);
-   *   context.eventTracer = (plugin) => createEventTracer(plugin);
+   * setup: ({ stateManager, eventEmitter, pluginExecutor }) => {
+   *   // Set up interval timer
+   *   const intervalId = setInterval(() => {
+   *     // periodic cleanup
+   *   }, 60000);
+   *
+   *   // Register context enhancer
+   *   pluginExecutor.registerContextEnhancer((context) => {
+   *     context.myProperty = myValue;
+   *   });
+   *
+   *   // Set up event listener
+   *   eventEmitter.on("invalidate", (tags) => {
+   *     // handle invalidation
+   *   });
    * }
    * ```
    */
-  contextEnhancer?: (context: PluginContext) => void;
+  setup?: (context: SetupContext) => void;
 
   /**
    * Expose functions/properties on the framework adapter return value (e.g., create).
    * Unlike `exports`, these are accessible directly from the instance, not just within plugin context.
+   * Should be pure - use `setup` for side effects like timers or event listeners.
    *
    * @example
    * ```ts
@@ -551,30 +564,19 @@ export type InstancePluginExecutor = {
   createContext: (input: PluginContextInput) => PluginContext;
 
   getPlugins: () => readonly SpooshPlugin[];
-};
 
-/**
- * Registry for extending InstanceApiContext with custom properties.
- * Third-party plugins can extend this interface via declaration merging.
- *
- * @example
- * ```ts
- * // In your plugin's types file:
- * declare module '@spoosh/core' {
- *   interface InstanceApiContextExtensions {
- *     myCustomProperty?: MyCustomType;
- *   }
- * }
- * ```
- */
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface InstanceApiContextExtensions {}
+  /**
+   * Register a function to enhance every PluginContext during creation.
+   * Call this during plugin setup to inject properties into all request contexts.
+   */
+  registerContextEnhancer: (enhancer: (context: PluginContext) => void) => void;
+};
 
 /**
  * Context provided to plugin's instanceApi function.
  * Used for creating framework-agnostic APIs exposed on the Spoosh instance.
  */
-export type InstanceApiContextBase<TApi = unknown> = {
+export type InstanceApiContext<TApi = unknown> = {
   api: TApi;
   stateManager: StateManager;
   eventEmitter: EventEmitter;
@@ -588,8 +590,17 @@ export type InstanceApiContextBase<TApi = unknown> = {
 };
 
 /**
- * Instance API context with extensions from third-party plugins.
- * Plugins can extend this via InstanceApiContextExtensions declaration merging.
+ * Context provided to plugin's setup function.
+ * Used for one-time initialization when the Spoosh instance is created.
  */
-export type InstanceApiContext<TApi = unknown> = InstanceApiContextBase<TApi> &
-  InstanceApiContextExtensions;
+export type SetupContext = {
+  stateManager: StateManager;
+  eventEmitter: EventEmitter;
+  pluginExecutor: InstancePluginExecutor;
+
+  /**
+   * Creates an event tracer for standalone events.
+   * Only available when devtools plugin is active.
+   */
+  eventTracer?: (plugin: string) => EventTracer;
+};

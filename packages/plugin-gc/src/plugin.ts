@@ -121,15 +121,17 @@ export function gcPlugin(
 ): SpooshPlugin<{ instanceApi: GcPluginExports }> {
   const { interval = 60000 } = options;
 
+  let runGcFn: (() => number) | undefined;
+
   return {
     name: PLUGIN_NAME,
     operations: [],
 
-    instanceApi(context) {
+    setup(context) {
       const { stateManager } = context;
       const et = context.eventTracer?.(PLUGIN_NAME);
 
-      const runGc = () => {
+      runGcFn = () => {
         return runGarbageCollection(stateManager, et, options);
       };
 
@@ -143,10 +145,14 @@ export function gcPlugin(
       });
 
       setInterval(() => {
-        runGc();
+        runGcFn?.();
       }, interval);
+    },
 
-      return { runGc };
+    instanceApi() {
+      return {
+        runGc: () => runGcFn?.() ?? 0,
+      };
     },
   };
 }

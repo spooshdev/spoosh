@@ -35,6 +35,12 @@ export type PluginExecutor = {
 
   /** Creates a full PluginContext with plugins accessor */
   createContext: (input: PluginContextInput) => PluginContext;
+
+  /**
+   * Register a function to enhance every PluginContext during creation.
+   * Call this during plugin setup to inject properties into all request contexts.
+   */
+  registerContextEnhancer: (enhancer: (context: PluginContext) => void) => void;
 };
 
 /**
@@ -75,6 +81,7 @@ export function createPluginExecutor(
   validateDependencies(initialPlugins);
   const plugins = sortByPriority(initialPlugins);
   const frozenPlugins = Object.freeze([...plugins]);
+  const contextEnhancers: ((context: PluginContext) => void)[] = [];
 
   const createPluginAccessor = (context: PluginContext): PluginAccessor => ({
     get(name: string) {
@@ -187,12 +194,16 @@ export function createPluginExecutor(
       return frozenPlugins;
     },
 
+    registerContextEnhancer(enhancer: (context: PluginContext) => void) {
+      contextEnhancers.push(enhancer);
+    },
+
     createContext(input: PluginContextInput) {
       const ctx = input as PluginContext;
       ctx.plugins = createPluginAccessor(ctx);
 
-      for (const plugin of plugins) {
-        plugin.contextEnhancer?.(ctx);
+      for (const enhancer of contextEnhancers) {
+        enhancer(ctx);
       }
 
       return ctx;
