@@ -1,5 +1,11 @@
 # @spoosh/devtool
 
+## 0.1.1
+
+- Fix new requests count in FAB disappearing after max history hit the limit
+- Fix abort requests are display as error in devtool
+- Fix state view not resolving dynamic param values
+
 ## 0.1.0
 
 - Initial release
