@@ -46,6 +46,7 @@ export class DevToolStore implements DevToolStoreInterface {
   private eventEmitter: EventEmitter | undefined;
   private importedSession: ImportedSession | null = null;
   private sensitiveHeaders = new Set<string>();
+  private totalTraceCount = 0;
 
   constructor(config: DevToolStoreConfig = {}) {
     this.stateManager = config.stateManager;
@@ -199,6 +200,7 @@ export class DevToolStore implements DevToolStoreInterface {
     };
 
     this.activeTraces.set(trace.id, trace);
+    this.totalTraceCount++;
     this.notify();
 
     return trace;
@@ -347,6 +349,10 @@ export class DevToolStore implements DevToolStoreInterface {
     return this.activeTraces.size;
   }
 
+  getTotalTraceCount(): number {
+    return this.totalTraceCount;
+  }
+
   getFilters(): DevToolFilters {
     return this.filters;
   }
@@ -421,6 +427,7 @@ export class DevToolStore implements DevToolStoreInterface {
     this.events.clear();
     this.activeTraces.clear();
     this.invalidations = [];
+    this.totalTraceCount = 0;
     this.notify();
   }
 

@@ -128,6 +128,7 @@ export interface DevToolStoreInterface {
   exportTraces(): ExportedTrace[];
   getFilteredTraces(searchQuery?: string): OperationTrace[];
   getActiveCount(): number;
+  getTotalTraceCount(): number;
   getFilters(): DevToolFilters;
   getKnownPlugins(operationType?: string): string[];
   setRegisteredPlugins(

@@ -4,15 +4,19 @@ export interface RingBuffer<T> {
   clear(): void;
   resize(newMaxSize: number): void;
   get length(): number;
+  get totalPushed(): number;
 }
 
 export function createRingBuffer<T>(maxSize: number): RingBuffer<T> {
   const buffer: T[] = [];
   let start = 0;
   let count = 0;
+  let total = 0;
 
   return {
     push(item: T) {
+      total++;
+
       if (count < maxSize) {
         buffer.push(item);
         count++;
@@ -34,6 +38,7 @@ export function createRingBuffer<T>(maxSize: number): RingBuffer<T> {
       buffer.length = 0;
       start = 0;
       count = 0;
+      total = 0;
     },
 
     resize(newMaxSize: number) {
@@ -53,6 +58,10 @@ export function createRingBuffer<T>(maxSize: number): RingBuffer<T> {
 
     get length() {
       return count;
+    },
+
+    get totalPushed() {
+      return total;
     },
   };
 }

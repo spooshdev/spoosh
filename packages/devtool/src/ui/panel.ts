@@ -139,7 +139,7 @@ export class DevToolPanel {
     this.store.setMaxHistory(savedMaxHistory);
 
     this.unsubscribe = this.store.subscribe(() => {
-      const newCount = this.store.getTraces().length;
+      const newCount = this.store.getTotalTraceCount();
 
       if (newCount !== this.traceCount) {
         const hadNewTrace = newCount > this.traceCount;
@@ -966,6 +966,7 @@ export class DevToolPanel {
   open(): void {
     this.viewModel.open();
     this.sidebar?.classList.add("open");
+    this.traceCount = this.store.getTotalTraceCount();
     this.lastSeenCount = this.traceCount;
     this.updateBadge();
     this.render();
