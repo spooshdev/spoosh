@@ -60,13 +60,59 @@ describe("retryPlugin", () => {
       expect(result).toEqual(errorResponse);
     });
 
-    it("should not retry on 500 error response", async () => {
-      const plugin = retryPlugin({ retries: 3 });
+    it("should retry on 500 error response by default", async () => {
+      const plugin = retryPlugin({ retries: 3, retryDelay: 1000 });
       const context = createMockContext();
       const errorResponse = {
         error: { message: "Server error" },
         status: 500,
       };
+      const successResponse = { data: { id: 1 }, status: 200 };
+
+      const next = vi
+        .fn()
+        .mockResolvedValueOnce(errorResponse)
+        .mockResolvedValueOnce(successResponse);
+
+      const resultPromise = plugin.middleware!(context, next);
+
+      await vi.advanceTimersByTimeAsync(1000);
+
+      const result = await resultPromise;
+
+      expect(next).toHaveBeenCalledTimes(2);
+      expect(result).toEqual(successResponse);
+    });
+
+    it("should retry on all default retry status codes (408, 429, 500, 502, 503, 504)", async () => {
+      const retryCodes = [408, 429, 500, 502, 503, 504];
+
+      for (const statusCode of retryCodes) {
+        const plugin = retryPlugin({ retries: 1, retryDelay: 100 });
+        const context = createMockContext();
+        const errorResponse = { error: { message: "Error" }, status: statusCode };
+        const successResponse = { data: {}, status: 200 };
+
+        const next = vi
+          .fn()
+          .mockResolvedValueOnce(errorResponse)
+          .mockResolvedValueOnce(successResponse);
+
+        const resultPromise = plugin.middleware!(context, next);
+
+        await vi.advanceTimersByTimeAsync(100);
+
+        const result = await resultPromise;
+
+        expect(next).toHaveBeenCalledTimes(2);
+        expect(result).toEqual(successResponse);
+      }
+    });
+
+    it("should not retry on 400 error response", async () => {
+      const plugin = retryPlugin({ retries: 3 });
+      const context = createMockContext();
+      const errorResponse = { error: { message: "Bad request" }, status: 400 };
       const next = vi.fn().mockResolvedValue(errorResponse);
 
       const result = await plugin.middleware!(context, next);
@@ -75,7 +121,7 @@ describe("retryPlugin", () => {
       expect(result).toEqual(errorResponse);
     });
 
-    it("should return error response immediately without delay", async () => {
+    it("should return error response immediately without delay for non-retryable status", async () => {
       const plugin = retryPlugin({ retries: 3, retryDelay: 5000 });
       const context = createMockContext();
       const errorResponse = { error: { message: "Bad request" }, status: 400 };
@@ -84,6 +130,91 @@ describe("retryPlugin", () => {
       await plugin.middleware!(context, next);
 
       expect(vi.getTimerCount()).toBe(0);
+    });
+  });
+
+  describe("shouldRetry callback", () => {
+    it("should use custom shouldRetry callback", async () => {
+      const shouldRetry = vi.fn().mockReturnValue(true);
+      const plugin = retryPlugin({ retries: 2, retryDelay: 100, shouldRetry });
+      const context = createMockContext();
+      const errorResponse = { error: { message: "Custom error" }, status: 418 };
+      const successResponse = { data: {}, status: 200 };
+
+      const next = vi
+        .fn()
+        .mockResolvedValueOnce(errorResponse)
+        .mockResolvedValueOnce(successResponse);
+
+      const resultPromise = plugin.middleware!(context, next);
+
+      await vi.advanceTimersByTimeAsync(100);
+
+      const result = await resultPromise;
+
+      expect(shouldRetry).toHaveBeenCalledWith({
+        status: 418,
+        error: { message: "Custom error" },
+        attempt: 0,
+        maxRetries: 2,
+      });
+      expect(next).toHaveBeenCalledTimes(2);
+      expect(result).toEqual(successResponse);
+    });
+
+    it("should disable status code retries with shouldRetry returning false", async () => {
+      const shouldRetry = vi.fn().mockReturnValue(false);
+      const plugin = retryPlugin({ retries: 3, shouldRetry });
+      const context = createMockContext();
+      const errorResponse = { error: { message: "Server error" }, status: 500 };
+      const next = vi.fn().mockResolvedValue(errorResponse);
+
+      const result = await plugin.middleware!(context, next);
+
+      expect(next).toHaveBeenCalledTimes(1);
+      expect(result).toEqual(errorResponse);
+    });
+
+    it("should override plugin shouldRetry with per-request option", async () => {
+      const pluginShouldRetry = vi.fn().mockReturnValue(true);
+      const requestShouldRetry = vi.fn().mockReturnValue(false);
+
+      const plugin = retryPlugin({ retries: 3, shouldRetry: pluginShouldRetry });
+      const context = createMockContext({
+        pluginOptions: { shouldRetry: requestShouldRetry },
+      });
+      const errorResponse = { error: { message: "Error" }, status: 500 };
+      const next = vi.fn().mockResolvedValue(errorResponse);
+
+      const result = await plugin.middleware!(context, next);
+
+      expect(pluginShouldRetry).not.toHaveBeenCalled();
+      expect(requestShouldRetry).toHaveBeenCalled();
+      expect(next).toHaveBeenCalledTimes(1);
+      expect(result).toEqual(errorResponse);
+    });
+
+    it("should always retry network errors regardless of shouldRetry", async () => {
+      const shouldRetry = vi.fn().mockReturnValue(false);
+      const plugin = retryPlugin({ retries: 2, retryDelay: 100, shouldRetry });
+      const context = createMockContext();
+      const networkError = new TypeError("Failed to fetch");
+      const successResponse = { data: {}, status: 200 };
+
+      const next = vi
+        .fn()
+        .mockResolvedValueOnce({ error: networkError, status: 0 })
+        .mockResolvedValueOnce(successResponse);
+
+      const resultPromise = plugin.middleware!(context, next);
+
+      await vi.advanceTimersByTimeAsync(100);
+
+      const result = await resultPromise;
+
+      expect(shouldRetry).not.toHaveBeenCalled();
+      expect(next).toHaveBeenCalledTimes(2);
+      expect(result).toEqual(successResponse);
     });
   });
 

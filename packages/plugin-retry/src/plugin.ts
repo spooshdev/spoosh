@@ -8,11 +8,18 @@ import type {
   RetryInfiniteReadOptions,
   RetryReadResult,
   RetryWriteResult,
+  ShouldRetryCallback,
 } from "./types";
+import { DEFAULT_RETRY_STATUS_CODES } from "./types";
 
 const PLUGIN_NAME = "spoosh:retry";
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const defaultShouldRetry: ShouldRetryCallback = ({ status }) => {
+  if (status === undefined) return false;
+  return (DEFAULT_RETRY_STATUS_CODES as readonly number[]).includes(status);
+};
 
 /**
  * Enables automatic retry for failed requests.
@@ -47,8 +54,11 @@ export function retryPlugin(config: RetryPluginConfig = {}): SpooshPlugin<{
   readResult: RetryReadResult;
   writeResult: RetryWriteResult;
 }> {
-  const { retries: defaultRetries = 3, retryDelay: defaultRetryDelay = 1000 } =
-    config;
+  const {
+    retries: defaultRetries = 3,
+    retryDelay: defaultRetryDelay = 1000,
+    shouldRetry: defaultShouldRetryFn = defaultShouldRetry,
+  } = config;
 
   return {
     name: PLUGIN_NAME,
@@ -63,6 +73,7 @@ export function retryPlugin(config: RetryPluginConfig = {}): SpooshPlugin<{
 
       const retriesConfig = pluginOptions?.retries ?? defaultRetries;
       const retryDelayConfig = pluginOptions?.retryDelay ?? defaultRetryDelay;
+      const shouldRetryFn = pluginOptions?.shouldRetry ?? defaultShouldRetryFn;
 
       const maxRetries = retriesConfig === false ? 0 : retriesConfig;
 
@@ -95,20 +106,45 @@ export function retryPlugin(config: RetryPluginConfig = {}): SpooshPlugin<{
           return res;
         }
 
-        if (isNetworkError(res.error) && attempt < maxRetries) {
+        const isLastAttempt = attempt >= maxRetries;
+
+        if (isNetworkError(res.error)) {
+          if (isLastAttempt) {
+            t?.log("Max retries reached (network error)", { color: "error" });
+            return res;
+          }
+
           const delayMs = retryDelayConfig * Math.pow(2, attempt);
           await delay(delayMs);
           continue;
         }
 
-        if (attempt > 0) {
-          if (isNetworkError(res.error)) {
+        if (res.error) {
+          const shouldRetryResult = shouldRetryFn({
+            status: res.status,
+            error: res.error,
+            attempt,
+            maxRetries,
+          });
+
+          if (shouldRetryResult && !isLastAttempt) {
+            t?.log(`Status ${res.status} - will retry`, { color: "warning" });
+            const delayMs = retryDelayConfig * Math.pow(2, attempt);
+            await delay(delayMs);
+            continue;
+          }
+
+          if (attempt > 0) {
             t?.log("Max retries reached or non-retryable error", {
               color: "error",
             });
-          } else {
-            t?.log("Retry succeeded", { color: "success" });
           }
+
+          return res;
+        }
+
+        if (attempt > 0) {
+          t?.log("Retry succeeded", { color: "success" });
         }
 
         return res;
