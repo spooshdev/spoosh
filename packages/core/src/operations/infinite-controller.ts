@@ -194,6 +194,7 @@ export function createInfiniteReadController<
   const trackerKey = createTrackerKey(path, method, baseOptionsForKey);
 
   let pageSubscriptions: (() => void)[] = [];
+  let trackerSubscription: (() => void) | null = null;
   let refetchUnsubscribe: (() => void) | null = null;
 
   const loadFromTracker = (): void => {
@@ -543,6 +544,8 @@ export function createInfiniteReadController<
       cachedState = computeState();
       subscribeToPages();
 
+      trackerSubscription = stateManager.subscribeCache(trackerKey, notify);
+
       const context = createContext(trackerKey, initialRequest);
       pluginExecutor.executeLifecycle("onMount", "infiniteRead", context);
 
@@ -571,6 +574,8 @@ export function createInfiniteReadController<
 
       pageSubscriptions.forEach((unsub) => unsub());
       pageSubscriptions = [];
+      trackerSubscription?.();
+      trackerSubscription = null;
       refetchUnsubscribe?.();
       refetchUnsubscribe = null;
     },

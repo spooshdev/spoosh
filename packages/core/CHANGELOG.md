@@ -1,5 +1,9 @@
 # @spoosh/core
 
+## 0.13.2
+
+- Fix fetch transport return empty object when response is not JSON
+
 ## 0.13.1
 
 - Add trigger options to plugin architecture to allow passing custom trigger values
