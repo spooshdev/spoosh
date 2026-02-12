@@ -14,6 +14,7 @@ import {
   type SelectorResult,
   type ResolverContext,
   type ResolveTypes,
+  type ResolveResultTypes,
   createOperationController,
   createSelectorProxy,
   resolvePath,
@@ -23,13 +24,11 @@ import type {
   BaseWriteResult,
   WriteApiClient,
   WriteResponseInputFields,
+  WriteTriggerInput,
 } from "./types";
 import type {
   ExtractMethodData,
   ExtractMethodError,
-  ExtractMethodOptions,
-  ExtractMethodQuery,
-  ExtractMethodBody,
   ExtractResponseQuery,
   ExtractResponseBody,
   ExtractResponseParamNames,
@@ -52,45 +51,53 @@ export function createUseWrite<
 
   type InferError<T> = [T] extends [unknown] ? TDefaultError : T;
 
-  type ExtractParamsRecord<T> =
-    ExtractResponseParamNames<T> extends never
+  type ExtractParamsRecord<TWriteFn> =
+    ExtractResponseParamNames<TWriteFn> extends never
       ? never
-      : Record<ExtractResponseParamNames<T>, string | number>;
+      : Record<ExtractResponseParamNames<TWriteFn>, string | number>;
 
-  type WriteResolverContext<TMethod> = ResolverContext<
+  type WriteResolverContext<TWriteFn> = ResolverContext<
     TSchema,
-    ExtractMethodData<TMethod>,
-    InferError<ExtractMethodError<TMethod>>,
-    ExtractMethodQuery<TMethod>,
-    ExtractMethodBody<TMethod>,
-    ExtractParamsRecord<TMethod>
+    ExtractMethodData<TWriteFn>,
+    InferError<ExtractMethodError<TWriteFn>>,
+    ExtractResponseQuery<TWriteFn>,
+    ExtractResponseBody<TWriteFn>,
+    ExtractParamsRecord<TWriteFn>
   >;
 
-  type ResolvedWriteOptions<TMethod> = ResolveTypes<
+  type ResolvedWriteOptions<TWriteFn> = ResolveTypes<
     PluginOptions["write"],
-    WriteResolverContext<TMethod>
+    WriteResolverContext<TWriteFn>
+  >;
+
+  type ResolvedWriteTriggerOptions<TWriteFn> = ResolveTypes<
+    PluginOptions["writeTrigger"],
+    WriteResolverContext<TWriteFn>
   >;
 
   function useWrite<
-    TMethod extends (
-      ...args: never[]
+    TWriteFn extends (
+      api: WriteApiClient<TSchema, TDefaultError>
     ) => Promise<SpooshResponse<unknown, unknown>>,
+    TWriteOpts extends ResolvedWriteOptions<TWriteFn> =
+      ResolvedWriteOptions<TWriteFn>,
   >(
-    writeFn: (api: WriteApiClient<TSchema, TDefaultError>) => TMethod
+    writeFn: TWriteFn,
+    writeOptions?: TWriteOpts
   ): BaseWriteResult<
-    ExtractMethodData<TMethod>,
-    InferError<ExtractMethodError<TMethod>>,
-    ExtractMethodOptions<TMethod> & ResolvedWriteOptions<TMethod>,
-    MergePluginResults<TPlugins>["write"]
+    ExtractMethodData<TWriteFn>,
+    InferError<ExtractMethodError<TWriteFn>>,
+    WriteTriggerInput<TWriteFn> & ResolvedWriteTriggerOptions<TWriteFn>,
+    ResolveResultTypes<MergePluginResults<TPlugins>["write"], TWriteOpts>
   > &
     WriteResponseInputFields<
-      ExtractResponseQuery<TMethod>,
-      ExtractResponseBody<TMethod>,
-      ExtractResponseParamNames<TMethod>
+      ExtractResponseQuery<TWriteFn>,
+      ExtractResponseBody<TWriteFn>,
+      ExtractResponseParamNames<TWriteFn>
     >;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  function useWrite(writeFn: any): any {
+  function useWrite(writeFn: any, writeOptions?: any): any {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     type TData = any;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -111,20 +118,20 @@ export function createUseWrite<
 
     (writeFn as (api: unknown) => unknown)(selectorProxy);
 
-    const selectedEndpoint = selectorResultRef.current.selector;
+    const capturedCall = selectorResultRef.current.call;
 
-    if (!selectedEndpoint) {
+    if (!capturedCall) {
       throw new Error(
-        "useWrite requires selecting an HTTP method (POST, PUT, PATCH, DELETE). " +
-          'Example: useWrite((api) => api("posts").POST)'
+        "useWrite requires calling an HTTP method (POST, PUT, PATCH, DELETE). " +
+          'Example: useWrite((api) => api("posts").POST())'
       );
     }
 
-    const pathSegments = selectedEndpoint.path.split("/").filter(Boolean);
+    const pathSegments = capturedCall.path.split("/").filter(Boolean);
 
     const queryKey = stateManager.createQueryKey({
-      path: selectedEndpoint.path,
-      method: selectedEndpoint.method,
+      path: capturedCall.path,
+      method: capturedCall.method,
       options: undefined,
     });
 
@@ -137,12 +144,8 @@ export function createUseWrite<
       controllerRef.current = {
         controller: createOperationController<TData, TError>({
           operationType: "write",
-          path: selectedEndpoint.path,
-          method: selectedEndpoint.method as
-            | "POST"
-            | "PUT"
-            | "PATCH"
-            | "DELETE",
+          path: capturedCall.path,
+          method: capturedCall.method as "POST" | "PUT" | "PATCH" | "DELETE",
           tags: [],
           stateManager,
           eventEmitter,
@@ -151,8 +154,8 @@ export function createUseWrite<
           fetchFn: async (fetchOpts) => {
             const pathMethods = (
               api as (path: string) => Record<string, unknown>
-            )(selectedEndpoint.path);
-            const method = pathMethods[selectedEndpoint.method] as (
+            )(capturedCall.path);
+            const method = pathMethods[capturedCall.method] as (
               o?: unknown
             ) => Promise<SpooshResponse<TData, TError>>;
 
@@ -199,7 +202,8 @@ export function createUseWrite<
         const resolvedPath = resolvePath(pathSegments, params);
         const tags = resolveTags(triggerOptions, resolvedPath);
 
-        controller.setPluginOptions({ ...triggerOptions, tags });
+        const mergedOptions = { ...writeOptions, ...triggerOptions, tags };
+        controller.setPluginOptions(mergedOptions);
 
         try {
           const response = await controller.execute(triggerOptions, {
@@ -218,7 +222,7 @@ export function createUseWrite<
           return { error: err as TError } as SpooshResponse<TData, TError>;
         }
       },
-      [selectedEndpoint.path]
+      [capturedCall.path]
     );
 
     const entry = stateManager.getCache(queryKey);

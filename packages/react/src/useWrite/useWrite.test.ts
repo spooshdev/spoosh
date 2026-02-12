@@ -92,7 +92,7 @@ describe("useWrite", () => {
       const { useWrite } = createTestHooks();
 
       const { result } = renderHook(() =>
-        useWrite((api: any) => api("posts").POST)
+        useWrite((api: any) => api("posts").POST())
       );
 
       expect(result.current).toHaveProperty("trigger");
@@ -106,7 +106,7 @@ describe("useWrite", () => {
       const { useWrite } = createTestHooks();
 
       const { result } = renderHook(() =>
-        useWrite((api: any) => api("posts").POST)
+        useWrite((api: any) => api("posts").POST())
       );
 
       expect(result.current.loading).toBe(false);
@@ -116,7 +116,7 @@ describe("useWrite", () => {
       const { useWrite } = createTestHooks();
 
       const { result } = renderHook(() =>
-        useWrite((api: any) => api("posts").POST)
+        useWrite((api: any) => api("posts").POST())
       );
 
       expect(result.current.data).toBeUndefined();
@@ -128,7 +128,7 @@ describe("useWrite", () => {
       const { useWrite, calls } = createTestHooks();
 
       const { result } = renderHook(() =>
-        useWrite((api: any) => api("posts").POST)
+        useWrite((api: any) => api("posts").POST())
       );
 
       await act(async () => {
@@ -147,7 +147,7 @@ describe("useWrite", () => {
       setMockResponse({ data: { id: 42, name: "Created" }, status: 201 });
 
       const { result } = renderHook(() =>
-        useWrite((api: any) => api("posts").POST)
+        useWrite((api: any) => api("posts").POST())
       );
 
       let response: unknown;
@@ -169,7 +169,7 @@ describe("useWrite", () => {
       setDelay(50);
 
       const { result } = renderHook(() =>
-        useWrite((api: any) => api("posts").POST)
+        useWrite((api: any) => api("posts").POST())
       );
 
       expect(result.current.loading).toBe(false);
@@ -196,7 +196,7 @@ describe("useWrite", () => {
       setDelay(10);
 
       const { result } = renderHook(() =>
-        useWrite((api: any) => api("posts").POST)
+        useWrite((api: any) => api("posts").POST())
       );
 
       await act(async () => {
@@ -213,7 +213,7 @@ describe("useWrite", () => {
       setMockResponse({ error: { message: "Server error" }, status: 500 });
 
       const { result } = renderHook(() =>
-        useWrite((api: any) => api("posts").POST)
+        useWrite((api: any) => api("posts").POST())
       );
 
       await act(async () => {
@@ -223,7 +223,7 @@ describe("useWrite", () => {
       expect(result.current.error).toEqual({ message: "Server error" });
     });
 
-    it("throws when no HTTP method selected", () => {
+    it("throws when no HTTP method called", () => {
       const stateManager = createStateManager();
       const eventEmitter = createEventEmitter();
       const pluginExecutor = createPluginExecutor([]);
@@ -239,7 +239,7 @@ describe("useWrite", () => {
       expect(() => {
         renderHook(() => useWrite((api) => api("posts")));
       }).toThrow(
-        'useWrite requires selecting an HTTP method (POST, PUT, PATCH, DELETE). Example: useWrite((api) => api("posts").POST)'
+        'useWrite requires calling an HTTP method (POST, PUT, PATCH, DELETE). Example: useWrite((api) => api("posts").POST())'
       );
     });
 
@@ -247,7 +247,7 @@ describe("useWrite", () => {
       const { useWrite, setMockResponse } = createTestHooks();
 
       const { result } = renderHook(() =>
-        useWrite((api: any) => api("posts").POST)
+        useWrite((api: any) => api("posts").POST())
       );
 
       setMockResponse({ error: { message: "Server error" }, status: 500 });
@@ -274,7 +274,7 @@ describe("useWrite", () => {
       setDelay(100);
 
       const { result } = renderHook(() =>
-        useWrite((api: any) => api("posts").POST)
+        useWrite((api: any) => api("posts").POST())
       );
 
       let triggerPromise: Promise<unknown>;
@@ -311,7 +311,7 @@ describe("useWrite", () => {
       const { useWrite } = createTestHooks();
 
       const { result } = renderHook(() =>
-        useWrite((api: any) => api("posts").POST)
+        useWrite((api: any) => api("posts").POST())
       );
 
       await act(async () => {
@@ -331,7 +331,7 @@ describe("useWrite", () => {
       const { useWrite } = createTestHooks();
 
       const { result } = renderHook(() =>
-        useWrite((api: any) => api("posts/:id").PUT)
+        useWrite((api: any) => api("posts/:id").PUT())
       );
 
       await act(async () => {
@@ -371,7 +371,7 @@ describe("useWrite", () => {
       });
 
       const { result } = renderHook(() =>
-        useWrite((api: any) => api("posts").POST)
+        useWrite((api: any) => api("posts").POST())
       );
 
       await act(async () => {
@@ -403,7 +403,7 @@ describe("useWrite", () => {
       });
 
       const { result } = renderHook(() =>
-        useWrite((api: any) => api("posts").POST)
+        useWrite((api: any) => api("posts").POST())
       );
 
       await act(async () => {

@@ -1,5 +1,34 @@
 # @spoosh/react
 
+## 0.10.0
+
+### Breaking Changes
+
+- Update useWrite to split hook-level and trigger-level options for proper type inference
+
+### Migration
+
+**Before:**
+
+```typescript
+const { trigger } = useWrite((api) => api.posts.POST);
+```
+
+**After:**
+
+```typescript
+const { trigger } = useWrite((api) => api.posts.POST(), {
+  // hook-level options here
+});
+
+trigger({
+  // trigger-level options here
+});
+```
+
+This allow same write hook to have similar api like `useRead` with hook-level options,
+while still allowing passing custom options when triggering the write.
+
 ## 0.9.0
 
 - Add devtool tracing support

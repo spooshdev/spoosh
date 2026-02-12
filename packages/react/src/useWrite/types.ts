@@ -3,7 +3,8 @@ import type {
   SpooshPlugin,
   PluginTypeConfig,
   MergePluginResults,
-  WriteClient,
+  WriteSelectorClient,
+  SpooshBody,
 } from "@spoosh/core";
 
 type OptionalQueryField<TQuery> = [TQuery] extends [never]
@@ -39,6 +40,38 @@ export type WriteResponseInputFields<
 > = [TQuery, TBody, TParamNames] extends [never, never, never]
   ? object
   : { input: InputFields<TQuery, TBody, TParamNames> | undefined };
+
+type TriggerAwaitedReturn<T> = T extends (
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ...args: any[]
+) => infer R
+  ? Awaited<R>
+  : never;
+
+type ExtractInputFromResponse<T> = T extends { input: infer I } ? I : never;
+
+type ExtractTriggerQuery<I> = I extends { query: infer Q }
+  ? undefined extends Q
+    ? { query?: Exclude<Q, undefined> }
+    : { query: Q }
+  : unknown;
+
+type ExtractTriggerBody<I> = I extends { body: infer B }
+  ? undefined extends B
+    ? { body?: Exclude<B, undefined> | SpooshBody<Exclude<B, undefined>> }
+    : { body: B | SpooshBody<B> }
+  : unknown;
+
+type ExtractTriggerParams<I> = I extends { params: infer P }
+  ? { params: P }
+  : unknown;
+
+export type WriteTriggerInput<T> =
+  ExtractInputFromResponse<TriggerAwaitedReturn<T>> extends infer I
+    ? [I] extends [never]
+      ? object
+      : ExtractTriggerQuery<I> & ExtractTriggerBody<I> & ExtractTriggerParams<I>
+    : object;
 
 /**
  * Result returned by `useWrite` hook.
@@ -82,7 +115,7 @@ export type UseWriteResult<
 > = BaseWriteResult<TData, TError, TOptions, TMeta> &
   MergePluginResults<TPlugins>["write"];
 
-export type WriteApiClient<TSchema, TDefaultError> = WriteClient<
+export type WriteApiClient<TSchema, TDefaultError> = WriteSelectorClient<
   TSchema,
   TDefaultError
 >;

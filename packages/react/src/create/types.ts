@@ -31,6 +31,7 @@ import type {
   BaseWriteResult,
   WriteResponseInputFields,
   WriteApiClient,
+  WriteTriggerInput,
 } from "../useWrite/types";
 import type {
   BaseInfiniteReadOptions,
@@ -59,6 +60,16 @@ type ResolvedWriteOptions<
   TDefaultError,
 > = ResolveTypes<
   MergePluginOptions<TPlugins>["write"],
+  WriteResolverContext<TSchema, TMethod, TDefaultError>
+>;
+
+type ResolvedWriteTriggerOptions<
+  TSchema,
+  TPlugins extends PluginArray,
+  TMethod,
+  TDefaultError,
+> = ResolveTypes<
+  MergePluginOptions<TPlugins>["writeTrigger"],
   WriteResolverContext<TSchema, TMethod, TDefaultError>
 >;
 
@@ -118,22 +129,29 @@ type UseReadFn<TDefaultError, TSchema, TPlugins extends PluginArray> = {
 
 type UseWriteFn<TDefaultError, TSchema, TPlugins extends PluginArray> = {
   <
-    TMethod extends (
-      ...args: never
+    TWriteFn extends (
+      api: WriteApiClient<TSchema, TDefaultError>
     ) => Promise<SpooshResponse<unknown, unknown>>,
+    TWriteOpts extends ResolvedWriteOptions<
+      TSchema,
+      TPlugins,
+      TWriteFn,
+      TDefaultError
+    > = ResolvedWriteOptions<TSchema, TPlugins, TWriteFn, TDefaultError>,
   >(
-    writeFn: (api: WriteApiClient<TSchema, TDefaultError>) => TMethod
+    writeFn: TWriteFn,
+    writeOptions?: TWriteOpts
   ): BaseWriteResult<
-    ExtractMethodData<TMethod>,
-    InferError<ExtractMethodError<TMethod>, TDefaultError>,
-    Parameters<TMethod>[0] &
-      ResolvedWriteOptions<TSchema, TPlugins, TMethod, TDefaultError>,
-    MergePluginResults<TPlugins>["write"]
+    ExtractMethodData<TWriteFn>,
+    InferError<ExtractMethodError<TWriteFn>, TDefaultError>,
+    WriteTriggerInput<TWriteFn> &
+      ResolvedWriteTriggerOptions<TSchema, TPlugins, TWriteFn, TDefaultError>,
+    ResolveResultTypes<MergePluginResults<TPlugins>["write"], TWriteOpts>
   > &
     WriteResponseInputFields<
-      ExtractMethodQuery<TMethod>,
-      ExtractMethodBody<TMethod>,
-      ExtractResponseParamNames<TMethod>
+      ExtractMethodQuery<TWriteFn>,
+      ExtractMethodBody<TWriteFn>,
+      ExtractResponseParamNames<TWriteFn>
     >;
 };
 
