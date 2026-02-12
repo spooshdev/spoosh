@@ -14,8 +14,8 @@ export function App() {
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
   const tasks = useRead((api) => api("tasks").GET(), { staleTime: 4_000 });
-  const createTask = useWrite((api) => api("tasks").POST);
-  const toggleTask = useWrite((api) => api("tasks/:id/toggle").POST);
+  const createTask = useWrite((api) => api("tasks").POST());
+  const toggleTask = useWrite((api) => api("tasks/:id/toggle").POST());
 
   const activity = useInfiniteRead(
     (api) => api("activities").GET({ query: { cursor: 0, limit: 6 } }),

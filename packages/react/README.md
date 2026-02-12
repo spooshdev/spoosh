@@ -69,7 +69,7 @@ Trigger mutations with loading and error states.
 ```typescript
 function CreateUser() {
   const { trigger, loading, error } = useWrite(
-    (api) => api("users").POST
+    (api) => api("users").POST()
   );
 
   const handleSubmit = async (data: CreateUserBody) => {
@@ -90,7 +90,7 @@ function CreateUser() {
 }
 
 // With path parameters
-const updateUser = useWrite((api) => api("users/:id").PUT);
+const updateUser = useWrite((api) => api("users/:id").PUT());
 
 await updateUser.trigger({
   params: { id: userId },

@@ -47,7 +47,7 @@ The cache plugin runs with **priority -10**, meaning it executes early in the mi
 Clear cache after a mutation completes successfully:
 
 ```typescript
-const { trigger } = useWrite((api) => api("auth/logout").POST);
+const { trigger } = useWrite((api) => api("auth/logout").POST());
 
 // Clear cache after logout
 await trigger({ clearCache: true });

@@ -34,11 +34,11 @@ download = injectRead((api) => api("files/:id").GET(), {
 ## File Upload
 
 ```typescript
-uploadFile = injectWrite((api) => api("files").POST);
+uploadFile = injectWrite((api) => api("files").POST(), { progress: true });
 
-uploadFile.trigger({ body: form({ file: selectedFile }), progress: true });
+uploadFile.trigger({ body: form({ file: selectedFile }) });
 
-// uploadFile.progress()?.loaded tracks bytes uploaded
+// uploadFile.meta().progress?.loaded tracks bytes uploaded
 ```
 
 ## Custom Total Header

@@ -80,7 +80,7 @@ function SearchUsers() {
 
 ```typescript
 function CreatePost() {
-  const { trigger, loading, abort } = useWrite((api) => api("posts").POST);
+  const { trigger, loading, abort } = useWrite((api) => api("posts").POST());
 
   const handleSubmit = async () => {
     await trigger({ body: { title: "New Post", content: "..." } });
@@ -100,8 +100,14 @@ function CreatePost() {
 ```typescript
 function PostFeed() {
   const { data, loading, abort, fetchNext } = useInfiniteRead(
-    (api, { pageParam }) => api("posts").GET({ query: { cursor: pageParam } }),
-    { getNextPageParam: (lastPage) => lastPage.nextCursor }
+    (api) => api("posts").GET({ query: { limit: 20 } }),
+    {
+      canFetchNext: ({ response }) => !!response?.nextCursor,
+      nextPageRequest: ({ response }) => ({
+        query: { cursor: response?.nextCursor },
+      }),
+      merger: (allResponses) => allResponses.flatMap((r) => r.items),
+    }
   );
 
   return (
@@ -118,7 +124,7 @@ function PostFeed() {
 The response includes the input that was sent with the request:
 
 ```typescript
-const { trigger } = useWrite((api) => api("users").POST);
+const { trigger } = useWrite((api) => api("users").POST());
 
 await trigger({ body: { name: "John", email: "john@example.com" } });
 

@@ -192,9 +192,9 @@ export class UserPostsListComponent {
   );
   posts = computed(() => this.userPosts.data());
 
-  private createPost = injectWrite((api) => api("users/:userId/posts").POST);
-  private deletePost = injectWrite(
-    (api) => api("users/:userId/posts/:postId").DELETE
+  private createPost = injectWrite((api) => api("users/:userId/posts").POST());
+  private deletePost = injectWrite((api) =>
+    api("users/:userId/posts/:postId").DELETE()
   );
 
   async handleCreatePost() {

@@ -75,7 +75,7 @@ The `invalidationPlugin` automatically refetches stale queries after mutations.
 | `"none"` | No automatic invalidation                           |
 
 ```typescript
-const { trigger } = useWrite((api) => api("posts").POST);
+const { trigger } = useWrite((api) => api("posts").POST());
 
 await trigger({
   body: { title: "New Post" },
@@ -88,7 +88,7 @@ await trigger({
 Target specific tags to invalidate:
 
 ```typescript
-const { trigger } = useWrite((api) => api("posts").POST);
+const { trigger } = useWrite((api) => api("posts").POST());
 
 await trigger({
   body: { title: "New Post" },

@@ -124,7 +124,7 @@ import { injectWrite } from "./api/client";
   `,
 })
 export class CreatePostComponent {
-  private createPost = injectWrite((api) => api("posts").POST);
+  private createPost = injectWrite((api) => api("posts").POST());
 
   loading = computed(() => this.createPost.loading());
   abort = () => this.createPost.abort();
@@ -156,8 +156,14 @@ import { injectInfiniteRead } from "./api/client";
 })
 export class PostFeedComponent {
   private posts = injectInfiniteRead(
-    (api, { pageParam }) => api("posts").GET({ query: { cursor: pageParam } }),
-    { getNextPageParam: (lastPage) => lastPage.nextCursor }
+    (api) => api("posts").GET({ query: { limit: 20 } }),
+    {
+      canFetchNext: ({ response }) => !!response?.nextCursor,
+      nextPageRequest: ({ response }) => ({
+        query: { cursor: response?.nextCursor },
+      }),
+      merger: (allResponses) => allResponses.flatMap((r) => r.items),
+    }
   );
 
   data = computed(() => this.posts.data());
@@ -172,7 +178,7 @@ export class PostFeedComponent {
 The response includes the input that was sent with the request:
 
 ```typescript
-createUser = injectWrite((api) => api("users").POST);
+createUser = injectWrite((api) => api("users").POST());
 
 // After: await createUser.trigger({ body: { name: "John", email: "john@example.com" } })
 // createUser.input?.body contains { name: "John", email: "john@example.com" }

@@ -27,7 +27,7 @@ const spoosh = new Spoosh<ApiSchema, Error>("/api").use([
   optimisticPlugin(),
 ]);
 
-const { trigger } = useWrite((api) => api("posts/:id").DELETE);
+const { trigger } = useWrite((api) => api("posts/:id").DELETE());
 
 trigger({
   params: { id },

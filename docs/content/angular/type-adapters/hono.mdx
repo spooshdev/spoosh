@@ -149,8 +149,8 @@ export class UserProfileComponent {
     api("users/:id").GET({ params: { id: this.userId() } })
   );
 
-  updateUser = injectWrite((api) => api("users/:id").PUT);
-  deleteUser = injectWrite((api) => api("users/:id").DELETE);
+  updateUser = injectWrite((api) => api("users/:id").PUT());
+  deleteUser = injectWrite((api) => api("users/:id").DELETE());
 
   async handleUpdate() {
     await this.updateUser.trigger({

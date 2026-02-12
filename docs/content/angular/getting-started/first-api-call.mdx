@@ -114,7 +114,7 @@ import { injectWrite } from "../api/client";
   `,
 })
 export class CreateUserFormComponent {
-  createUser = injectWrite((api) => api("users").POST);
+  createUser = injectWrite((api) => api("users").POST());
 
   async handleSubmit(event: SubmitEvent) {
     event.preventDefault();
@@ -153,9 +153,9 @@ import { injectWrite } from "../api/client";
 export class UserActionsComponent {
   userId = input.required<number>();
 
-  updateUser = injectWrite((api) => api("users/:id").PUT);
+  updateUser = injectWrite((api) => api("users/:id").PUT());
 
-  deleteUser = injectWrite((api) => api("users/:id").DELETE);
+  deleteUser = injectWrite((api) => api("users/:id").DELETE());
 
   async handleUpdate() {
     await this.updateUser.trigger({
@@ -186,11 +186,11 @@ user = injectRead((api) =>
 
 // injectWrite: Pass params when triggering
 userId = input.required<number>();
-updateUser = injectWrite((api) => api("users/:id").PUT);
+updateUser = injectWrite((api) => api("users/:id").PUT());
 // Usage: await this.updateUser.trigger({ params: { id: this.userId() }, body: { name: "New Name" } });
 
 // Multiple params
-deletePost = injectWrite((api) => api("users/:userId/posts/:postId").DELETE);
+deletePost = injectWrite((api) => api("users/:userId/posts/:postId").DELETE());
 // Usage: await this.deletePost.trigger({ params: { userId: 1, postId: 42 } });
 ```
 

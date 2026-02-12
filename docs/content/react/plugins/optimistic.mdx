@@ -37,7 +37,7 @@ Remove an item from a cached list immediately, before the server confirms:
 ```typescript
 function PostList() {
   const { data, meta } = useRead((api) => api("posts").GET());
-  const { trigger } = useWrite((api) => api("posts/:id").DELETE);
+  const { trigger } = useWrite((api) => api("posts/:id").DELETE());
 
   const handleDelete = (id: number) => {
     trigger({
@@ -72,7 +72,7 @@ The `UPDATE_CACHE` function receives the current cached data and returns the opt
 Prepend a new item to the list before the server responds:
 
 ```typescript
-const { trigger } = useWrite((api) => api("posts").POST);
+const { trigger } = useWrite((api) => api("posts").POST());
 
 trigger({
   body: { title: "Draft Post", content: "..." },
@@ -91,7 +91,7 @@ trigger({
 Use `ON_SUCCESS` to update the cache with the actual server response instead of fabricated data:
 
 ```typescript
-const { trigger } = useWrite((api) => api("posts").POST);
+const { trigger } = useWrite((api) => api("posts").POST());
 
 trigger({
   body: { title: "New Post", content: "..." },
@@ -208,7 +208,7 @@ trigger({
 By default, optimistic updates set invalidation to `"none"` to prevent the server response from overwriting your optimistic data prematurely. To enable invalidation alongside optimistic updates:
 
 ```typescript
-const { trigger } = useWrite((api) => api("posts/:id").DELETE);
+const { trigger } = useWrite((api) => api("posts/:id").DELETE());
 
 trigger({
   params: { id },

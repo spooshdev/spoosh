@@ -75,7 +75,7 @@ The `trigger` function returns a promise with both `data` and `error`, letting y
 
 ```typescript
 function LoginForm() {
-  const { trigger } = useWrite((api) => api("auth/login").POST);
+  const { trigger } = useWrite((api) => api("auth/login").POST());
 
   const handleSubmit = async () => {
     const { data, error } = await trigger({ body: credentials });

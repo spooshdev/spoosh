@@ -57,9 +57,9 @@ const { data, meta } = useRead((api) => api("posts").GET(), {
 - ✅ Per-request transforms (no global config needed)
 - ✅ Return `undefined` to remove data entirely
 
-## TypeScript Limitation (useWrite)
+## useWrite with Transform
 
-Due to TypeScript limitations with dynamic trigger options, `meta.transformedData` is typed as `never` in `useWrite` hook results. Use type assertion:
+With the hook-level options pattern, `transform` is now passed as a second argument to `useWrite`, enabling full type inference:
 
 ```typescript
 type TransformedPost = {
@@ -67,10 +67,15 @@ type TransformedPost = {
   postId: number;
 };
 
-const { meta } = useWrite((api) => api("posts").POST);
+const { trigger, meta } = useWrite((api) => api("posts").POST(), {
+  transform: (post) => ({
+    success: true,
+    postId: post.id,
+  }),
+});
 
-// Type assertion required
-const typed = meta.transformedData as TransformedPost | undefined;
+await trigger({ body: { title: "New Post" } });
+
+// meta.transformedData is now properly typed!
+const typed = meta.transformedData; // Type: TransformedPost | undefined
 ```
-
-This limitation does not affect `useRead` or `useInfiniteRead`, where options are passed at hook creation time.

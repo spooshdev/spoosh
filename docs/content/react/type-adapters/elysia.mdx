@@ -138,8 +138,8 @@ function UserProfile({ userId }: { userId: number }) {
   );
 
   // Path-based access with useWrite
-  const { trigger: updateUser } = useWrite((api) => api("users/:id").PUT);
-  const { trigger: deleteUser } = useWrite((api) => api("users/:id").DELETE);
+  const { trigger: updateUser } = useWrite((api) => api("users/:id").PUT());
+  const { trigger: deleteUser } = useWrite((api) => api("users/:id").DELETE());
 
   const handleUpdate = async () => {
     await updateUser({ params: { id: userId }, body: { name: "Updated" } });

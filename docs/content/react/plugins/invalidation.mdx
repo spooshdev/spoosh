@@ -101,7 +101,7 @@ const { data } = useRead(
 When a mutation succeeds, related queries are automatically invalidated:
 
 ```typescript
-const { trigger } = useWrite((api) => api("users/:id/posts").POST);
+const { trigger } = useWrite((api) => api("users/:id/posts").POST());
 
 await trigger({ params: { id: 123 }, body: { title: "New Post" } });
 // ✓ Invalidates: "users", "users/123", "users/123/posts"
@@ -113,7 +113,7 @@ await trigger({ params: { id: 123 }, body: { title: "New Post" } });
 Override the default invalidation behavior for specific mutations:
 
 ```typescript
-const { trigger } = useWrite((api) => api("posts").POST);
+const { trigger } = useWrite((api) => api("posts").POST());
 
 // Mode only (string)
 await trigger({
@@ -217,7 +217,7 @@ await trigger({ invalidate: "*" });
 
 ```typescript
 // Creating a new post
-const { trigger: createPost } = useWrite((api) => api("posts").POST);
+const { trigger: createPost } = useWrite((api) => api("posts").POST());
 
 await createPost({
   body: { title: "New Post" },
@@ -226,7 +226,7 @@ await createPost({
 // Invalidates: ["posts"]
 
 // Updating a specific post
-const { trigger: updatePost } = useWrite((api) => api("posts/:id").PATCH);
+const { trigger: updatePost } = useWrite((api) => api("posts/:id").PATCH());
 
 const postId = 1;
 await updatePost({
@@ -237,8 +237,8 @@ await updatePost({
 // Invalidates: ["posts", `posts/${postId}`]
 
 // Deleting a comment on a post
-const { trigger: deleteComment } = useWrite(
-  (api) => api("posts/:postId/comments/:id").DELETE
+const { trigger: deleteComment } = useWrite((api) =>
+  api("posts/:postId/comments/:id").DELETE()
 );
 
 const postId = 5;
@@ -254,7 +254,7 @@ await deleteComment({
 
 ```typescript
 // Path: posts/:id/comments
-const { trigger } = useWrite((api) => api("posts/:id/comments").POST);
+const { trigger } = useWrite((api) => api("posts/:id/comments").POST());
 
 const postId = 1;
 
@@ -286,8 +286,8 @@ await trigger({
 ### Combining Mode with Explicit Tags
 
 ```typescript
-const { trigger: createComment } = useWrite(
-  (api) => api("posts/:id/comments").POST
+const { trigger: createComment } = useWrite((api) =>
+  api("posts/:id/comments").POST()
 );
 
 const postId = 1;
@@ -360,7 +360,7 @@ function Dashboard() {
 For scenarios like logout or user switching, combine `invalidate: "*"` with `clearCache` from `@spoosh/plugin-cache`:
 
 ```typescript
-const { trigger } = useWrite((api) => api("auth/logout").POST);
+const { trigger } = useWrite((api) => api("auth/logout").POST());
 
 // Clear cache + trigger all queries to refetch
 await trigger({

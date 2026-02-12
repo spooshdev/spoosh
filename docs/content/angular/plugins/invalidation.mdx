@@ -101,7 +101,7 @@ posts = injectRead(
 When a mutation succeeds, related queries are automatically invalidated:
 
 ```typescript
-createPost = injectWrite((api) => api("users/:id/posts").POST);
+createPost = injectWrite((api) => api("users/:id/posts").POST());
 
 await createPost.trigger({ params: { id: 123 }, body: { title: "New Post" } });
 // ✓ Invalidates: "users", "users/123", "users/123/posts"
@@ -113,7 +113,7 @@ await createPost.trigger({ params: { id: 123 }, body: { title: "New Post" } });
 Override the default invalidation behavior for specific mutations:
 
 ```typescript
-createPost = injectWrite((api) => api("posts").POST);
+createPost = injectWrite((api) => api("posts").POST());
 
 // Mode only (string)
 await createPost.trigger({
@@ -202,7 +202,7 @@ These two options serve different purposes:
 - **`"*"`** - Triggers a **global refetch of every active query** in your app, regardless of tags. Use this sparingly for scenarios like "user logged out" or "full data sync from server".
 
 ```typescript
-createPost = injectWrite((api) => api("users/:id/posts").POST);
+createPost = injectWrite((api) => api("users/:id/posts").POST());
 
 // "all" - scoped to this mutation's path hierarchy
 await createPost.trigger({ invalidate: "all" });
@@ -219,7 +219,7 @@ await createPost.trigger({ invalidate: "*" });
 
 ```typescript
 // Creating a new post
-createPost = injectWrite((api) => api("posts").POST);
+createPost = injectWrite((api) => api("posts").POST());
 
 await createPost.trigger({
   body: { title: "New Post" },
@@ -228,7 +228,7 @@ await createPost.trigger({
 // Invalidates: ["posts"]
 
 // Updating a specific post
-updatePost = injectWrite((api) => api("posts/:id").PATCH);
+updatePost = injectWrite((api) => api("posts/:id").PATCH());
 
 const postId = 1;
 await updatePost.trigger({
@@ -239,7 +239,9 @@ await updatePost.trigger({
 // Invalidates: ["posts", `posts/${postId}`]
 
 // Deleting a comment on a post
-deleteComment = injectWrite((api) => api("posts/:postId/comments/:id").DELETE);
+deleteComment = injectWrite((api) =>
+  api("posts/:postId/comments/:id").DELETE()
+);
 
 const postId = 5;
 const commentId = 10;
@@ -254,7 +256,7 @@ await deleteComment.trigger({
 
 ```typescript
 // Path: posts/:id/comments
-createComment = injectWrite((api) => api("posts/:id/comments").POST);
+createComment = injectWrite((api) => api("posts/:id/comments").POST());
 
 const postId = 1;
 
@@ -286,7 +288,7 @@ await createComment.trigger({
 ### Combining Mode with Explicit Tags
 
 ```typescript
-createComment = injectWrite((api) => api("posts/:id/comments").POST);
+createComment = injectWrite((api) => api("posts/:id/comments").POST());
 
 const postId = 1;
 
@@ -360,7 +362,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 For scenarios like logout or user switching, combine `invalidate: "*"` with `clearCache` from `@spoosh/plugin-cache`:
 
 ```typescript
-logout = injectWrite((api) => api("auth/logout").POST);
+logout = injectWrite((api) => api("auth/logout").POST());
 
 // Clear cache + trigger all queries to refetch
 await logout.trigger({

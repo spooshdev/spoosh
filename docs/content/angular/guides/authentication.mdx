@@ -201,7 +201,7 @@ const { injectWrite, clearCache } = create(spoosh);
   template: `<button (click)="handleLogout()">Logout</button>`,
 })
 export class LogoutButtonComponent {
-  private logoutWriter = injectWrite((api) => api("auth/logout").POST);
+  private logoutWriter = injectWrite((api) => api("auth/logout").POST());
 
   async handleLogout() {
     await this.logoutWriter.trigger({ clearCache: true, invalidate: "*" });
@@ -234,7 +234,7 @@ export class LogoutButtonComponent {
 Override headers for a specific request:
 
 ```typescript
-private adminAction = injectWrite((api) => api("admin/action").POST);
+private adminAction = injectWrite((api) => api("admin/action").POST());
 
 async performAction() {
   await this.adminAction.trigger({

@@ -54,7 +54,7 @@ useRead((api) => api("users/:id/posts").GET({ params: { id: 123 } }));
 When you mutate data, Spoosh automatically invalidates related queries based on these tags. Create a post for user 123? Every query that depends on that user's data refreshes automatically.
 
 ```typescript
-const { trigger } = useWrite((api) => api("users/:id/posts").POST);
+const { trigger } = useWrite((api) => api("users/:id/posts").POST());
 
 // This mutation automatically invalidates:
 // - users

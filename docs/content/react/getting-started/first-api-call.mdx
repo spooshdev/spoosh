@@ -68,7 +68,7 @@ Use `useWrite` for mutations (POST, PUT, DELETE):
 import { useWrite } from "../api/client";
 
 function CreateUserForm() {
-  const { trigger, loading, error } = useWrite((api) => api("users").POST);
+  const { trigger, loading, error } = useWrite((api) => api("users").POST());
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -103,9 +103,9 @@ function CreateUserForm() {
 
 ```tsx
 function UserActions({ userId }: { userId: number }) {
-  const { trigger: updateUser } = useWrite((api) => api("users/:id").PUT);
+  const { trigger: updateUser } = useWrite((api) => api("users/:id").PUT());
 
-  const { trigger: deleteUser } = useWrite((api) => api("users/:id").DELETE);
+  const { trigger: deleteUser } = useWrite((api) => api("users/:id").DELETE());
 
   const handleUpdate = async () => {
     await updateUser({
@@ -139,7 +139,7 @@ const { data } = useRead((api) =>
 );
 
 // useWrite: Pass params when triggering
-const { trigger: updateUser } = useWrite((api) => api("users/:id").PUT);
+const { trigger: updateUser } = useWrite((api) => api("users/:id").PUT());
 await updateUser({ params: { id: userId }, body: { name: "New Name" } });
 
 // Nested params
@@ -148,8 +148,8 @@ const { data } = useRead((api) =>
 );
 
 // useWrite with DELETE
-const { trigger: deletePost } = useWrite(
-  (api) => api("users/:userId/posts/:postId").DELETE
+const { trigger: deletePost } = useWrite((api) =>
+  api("users/:userId/posts/:postId").DELETE()
 );
 await deletePost({ params: { userId: 1, postId: 42 } });
 ```

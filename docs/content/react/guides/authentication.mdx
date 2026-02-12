@@ -197,7 +197,7 @@ import { create } from "@spoosh/react";
 const { useWrite, clearCache } = create(spoosh);
 
 function LogoutButton() {
-  const { trigger } = useWrite((api) => api("auth/logout").POST);
+  const { trigger } = useWrite((api) => api("auth/logout").POST());
 
   const handleLogout = async () => {
     await trigger({ clearCache: true, invalidate: "*" });
@@ -230,7 +230,7 @@ function LogoutButton() {
 Override headers for a specific request:
 
 ```typescript
-const { trigger } = useWrite((api) => api("admin/action").POST);
+const { trigger } = useWrite((api) => api("admin/action").POST());
 
 await trigger({
   body: { action: "reset" },

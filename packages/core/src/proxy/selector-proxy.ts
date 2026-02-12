@@ -149,7 +149,7 @@ export function extractPathFromSelector(fn: unknown): string {
  * @example
  * ```ts
  * const proxy = createSelectorProxy<ApiSchema>();
- * const method = extractMethodFromSelector(proxy("posts").POST);
+ * const method = extractMethodFromSelector(proxy("posts").POST());
  * // method = 'POST'
  * ```
  */

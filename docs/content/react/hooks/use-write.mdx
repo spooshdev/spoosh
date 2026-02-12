@@ -3,14 +3,12 @@ title: useWrite
 description: Trigger mutations with loading and error states
 ---
 
-Trigger mutations with loading and error states. The callback **selects** the API method (no parentheses).
-
 ## Basic Usage
 
 ```typescript
 function CreateUser() {
   const { trigger, loading, error } = useWrite(
-    (api) => api("users").POST
+    (api) => api("users").POST()
   );
 
   const handleSubmit = async (formData: CreateUserBody) => {
@@ -35,13 +33,38 @@ function CreateUser() {
 ## With Invalidation
 
 ```typescript
-const { trigger } = useWrite((api) => api("posts").POST);
+const { trigger } = useWrite((api) => api("posts").POST());
 
 await trigger({
   body: { title: "New Post", content: "..." },
   invalidate: ["posts"],
 });
 ```
+
+## Hook-Level Options
+
+`useWrite` accepts a second argument for hook-level options. These options apply to all triggers from this hook:
+
+```typescript
+const { trigger, meta } = useWrite((api) => api("posts").POST(), {
+  transform: (post) => ({
+    success: true,
+    postId: post.id,
+    createdAt: new Date(post.timestamp),
+  }),
+});
+
+await trigger({ body: { title: "New Post" } });
+
+// meta.transformedData is available after trigger completes
+```
+
+### Available Hook Options
+
+| Option           | Type          | Description                               |
+| ---------------- | ------------- | ----------------------------------------- |
+| `transform`      | `(data) => T` | Transform response data at hook level     |
+| + plugin options | -             | Hook-level options from installed plugins |
 
 ## Returns
 

@@ -435,7 +435,7 @@ Fetch data after a mutation completes successfully:
 export class OrderConfirmationComponent {
   orderId = signal<string | null>(null);
 
-  private orderSubmitter = injectWrite((api) => api("orders").POST);
+  private orderSubmitter = injectWrite((api) => api("orders").POST());
 
   private orderDetailsQuery = injectRead(
     (api) => api("orders/:id").GET({ params: { id: this.orderId() ?? "" } }),

@@ -43,13 +43,10 @@ The `meta().transformedData` type is automatically inferred from your transforme
 
 ### Response Transforms (injectWrite)
 
-Just like `injectRead`, response transforms for `injectWrite` produce a separate `transformedData` field in `meta`:
+With hook-level options, response transforms for `injectWrite` provide full type inference for `meta().transformedData`:
 
 ```typescript
-createPost = injectWrite((api) => api("posts").POST);
-
-const response = await createPost.trigger({
-  body: { title: "New Post" },
+createPost = injectWrite((api) => api("posts").POST(), {
   transform: (post) => ({
     success: true,
     postId: post.id,
@@ -57,39 +54,14 @@ const response = await createPost.trigger({
   }),
 });
 
+await createPost.trigger({ body: { title: "New Post" } });
+
 // After trigger completes:
 // createPost.data() = Post (original response, preserved)
 // createPost.meta().transformedData = { success: boolean, postId: number, createdAt: Date } | undefined
 ```
 
-<Callout type="warning">
-**TypeScript Limitation**: Due to TypeScript's limitations with dynamic trigger options, `meta().transformedData` is typed as `never` in the result. You'll need to use type assertion to access it:
-
-```typescript
-createPost = injectWrite((api) => api("posts").POST);
-
-// Type assertion required
-const typed = createPost.meta().transformedData as
-  | { success: boolean; postId: number }
-  | undefined;
-```
-
-Alternatively, extract it from the trigger response:
-
-```typescript
-createPost = injectWrite((api) => api("posts").POST);
-
-const response = await createPost.trigger({
-  body: { title: "New Post" },
-  transform: (post) => ({ success: true, postId: post.id }),
-});
-
-// Access from response
-const result = response.data; // Post
-// meta().transformedData is available in the state after trigger completes
-```
-
-</Callout>
+By passing `transform` as a hook-level option (second argument to `injectWrite`), TypeScript can properly infer the `transformedData` type.
 
 ## Response Transform Examples
 
@@ -163,43 +135,23 @@ users = injectRead((api) => api("users").GET(), {
 // { activeCount: number; admins: User[] } | undefined
 ```
 
-### TypeScript Limitations with injectWrite
+### Type Inference with Hook-Level Options
 
-For `injectWrite`, there is a TypeScript limitation where `meta().transformedData` is inferred as `never` in the result due to dynamic trigger options:
-
-```typescript
-createPost = injectWrite((api) => api("posts").POST);
-
-// meta().transformedData is typed as 'never' here because TypeScript cannot infer
-// the type from dynamic trigger options passed later
-
-// ❌ Type error: transformedData is never
-console.log(createPost.meta().transformedData.success);
-
-// ✅ Use type assertion
-const typed = createPost.meta().transformedData as
-  | { success: boolean; postId: number }
-  | undefined;
-console.log(typed?.success);
-```
-
-This is a known TypeScript limitation with higher-order function type inference. For `injectRead`, the options are passed at function creation time, allowing full type inference. For `injectWrite`, options are passed to `trigger` dynamically, which breaks TypeScript's ability to infer the result type.
-
-**Workaround**: Define your transformed type separately:
+By passing `transform` as a hook-level option, `meta().transformedData` is properly typed:
 
 ```typescript
-type TransformedPost = {
-  success: boolean;
-  postId: number;
-  createdAt: Date;
-};
+createPost = injectWrite((api) => api("posts").POST(), {
+  transform: (post) => ({
+    success: true,
+    postId: post.id,
+  }),
+});
 
-createPost = injectWrite((api) => api("posts").POST);
+await createPost.trigger({ body: { title: "New Post" } });
 
-// Use type assertion
-const transformed = createPost.meta().transformedData as
-  | TransformedPost
-  | undefined;
+// createPost.meta().transformedData is properly typed as:
+// { success: boolean; postId: number } | undefined
+console.log(createPost.meta().transformedData?.success); // ✓ Works with full type safety
 ```
 
 ## Use Cases

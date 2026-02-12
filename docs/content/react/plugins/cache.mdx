@@ -79,7 +79,7 @@ When a mutation succeeds, related cached queries are automatically refreshed.
 You can clear all cached data after a mutation completes successfully using the `clearCache` write option:
 
 ```typescript
-const { trigger } = useWrite((api) => api("auth/logout").POST);
+const { trigger } = useWrite((api) => api("auth/logout").POST());
 
 // Clear cache after logout
 await trigger({ clearCache: true });

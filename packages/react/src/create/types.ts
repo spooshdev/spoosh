@@ -228,12 +228,12 @@ export type SpooshReactHooks<
   /**
    * React hook for mutations (POST, PUT, PATCH, DELETE) with manual triggering.
    *
-   * @param writeFn - Function that selects the API endpoint (e.g., `(api) => api("posts").POST`)
+   * @param writeFn - Function that selects the API endpoint (e.g., `(api) => api("posts").POST()`)
    * @returns Object containing `trigger`, `data`, `error`, `loading`, and `abort`
    *
    * @example
    * ```tsx
-   * const { trigger, loading, data } = useWrite((api) => api("posts").POST);
+   * const { trigger, loading, data } = useWrite((api) => api("posts").POST());
    *
    * const handleSubmit = async (formData) => {
    *   const { data, error } = await trigger({ body: formData });

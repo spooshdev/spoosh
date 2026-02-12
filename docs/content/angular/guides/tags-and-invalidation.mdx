@@ -16,7 +16,7 @@ Every query is automatically tagged based on its API path. When a mutation succe
 injectRead((api) => api("users/:id/posts").GET({ params: { id: 123 } }));
 
 // When this mutation succeeds...
-const writer = injectWrite((api) => api("users/:id").PATCH);
+const writer = injectWrite((api) => api("users/:id").PATCH());
 await writer.trigger({ params: { id: 123 }, body: updated });
 // → Tags ["users", "users/123"] are invalidated
 // → The query above refetches because its tags overlap
@@ -72,7 +72,7 @@ After a mutation, you control what gets invalidated:
 | `["tag1", "tag2"]` | Invalidate specific tags                       |
 
 ```typescript
-private postWriter = injectWrite((api) => api("posts").POST);
+private postWriter = injectWrite((api) => api("posts").POST());
 
 // Standard CRUD — let related queries refresh
 await this.postWriter.trigger({ body: newPost, invalidate: "all" });

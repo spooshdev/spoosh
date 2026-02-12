@@ -39,7 +39,7 @@ import type { SpooshOptions, SpooshOptionsInput } from "./types/request.types";
  *
  * // In component
  * const { data } = useRead((api) => api("posts").GET());
- * const { trigger } = useWrite((api) => api("posts").POST);
+ * const { trigger } = useWrite((api) => api("posts").POST());
  * ```
  *
  * @since 0.1.0

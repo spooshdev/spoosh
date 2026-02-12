@@ -37,7 +37,7 @@ const { data } = await spoosh.api("posts/:postId/comments").GET({
 // api("users/:id/posts").GET({...}) → tags: ["users", "users/:id", "users/:id/posts"]
 
 // When you create a post, related queries are auto-invalidated:
-const { trigger } = useWrite((api) => api("users/:userId/posts").POST);
+const { trigger } = useWrite((api) => api("users/:userId/posts").POST());
 await trigger({ params: { userId: 123 }, body: { title: "New Post" } });
 // ✓ Automatically invalidates: users, users/:userId, users/:userId/posts
 ```

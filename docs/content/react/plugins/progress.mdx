@@ -34,11 +34,13 @@ const { data, progress } = useRead((api) => api("files/:id").GET(), {
 ## File Upload
 
 ```typescript
-const { trigger, progress } = useWrite((api) => api("files").POST);
+const { trigger, meta } = useWrite((api) => api("files").POST(), {
+  progress: true,
+});
 
-trigger({ body: form({ file: selectedFile }), progress: true });
+trigger({ body: form({ file: selectedFile }) });
 
-// progress?.loaded tracks bytes uploaded
+// meta.progress?.loaded tracks bytes uploaded
 ```
 
 ## Custom Total Header

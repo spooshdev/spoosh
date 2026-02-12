@@ -53,7 +53,7 @@ Remove an item from a cached list immediately, before the server confirms:
 })
 export class PostListComponent {
   private posts = injectRead((api) => api("posts").GET());
-  private deletePost = injectWrite((api) => api("posts/:id").DELETE);
+  private deletePost = injectWrite((api) => api("posts/:id").DELETE());
 
   data = this.posts.data;
   meta = this.posts.meta;
@@ -77,7 +77,7 @@ The `UPDATE_CACHE` function receives the current cached data and returns the opt
 Prepend a new item to the list before the server responds:
 
 ```typescript
-private createPost = injectWrite((api) => api("posts").POST);
+private createPost = injectWrite((api) => api("posts").POST());
 
 submit() {
   this.createPost.trigger({
@@ -220,7 +220,7 @@ this.createPost.trigger({
 By default, optimistic updates set invalidation to `"none"` to prevent the server response from overwriting your optimistic data prematurely. To enable invalidation alongside optimistic updates:
 
 ```typescript
-private deletePost = injectWrite((api) => api("posts/:id").DELETE);
+private deletePost = injectWrite((api) => api("posts/:id").DELETE());
 
 // In your method:
 this.deletePost.trigger({

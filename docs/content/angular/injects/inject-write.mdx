@@ -3,7 +3,7 @@ title: injectWrite
 description: Trigger mutations with loading and error states
 ---
 
-Trigger mutations with loading and error states. The callback **selects** the API method (no parentheses).
+The callback **calls** the API method with parentheses.
 
 ## Basic Usage
 
@@ -19,7 +19,7 @@ Trigger mutations with loading and error states. The callback **selects** the AP
   `,
 })
 export class CreateUserComponent {
-  createUser = injectWrite((api) => api("users").POST);
+  createUser = injectWrite((api) => api("users").POST());
 
   async handleSubmit() {
     const result = await this.createUser.trigger({ body: formData });
@@ -34,7 +34,7 @@ export class CreateUserComponent {
 ## With Invalidation
 
 ```typescript
-createPost = injectWrite((api) => api("posts").POST);
+createPost = injectWrite((api) => api("posts").POST());
 
 await createPost.trigger({
   body: { title: "New Post", content: "..." },
@@ -53,6 +53,27 @@ await createPost.trigger({
 | `abort`   | `() => void`                  | Abort current request              |
 | `input`   | `TriggerOptions \| undefined` | The last trigger input             |
 | `meta`    | `Signal<PluginResults>`       | Plugin-provided metadata           |
+
+## Hook-Level Options
+
+`injectWrite` accepts a second argument for hook-level options like `transform`:
+
+```typescript
+createPost = injectWrite((api) => api("posts").POST(), {
+  transform: (post) => ({
+    success: true,
+    postId: post.id,
+    createdAt: new Date(post.timestamp),
+  }),
+});
+```
+
+### Available Hook Options
+
+| Option           | Type                    | Description                                     |
+| ---------------- | ----------------------- | ----------------------------------------------- |
+| `transform`      | `(data: TData) => TOut` | Transform response data (from transform plugin) |
+| + plugin options | -                       | Additional options from installed plugins       |
 
 ## Trigger Options
 

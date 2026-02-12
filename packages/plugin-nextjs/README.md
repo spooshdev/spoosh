@@ -36,7 +36,7 @@ const spoosh = new Spoosh<ApiSchema, Error>("/api").use([
 ]);
 
 // After a successful mutation, cache tags are automatically revalidated
-const { trigger } = useWrite((api) => api("posts").POST);
+const { trigger } = useWrite((api) => api("posts").POST());
 
 await trigger({ body: { title: "New Post" } });
 // Revalidates: ["posts"] tag on the server
@@ -45,7 +45,7 @@ await trigger({ body: { title: "New Post" } });
 ### Revalidate Additional Paths
 
 ```typescript
-const { trigger } = useWrite((api) => api("posts").POST);
+const { trigger } = useWrite((api) => api("posts").POST());
 
 await trigger({
   body: { title: "New Post" },

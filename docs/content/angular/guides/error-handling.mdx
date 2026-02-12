@@ -87,7 +87,7 @@ The `trigger` function returns a promise with both `data` and `error`, letting y
   template: `<form (ngSubmit)="handleSubmit()">...</form>`,
 })
 export class LoginFormComponent {
-  private loginWriter = injectWrite((api) => api("auth/login").POST);
+  private loginWriter = injectWrite((api) => api("auth/login").POST());
 
   async handleSubmit() {
     const { data, error } = await this.loginWriter.trigger({

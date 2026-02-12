@@ -22,10 +22,11 @@ const spoosh = new Spoosh<ApiSchema, Error>("/api").use([progressPlugin()]);
 useRead((api) => api("files/:id").GET(), { progress: true });
 
 // File upload with progress
-const { trigger, progress } = useWrite((api) => api("files").POST, {
+const { trigger, meta } = useWrite((api) => api("files").POST(), {
   progress: true,
 });
 trigger({ body: form({ file: selectedFile }) });
+// Access progress via meta.progress
 ```
 
 ## Per-Request Options

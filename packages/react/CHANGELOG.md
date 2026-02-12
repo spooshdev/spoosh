@@ -11,13 +11,13 @@
 **Before:**
 
 ```typescript
-const { trigger } = useWrite((api) => api.posts.POST);
+const { trigger } = useWrite((api) => api("posts").POST);
 ```
 
 **After:**
 
 ```typescript
-const { trigger } = useWrite((api) => api.posts.POST(), {
+const { trigger } = useWrite((api) => api("posts").POST(), {
   // hook-level options here
 });
 

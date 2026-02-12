@@ -30,7 +30,7 @@ When a mutation succeeds, related queries are automatically invalidated:
 
 ```typescript
 // Creating a post at users/123/posts invalidates:
-const { trigger } = useWrite((api) => api("users/:id/posts").POST);
+const { trigger } = useWrite((api) => api("users/:id/posts").POST());
 await trigger({ params: { id: 123 }, body: { title: "New Post" } });
 
 // ✓ Invalidates: "users", "users/123", "users/123/posts"
@@ -45,7 +45,7 @@ import { invalidationPlugin } from "@spoosh/plugin-invalidation";
 
 const spoosh = new Spoosh<ApiSchema, Error>("/api").use([invalidationPlugin()]);
 
-const { trigger } = useWrite((api) => api("posts").POST);
+const { trigger } = useWrite((api) => api("posts").POST());
 await trigger({ body: { title: "New Post" } });
 ```
 
@@ -205,7 +205,7 @@ socket.on("full-sync", () => {
 For scenarios like logout or user switching, combine `invalidate: "*"` with `clearCache` from `@spoosh/plugin-cache`:
 
 ```typescript
-const { trigger } = useWrite((api) => api("auth/logout").POST);
+const { trigger } = useWrite((api) => api("auth/logout").POST());
 
 // Clear cache + trigger all queries to refetch
 await trigger({
