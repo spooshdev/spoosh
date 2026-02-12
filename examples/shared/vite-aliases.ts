@@ -1,7 +1,11 @@
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
-import type { Alias } from "vite";
+
+interface Alias {
+  find: string;
+  replacement: string;
+}
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const packagesDir = path.resolve(__dirname, "../../packages");
