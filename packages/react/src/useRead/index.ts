@@ -231,7 +231,7 @@ export function createUseRead<
 
     const executeWithTracking = useCallback(
       async (force = false, overrideOptions?: Record<string, unknown>) => {
-        setRequestState((prev) => ({ ...prev, isPending: true }));
+        setRequestState({ isPending: true, error: undefined });
 
         try {
           const execOptions = overrideOptions
@@ -384,7 +384,7 @@ export function createUseRead<
         forceUpdate((n) => n + 1);
 
         newController.mount();
-        setRequestState((prev) => ({ ...prev, isPending: true }));
+        setRequestState({ isPending: true, error: undefined });
 
         try {
           const response = await newController.execute(mergedOptions, {

@@ -1,5 +1,10 @@
 # @spoosh/react
 
+## 0.10.1
+
+- Bump @spoosh/core to 0.13.2
+- Reset error state when fetch
+
 ## 0.10.0
 
 ### Breaking Changes

@@ -189,6 +189,7 @@ export function createInjectInfiniteRead<
       if (currentState.data === undefined && !isFetching) {
         loadingSignal.set(true);
         fetchingNextSignal.set(true);
+        errorSignal.set(undefined);
         currentController.fetchNext().finally(() => {
           updateSignalsFromState();
           loadingSignal.set(false);

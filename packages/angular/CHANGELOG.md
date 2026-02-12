@@ -1,5 +1,10 @@
 # @spoosh/angular
 
+## 0.9.1
+
+- Bump @spoosh/core to 0.13.2
+- Reset error state when fetch
+
 ## 0.9.0
 
 - Refactor `injectWrite` to split hook-level and trigger-level options for proper type inference

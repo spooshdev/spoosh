@@ -231,6 +231,7 @@ export function createInjectWrite<
 
       lastTriggerOptionsSignal.set(triggerOptions);
       loadingSignal.set(true);
+      errorSignal.set(undefined);
 
       const mergedOptions = { ...writeOptions, ...triggerOptions, tags };
       currentController!.setPluginOptions(mergedOptions);

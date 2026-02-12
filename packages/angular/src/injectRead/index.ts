@@ -209,6 +209,7 @@ export function createInjectRead<
       const hasData = dataSignal() !== undefined;
       loadingSignal.set(!hasData);
       fetchingSignal.set(true);
+      errorSignal.set(undefined);
 
       try {
         const execOptions = overrideOptions

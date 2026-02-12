@@ -342,6 +342,7 @@ export function createInfiniteReadController<
 
     pendingFetches.add(pageKey);
     fetchingDirection = direction;
+    latestError = undefined;
     notify();
 
     abortController = new AbortController();
@@ -350,57 +351,53 @@ export function createInfiniteReadController<
     const context = createContext(pageKey, mergedRequest);
 
     const coreFetch = async (): Promise<SpooshResponse<TData, TError>> => {
-      const fetchPromise = (async (): Promise<
-        SpooshResponse<TData, TError>
-      > => {
-        try {
-          const response = await fetchFn(mergedRequest, signal);
+      try {
+        const response = await fetchFn(mergedRequest, signal);
 
-          if (signal.aborted) {
-            return {
-              status: 0,
-              data: undefined,
-              aborted: true,
-            } as SpooshResponse<TData, TError>;
-          }
-
-          return response;
-        } catch (err) {
-          if (signal.aborted) {
-            return {
-              status: 0,
-              data: undefined,
-              aborted: true,
-            } as SpooshResponse<TData, TError>;
-          }
-
-          const errorResponse: SpooshResponse<TData, TError> = {
+        if (signal.aborted) {
+          return {
             status: 0,
-            error: err as TError,
             data: undefined,
-          };
-
-          latestError = err as TError;
-
-          return errorResponse;
-        } finally {
-          pendingFetches.delete(pageKey);
-          fetchingDirection = null;
-          stateManager.setPendingPromise(pageKey, undefined);
-          notify();
+            aborted: true,
+          } as SpooshResponse<TData, TError>;
         }
-      })();
 
-      stateManager.setPendingPromise(pageKey, fetchPromise);
+        return response;
+      } catch (err) {
+        if (signal.aborted) {
+          return {
+            status: 0,
+            data: undefined,
+            aborted: true,
+          } as SpooshResponse<TData, TError>;
+        }
 
-      return fetchPromise;
+        const errorResponse: SpooshResponse<TData, TError> = {
+          status: 0,
+          error: err as TError,
+          data: undefined,
+        };
+
+        latestError = err as TError;
+
+        return errorResponse;
+      }
     };
 
-    const finalResponse = await pluginExecutor.executeMiddleware(
+    const middlewarePromise = pluginExecutor.executeMiddleware(
       "infiniteRead",
       context,
       coreFetch
     );
+
+    stateManager.setPendingPromise(pageKey, middlewarePromise);
+
+    const finalResponse = await middlewarePromise;
+
+    pendingFetches.delete(pageKey);
+    fetchingDirection = null;
+    stateManager.setPendingPromise(pageKey, undefined);
+    notify();
 
     if (finalResponse.data !== undefined && !finalResponse.error) {
       pageRequests.set(pageKey, mergedRequest);

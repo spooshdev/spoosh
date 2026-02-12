@@ -192,7 +192,7 @@ export function createUseWrite<
         triggerOptions?: TOptions
       ): Promise<SpooshResponse<TData, TError>> => {
         setLastTriggerOptions(triggerOptions);
-        setRequestState((prev) => ({ ...prev, isPending: true }));
+        setRequestState({ isPending: true, error: undefined });
 
         const params = (
           triggerOptions as
