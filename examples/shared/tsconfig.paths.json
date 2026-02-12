@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@spoosh/core": ["../../packages/core/src/index.ts"],
+      "@spoosh/react": ["../../packages/react/src/index.ts"],
+      "@spoosh/angular": ["../../packages/angular/src/index.ts"],
+      "@spoosh/devtool": ["../../packages/devtool/src/index.ts"],
+      "@spoosh/hono": ["../../packages/hono/src/index.ts"],
+      "@spoosh/elysia": ["../../packages/elysia/src/index.ts"],
+      "@spoosh/openapi": ["../../packages/openapi/src/index.ts"],
+      "@spoosh/plugin-cache": ["../../packages/plugin-cache/src/index.ts"],
+      "@spoosh/plugin-retry": ["../../packages/plugin-retry/src/index.ts"],
+      "@spoosh/plugin-debounce": ["../../packages/plugin-debounce/src/index.ts"],
+      "@spoosh/plugin-throttle": ["../../packages/plugin-throttle/src/index.ts"],
+      "@spoosh/plugin-deduplication": ["../../packages/plugin-deduplication/src/index.ts"],
+      "@spoosh/plugin-invalidation": ["../../packages/plugin-invalidation/src/index.ts"],
+      "@spoosh/plugin-refetch": ["../../packages/plugin-refetch/src/index.ts"],
+      "@spoosh/plugin-prefetch": ["../../packages/plugin-prefetch/src/index.ts"],
+      "@spoosh/plugin-polling": ["../../packages/plugin-polling/src/index.ts"],
+      "@spoosh/plugin-optimistic": ["../../packages/plugin-optimistic/src/index.ts"],
+      "@spoosh/plugin-progress": ["../../packages/plugin-progress/src/index.ts"],
+      "@spoosh/plugin-transform": ["../../packages/plugin-transform/src/index.ts"],
+      "@spoosh/plugin-gc": ["../../packages/plugin-gc/src/index.ts"],
+      "@spoosh/plugin-initial-data": ["../../packages/plugin-initial-data/src/index.ts"],
+      "@spoosh/plugin-nextjs": ["../../packages/plugin-nextjs/src/index.ts"],
+      "@spoosh/plugin-qs": ["../../packages/plugin-qs/src/index.ts"]
+    }
+  }
+}
