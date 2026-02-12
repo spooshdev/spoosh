@@ -1,5 +1,9 @@
 # @spoosh/plugin-deduplication
 
+## 0.2.1
+
+- Bump @spoosh/core to 0.13.2
+
 ## 0.2.0
 
 - Add devtool tracing support

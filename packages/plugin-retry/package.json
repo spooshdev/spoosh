@@ -1,6 +1,6 @@
 {
   "name": "@spoosh/plugin-retry",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Automatic retry plugin for Spoosh with configurable attempts and delay",
   "license": "MIT",
   "repository": {
@@ -40,7 +40,7 @@
     "format": "prettier --write 'src/**/*.ts'"
   },
   "peerDependencies": {
-    "@spoosh/core": ">=0.13.0"
+    "@spoosh/core": ">=0.13.2"
   },
   "devDependencies": {
     "@spoosh/core": "workspace:*",

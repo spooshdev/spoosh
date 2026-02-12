@@ -2,6 +2,10 @@
 
 ## 0.3.1
 
+- Bump @spoosh/core to 0.13.2
+
+## 0.3.1
+
 - Add `shouldRetry` function to plugin options for more flexible retry conditions
   - By default it will retry on network error and `408, 429, 500, 502, 503, 504` status codes,
     but users can now provide their own function to determine if a retry should occur based on the error or response

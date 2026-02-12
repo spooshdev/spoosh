@@ -1,6 +1,6 @@
 {
   "name": "@spoosh/plugin-deduplication",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Request deduplication plugin for Spoosh - prevents duplicate in-flight requests",
   "license": "MIT",
   "repository": {
@@ -40,7 +40,7 @@
     "format": "prettier --write 'src/**/*.ts'"
   },
   "peerDependencies": {
-    "@spoosh/core": ">=0.13.0"
+    "@spoosh/core": ">=0.13.2"
   },
   "devDependencies": {
     "@spoosh/core": "workspace:*",
