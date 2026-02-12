@@ -27,13 +27,14 @@ type SpooshResponse<TData, TError> =
 
 Every response includes:
 
-| Field     | Type                   | Description                        |
-| --------- | ---------------------- | ---------------------------------- |
-| `status`  | `number`               | HTTP status code                   |
-| `data`    | `TData \| undefined`   | Response data (present on success) |
-| `error`   | `TError \| undefined`  | Error object (present on failure)  |
-| `headers` | `Headers \| undefined` | Response headers                   |
-| `aborted` | `boolean \| undefined` | True if request was aborted        |
+| Field     | Type                   | Description                             |
+| --------- | ---------------------- | --------------------------------------- |
+| `status`  | `number`               | HTTP status code                        |
+| `data`    | `TData \| undefined`   | Response data (present on success)      |
+| `error`   | `TError \| undefined`  | Error object (present on failure)       |
+| `headers` | `Headers \| undefined` | Response headers                        |
+| `aborted` | `boolean \| undefined` | True if request was aborted             |
+| `input`   | `object \| undefined`  | The request input (body, query, params) |
 
 ## Handling Responses
 

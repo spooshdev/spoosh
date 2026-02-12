@@ -180,13 +180,13 @@ function UserPostsList({ userId }: { userId: number }) {
   );
 
   // useWrite with POST
-  const { trigger: createPost } = useWrite(
-    (api) => api("users/:userId/posts").POST
+  const { trigger: createPost } = useWrite((api) =>
+    api("users/:userId/posts").POST()
   );
 
   // useWrite with DELETE and params
-  const { trigger: deletePost } = useWrite(
-    (api) => api("users/:userId/posts/:postId").DELETE
+  const { trigger: deletePost } = useWrite((api) =>
+    api("users/:userId/posts/:postId").DELETE()
   );
 
   const handleCreatePost = async () => {

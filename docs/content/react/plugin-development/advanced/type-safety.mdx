@@ -14,7 +14,7 @@ This guide shows you how to make your plugins fully type-safe using TypeScript g
 
 ## Type Structure
 
-Every plugin can define up to 6 type interfaces:
+Every plugin can define up to 9 type interfaces:
 
 ```typescript
 // types.ts
@@ -24,17 +24,22 @@ export interface MyPluginConfig {
 }
 
 export interface MyReadOptions {
-  // Per-request options for read operations
+  // Hook-level options for read operations (passed to useRead 2nd argument)
   timeout?: number;
 }
 
 export interface MyWriteOptions {
-  // Per-request options for write operations
-  timeout?: number;
+  // Hook-level options for write operations (passed to useWrite 2nd argument)
+  transform?: (data: unknown) => unknown;
+}
+
+export interface MyWriteTriggerOptions {
+  // Trigger-level options for write operations (passed to trigger())
+  invalidate?: string[];
 }
 
 export interface MyInfiniteReadOptions {
-  // Per-request options for infinite read operations
+  // Hook-level options for infinite read operations
   timeout?: number;
 }
 
@@ -54,6 +59,28 @@ export interface MyInstanceApi {
 }
 ```
 
+### Hook-Level vs Trigger-Level Options
+
+For write operations, options are split into two categories:
+
+- **Hook-level options** (`writeOptions`): Passed to `useWrite` as the second argument. These options are set once when the hook is created and enable proper TypeScript inference.
+
+- **Trigger-level options** (`writeTriggerOptions`): Passed to `trigger()` when executing the mutation. These options can vary per-call.
+
+```typescript
+// Hook-level options (set once, enables type inference)
+const { trigger, meta } = useWrite(
+  (api) => api("posts").POST(),
+  { transform: (post) => ({ id: post.id }) } // writeOptions
+);
+
+// Trigger-level options (can vary per call)
+await trigger({
+  body: { title: "New Post" },
+  invalidate: ["posts"], // writeTriggerOptions
+});
+```
+
 ## Basic Type Safety
 
 Use the `SpooshPlugin` generic to tell TypeScript about your types:
@@ -65,6 +92,7 @@ import type {
   MyPluginConfig,
   MyReadOptions,
   MyWriteOptions,
+  MyWriteTriggerOptions,
   MyReadResult,
   MyWriteResult,
   MyInstanceApi,
@@ -73,6 +101,7 @@ import type {
 export function myPlugin(config: MyPluginConfig = {}): SpooshPlugin<{
   readOptions: MyReadOptions;
   writeOptions: MyWriteOptions;
+  writeTriggerOptions: MyWriteTriggerOptions;
   readResult: MyReadResult;
   writeResult: MyWriteResult;
   instanceApi: MyInstanceApi;
@@ -98,7 +127,8 @@ export function myPlugin(config: MyPluginConfig = {}): SpooshPlugin<{
 **Now TypeScript knows:**
 
 - `useRead` accepts `MyReadOptions`
-- `useWrite` accepts `MyWriteOptions`
+- `useWrite` hook accepts `MyWriteOptions`
+- `useWrite` trigger accepts `MyWriteTriggerOptions`
 - Hook results include `MyReadResult` / `MyWriteResult`
 - `create()` return includes `MyInstanceApi`
 
@@ -165,7 +195,11 @@ export interface CacheReadOptions {
   staleTime?: number;
 }
 
-export interface CacheWriteOptions {
+// Hook-level write options (empty for cache plugin)
+export type CacheWriteOptions = object;
+
+// Trigger-level write options
+export interface CacheWriteTriggerOptions {
   /** Clear all cached data after mutation completes successfully. */
   clearCache?: boolean;
 }
@@ -189,6 +223,7 @@ import type {
   CachePluginConfig,
   CacheReadOptions,
   CacheWriteOptions,
+  CacheWriteTriggerOptions,
   CacheInfiniteReadOptions,
   CacheReadResult,
   CacheWriteResult,
@@ -199,6 +234,7 @@ import type {
 export function cachePlugin(config: CachePluginConfig = {}): SpooshPlugin<{
   readOptions: CacheReadOptions;
   writeOptions: CacheWriteOptions;
+  writeTriggerOptions: CacheWriteTriggerOptions;
   infiniteReadOptions: CacheInfiniteReadOptions;
   readResult: CacheReadResult;
   writeResult: CacheWriteResult;
@@ -233,8 +269,9 @@ export function cachePlugin(config: CachePluginConfig = {}): SpooshPlugin<{
 
     afterResponse(context, response) {
       if (!response.error) {
+        // For write operations, trigger options are merged into pluginOptions
         const pluginOptions = context.pluginOptions as
-          | CacheWriteOptions
+          | CacheWriteTriggerOptions
           | undefined;
 
         if (pluginOptions?.clearCache) {
@@ -272,11 +309,19 @@ export * from "./plugin";
 
 ```typescript
 const spoosh = new Spoosh("/api").use([cachePlugin({ staleTime: 5000 })]);
-const { useRead, clearCache } = create(spoosh);
+const { useRead, useWrite, clearCache } = create(spoosh);
 
-// Type-safe read options
+// Type-safe read options (hook-level)
 const { data } = useRead((api) => api("posts").GET(), {
   staleTime: 10000, // ✅ TypeScript knows this option
+});
+
+// Type-safe write with trigger options
+const { trigger } = useWrite((api) => api("posts").POST());
+
+await trigger({
+  body: { title: "New Post" },
+  clearCache: true, // ✅ TypeScript knows this trigger option
 });
 
 // Type-safe instance API
@@ -469,7 +514,7 @@ const { data, isInitialData } = useRead((api) => api("posts").GET(), {
 
 ## Real Example: Optimistic Plugin
 
-Shows complex schema-aware type inference:
+Shows complex schema-aware type inference with trigger-level options:
 
 ```typescript
 // types.ts (simplified)
@@ -477,7 +522,11 @@ export type OptimisticCallbackFn<TSchema = unknown, TResponse = unknown> = (
   api: OptimisticApiHelper<TSchema, TResponse>
 ) => CompletedOptimisticBuilder | CompletedOptimisticBuilder[];
 
-export interface OptimisticWriteOptions<
+// Hook-level options (empty for optimistic plugin)
+export type OptimisticWriteOptions = object;
+
+// Trigger-level options
+export interface OptimisticWriteTriggerOptions<
   TSchema = unknown,
   TResponse = unknown,
 > {
@@ -499,8 +548,11 @@ declare module "@spoosh/core" {
 **Usage:**
 
 ```typescript
-const { trigger } = useWrite((api) => api("posts/:id").DELETE(), {
-  // TypeScript knows the schema and response types
+const { trigger } = useWrite((api) => api("posts/:id").DELETE());
+
+// optimistic is passed to trigger(), not hook options
+await trigger({
+  params: { id: deletedId },
   optimistic: (api) =>
     api("posts")
       .GET()
@@ -658,9 +710,14 @@ export interface RetryReadOptions {
 
 **Basic Type Safety:**
 
-1. Define 6 type interfaces (config, options, results, instanceApi)
+1. Define type interfaces (config, options, trigger options, results, instanceApi)
 2. Pass to `SpooshPlugin<{...}>` generic
 3. Export from index.ts
+
+**Write Options Split:**
+
+- `writeOptions`: Hook-level options passed to `useWrite` second argument
+- `writeTriggerOptions`: Trigger-level options passed to `trigger()`
 
 **Advanced Type Safety:**
 

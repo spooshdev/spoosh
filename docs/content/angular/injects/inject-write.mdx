@@ -44,15 +44,15 @@ await createPost.trigger({
 
 ## Returns
 
-| Property  | Type                          | Description                        |
-| --------- | ----------------------------- | ---------------------------------- |
-| `trigger` | `(options) => Promise`        | Execute the mutation               |
-| `data`    | `Signal<TData \| undefined>`  | Response data                      |
-| `error`   | `Signal<TError \| undefined>` | Error if request failed            |
-| `loading` | `Signal<boolean>`             | True while mutation is in progress |
-| `abort`   | `() => void`                  | Abort current request              |
-| `input`   | `TriggerOptions \| undefined` | The last trigger input             |
-| `meta`    | `Signal<PluginResults>`       | Plugin-provided metadata           |
+| Property  | Type                                | Description                        |
+| --------- | ----------------------------------- | ---------------------------------- |
+| `trigger` | `(options) => Promise`              | Execute the mutation               |
+| `data`    | `Signal<TData \| undefined>`        | Response data                      |
+| `error`   | `Signal<TError \| undefined>`       | Error if request failed            |
+| `loading` | `Signal<boolean>`                   | True while mutation is in progress |
+| `abort`   | `() => void`                        | Abort current request              |
+| `input`   | `Signal<TriggerInput \| undefined>` | The last trigger input             |
+| `meta`    | `Signal<PluginResults>`             | Plugin-provided metadata           |
 
 ## Hook-Level Options
 
