@@ -1,6 +1,11 @@
 import { NavLink, Outlet } from "react-router-dom";
 import { useRead } from "../lib/spoosh";
-import { CartIcon, CreditCardIcon, HomeIcon } from "../components/icons";
+import {
+  CartIcon,
+  CreditCardIcon,
+  HomeIcon,
+  PlusIcon,
+} from "../components/icons";
 
 export function RootLayout() {
   const cartQuery = useRead((api) => api("cart").GET(), {
@@ -28,6 +33,13 @@ export function RootLayout() {
               >
                 <HomeIcon className="nav-icon" />
                 Home
+              </NavLink>
+              <NavLink
+                className={({ isActive }) => (isActive ? "active" : undefined)}
+                to="/products/new"
+              >
+                <PlusIcon className="nav-icon" />
+                Create
               </NavLink>
               <NavLink
                 className={({ isActive }) => (isActive ? "active" : undefined)}

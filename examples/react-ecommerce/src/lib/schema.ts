@@ -40,89 +40,54 @@ export type OrderStatusRaw = {
   updated_at: string;
 };
 
+export type ProductsQuery = {
+  page?: number;
+  q?: string;
+};
+
+export type CreateProductBody = {
+  title: string;
+  description?: string;
+  price_cents: number;
+  in_stock: boolean;
+  image?: File;
+};
+
 export type ApiSchema = SpooshSchema<{
   products: {
     GET: {
-      data: {
-        items: ProductRaw[];
-        next_page: number | null;
-      };
-      query: {
-        page?: number;
-        q?: string;
-      };
-      error: ApiError;
+      data: { items: ProductRaw[]; next_page: number | null };
+      query: ProductsQuery;
     };
+    POST: { data: ProductRaw; body: CreateProductBody };
   };
   "products/:id": {
-    GET: {
-      data: ProductRaw;
-      params: { id: string };
-      error: ApiError;
-    };
+    GET: { data: ProductRaw };
   };
   "products/:id/comments": {
-    GET: {
-      data: CommentRaw[];
-      params: { id: string };
-      error: ApiError;
-    };
-    POST: {
-      data: CommentRaw;
-      params: { id: string };
-      body: {
-        body: string;
-      };
-      error: ApiError;
-    };
+    GET: { data: CommentRaw[] };
+    POST: { data: CommentRaw; body: { body: string } };
   };
   "products/:id/like": {
-    POST: {
-      data: {
-        likes_count: number;
-      };
-      params: { id: string };
-      error: ApiError;
-    };
+    POST: { data: { likes_count: number } };
   };
+
   cart: {
-    GET: {
-      data: CartItemRaw[];
-      error: ApiError;
-    };
-    POST: {
-      data: CartItemRaw;
-      body: {
-        product_id: string;
-        quantity: number;
-      };
-      error: ApiError;
-    };
+    GET: { data: CartItemRaw[] };
+    POST: { data: CartItemRaw; body: { product_id: string; quantity: number } };
   };
   "cart/:id": {
-    DELETE: {
-      data: { ok: true };
-      params: { id: string };
-      error: ApiError;
-    };
+    DELETE: { data: { ok: true } };
   };
+
   checkout: {
     POST: {
-      data: {
-        order_id: string;
-      };
-      body: {
-        email: string;
-        address: string;
-      };
-      error: ApiError;
+      data: { order_id: string };
+      body: { email: string; address: string };
     };
   };
+
   "orders/:id/status": {
-    GET: {
-      data: OrderStatusRaw;
-      params: { id: string };
-      error: ApiError;
-    };
+    GET: { data: OrderStatusRaw };
   };
 }>;

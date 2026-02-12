@@ -55,6 +55,7 @@ let cartItems: CartItemRaw[] = [
 
 const orderPollCount = new Map<string, number>();
 const outOfStockRetryCount = new Map<string, number>();
+let nextProductId = 31;
 
 function randomDelay() {
   return 300 + Math.floor(Math.random() * 300);
@@ -114,6 +115,49 @@ export const handlers = [
     }
 
     return HttpResponse.json(product);
+  }),
+
+  http.post("/api/products", async ({ request }) => {
+    await delay(randomDelay());
+
+    const formData = await request.formData();
+    const title = formData.get("title") as string;
+    const description = formData.get("description") as string;
+    const priceCents = Number(formData.get("price_cents")) || 0;
+    const inStock = formData.get("in_stock") === "true";
+    const image = formData.get("image") as File | null;
+
+    if (!title || title.trim().length < 3) {
+      return HttpResponse.json(
+        { message: "Title must be at least 3 characters" },
+        { status: 400 }
+      );
+    }
+
+    if (priceCents <= 0) {
+      return HttpResponse.json(
+        { message: "Price must be greater than 0" },
+        { status: 400 }
+      );
+    }
+
+    const id = String(nextProductId++);
+    const newProduct: ProductRaw = {
+      id,
+      title: title.trim(),
+      description: description?.trim() || "No description provided.",
+      image_url: image
+        ? URL.createObjectURL(image)
+        : `https://picsum.photos/seed/spoosh-${id}/800/600`,
+      price_cents: priceCents,
+      rating_avg: 0,
+      likes_count: 0,
+      in_stock: inStock,
+    };
+
+    products.unshift(newProduct);
+
+    return HttpResponse.json(newProduct, { status: 201 });
   }),
 
   http.get("/api/products/:id/comments", async ({ params }) => {
