@@ -46,20 +46,17 @@ export function renderTraceRow(ctx: TraceRowContext): string {
   );
   const preview = getResponsePreview(trace);
 
-  const traceClass = `spoosh-trace${isSelected ? " selected" : ""}${hasError ? " error" : ""}${isAborted ? " aborted" : ""}`;
+  const traceClass = `spoosh-trace-card${isSelected ? " selected" : ""}${hasError ? " error" : ""}${isAborted ? " aborted" : ""} status-${statusClass}`;
 
   return `
     <div class="${traceClass}" data-trace-id="${trace.id}">
-      <div class="spoosh-trace-status ${statusClass}"></div>
-      <div class="spoosh-trace-info">
-        <div class="spoosh-trace-key-row">
-          <span class="spoosh-trace-method method-${trace.method}">${trace.method}</span>
-          <span class="spoosh-trace-path">${escapeHtml(trace.path)}${queryParams ? `<span class="spoosh-trace-query">?${escapeHtml(queryParams)}</span>` : ""}</span>
-        </div>
-        <div class="spoosh-trace-preview-row">
-          <span class="spoosh-trace-preview">${escapeHtml(preview)}</span>
-          <span class="spoosh-trace-time">${duration}ms</span>
-        </div>
+      <div class="spoosh-trace-card-header">
+        <span class="spoosh-trace-method-badge method-${trace.method}">${trace.method}</span>
+        <span class="spoosh-trace-path">${escapeHtml(trace.path)}${queryParams ? `<span class="spoosh-trace-query">?${escapeHtml(queryParams)}</span>` : ""}</span>
+      </div>
+      <div class="spoosh-trace-card-footer">
+        <span class="spoosh-trace-preview">${escapeHtml(preview)}</span>
+        <span class="spoosh-trace-duration ${statusClass}">${duration}ms</span>
       </div>
     </div>
   `;

@@ -52,7 +52,7 @@ export function renderStateRow(
   entry: CacheEntryDisplay,
   isSelected: boolean
 ): string {
-  const { path, method, queryParams } = parseQueryKey(
+  const { path, queryParams } = parseQueryKey(
     entry.queryKey,
     entry.resolvedPath
   );
@@ -77,7 +77,6 @@ export function renderStateRow(
       <div class="spoosh-state-status ${statusClass}"></div>
       <div class="spoosh-state-info">
         <div class="spoosh-state-key-row">
-          <span class="spoosh-state-method method-${method}">${method}</span>
           <span class="spoosh-state-path">${escapeHtml(path)}${queryParams ? `<span class="spoosh-state-query">?${escapeHtml(queryParams)}</span>` : ""}</span>
         </div>
         <div class="spoosh-state-preview">${escapeHtml(dataPreview)}</div>

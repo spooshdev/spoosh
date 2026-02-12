@@ -7,32 +7,12 @@ import type {
   TraceStage,
   DevtoolEvents,
 } from "@spoosh/core";
+import { resolvePathString } from "@spoosh/core";
 
 import { DevToolStore } from "./store";
 import { DevToolPanel } from "./ui/panel";
 import type { DevToolConfig, DevToolInstanceApi } from "./types";
 import type { DedupeMode } from "@spoosh/plugin-deduplication";
-
-function resolvePathWithParams(
-  path: string,
-  params: Record<string, string | number> | undefined
-): string {
-  if (!params) return path;
-
-  return path
-    .split("/")
-    .map((segment) => {
-      if (segment.startsWith(":")) {
-        const paramName = segment.slice(1);
-        const value = params[paramName];
-
-        return value !== undefined ? String(value) : segment;
-      }
-
-      return segment;
-    })
-    .join("/");
-}
 
 const DEFAULT_SENSITIVE_HEADERS = [
   "authorization",
@@ -103,7 +83,7 @@ export function devtool(
         }
       }
 
-      const resolvedPath = resolvePathWithParams(
+      const resolvedPath = resolvePathString(
         context.path,
         context.request.params as Record<string, string | number> | undefined
       );

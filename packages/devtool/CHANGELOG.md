@@ -4,6 +4,7 @@
 
 - Hide `infinite-tracker` helper state in devtool state view
 - Fix request query params not showing correctly in state/import view
+- Improve UI for better readability
 
 ## 0.1.2
 

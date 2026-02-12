@@ -37,19 +37,19 @@ function renderImportTraceRow(
   const hasError = !!response?.error && !isAborted;
   const statusClass = isAborted ? "aborted" : hasError ? "error" : "success";
   const { queryParams } = parseQueryKey(trace.queryKey);
+  const timestamp = formatTime(trace.timestamp);
+
+  const traceClass = `spoosh-trace-card${isSelected ? " selected" : ""}${hasError ? " error" : ""}${isAborted ? " aborted" : ""} status-${statusClass}`;
 
   return `
-    <div class="spoosh-trace${isSelected ? " selected" : ""}${hasError ? " error" : ""}${isAborted ? " aborted" : ""}" data-imported-trace-id="${escapeHtml(trace.id)}">
-      <div class="spoosh-trace-status ${statusClass}"></div>
-      <div class="spoosh-trace-info">
-        <div class="spoosh-trace-key-row">
-          <span class="spoosh-trace-method method-${trace.method}">${trace.method}</span>
-          <span class="spoosh-trace-path">${escapeHtml(trace.path)}${queryParams ? `<span class="spoosh-trace-query">?${escapeHtml(queryParams)}</span>` : ""}</span>
-        </div>
-        <div class="spoosh-trace-preview-row">
-          <span class="spoosh-trace-preview">${formatTime(trace.timestamp)}</span>
-          <span class="spoosh-trace-time">${duration}ms</span>
-        </div>
+    <div class="${traceClass}" data-imported-trace-id="${escapeHtml(trace.id)}">
+      <div class="spoosh-trace-card-header">
+        <span class="spoosh-trace-method-badge method-${trace.method}">${trace.method}</span>
+        <span class="spoosh-trace-path">${escapeHtml(trace.path)}${queryParams ? `<span class="spoosh-trace-query">?${escapeHtml(queryParams)}</span>` : ""}</span>
+      </div>
+      <div class="spoosh-trace-card-footer">
+        <span class="spoosh-trace-preview">${timestamp}</span>
+        <span class="spoosh-trace-duration ${statusClass}">${duration}ms</span>
       </div>
     </div>
   `;

@@ -241,6 +241,141 @@ export const componentsCSS = `
     border-left: 2px solid #8857ff;
   }
 
+  .spoosh-traces {
+    padding: 4px 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  /* ===== Trace Card ===== */
+  .spoosh-trace-card {
+    display: flex;
+    flex-direction: column;
+    padding: 8px 10px;
+    cursor: pointer;
+    background: var(--spoosh-surface);
+    border: 1px solid var(--spoosh-border);
+    border-radius: 6px;
+    transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+  }
+
+  .spoosh-trace-card:hover {
+    border-color: #8857ff;
+    background: rgba(136, 87, 255, 0.03);
+  }
+
+  .spoosh-trace-card.selected {
+    border-color: #8857ff;
+    background: rgba(136, 87, 255, 0.06);
+    box-shadow: 0 0 0 1px rgba(136, 87, 255, 0.3);
+  }
+
+  .spoosh-trace-card.error {
+    border-left: 3px solid var(--spoosh-error);
+  }
+
+  .spoosh-trace-card.error:hover {
+    background: rgba(248, 81, 73, 0.05);
+    border-color: var(--spoosh-error);
+  }
+
+  .spoosh-trace-card.error.selected {
+    background: rgba(248, 81, 73, 0.08);
+    border-color: var(--spoosh-error);
+    box-shadow: 0 0 0 1px rgba(248, 81, 73, 0.3);
+  }
+
+  .spoosh-trace-card.aborted {
+    opacity: 0.6;
+  }
+
+  .spoosh-trace-card.status-pending {
+    border-left: 3px solid #8857ff;
+  }
+
+  .spoosh-trace-card.status-success {
+    border-left: 3px solid var(--spoosh-success);
+  }
+
+  .spoosh-trace-card-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+  }
+
+  .spoosh-trace-method-badge {
+    font-weight: 600;
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    text-transform: uppercase;
+    flex-shrink: 0;
+  }
+
+  .spoosh-trace-method-badge.method-GET {
+    background: rgba(63, 185, 80, 0.15);
+    color: var(--spoosh-success);
+  }
+
+  .spoosh-trace-method-badge.method-POST {
+    background: rgba(88, 166, 255, 0.15);
+    color: var(--spoosh-primary);
+  }
+
+  .spoosh-trace-method-badge.method-PUT,
+  .spoosh-trace-method-badge.method-PATCH {
+    background: rgba(210, 153, 34, 0.15);
+    color: var(--spoosh-warning);
+  }
+
+  .spoosh-trace-method-badge.method-DELETE {
+    background: rgba(248, 81, 73, 0.15);
+    color: var(--spoosh-error);
+  }
+
+  .spoosh-trace-card-header .spoosh-trace-path {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .spoosh-trace-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .spoosh-trace-duration {
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .spoosh-trace-duration.success {
+    background: rgba(63, 185, 80, 0.12);
+    color: var(--spoosh-success);
+  }
+
+  .spoosh-trace-duration.error {
+    background: rgba(248, 81, 73, 0.12);
+    color: var(--spoosh-error);
+  }
+
+  .spoosh-trace-duration.pending {
+    background: rgba(136, 87, 255, 0.12);
+    color: #8857ff;
+  }
+
+  .spoosh-trace-duration.aborted {
+    background: var(--spoosh-border);
+    color: var(--spoosh-text-muted);
+  }
+
+  /* Legacy trace styles (for backwards compatibility) */
   .spoosh-trace {
     display: flex;
     align-items: flex-start;
@@ -324,8 +459,9 @@ export const componentsCSS = `
   }
 
   .spoosh-trace-query {
-    color: var(--spoosh-text-muted);
+    color: #8857ff;
     font-size: 10px;
+    font-weight: 400;
   }
 
   .spoosh-trace-preview-row {
