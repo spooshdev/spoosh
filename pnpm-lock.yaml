@@ -170,6 +170,82 @@ importers:
         specifier: ^7.2.0
         version: 7.3.1(@types/node@25.0.7)(jiti@2.6.1)(less@4.4.2)(lightningcss@1.30.2)(sass@1.97.1)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2)
 
+  examples/react-ecommerce:
+    dependencies:
+      '@spoosh/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@spoosh/devtool':
+        specifier: workspace:*
+        version: link:../../packages/devtool
+      '@spoosh/plugin-cache':
+        specifier: workspace:*
+        version: link:../../packages/plugin-cache
+      '@spoosh/plugin-debounce':
+        specifier: workspace:*
+        version: link:../../packages/plugin-debounce
+      '@spoosh/plugin-deduplication':
+        specifier: workspace:*
+        version: link:../../packages/plugin-deduplication
+      '@spoosh/plugin-gc':
+        specifier: workspace:*
+        version: link:../../packages/plugin-gc
+      '@spoosh/plugin-invalidation':
+        specifier: workspace:*
+        version: link:../../packages/plugin-invalidation
+      '@spoosh/plugin-optimistic':
+        specifier: workspace:*
+        version: link:../../packages/plugin-optimistic
+      '@spoosh/plugin-polling':
+        specifier: workspace:*
+        version: link:../../packages/plugin-polling
+      '@spoosh/plugin-prefetch':
+        specifier: workspace:*
+        version: link:../../packages/plugin-prefetch
+      '@spoosh/plugin-progress':
+        specifier: workspace:*
+        version: link:../../packages/plugin-progress
+      '@spoosh/plugin-refetch':
+        specifier: workspace:*
+        version: link:../../packages/plugin-refetch
+      '@spoosh/plugin-retry':
+        specifier: workspace:*
+        version: link:../../packages/plugin-retry
+      '@spoosh/plugin-transform':
+        specifier: workspace:*
+        version: link:../../packages/plugin-transform
+      '@spoosh/react':
+        specifier: workspace:*
+        version: link:../../packages/react
+      msw:
+        specifier: ^2.11.3
+        version: 2.12.10(@types/node@25.0.7)(typescript@5.9.3)
+      react:
+        specifier: ^19.2.0
+        version: 19.2.4
+      react-dom:
+        specifier: ^19.2.0
+        version: 19.2.4(react@19.2.4)
+      react-router-dom:
+        specifier: ^7.9.4
+        version: 7.13.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+    devDependencies:
+      '@types/react':
+        specifier: ^19.2.2
+        version: 19.2.7
+      '@types/react-dom':
+        specifier: ^19.2.2
+        version: 19.2.3(@types/react@19.2.7)
+      '@vitejs/plugin-react':
+        specifier: ^5.1.0
+        version: 5.1.4(vite@7.3.1(@types/node@25.0.7)(jiti@2.6.1)(less@4.4.2)(lightningcss@1.30.2)(sass@1.97.1)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2))
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.3
+      vite:
+        specifier: ^7.2.0
+        version: 7.3.1(@types/node@25.0.7)(jiti@2.6.1)(less@4.4.2)(lightningcss@1.30.2)(sass@1.97.1)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2)
+
   packages/angular:
     devDependencies:
       '@angular/core':
@@ -4679,6 +4755,13 @@ packages:
     peerDependenciesMeta:
       '@types/react':
         optional: true
+
+  react-router-dom@7.13.0:
+    resolution: {integrity: sha512-5CO/l5Yahi2SKC6rGZ+HDEjpjkGaG/ncEP7eWFTvFxbHP8yeeI0PxTDjimtpXYlR3b3i9/WIL4VJttPrESIf2g==}
+    engines: {node: '>=20.0.0'}
+    peerDependencies:
+      react: '>=18'
+      react-dom: '>=18'
 
   react-router@7.13.0:
     resolution: {integrity: sha512-PZgus8ETambRT17BUm/LL8lX3Of+oiLaPuVTRH3l1eLvSPpKO3AvhAEb5N7ihAFZQrYDqkvvWfFh9p0z9VsjLw==}
@@ -10371,6 +10454,12 @@ snapshots:
     optionalDependencies:
       '@types/react': 19.2.7
 
+  react-router-dom@7.13.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4):
+    dependencies:
+      react: 19.2.4
+      react-dom: 19.2.4(react@19.2.4)
+      react-router: 7.13.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+
   react-router@7.13.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4):
     dependencies:
       cookie: 1.1.1
@@ -10378,7 +10467,6 @@ snapshots:
       set-cookie-parser: 2.7.2
     optionalDependencies:
       react-dom: 19.2.4(react@19.2.4)
-    optional: true
 
   react-style-singleton@2.2.3(@types/react@19.2.7)(react@19.2.4):
     dependencies:
@@ -10669,8 +10757,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  set-cookie-parser@2.7.2:
-    optional: true
+  set-cookie-parser@2.7.2: {}
 
   set-function-length@1.2.2:
     dependencies:

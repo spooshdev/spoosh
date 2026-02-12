@@ -1,5 +1,10 @@
 # @spoosh/devtool
 
+## 0.1.3
+
+- Hide `infinite-tracker` helper state in devtool state view
+- Fix request query params not showing correctly in state/import view
+
 ## 0.1.2
 
 - Use LCS algorithm to display diff for better readability

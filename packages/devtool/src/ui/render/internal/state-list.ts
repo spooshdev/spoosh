@@ -22,11 +22,11 @@ function parseQueryKey(
       path?: string;
       method?: string;
       options?: { query?: Record<string, unknown> };
+      pageRequest?: { query?: Record<string, unknown> };
     };
 
-    const queryParams = parsed.options?.query
-      ? formatQueryParams(parsed.options.query)
-      : null;
+    const query = parsed.pageRequest?.query ?? parsed.options?.query;
+    const queryParams = query ? formatQueryParams(query) : null;
 
     return {
       path: resolvedPath ?? parsed.path ?? queryKey,

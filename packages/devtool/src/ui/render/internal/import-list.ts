@@ -1,5 +1,21 @@
 import type { ExportedTrace } from "../../../types";
-import { escapeHtml, formatTime } from "../../utils";
+import { escapeHtml, formatTime, formatQueryParams } from "../../utils";
+
+function parseQueryKey(queryKey: string): { queryParams: string | null } {
+  try {
+    const parsed = JSON.parse(queryKey) as {
+      options?: { query?: Record<string, unknown> };
+      pageRequest?: { query?: Record<string, unknown> };
+    };
+
+    const query = parsed.pageRequest?.query ?? parsed.options?.query;
+    const queryParams = query ? formatQueryParams(query) : null;
+
+    return { queryParams };
+  } catch {
+    return { queryParams: null };
+  }
+}
 
 export interface ImportListContext {
   traces: ExportedTrace[];
@@ -20,6 +36,7 @@ function renderImportTraceRow(
   const isAborted = !!response?.aborted;
   const hasError = !!response?.error && !isAborted;
   const statusClass = isAborted ? "aborted" : hasError ? "error" : "success";
+  const { queryParams } = parseQueryKey(trace.queryKey);
 
   return `
     <div class="spoosh-trace${isSelected ? " selected" : ""}${hasError ? " error" : ""}${isAborted ? " aborted" : ""}" data-imported-trace-id="${escapeHtml(trace.id)}">
@@ -27,7 +44,7 @@ function renderImportTraceRow(
       <div class="spoosh-trace-info">
         <div class="spoosh-trace-key-row">
           <span class="spoosh-trace-method method-${trace.method}">${trace.method}</span>
-          <span class="spoosh-trace-path">${escapeHtml(trace.path)}</span>
+          <span class="spoosh-trace-path">${escapeHtml(trace.path)}${queryParams ? `<span class="spoosh-trace-query">?${escapeHtml(queryParams)}</span>` : ""}</span>
         </div>
         <div class="spoosh-trace-preview-row">
           <span class="spoosh-trace-preview">${formatTime(trace.timestamp)}</span>
