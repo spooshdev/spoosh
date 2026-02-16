@@ -11,3 +11,4 @@ export * from "./plugins";
 export * from "./state";
 export * from "./operations";
 export * from "./events";
+export * from "./queue";

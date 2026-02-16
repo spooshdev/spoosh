@@ -34,6 +34,12 @@ import type {
   WriteTriggerInput,
 } from "../useWrite/types";
 import type {
+  UseQueueOptions,
+  UseQueueResult,
+  QueueApiClient,
+  QueueTriggerInput,
+} from "../useQueue/types";
+import type {
   BaseInfiniteReadOptions,
   BaseInfiniteReadResult,
   AnyInfiniteRequestOptions,
@@ -155,6 +161,19 @@ type UseWriteFn<TDefaultError, TSchema, TPlugins extends PluginArray> = {
     >;
 };
 
+type UseQueueFn<TDefaultError, TSchema> = <
+  TQueueFn extends (
+    api: QueueApiClient<TSchema, TDefaultError>
+  ) => Promise<SpooshResponse<unknown, unknown>>,
+>(
+  queueFn: TQueueFn,
+  queueOptions?: UseQueueOptions
+) => UseQueueResult<
+  ExtractMethodData<TQueueFn>,
+  InferError<ExtractMethodError<TQueueFn>, TDefaultError>,
+  QueueTriggerInput<TQueueFn>
+>;
+
 type InfiniteReadResolverContext<TSchema, TData, TError, TRequest> =
   ResolverContext<
     TSchema,
@@ -263,6 +282,27 @@ export type SpooshReactHooks<
    * ```
    */
   useInfiniteRead: UseInfiniteReadFn<TDefaultError, TSchema, TPlugins>;
+
+  /**
+   * React hook for queued operations with concurrency control.
+   *
+   * @param queueFn - Function that selects the API endpoint
+   * @param queueOptions - Optional configuration including `concurrency`
+   * @returns Object containing `trigger`, `queue`, `progress`, `abort`, `retry`, `remove`, `clear`
+   *
+   * @example
+   * ```tsx
+   * const { trigger, queue, progress } = useQueue(
+   *   (api) => api("uploads").POST(),
+   *   { concurrency: 2 }
+   * );
+   *
+   * for (const file of files) {
+   *   trigger({ body: form({ file }) });
+   * }
+   * ```
+   */
+  useQueue: UseQueueFn<TDefaultError, TSchema>;
 } & MergePluginInstanceApi<TPlugins, TSchema>;
 
 /**

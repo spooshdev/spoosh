@@ -2,6 +2,7 @@ import type { PluginArray } from "@spoosh/core";
 import { createUseRead } from "../useRead";
 import { createUseWrite } from "../useWrite";
 import { createUseInfiniteRead } from "../useInfiniteRead";
+import { createUseQueue } from "../useQueue";
 import type { SpooshReactHooks, SpooshInstanceShape } from "./types";
 
 /**
@@ -59,6 +60,13 @@ export function create<
     pluginExecutor,
   });
 
+  const useQueue = createUseQueue<TSchema, TDefaultError, TPlugins>({
+    api,
+    stateManager,
+    eventEmitter,
+    pluginExecutor,
+  });
+
   const plugins = pluginExecutor.getPlugins();
 
   const setupContext = {
@@ -92,6 +100,7 @@ export function create<
     useRead,
     useWrite,
     useInfiniteRead,
+    useQueue,
     ...instanceApis,
   } as SpooshReactHooks<TDefaultError, TSchema, TPlugins>;
 }

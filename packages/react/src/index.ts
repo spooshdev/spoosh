@@ -25,6 +25,12 @@ export type {
   InfinitePrevContext,
 } from "./useInfiniteRead/types";
 export type {
+  UseQueueResult,
+  UseQueueOptions,
+  QueueApiClient,
+  QueueTriggerInput,
+} from "./useQueue/types";
+export type {
   ExtractMethodData,
   ExtractMethodError,
   ExtractMethodOptions,
