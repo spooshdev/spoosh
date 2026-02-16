@@ -1,6 +1,6 @@
 import type {
   SpooshResponse,
-  WriteSelectorClient,
+  QueueSelectorClient,
   SpooshBody,
 } from "@spoosh/core";
 import type { QueueItem, QueueProgress } from "@spoosh/core";
@@ -51,8 +51,14 @@ export interface UseQueueOptions {
  * @template TData - The response data type
  * @template TError - The error type
  * @template TTriggerInput - The trigger input type
+ * @template TPluginResult - Plugin-contributed result properties
  */
-export interface UseQueueResult<TData, TError, TTriggerInput> {
+export type UseQueueResult<
+  TData,
+  TError,
+  TTriggerInput,
+  TPluginResult = object,
+> = {
   /** Add item to queue and execute. Returns promise for this item. */
   trigger: (input?: TTriggerInput) => Promise<SpooshResponse<TData, TError>>;
 
@@ -79,12 +85,13 @@ export interface UseQueueResult<TData, TError, TTriggerInput> {
 
   /** Abort all and clear queue */
   clear: () => void;
-}
+} & TPluginResult;
 
 /**
  * API client type for queue selector.
+ * Supports all HTTP methods (GET, POST, PUT, PATCH, DELETE).
  */
-export type QueueApiClient<TSchema, TDefaultError> = WriteSelectorClient<
+export type QueueApiClient<TSchema, TDefaultError> = QueueSelectorClient<
   TSchema,
   TDefaultError
 >;

@@ -100,6 +100,6 @@ export interface QueueControllerConfig {
   /** Maximum concurrent operations. Defaults to 3. */
   concurrency?: number;
 
-  /** Operation type for plugin middleware (derived from HTTP method) */
-  operationType: "read" | "write";
+  /** Operation type for plugin middleware */
+  operationType: "read" | "write" | "queue";
 }

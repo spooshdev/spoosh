@@ -1,4 +1,4 @@
-import { useSyncExternalStore, useRef, useId, useCallback } from "react";
+import { useSyncExternalStore, useRef, useId } from "react";
 import {
   type SpooshResponse,
   type SpooshPlugin,
@@ -80,9 +80,6 @@ export function createUseQueue<
       );
     }
 
-    const isWrite = ["POST", "PUT", "PATCH", "DELETE"].includes(
-      captured.method
-    );
     const concurrency = queueOptions?.concurrency;
 
     const controllerRef = useRef<QueueController<TData, TError> | null>(null);
@@ -92,7 +89,7 @@ export function createUseQueue<
         path: captured.path,
         method: captured.method,
         concurrency,
-        operationType: isWrite ? "write" : "read",
+        operationType: "queue",
       };
 
       controllerRef.current = createQueueController<TData, TError>(config, {
@@ -115,38 +112,16 @@ export function createUseQueue<
     const pending = queue.filter((i) => i.status === "pending").length;
     const loading = queue.some((i) => i.status === "loading");
 
-    const trigger = useCallback(
-      (input?: unknown) => controller.trigger(input ?? {}),
-      [controller]
-    );
-
-    const abort = useCallback(
-      (id?: string) => controller.abort(id),
-      [controller]
-    );
-
-    const retry = useCallback(
-      (id?: string) => controller.retry(id),
-      [controller]
-    );
-
-    const remove = useCallback(
-      (id?: string) => controller.remove(id),
-      [controller]
-    );
-
-    const clear = useCallback(() => controller.clear(), [controller]);
-
     return {
-      trigger,
+      trigger: (input?: unknown) => controller.trigger(input ?? {}),
       queue,
       pending,
       loading,
       progress,
-      abort,
-      retry,
-      remove,
-      clear,
+      abort: controller.abort,
+      retry: controller.retry,
+      remove: controller.remove,
+      clear: controller.clear,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any;
   }

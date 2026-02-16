@@ -7,7 +7,7 @@ import type { RequestTracer, EventTracer } from "./devtool.types";
 
 export * from "./devtool.types";
 
-export type OperationType = "read" | "write" | "infiniteRead";
+export type OperationType = "read" | "write" | "infiniteRead" | "queue";
 
 export type LifecyclePhase = "onMount" | "onUnmount" | "onUpdate";
 
@@ -223,8 +223,11 @@ export type PluginTypeConfig = {
   writeOptions?: object;
   infiniteReadOptions?: object;
   writeTriggerOptions?: object;
+  queueOptions?: object;
+  queueTriggerOptions?: object;
   readResult?: object;
   writeResult?: object;
+  queueResult?: object;
   instanceApi?: object;
 };
 

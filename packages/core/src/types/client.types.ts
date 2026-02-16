@@ -272,3 +272,39 @@ export type WriteSelectorClient<TSchema, TDefaultError = unknown> = <
 ) => HasWriteMethod<TSchema, TPath> extends true
   ? WriteSelectorPathMethods<TSchema, TPath, TDefaultError>
   : never;
+
+/**
+ * Method function type for queue selectors - accepts no arguments.
+ * All input (body, query, params) is passed to trigger() instead.
+ */
+type QueueSelectorMethodFn<
+  TMethodConfig,
+  TDefaultError,
+  TUserPath extends string,
+> = () => Promise<MethodResponse<TMethodConfig, TDefaultError, TUserPath>>;
+
+/**
+ * Queue selector path methods - all HTTP methods, accepting no arguments.
+ */
+type QueueSelectorPathMethods<TSchema, TPath extends string, TDefaultError> =
+  FindMatchingKey<TSchema, TPath> extends infer TKey
+    ? TKey extends keyof TSchema
+      ? Simplify<{
+          [M in HttpMethod as M extends keyof TSchema[TKey]
+            ? M
+            : never]: M extends keyof TSchema[TKey]
+            ? QueueSelectorMethodFn<TSchema[TKey][M], TDefaultError, TPath>
+            : never;
+        }>
+      : never
+    : never;
+
+/**
+ * Queue selector client - all HTTP methods, accepting no arguments.
+ * Used by useQueue for selecting endpoints. All input goes to trigger().
+ */
+export type QueueSelectorClient<TSchema, TDefaultError = unknown> = <
+  TPath extends SchemaPaths<TSchema> | (string & {}),
+>(
+  path: TPath
+) => QueueSelectorPathMethods<TSchema, TPath, TDefaultError>;

@@ -79,6 +79,37 @@ type ResolvedWriteTriggerOptions<
   WriteResolverContext<TSchema, TMethod, TDefaultError>
 >;
 
+type QueueResolverContext<TSchema, TMethod, TDefaultError> = ResolverContext<
+  TSchema,
+  ExtractMethodData<TMethod>,
+  InferError<ExtractMethodError<TMethod>, TDefaultError>,
+  ExtractMethodQuery<TMethod>,
+  ExtractMethodBody<TMethod>,
+  ExtractResponseParamNames<TMethod> extends never
+    ? never
+    : Record<ExtractResponseParamNames<TMethod>, string | number>
+>;
+
+type ResolvedQueueOptions<
+  TSchema,
+  TPlugins extends PluginArray,
+  TMethod,
+  TDefaultError,
+> = ResolveTypes<
+  MergePluginOptions<TPlugins>["queue"],
+  QueueResolverContext<TSchema, TMethod, TDefaultError>
+>;
+
+type ResolvedQueueTriggerOptions<
+  TSchema,
+  TPlugins extends PluginArray,
+  TMethod,
+  TDefaultError,
+> = ResolveTypes<
+  MergePluginOptions<TPlugins>["queueTrigger"],
+  QueueResolverContext<TSchema, TMethod, TDefaultError>
+>;
+
 type UseReadFn<TDefaultError, TSchema, TPlugins extends PluginArray> = {
   <
     TReadFn extends (
@@ -161,18 +192,35 @@ type UseWriteFn<TDefaultError, TSchema, TPlugins extends PluginArray> = {
     >;
 };
 
-type UseQueueFn<TDefaultError, TSchema> = <
-  TQueueFn extends (
-    api: QueueApiClient<TSchema, TDefaultError>
-  ) => Promise<SpooshResponse<unknown, unknown>>,
->(
-  queueFn: TQueueFn,
-  queueOptions?: UseQueueOptions
-) => UseQueueResult<
-  ExtractMethodData<TQueueFn>,
-  InferError<ExtractMethodError<TQueueFn>, TDefaultError>,
-  QueueTriggerInput<TQueueFn>
->;
+type UseQueueFn<TDefaultError, TSchema, TPlugins extends PluginArray> = {
+  <
+    TQueueFn extends (
+      api: QueueApiClient<TSchema, TDefaultError>
+    ) => Promise<SpooshResponse<unknown, unknown>>,
+    TQueueOpts extends ResolvedQueueOptions<
+      TSchema,
+      TPlugins,
+      TQueueFn,
+      TDefaultError
+    > &
+      UseQueueOptions = ResolvedQueueOptions<
+      TSchema,
+      TPlugins,
+      TQueueFn,
+      TDefaultError
+    > &
+      UseQueueOptions,
+  >(
+    queueFn: TQueueFn,
+    queueOptions?: TQueueOpts
+  ): UseQueueResult<
+    ExtractMethodData<TQueueFn>,
+    InferError<ExtractMethodError<TQueueFn>, TDefaultError>,
+    QueueTriggerInput<TQueueFn> &
+      ResolvedQueueTriggerOptions<TSchema, TPlugins, TQueueFn, TDefaultError>,
+    ResolveResultTypes<MergePluginResults<TPlugins>["queue"], TQueueOpts>
+  >;
+};
 
 type InfiniteReadResolverContext<TSchema, TData, TError, TRequest> =
   ResolverContext<
@@ -302,7 +350,7 @@ export type SpooshReactHooks<
    * }
    * ```
    */
-  useQueue: UseQueueFn<TDefaultError, TSchema>;
+  useQueue: UseQueueFn<TDefaultError, TSchema, TPlugins>;
 } & MergePluginInstanceApi<TPlugins, TSchema>;
 
 /**
