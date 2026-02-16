@@ -84,7 +84,7 @@ export function createQueueController<
     abortControllers.set(item.id, abortController);
 
     try {
-      updateItem(item.id, { status: "loading" });
+      updateItem(item.id, { status: "running" });
       notify();
 
       const queryKey = stateManager.createQueryKey({
@@ -206,19 +206,30 @@ export function createQueueController<
 
     getQueue: () => cachedQueueSnapshot,
 
-    getProgress: () => {
-      const completed = queue.filter(
-        (i) =>
-          i.status === "success" ||
-          i.status === "error" ||
-          i.status === "aborted"
-      ).length;
+    getStats: () => {
+      let pending = 0;
+      let running = 0;
+      let success = 0;
+      let failed = 0;
+
+      for (const item of queue) {
+        if (item.status === "pending") pending++;
+        else if (item.status === "running") running++;
+        else if (item.status === "success") success++;
+        else if (item.status === "error" || item.status === "aborted") failed++;
+      }
+
+      const settled = success + failed;
+      const total = queue.length;
 
       return {
-        completed,
-        total: queue.length,
-        percentage:
-          queue.length > 0 ? Math.round((completed / queue.length) * 100) : 0,
+        pending,
+        running,
+        settled,
+        success,
+        failed,
+        total,
+        percentage: total > 0 ? Math.round((settled / total) * 100) : 0,
       };
     },
 
@@ -231,14 +242,14 @@ export function createQueueController<
       if (id) {
         const item = queue.find((i) => i.id === id);
 
-        if (item && (item.status === "pending" || item.status === "loading")) {
+        if (item && (item.status === "pending" || item.status === "running")) {
           abortControllers.get(id)?.abort();
           updateItem(id, { status: "aborted" });
           notify();
         }
       } else {
         for (const item of queue) {
-          if (item.status === "pending" || item.status === "loading") {
+          if (item.status === "pending" || item.status === "running") {
             abortControllers.get(item.id)?.abort();
             updateItem(item.id, { status: "aborted" });
           }
@@ -278,7 +289,7 @@ export function createQueueController<
         }
       } else {
         const active = queue.filter(
-          (i) => i.status === "pending" || i.status === "loading"
+          (i) => i.status === "pending" || i.status === "running"
         );
         queue.length = 0;
         queue.push(...active);

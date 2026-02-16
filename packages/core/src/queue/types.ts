@@ -5,7 +5,7 @@ import type { SpooshResponse } from "../types/response.types";
  */
 export type QueueItemStatus =
   | "pending"
-  | "loading"
+  | "running"
   | "success"
   | "error"
   | "aborted";
@@ -42,11 +42,23 @@ export interface QueueItem<
 }
 
 /**
- * Progress information for the queue.
+ * Statistics information for the queue.
  */
-export interface QueueProgress {
-  /** Number of completed items (success, error, or aborted) */
-  completed: number;
+export interface QueueStats {
+  /** Number of pending items waiting to run */
+  pending: number;
+
+  /** Number of currently running items */
+  running: number;
+
+  /** Number of settled items (success, error, or aborted) */
+  settled: number;
+
+  /** Number of successful items */
+  success: number;
+
+  /** Number of failed items (error or aborted) */
+  failed: number;
 
   /** Total number of items in queue */
   total: number;
@@ -79,8 +91,8 @@ export interface QueueController<
   /** Get current queue state */
   getQueue: () => QueueItem<TData, TError, TMeta>[];
 
-  /** Get current progress */
-  getProgress: () => QueueProgress;
+  /** Get queue statistics */
+  getStats: () => QueueStats;
 
   /** Subscribe to queue state changes */
   subscribe: (callback: () => void) => () => void;

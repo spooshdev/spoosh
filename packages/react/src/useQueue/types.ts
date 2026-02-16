@@ -2,8 +2,9 @@ import type {
   SpooshResponse,
   QueueSelectorClient,
   SpooshBody,
+  QueueItem,
+  QueueStats,
 } from "@spoosh/core";
-import type { QueueItem, QueueProgress } from "@spoosh/core";
 
 type TriggerAwaitedReturn<T> = T extends (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -57,25 +58,19 @@ export type UseQueueResult<TData, TError, TTriggerInput, TMeta = object> = {
   /** Add item to queue and execute. Returns promise for this item. */
   trigger: (input?: TTriggerInput) => Promise<SpooshResponse<TData, TError>>;
 
-  /** All items in queue with their current status */
-  queue: QueueItem<TData, TError, TMeta>[];
+  /** All tasks in queue with their current status */
+  tasks: QueueItem<TData, TError, TMeta>[];
 
-  /** Number of pending items */
-  pending: number;
+  /** Queue statistics (pending/loading/settled/success/failed/total/percentage) */
+  stats: QueueStats;
 
-  /** True if any item is currently loading */
-  loading: boolean;
-
-  /** Overall queue progress */
-  progress: QueueProgress;
-
-  /** Abort item by ID, or all items if no ID */
+  /** Abort task by ID, or all tasks if no ID */
   abort: (id?: string) => void;
 
-  /** Retry failed item by ID, or all failed if no ID */
+  /** Retry failed task by ID, or all failed if no ID */
   retry: (id?: string) => Promise<void>;
 
-  /** Remove item by ID, or all finished if no ID */
+  /** Remove task by ID, or all finished if no ID */
   remove: (id?: string) => void;
 
   /** Abort all and clear queue */

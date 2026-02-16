@@ -109,22 +109,16 @@ export function createUseQueue<
       }
     }, [concurrency, controller]);
 
-    const queue = useSyncExternalStore(
+    const tasks = useSyncExternalStore(
       controller.subscribe,
       controller.getQueue,
       controller.getQueue
     );
 
-    const progress = controller.getProgress();
-    const pending = queue.filter((i) => i.status === "pending").length;
-    const loading = queue.some((i) => i.status === "loading");
-
     return {
       trigger: (input?: unknown) => controller.trigger(input ?? {}),
-      queue,
-      pending,
-      loading,
-      progress,
+      tasks,
+      stats: controller.getStats(),
       abort: controller.abort,
       retry: controller.retry,
       remove: controller.remove,
