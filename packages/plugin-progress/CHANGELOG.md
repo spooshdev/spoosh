@@ -1,5 +1,9 @@
 # @spoosh/plugin-progress
 
+## 0.3.0
+
+- Support `queue` operation type
+
 ## 0.2.0
 
 - Add devtool tracing support

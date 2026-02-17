@@ -1,5 +1,9 @@
 # @spoosh/plugin-retry
 
+## 0.4.0
+
+- Support `queue` operation type
+
 ## 0.3.1
 
 - Bump @spoosh/core to 0.13.2

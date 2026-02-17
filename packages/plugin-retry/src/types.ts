@@ -75,6 +75,10 @@ export interface RetryWriteOptions {
 
 export type RetryInfiniteReadOptions = RetryReadOptions;
 
+export type RetryQueueOptions = RetryReadOptions;
+
 export type RetryReadResult = object;
 
 export type RetryWriteResult = object;
+
+export type RetryQueueResult = object;

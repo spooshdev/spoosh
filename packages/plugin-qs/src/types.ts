@@ -16,6 +16,12 @@ export interface QsInfiniteReadHookOptions {
   qs?: QsOptions;
 }
 
+export interface QsQueueHookOptions {
+  qs?: QsOptions;
+}
+
 export type QsReadResult = object;
 
 export type QsWriteResult = object;
+
+export type QsQueueResult = object;

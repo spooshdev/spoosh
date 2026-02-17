@@ -1,6 +1,6 @@
 {
   "name": "@spoosh/plugin-qs",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Query string serialization plugin for Spoosh with nested object support",
   "license": "MIT",
   "repository": {
@@ -44,7 +44,7 @@
     "qs": "^6.13.0"
   },
   "peerDependencies": {
-    "@spoosh/core": ">=0.13.0"
+    "@spoosh/core": ">=0.14.0"
   },
   "devDependencies": {
     "@spoosh/core": "workspace:*",

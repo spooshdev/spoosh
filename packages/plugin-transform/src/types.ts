@@ -26,9 +26,18 @@ export interface TransformWriteOptions {
 
 export type TransformInfiniteReadOptions = object;
 
+export interface TransformQueueOptions {
+  /** Per-request transform function for response data. */
+  transform?: ResponseTransformer<unknown, unknown>;
+}
+
 export type TransformReadResult = object;
 
 export type TransformWriteResult = {
+  transformedData?: unknown;
+};
+
+export type TransformQueueResult = {
   transformedData?: unknown;
 };
 

@@ -1,5 +1,9 @@
 # @spoosh/plugin-qs
 
+## 0.4.0
+
+- Support `queue` operation type
+
 ## 0.3.0
 
 - Add devtool tracing support

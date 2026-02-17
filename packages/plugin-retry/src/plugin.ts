@@ -6,8 +6,10 @@ import type {
   RetryReadOptions,
   RetryWriteOptions,
   RetryInfiniteReadOptions,
+  RetryQueueOptions,
   RetryReadResult,
   RetryWriteResult,
+  RetryQueueResult,
   ShouldRetryCallback,
 } from "./types";
 import { DEFAULT_RETRY_STATUS_CODES } from "./types";
@@ -51,8 +53,10 @@ export function retryPlugin(config: RetryPluginConfig = {}): SpooshPlugin<{
   readOptions: RetryReadOptions;
   writeOptions: RetryWriteOptions;
   infiniteReadOptions: RetryInfiniteReadOptions;
+  queueOptions: RetryQueueOptions;
   readResult: RetryReadResult;
   writeResult: RetryWriteResult;
+  queueResult: RetryQueueResult;
 }> {
   const {
     retries: defaultRetries = 3,
@@ -62,7 +66,7 @@ export function retryPlugin(config: RetryPluginConfig = {}): SpooshPlugin<{
 
   return {
     name: PLUGIN_NAME,
-    operations: ["read", "write", "infiniteRead"],
+    operations: ["read", "write", "infiniteRead", "queue"],
     priority: 200,
 
     middleware: async (context, next) => {

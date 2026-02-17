@@ -6,8 +6,10 @@ import type {
   QsReadHookOptions,
   QsWriteHookOptions,
   QsInfiniteReadHookOptions,
+  QsQueueHookOptions,
   QsReadResult,
   QsWriteResult,
+  QsQueueResult,
 } from "./types";
 
 const PLUGIN_NAME = "spoosh:qs";
@@ -46,12 +48,14 @@ export function qsPlugin(config: QsPluginConfig = {}): SpooshPlugin<{
   readOptions: QsReadHookOptions;
   writeOptions: QsWriteHookOptions;
   infiniteReadOptions: QsInfiniteReadHookOptions;
+  queueOptions: QsQueueHookOptions;
   readResult: QsReadResult;
   writeResult: QsWriteResult;
+  queueResult: QsQueueResult;
 }> {
   return {
     name: PLUGIN_NAME,
-    operations: ["read", "write", "infiniteRead"],
+    operations: ["read", "write", "infiniteRead", "queue"],
 
     middleware: async (context, next) => {
       const t = context.tracer?.(PLUGIN_NAME);

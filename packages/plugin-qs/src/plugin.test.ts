@@ -9,9 +9,14 @@ describe("qsPlugin", () => {
       expect(plugin.name).toBe("spoosh:qs");
     });
 
-    it("should operate on read, write, and infiniteRead operations", () => {
+    it("should operate on read, write, infiniteRead, and queue operations", () => {
       const plugin = qsPlugin();
-      expect(plugin.operations).toEqual(["read", "write", "infiniteRead"]);
+      expect(plugin.operations).toEqual([
+        "read",
+        "write",
+        "infiniteRead",
+        "queue",
+      ]);
     });
   });
 

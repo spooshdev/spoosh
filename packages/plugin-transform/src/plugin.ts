@@ -3,8 +3,10 @@ import type { SpooshPlugin } from "@spoosh/core";
 import type {
   TransformReadOptions,
   TransformWriteOptions,
+  TransformQueueOptions,
   TransformReadResult,
   TransformWriteResult,
+  TransformQueueResult,
   TransformOptions,
 } from "./types";
 
@@ -47,12 +49,14 @@ const PLUGIN_NAME = "spoosh:transform";
 export function transformPlugin(): SpooshPlugin<{
   readOptions: TransformReadOptions;
   writeOptions: TransformWriteOptions;
+  queueOptions: TransformQueueOptions;
   readResult: TransformReadResult;
   writeResult: TransformWriteResult;
+  queueResult: TransformQueueResult;
 }> {
   return {
     name: PLUGIN_NAME,
-    operations: ["read", "write"],
+    operations: ["read", "write", "queue"],
 
     afterResponse: async (context, response) => {
       const t = context.tracer?.(PLUGIN_NAME);

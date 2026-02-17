@@ -21,10 +21,16 @@ export interface ProgressWriteOptions {
 
 export type ProgressInfiniteReadOptions = ProgressReadOptions;
 
+export type ProgressQueueOptions = ProgressReadOptions;
+
 export interface ProgressReadResult {
   progress?: ProgressInfo;
 }
 
 export interface ProgressWriteResult {
+  progress?: ProgressInfo;
+}
+
+export interface ProgressQueueResult {
   progress?: ProgressInfo;
 }

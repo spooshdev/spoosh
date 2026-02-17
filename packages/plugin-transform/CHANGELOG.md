@@ -1,5 +1,9 @@
 # @spoosh/plugin-transform
 
+## 0.7.0
+
+- Support `queue` operation type
+
 ## 0.6.0
 
 - Add devtool tracing support
