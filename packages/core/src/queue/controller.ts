@@ -348,12 +348,28 @@ export function createQueueController<
     },
 
     remove: (id) => {
-      if (id) {
-        abortControllers.get(id)?.abort();
-        const idx = queue.findIndex((i) => i.id === id);
+      const abortedResponse = {
+        error: new Error("Removed") as TError,
+        aborted: true,
+      } as SpooshResponse<TData, TError>;
 
-        if (idx !== -1) {
-          queue.splice(idx, 1);
+      if (id) {
+        const item = queue.find((i) => i.id === id);
+
+        if (item) {
+          if (item.status === "pending") {
+            item.status = "aborted";
+            itemPromises.get(id)?.resolve(abortedResponse);
+            itemPromises.delete(id);
+          } else if (item.status === "running") {
+            abortControllers.get(id)?.abort();
+          }
+
+          const idx = queue.findIndex((i) => i.id === id);
+
+          if (idx !== -1) {
+            queue.splice(idx, 1);
+          }
         }
       } else {
         const active = queue.filter(
