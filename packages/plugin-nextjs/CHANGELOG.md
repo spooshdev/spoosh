@@ -1,5 +1,9 @@
 # @spoosh/plugin-nextjs
 
+## 0.4.0
+
+- Support `queue` operation type
+
 ## 0.3.1
 
 - Fix params not resolving correctly

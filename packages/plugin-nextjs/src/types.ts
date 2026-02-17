@@ -25,6 +25,16 @@ export interface NextjsWriteTriggerOptions {
 
 export type NextjsInfiniteReadOptions = object;
 
+export interface NextjsQueueTriggerOptions {
+  /** Additional paths to revalidate after queue item completes */
+  revalidatePaths?: string[];
+
+  /** Whether to trigger server revalidation. Overrides plugin default. */
+  serverRevalidate?: boolean;
+}
+
 export type NextjsReadResult = object;
 
 export type NextjsWriteResult = object;
+
+export type NextjsQueueResult = object;

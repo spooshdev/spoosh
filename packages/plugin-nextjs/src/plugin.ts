@@ -6,9 +6,11 @@ import type {
   NextjsReadOptions,
   NextjsWriteOptions,
   NextjsWriteTriggerOptions,
+  NextjsQueueTriggerOptions,
   NextjsInfiniteReadOptions,
   NextjsReadResult,
   NextjsWriteResult,
+  NextjsQueueResult,
 } from "./types";
 
 const PLUGIN_NAME = "spoosh:nextjs";
@@ -46,15 +48,17 @@ export function nextjsPlugin(config: NextjsPluginConfig = {}): SpooshPlugin<{
   readOptions: NextjsReadOptions;
   writeOptions: NextjsWriteOptions;
   writeTriggerOptions: NextjsWriteTriggerOptions;
+  queueTriggerOptions: NextjsQueueTriggerOptions;
   infiniteReadOptions: NextjsInfiniteReadOptions;
   readResult: NextjsReadResult;
   writeResult: NextjsWriteResult;
+  queueResult: NextjsQueueResult;
 }> {
   const { serverRevalidator, skipServerRevalidation = false } = config;
 
   return {
     name: PLUGIN_NAME,
-    operations: ["write"],
+    operations: ["write", "queue"],
 
     middleware: async (context, next) => {
       const t = context.tracer?.(PLUGIN_NAME);
