@@ -1,5 +1,9 @@
 # @spoosh/core
 
+## 0.14.0
+
+- Add `queue` controller support for queuing multiple requests to the same endpoint.
+
 ## 0.13.3
 
 - Fix global `Content-Type` header override `form`, `urlencoded`, and `json` body helpers.

@@ -1,5 +1,9 @@
 # @spoosh/react
 
+## 0.14.0
+
+- Add `useQueue` hook for queuing multiple requests to the same endpoint.
+
 ## 0.10.1
 
 - Bump @spoosh/core to 0.13.2
