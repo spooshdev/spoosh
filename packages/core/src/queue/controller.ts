@@ -36,6 +36,7 @@ export function createQueueController<
 ): QueueController<TData, TError, TMeta> {
   const { path, method, operationType, hookOptions = {} } = config;
   const concurrency = config.concurrency ?? DEFAULT_CONCURRENCY;
+  const autoStart = config.autoStart ?? true;
   const { api, stateManager, eventEmitter, pluginExecutor } = context;
 
   const semaphore = new Semaphore(concurrency);
@@ -45,6 +46,7 @@ export function createQueueController<
   const itemPromises = new Map<string, ItemPromiseHandlers<TData, TError>>();
 
   let cachedQueueSnapshot: QueueItem<TData, TError, TMeta>[] = [];
+  let started = autoStart;
 
   const notify = () => {
     cachedQueueSnapshot = [...queue];
@@ -204,6 +206,14 @@ export function createQueueController<
     }
   };
 
+  const processPendingItems = () => {
+    for (const item of queue) {
+      if (item.status === "pending") {
+        executeItem(item);
+      }
+    }
+  };
+
   return {
     trigger(input: QueueTriggerInput) {
       const id = generateId();
@@ -221,7 +231,9 @@ export function createQueueController<
         }
       );
 
-      executeItem(item);
+      if (started) {
+        executeItem(item);
+      }
 
       return promise;
     },
@@ -425,5 +437,17 @@ export function createQueueController<
 
       semaphore.setConcurrency(newConcurrency);
     },
+
+    start: () => {
+      if (started) {
+        return;
+      }
+
+      started = true;
+      notify();
+      processPendingItems();
+    },
+
+    isStarted: () => started,
   };
 }

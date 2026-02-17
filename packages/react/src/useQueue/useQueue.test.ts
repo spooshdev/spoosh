@@ -66,7 +66,7 @@ function createTestHooks() {
 
 describe("useQueue", () => {
   describe("Basic Functionality", () => {
-    it("returns trigger, tasks, stats, abort, retry, remove, clear", () => {
+    it("returns trigger, tasks, stats, abort, retry, remove, clear, start, isStarted", () => {
       const { useQueue } = createTestHooks();
 
       const { result } = renderHook(() =>
@@ -80,6 +80,8 @@ describe("useQueue", () => {
       expect(result.current).toHaveProperty("retry");
       expect(result.current).toHaveProperty("remove");
       expect(result.current).toHaveProperty("clear");
+      expect(result.current).toHaveProperty("start");
+      expect(result.current).toHaveProperty("isStarted");
     });
 
     it("initial tasks is empty array", () => {
@@ -581,6 +583,136 @@ describe("useQueue", () => {
 
       expect(calls).toHaveLength(1);
       expect(middlewareSpy).toHaveBeenCalled();
+    });
+  });
+
+  describe("autoStart", () => {
+    it("defaults to autoStart true", () => {
+      const { useQueue } = createTestHooks();
+
+      const { result } = renderHook(() =>
+        useQueue((api: any) => api("uploads").POST())
+      );
+
+      expect(result.current.isStarted).toBe(true);
+    });
+
+    it("does not execute items when autoStart is false", async () => {
+      const { useQueue, calls } = createTestHooks();
+
+      const { result } = renderHook(() =>
+        useQueue((api: any) => api("uploads").POST(), { autoStart: false })
+      );
+
+      expect(result.current.isStarted).toBe(false);
+
+      act(() => {
+        result.current.trigger({ body: { file: "1" } } as any);
+        result.current.trigger({ body: { file: "2" } } as any);
+      });
+
+      await waitFor(() => {
+        expect(result.current.tasks).toHaveLength(2);
+      });
+
+      expect(calls).toHaveLength(0);
+      expect(result.current.tasks[0]?.status).toBe("pending");
+      expect(result.current.tasks[1]?.status).toBe("pending");
+    });
+
+    it("executes pending items when start is called", async () => {
+      const { useQueue, calls } = createTestHooks();
+
+      const { result } = renderHook(() =>
+        useQueue((api: any) => api("uploads").POST(), { autoStart: false })
+      );
+
+      act(() => {
+        result.current.trigger({ body: { file: "1" } } as any);
+        result.current.trigger({ body: { file: "2" } } as any);
+      });
+
+      await waitFor(() => {
+        expect(result.current.tasks).toHaveLength(2);
+      });
+
+      expect(calls).toHaveLength(0);
+
+      act(() => {
+        result.current.start();
+      });
+
+      await waitFor(() => {
+        expect(result.current.tasks[0]?.status).toBe("success");
+        expect(result.current.tasks[1]?.status).toBe("success");
+      });
+
+      expect(calls).toHaveLength(2);
+    });
+
+    it("executes new items immediately after start is called", async () => {
+      const { useQueue, calls } = createTestHooks();
+
+      const { result } = renderHook(() =>
+        useQueue((api: any) => api("uploads").POST(), { autoStart: false })
+      );
+
+      act(() => {
+        result.current.trigger({ body: { file: "1" } } as any);
+      });
+
+      await waitFor(() => {
+        expect(result.current.tasks).toHaveLength(1);
+      });
+
+      expect(calls).toHaveLength(0);
+
+      act(() => {
+        result.current.start();
+      });
+
+      await waitFor(() => {
+        expect(result.current.tasks[0]?.status).toBe("success");
+      });
+
+      await act(async () => {
+        await result.current.trigger({ body: { file: "2" } } as any);
+      });
+
+      expect(calls).toHaveLength(2);
+    });
+
+    it("respects concurrency when starting", async () => {
+      const { useQueue, setDelay } = createTestHooks();
+      setDelay(100);
+
+      const { result } = renderHook(() =>
+        useQueue((api: any) => api("uploads").POST(), {
+          autoStart: false,
+          concurrency: 1,
+        })
+      );
+
+      act(() => {
+        result.current.trigger({ body: { file: "1" } } as any);
+        result.current.trigger({ body: { file: "2" } } as any);
+        result.current.trigger({ body: { file: "3" } } as any);
+      });
+
+      await waitFor(() => {
+        expect(result.current.tasks).toHaveLength(3);
+      });
+
+      act(() => {
+        result.current.start();
+      });
+
+      await waitFor(() => {
+        expect(result.current.stats.running).toBe(1);
+        expect(result.current.stats.pending).toBe(2);
+      });
+
+      result.current.clear();
     });
   });
 });

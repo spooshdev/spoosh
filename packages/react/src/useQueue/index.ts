@@ -118,7 +118,7 @@ export function createUseQueue<
       );
     }
 
-    const { concurrency, ...hookOptions } = queueOptions ?? {};
+    const { concurrency, autoStart, ...hookOptions } = queueOptions ?? {};
 
     const controllerRef = useRef<QueueController<TData, TError> | null>(null);
 
@@ -127,6 +127,7 @@ export function createUseQueue<
         path: captured.path,
         method: captured.method,
         concurrency,
+        autoStart,
         operationType: "queue",
         hookOptions,
       };
@@ -161,6 +162,8 @@ export function createUseQueue<
       retry: controller.retry,
       remove: controller.remove,
       clear: controller.clear,
+      start: controller.start,
+      isStarted: controller.isStarted(),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any;
   }

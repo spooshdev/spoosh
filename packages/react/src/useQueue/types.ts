@@ -44,6 +44,9 @@ export type QueueTriggerInput<T> =
 export interface UseQueueOptions {
   /** Maximum concurrent operations. Defaults to 3. */
   concurrency?: number;
+
+  /** Whether to start processing immediately on trigger. Defaults to true. */
+  autoStart?: boolean;
 }
 
 /**
@@ -55,7 +58,7 @@ export interface UseQueueOptions {
  * @template TMeta - Plugin-contributed metadata on queue items
  */
 export type UseQueueResult<TData, TError, TTriggerInput, TMeta = object> = {
-  /** Add item to queue and execute. Returns promise for this item. */
+  /** Add item to queue and execute (if autoStart is true). Returns promise for this item. */
   trigger: (input?: TTriggerInput) => Promise<SpooshResponse<TData, TError>>;
 
   /** All tasks in queue with their current status */
@@ -75,6 +78,12 @@ export type UseQueueResult<TData, TError, TTriggerInput, TMeta = object> = {
 
   /** Abort all and clear queue */
   clear: () => void;
+
+  /** Start processing queued items. Only needed when autoStart is false. */
+  start: () => void;
+
+  /** Whether queue processing has started */
+  isStarted: boolean;
 };
 
 /**

@@ -128,7 +128,7 @@ describe("injectQueue", () => {
   });
 
   describe("Basic Functionality", () => {
-    it("returns trigger, tasks, stats, abort, retry, remove, clear", () => {
+    it("returns trigger, tasks, stats, abort, retry, remove, clear, start, isStarted", () => {
       const { injectQueue } = createTestHooks();
 
       const result = injectQueue((api: any) => api("uploads").POST());
@@ -140,6 +140,8 @@ describe("injectQueue", () => {
       expect(result).toHaveProperty("retry");
       expect(result).toHaveProperty("remove");
       expect(result).toHaveProperty("clear");
+      expect(result).toHaveProperty("start");
+      expect(result).toHaveProperty("isStarted");
     });
 
     it("initial tasks is empty array", () => {
@@ -551,6 +553,128 @@ describe("injectQueue", () => {
 
       expect(calls).toHaveLength(1);
       expect(middlewareSpy).toHaveBeenCalled();
+    });
+  });
+
+  describe("autoStart", () => {
+    it("defaults to autoStart true", () => {
+      const { injectQueue } = createTestHooks();
+
+      const result = injectQueue((api: any) => api("uploads").POST());
+
+      expect(result.isStarted()).toBe(true);
+    });
+
+    it("does not execute items when autoStart is false", async () => {
+      const { injectQueue, calls } = createTestHooks();
+
+      const result = injectQueue((api: any) => api("uploads").POST(), {
+        autoStart: false,
+      });
+
+      expect(result.isStarted()).toBe(false);
+
+      result.trigger({ body: { file: "1" } } as any);
+      result.trigger({ body: { file: "2" } } as any);
+
+      await new Promise((r) => setTimeout(r, 20));
+
+      expect(calls).toHaveLength(0);
+
+      const tasks = result.tasks();
+      expect(tasks).toHaveLength(2);
+      expect(tasks[0]?.status).toBe("pending");
+      expect(tasks[1]?.status).toBe("pending");
+    });
+
+    it("executes pending items when start is called", async () => {
+      const { injectQueue, calls } = createTestHooks();
+
+      const result = injectQueue((api: any) => api("uploads").POST(), {
+        autoStart: false,
+      });
+
+      result.trigger({ body: { file: "1" } } as any);
+      result.trigger({ body: { file: "2" } } as any);
+
+      await new Promise((r) => setTimeout(r, 20));
+
+      expect(calls).toHaveLength(0);
+
+      result.start();
+
+      await new Promise((r) => setTimeout(r, 50));
+
+      expect(calls).toHaveLength(2);
+
+      const tasks = result.tasks();
+      expect(tasks[0]?.status).toBe("success");
+      expect(tasks[1]?.status).toBe("success");
+    });
+
+    it("updates isStarted signal when start is called", async () => {
+      const { injectQueue } = createTestHooks();
+
+      const result = injectQueue((api: any) => api("uploads").POST(), {
+        autoStart: false,
+      });
+
+      expect(result.isStarted()).toBe(false);
+
+      result.start();
+
+      await new Promise((r) => setTimeout(r, 10));
+
+      expect(result.isStarted()).toBe(true);
+    });
+
+    it("executes new items immediately after start is called", async () => {
+      const { injectQueue, calls } = createTestHooks();
+
+      const result = injectQueue((api: any) => api("uploads").POST(), {
+        autoStart: false,
+      });
+
+      result.trigger({ body: { file: "1" } } as any);
+
+      await new Promise((r) => setTimeout(r, 10));
+      expect(calls).toHaveLength(0);
+
+      result.start();
+
+      await new Promise((r) => setTimeout(r, 20));
+
+      result.trigger({ body: { file: "2" } } as any);
+
+      await new Promise((r) => setTimeout(r, 50));
+
+      expect(calls).toHaveLength(2);
+    });
+
+    it("respects concurrency when starting", async () => {
+      const { injectQueue, setDelay } = createTestHooks();
+      setDelay(100);
+
+      const result = injectQueue((api: any) => api("uploads").POST(), {
+        autoStart: false,
+        concurrency: 1,
+      });
+
+      result.trigger({ body: { file: "1" } } as any);
+      result.trigger({ body: { file: "2" } } as any);
+      result.trigger({ body: { file: "3" } } as any);
+
+      await new Promise((r) => setTimeout(r, 10));
+
+      result.start();
+
+      await new Promise((r) => setTimeout(r, 20));
+
+      const stats = result.stats();
+      expect(stats.running).toBe(1);
+      expect(stats.pending).toBe(2);
+
+      result.clear();
     });
   });
 });
