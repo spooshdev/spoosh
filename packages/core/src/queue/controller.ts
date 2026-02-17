@@ -68,15 +68,21 @@ export function createQueueController<
   const executeItem = async (
     item: QueueItem<TData, TError, TMeta>
   ): Promise<SpooshResponse<TData, TError>> => {
-    await semaphore.acquire();
+    const acquired = await semaphore.acquire();
 
-    if (item.status === "aborted") {
-      semaphore.release();
+    if (!acquired || item.status === "aborted") {
+      if (acquired) {
+        semaphore.release();
+      }
+
       const response = {
         error: new Error("Aborted") as TError,
+        aborted: true,
       } as SpooshResponse<TData, TError>;
-      itemPromises.get(item.id)?.reject(response.error);
+
+      itemPromises.get(item.id)?.resolve(response);
       itemPromises.delete(item.id);
+
       return response;
     }
 
@@ -161,17 +167,20 @@ export function createQueueController<
 
       return response;
     } catch (err) {
-      if (abortController.signal.aborted) {
+      const isAborted = abortController.signal.aborted;
+
+      if (isAborted) {
         updateItem(item.id, { status: "aborted" });
       } else {
         updateItem(item.id, { status: "error", error: err as TError });
       }
 
-      const errorResponse = { error: err as TError } as SpooshResponse<
-        TData,
-        TError
-      >;
-      itemPromises.get(item.id)?.reject(err);
+      const errorResponse = {
+        error: err as TError,
+        aborted: isAborted,
+      } as SpooshResponse<TData, TError>;
+
+      itemPromises.get(item.id)?.resolve(errorResponse);
 
       return errorResponse;
     } finally {
@@ -299,8 +308,38 @@ export function createQueueController<
     },
 
     clear: () => {
-      abortControllers.forEach((c) => c.abort());
+      const queryKeysToDiscard: string[] = [];
+
+      for (const item of queue) {
+        if (item.status === "pending" || item.status === "running") {
+          abortControllers.get(item.id)?.abort();
+          item.status = "aborted";
+
+          const abortedResponse = {
+            error: new Error("Aborted") as TError,
+            aborted: true,
+          } as SpooshResponse<TData, TError>;
+
+          itemPromises.get(item.id)?.resolve(abortedResponse);
+          itemPromises.delete(item.id);
+
+          const queryKey = stateManager.createQueryKey({
+            path,
+            method,
+            options: { ...item.input, _queueId: item.id },
+          });
+          queryKeysToDiscard.push(queryKey);
+        }
+      }
+
+      if (queryKeysToDiscard.length > 0) {
+        eventEmitter.emit("spoosh:queue-clear", {
+          queryKeys: queryKeysToDiscard,
+        });
+      }
+
       queue.length = 0;
+      semaphore.reset();
       notify();
     },
 

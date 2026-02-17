@@ -4,25 +4,27 @@
  */
 export class Semaphore {
   private current = 0;
-  private waiting: Array<() => void> = [];
+  private waiting: Array<(acquired: boolean) => void> = [];
 
   constructor(private max: number) {}
 
-  async acquire(): Promise<void> {
+  async acquire(): Promise<boolean> {
     if (this.current < this.max) {
       this.current++;
-      return;
+      return true;
     }
 
     return new Promise((resolve) => this.waiting.push(resolve));
   }
 
   release(): void {
-    this.current--;
+    if (this.current > 0) {
+      this.current--;
+    }
 
     if (this.waiting.length > 0) {
       this.current++;
-      this.waiting.shift()!();
+      this.waiting.shift()!(true);
     }
   }
 
@@ -35,8 +37,25 @@ export class Semaphore {
 
       for (let i = 0; i < slotsToRelease; i++) {
         this.current++;
-        this.waiting.shift()!();
+        this.waiting.shift()!(true);
       }
     }
+  }
+
+  reset(): void {
+    this.current = 0;
+
+    while (this.waiting.length > 0) {
+      const resolve = this.waiting.shift()!;
+      resolve(false);
+    }
+  }
+
+  getCurrent(): number {
+    return this.current;
+  }
+
+  getWaitingCount(): number {
+    return this.waiting.length;
   }
 }
