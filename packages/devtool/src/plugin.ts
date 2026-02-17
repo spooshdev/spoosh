@@ -112,7 +112,24 @@ export function devtool(
 
       context.tracer = createRequestTracer;
 
-      const response = await next();
+      let response: SpooshResponse<unknown, unknown> | undefined;
+
+      try {
+        response = await next();
+      } catch (error) {
+        const isAbortError =
+          error instanceof Error &&
+          (error.name === "AbortError" || error.message === "Aborted");
+
+        const errorResponse = {
+          error,
+          aborted: isAbortError,
+        } as SpooshResponse<unknown, unknown>;
+
+        store.endTrace(trace.id, errorResponse);
+
+        return errorResponse;
+      }
 
       const isDebounced =
         response?.status === 0 &&
@@ -187,6 +204,13 @@ export function devtool(
         "spoosh:devtool-event",
         (event) => {
           store.addEvent(event);
+        }
+      );
+
+      ctx.eventEmitter.on<{ queryKeys: string[] }>(
+        "spoosh:queue-clear",
+        ({ queryKeys }) => {
+          store.discardTracesByQueryKeys(queryKeys);
         }
       );
 

@@ -232,6 +232,28 @@ export class DevToolStore implements DevToolStoreInterface {
     this.notify();
   }
 
+  discardTracesByQueryKeys(queryKeys: string[]): void {
+    const queryKeySet = new Set(queryKeys);
+
+    for (const [traceId, trace] of this.activeTraces.entries()) {
+      if (queryKeySet.has(trace.queryKey)) {
+        const abortedResponse = {
+          error: new Error("Aborted"),
+          aborted: true,
+        } as SpooshResponse<unknown, unknown>;
+
+        trace.endTime = performance.now();
+        trace.duration = trace.endTime - trace.startTime;
+        trace.response = abortedResponse;
+
+        this.traces.push(trace);
+        this.activeTraces.delete(traceId);
+      }
+    }
+
+    this.notify();
+  }
+
   setTraceMeta(traceId: string, meta: Record<string, unknown>): void {
     const trace = this.getTrace(traceId);
 

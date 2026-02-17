@@ -125,6 +125,7 @@ export interface DevToolStoreInterface {
   startTrace(context: PluginContext, resolvedPath: string): OperationTrace;
   endTrace(traceId: string, response?: SpooshResponse<unknown, unknown>): void;
   discardTrace(traceId: string): void;
+  discardTracesByQueryKeys(queryKeys: string[]): void;
   setTraceMeta(traceId: string, meta: Record<string, unknown>): void;
   setTraceHeaders(traceId: string, headers: Record<string, string>): void;
   setSensitiveHeaders(headers: Set<string>): void;
