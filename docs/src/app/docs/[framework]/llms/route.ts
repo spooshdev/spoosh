@@ -17,13 +17,15 @@ function generateContent(framework: "react" | "angular"): string {
 - [Overview](${RAW_BASE_PATH}/hooks/index.mdx): React hooks overview
 - [useRead](${RAW_BASE_PATH}/hooks/use-read.mdx): Fetch data with automatic caching
 - [useWrite](${RAW_BASE_PATH}/hooks/use-write.mdx): Trigger mutations
-- [useInfiniteRead](${RAW_BASE_PATH}/hooks/use-infinite-read.mdx): Paginated data fetching`
+- [useInfiniteRead](${RAW_BASE_PATH}/hooks/use-infinite-read.mdx): Paginated data fetching
+- [useQueue](${RAW_BASE_PATH}/hooks/use-queue.mdx): Concurrent request queues with progress tracking`
       : `## Injects
 
 - [Overview](${RAW_BASE_PATH}/injects/index.mdx): Angular inject functions overview
 - [injectRead](${RAW_BASE_PATH}/injects/inject-read.mdx): Fetch data with Signals
 - [injectWrite](${RAW_BASE_PATH}/injects/inject-write.mdx): Trigger mutations
-- [injectInfiniteRead](${RAW_BASE_PATH}/injects/inject-infinite-read.mdx): Paginated data fetching`;
+- [injectInfiniteRead](${RAW_BASE_PATH}/injects/inject-infinite-read.mdx): Paginated data fetching
+- [injectQueue](${RAW_BASE_PATH}/injects/inject-queue.mdx): Concurrent request queues with progress tracking`;
 
   const infiniteQueryHook =
     framework === "react" ? "useInfiniteRead" : "injectInfiniteRead";
