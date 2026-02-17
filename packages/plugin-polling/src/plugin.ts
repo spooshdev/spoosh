@@ -40,7 +40,7 @@ const PLUGIN_NAME = "spoosh:polling";
  *
  * // Dynamic interval based on data
  * useRead((api) => api("posts").GET(), {
- *   pollingInterval: (data, error) => error ? 10000 : 5000,
+ *   pollingInterval: ({ data, error }) => error ? 10000 : 5000,
  * });
  * ```
  */
@@ -89,7 +89,7 @@ export function pollingPlugin(): SpooshPlugin<{
 
     const resolvedInterval =
       typeof pollingInterval === "function"
-        ? pollingInterval(source?.data, source?.error)
+        ? pollingInterval({ data: source?.data, error: source?.error })
         : pollingInterval;
 
     if (resolvedInterval === false || resolvedInterval <= 0) {

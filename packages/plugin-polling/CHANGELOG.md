@@ -1,5 +1,9 @@
 # @spoosh/plugin-polling
 
+## 0.4.0
+
+- Restore contextual typing using ctx-based pollingInterval
+
 ## 0.3.0
 
 - Add devtool tracing support

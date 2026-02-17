@@ -1,8 +1,14 @@
+import type { ResolverContext } from "@spoosh/core";
+
 export type PollingIntervalValue = number | false;
 
+export interface PollingIntervalContext<TData = unknown, TError = unknown> {
+  data: TData | undefined;
+  error: TError | undefined;
+}
+
 export type PollingIntervalFn<TData = unknown, TError = unknown> = (
-  data: TData | undefined,
-  error: TError | undefined
+  context: PollingIntervalContext<TData, TError>
 ) => PollingIntervalValue;
 
 export type PollingInterval<TData = unknown, TError = unknown> =
@@ -23,9 +29,13 @@ export type PollingReadResult = object;
 export type PollingWriteResult = object;
 
 declare module "@spoosh/core" {
-  interface PluginResolvers<TContext> {
+  interface PluginResolvers<TContext extends ResolverContext> {
     pollingInterval:
-      | PollingInterval<TContext["data"], TContext["error"]>
+      | PollingIntervalValue
+      | ((context: {
+          data: TContext["data"] | undefined;
+          error: TContext["error"] | undefined;
+        }) => PollingIntervalValue)
       | undefined;
   }
 }

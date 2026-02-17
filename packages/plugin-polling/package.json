@@ -1,6 +1,6 @@
 {
   "name": "@spoosh/plugin-polling",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Automatic polling/refetching plugin for Spoosh",
   "license": "MIT",
   "repository": {

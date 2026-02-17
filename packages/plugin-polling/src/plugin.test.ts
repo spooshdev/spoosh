@@ -227,7 +227,10 @@ describe("pollingPlugin", () => {
         createMockResponse({ data: responseData })
       );
 
-      expect(pollingIntervalFn).toHaveBeenCalledWith(responseData, undefined);
+      expect(pollingIntervalFn).toHaveBeenCalledWith({
+        data: responseData,
+        error: undefined,
+      });
     });
 
     it("should pass response error to pollingInterval on first request with empty cache", () => {
@@ -250,7 +253,10 @@ describe("pollingPlugin", () => {
         createMockResponse({ error: responseError, status: 404 })
       );
 
-      expect(pollingIntervalFn).toHaveBeenCalledWith(undefined, responseError);
+      expect(pollingIntervalFn).toHaveBeenCalledWith({
+        data: undefined,
+        error: responseError,
+      });
     });
   });
 
@@ -275,7 +281,10 @@ describe("pollingPlugin", () => {
         createMockResponse({ data: responseData })
       );
 
-      expect(pollingIntervalFn).toHaveBeenCalledWith(responseData, undefined);
+      expect(pollingIntervalFn).toHaveBeenCalledWith({
+        data: responseData,
+        error: undefined,
+      });
     });
 
     it("should use dynamic interval value from function", () => {
@@ -330,7 +339,10 @@ describe("pollingPlugin", () => {
         createMockResponse({ error: responseError, status: 500 })
       );
 
-      expect(pollingIntervalFn).toHaveBeenCalledWith(undefined, responseError);
+      expect(pollingIntervalFn).toHaveBeenCalledWith({
+        data: undefined,
+        error: responseError,
+      });
     });
 
     it("should disable polling when function returns false", () => {

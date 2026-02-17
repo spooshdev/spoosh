@@ -12,7 +12,7 @@ export function OrderProcessingPage() {
     (api) => api("orders/:id/status").GET({ params: { id: orderId ?? "" } }),
     {
       enabled: Boolean(orderId),
-      pollingInterval: (data) => (data?.status === "paid" ? false : 2_000),
+      pollingInterval: ({ data }) => (data?.status === "paid" ? false : 2_000),
     }
   );
 

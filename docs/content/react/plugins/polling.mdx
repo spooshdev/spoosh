@@ -32,7 +32,7 @@ The polling interval can be a function that adjusts based on the response:
 
 ```typescript
 useRead((api) => api("jobs/:id").GET({ params: { id: jobId } }), {
-  pollingInterval: (data, error) => {
+  pollingInterval: ({ data, error }) => {
     // Stop polling when job is complete
     if (data?.status === "completed") return false;
 
@@ -52,9 +52,9 @@ useRead((api) => api("jobs/:id").GET({ params: { id: jobId } }), {
 
 ### Per-Request Options
 
-| Option            | Type                                                  | Description                                                                     |
-| ----------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------- |
-| `pollingInterval` | `number \| false \| (data, error) => number \| false` | Polling interval in ms, `false` to disable, or a function for dynamic intervals |
+| Option            | Type                                                      | Description                                                                     |
+| ----------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `pollingInterval` | `number \| false \| ({ data, error }) => number \| false` | Polling interval in ms, `false` to disable, or a function for dynamic intervals |
 
 ## Example: Real-Time Dashboard
 

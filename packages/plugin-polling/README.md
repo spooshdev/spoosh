@@ -26,7 +26,7 @@ useRead((api) => api("posts").GET(), { pollingInterval: false });
 
 // Dynamic polling interval based on data/error
 useRead((api) => api("booking/:id").GET({ params: { id: 123 } }), {
-  pollingInterval: (data, error) => {
+  pollingInterval: ({ data, error }) => {
     if (error) return 10000; // Slower polling on error
     if (data?.status === "pending") return 1000; // Fast polling for pending
     return 5000; // Normal polling
@@ -38,9 +38,9 @@ useRead((api) => api("booking/:id").GET({ params: { id: 123 } }), {
 
 ### Per-Request Options
 
-| Option            | Type                                                  | Description                                                                               |
-| ----------------- | ----------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| `pollingInterval` | `number \| false \| (data, error) => number \| false` | Polling interval in milliseconds, `false` to disable, or a function for dynamic intervals |
+| Option            | Type                                                      | Description                                                                               |
+| ----------------- | --------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `pollingInterval` | `number \| false \| ({ data, error }) => number \| false` | Polling interval in milliseconds, `false` to disable, or a function for dynamic intervals |
 
 ## Dynamic Polling
 
@@ -48,7 +48,7 @@ The polling interval can be a function that receives the current data and error,
 
 ```typescript
 useRead((api) => api("jobs/:id").GET({ params: { id: jobId } }), {
-  pollingInterval: (data) => {
+  pollingInterval: ({ data }) => {
     // Stop polling when job is complete
     if (data?.status === "completed") return false;
 
