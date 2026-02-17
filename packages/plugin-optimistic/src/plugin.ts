@@ -4,7 +4,6 @@ import type {
   StateManager,
   RequestTracer,
 } from "@spoosh/core";
-import { generateTags } from "@spoosh/core";
 import "@spoosh/plugin-invalidation";
 import type {
   OptimisticWriteOptions,
@@ -72,13 +71,70 @@ function createOptimisticProxy<TSchema>(): TSchema {
   return ((path: string) => createMethodsProxy(path)) as TSchema;
 }
 
-function extractTagsFromPath(path: string): string[] {
-  const pathSegments = path.split("/").filter(Boolean);
-  return generateTags(pathSegments);
+function isParameterSegment(segment: string): boolean {
+  return segment.startsWith(":");
 }
 
-function getExactMatchPath(tags: string[]): string | undefined {
-  return tags.length > 0 ? tags[tags.length - 1] : undefined;
+
+function pathMatchesPattern(
+  actualPath: string,
+  pattern: string
+): {
+  matches: boolean;
+  params: Record<string, string>;
+  paramMapping: Record<string, string>;
+} {
+  const actualSegments = actualPath.split("/").filter(Boolean);
+  const patternSegments = pattern.split("/").filter(Boolean);
+
+  if (actualSegments.length !== patternSegments.length) {
+    return { matches: false, params: {}, paramMapping: {} };
+  }
+
+  const params: Record<string, string> = {};
+  const paramMapping: Record<string, string> = {};
+
+  for (let i = 0; i < patternSegments.length; i++) {
+    const patternSeg = patternSegments[i]!;
+    const actualSeg = actualSegments[i]!;
+
+    if (isParameterSegment(patternSeg)) {
+      const targetParamName = patternSeg.slice(1);
+
+      if (isParameterSegment(actualSeg)) {
+        const actualParamName = actualSeg.slice(1);
+        paramMapping[targetParamName] = actualParamName;
+        continue;
+      }
+
+      params[targetParamName] = actualSeg;
+    } else if (isParameterSegment(actualSeg)) {
+      continue;
+    } else if (patternSeg !== actualSeg) {
+      return { matches: false, params: {}, paramMapping: {} };
+    }
+  }
+
+  return { matches: true, params, paramMapping };
+}
+
+function hasPatternParams(path: string): boolean {
+  return path.split("/").some(isParameterSegment);
+}
+
+function extractPathFromKey(key: string): string | null {
+  try {
+    const parsed = JSON.parse(key) as { path?: string | string[] };
+    const path = parsed.path;
+
+    if (typeof path === "string") {
+      return path;
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -112,6 +168,29 @@ function extractOptionsFromKey(
   }
 }
 
+function mapParamsToTargetNames(
+  actualParams: Record<string, unknown> | undefined,
+  paramMapping: Record<string, string>
+): Record<string, unknown> {
+  if (!actualParams) return {};
+
+  const result: Record<string, unknown> = {};
+
+  for (const [targetName, actualName] of Object.entries(paramMapping)) {
+    if (actualName in actualParams) {
+      result[targetName] = actualParams[actualName];
+    }
+  }
+
+  for (const [key, value] of Object.entries(actualParams)) {
+    if (!Object.values(paramMapping).includes(key)) {
+      result[key] = value;
+    }
+  }
+
+  return result;
+}
+
 function resolveOptimisticTargets(context: PluginContext): OptimisticTarget[] {
   const pluginOptions = context.pluginOptions as
     | OptimisticWriteTriggerOptions
@@ -127,6 +206,72 @@ function resolveOptimisticTargets(context: PluginContext): OptimisticTarget[] {
   return targets as unknown as OptimisticTarget[];
 }
 
+function getMatchingEntries(
+  stateManager: StateManager,
+  targetPath: string,
+  targetMethod: string
+): Array<{
+  key: string;
+  entry: ReturnType<StateManager["getCache"]>;
+  extractedParams: Record<string, string>;
+  paramMapping: Record<string, string>;
+}> {
+  const results: Array<{
+    key: string;
+    entry: ReturnType<StateManager["getCache"]>;
+    extractedParams: Record<string, string>;
+    paramMapping: Record<string, string>;
+  }> = [];
+
+  if (hasPatternParams(targetPath)) {
+    const allEntries = stateManager.getAllCacheEntries();
+
+    for (const { key, entry } of allEntries) {
+      if (key.includes('"type":"infinite-tracker"')) continue;
+      if (!key.includes(`"method":"${targetMethod}"`)) continue;
+
+      const actualPath = extractPathFromKey(key);
+
+      if (!actualPath) continue;
+
+      const { matches, params, paramMapping } = pathMatchesPattern(
+        actualPath,
+        targetPath
+      );
+
+      if (matches) {
+        results.push({ key, entry, extractedParams: params, paramMapping });
+      }
+    }
+  } else {
+    const allEntries = stateManager.getAllCacheEntries();
+
+    for (const { key, entry } of allEntries) {
+      if (key.includes('"type":"infinite-tracker"')) continue;
+      if (!key.includes(`"method":"${targetMethod}"`)) continue;
+
+      const actualPath = extractPathFromKey(key);
+
+      if (!actualPath) continue;
+
+      if (actualPath === targetPath) {
+        results.push({ key, entry, extractedParams: {}, paramMapping: {} });
+      } else if (hasPatternParams(actualPath)) {
+        const { matches, params, paramMapping } = pathMatchesPattern(
+          targetPath,
+          actualPath
+        );
+
+        if (matches) {
+          results.push({ key, entry, extractedParams: params, paramMapping });
+        }
+      }
+    }
+  }
+
+  return results;
+}
+
 function applyOptimisticUpdate(
   stateManager: StateManager,
   target: OptimisticTarget,
@@ -134,32 +279,34 @@ function applyOptimisticUpdate(
 ): OptimisticSnapshot[] {
   if (!target.updater) return [];
 
-  const tags = extractTagsFromPath(target.path);
-  const targetSelfTag = getExactMatchPath(tags);
-
-  if (!targetSelfTag) return [];
-
   const snapshots: OptimisticSnapshot[] = [];
-  const entries = stateManager.getCacheEntriesBySelfTag(targetSelfTag);
+  const matchingEntries = getMatchingEntries(
+    stateManager,
+    target.path,
+    target.method
+  );
 
-  for (const { key, entry } of entries) {
-    if (key.includes('"type":"infinite-tracker"')) {
-      continue;
-    }
-
-    if (!key.includes(`"method":"${target.method}"`)) {
-      continue;
-    }
-
+  for (const { key, entry, extractedParams, paramMapping } of matchingEntries) {
     if (target.where) {
-      const options = extractOptionsFromKey(key);
+      const options = extractOptionsFromKey(key) ?? {};
+      const mappedParams = mapParamsToTargetNames(
+        options.params as Record<string, unknown> | undefined,
+        paramMapping
+      );
+      const mergedOptions = {
+        ...options,
+        params: {
+          ...extractedParams,
+          ...mappedParams,
+        },
+      };
 
-      if (!options || !target.where(options)) {
+      if (!target.where(mergedOptions)) {
         continue;
       }
     }
 
-    if (entry.state.data === undefined) {
+    if (entry?.state.data === undefined) {
       continue;
     }
 
@@ -399,31 +546,38 @@ export function optimisticPlugin(): SpooshPlugin<{
         for (const target of onSuccessTargets) {
           if (!target.updater) continue;
 
-          const tags = extractTagsFromPath(target.path);
-          const targetSelfTag = getExactMatchPath(tags);
+          const matchingEntries = getMatchingEntries(
+            stateManager,
+            target.path,
+            target.method
+          );
 
-          if (!targetSelfTag) continue;
-
-          const entries = stateManager.getCacheEntriesBySelfTag(targetSelfTag);
-
-          for (const { key, entry } of entries) {
-            if (key.includes('"type":"infinite-tracker"')) {
-              continue;
-            }
-
-            if (!key.includes(`"method":"${target.method}"`)) {
-              continue;
-            }
-
+          for (const {
+            key,
+            entry,
+            extractedParams,
+            paramMapping,
+          } of matchingEntries) {
             if (target.where) {
-              const options = extractOptionsFromKey(key);
+              const options = extractOptionsFromKey(key) ?? {};
+              const mappedParams = mapParamsToTargetNames(
+                options.params as Record<string, unknown> | undefined,
+                paramMapping
+              );
+              const mergedOptions = {
+                ...options,
+                params: {
+                  ...extractedParams,
+                  ...mappedParams,
+                },
+              };
 
-              if (!options || !target.where(options)) {
+              if (!target.where(mergedOptions)) {
                 continue;
               }
             }
 
-            if (entry.state.data === undefined) {
+            if (entry?.state.data === undefined) {
               continue;
             }
 

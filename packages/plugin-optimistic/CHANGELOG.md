@@ -1,5 +1,10 @@
 # @spoosh/plugin-optimistic
 
+## 0.6.1
+
+- Improve types for optimistic trigger options
+- Allow passing dynamic param paths directly in the `api`
+
 ## 0.6.0
 
 - Move `optimistic` option to new write trigger options

@@ -3,6 +3,7 @@ import type {
   ExtractData,
   ExtractParamNames,
   HasParams,
+  ReadPaths,
   Simplify,
 } from "@spoosh/core";
 
@@ -213,14 +214,9 @@ export type OptimisticBuilder<
 };
 
 /**
- * Extract paths that have GET methods.
- */
-type ReadPaths<TSchema> = {
-  [K in keyof TSchema & string]: "GET" extends keyof TSchema[K] ? K : never;
-}[keyof TSchema & string];
-
-/**
  * Path methods proxy for optimistic API - only GET.
+ * Resolves literal paths (e.g., "posts/1") to schema keys (e.g., "posts/:id") using FindMatchingKey.
+ * Uses TPath for param extraction to preserve user's param names.
  */
 type OptimisticPathMethods<TSchema, TPath extends string, TResponse> =
   FindMatchingKey<TSchema, TPath> extends infer TKey
@@ -247,9 +243,11 @@ type OptimisticPathMethods<TSchema, TPath extends string, TResponse> =
 
 /**
  * Helper type for creating the optimistic API proxy.
+ * Accepts both schema-defined paths (e.g., "posts/:id") and literal paths (e.g., "posts/1").
+ * Uses union with (string & {}) to allow any string while preserving autocomplete.
  */
 export type OptimisticApiHelper<TSchema, TResponse = unknown> = <
-  TPath extends ReadPaths<TSchema>,
+  TPath extends ReadPaths<TSchema> | (string & {}),
 >(
   path: TPath
 ) => OptimisticPathMethods<TSchema, TPath, TResponse>;
