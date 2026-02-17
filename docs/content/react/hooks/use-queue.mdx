@@ -88,12 +88,13 @@ Each task in the `tasks` array has:
 
 ## Trigger Options
 
-| Option           | Type                               | Description                    |
-| ---------------- | ---------------------------------- | ------------------------------ |
-| `body`           | `TBody`                            | Request body                   |
-| `query`          | `TQuery`                           | Query parameters               |
-| `params`         | `Record<string, string \| number>` | Path parameters                |
-| + plugin options | -                                  | Options from installed plugins |
+| Option           | Type                               | Description                                      |
+| ---------------- | ---------------------------------- | ------------------------------------------------ |
+| `id`             | `string`                           | Custom ID for the task (auto-generated if unset) |
+| `body`           | `TBody`                            | Request body                                     |
+| `query`          | `TQuery`                           | Query parameters                                 |
+| `params`         | `Record<string, string \| number>` | Path parameters                                  |
+| + plugin options | -                                  | Options from installed plugins                   |
 
 ## Progress Tracking
 

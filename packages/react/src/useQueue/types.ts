@@ -31,12 +31,20 @@ type ExtractTriggerParams<I> = I extends { params: infer P }
   ? { params: P }
   : unknown;
 
+type QueueTriggerBase = {
+  /** Custom ID for this queue item. If not provided, one will be auto-generated. */
+  id?: string;
+};
+
 export type QueueTriggerInput<T> =
   ExtractInputFromResponse<TriggerAwaitedReturn<T>> extends infer I
     ? [I] extends [never]
-      ? object
-      : ExtractTriggerQuery<I> & ExtractTriggerBody<I> & ExtractTriggerParams<I>
-    : object;
+      ? QueueTriggerBase
+      : QueueTriggerBase &
+          ExtractTriggerQuery<I> &
+          ExtractTriggerBody<I> &
+          ExtractTriggerParams<I>
+    : QueueTriggerBase;
 
 /**
  * Options for useQueue hook.

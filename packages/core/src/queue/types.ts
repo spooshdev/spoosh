@@ -71,6 +71,9 @@ export interface QueueStats {
  * Input type for queue trigger.
  */
 export interface QueueTriggerInput {
+  /** Custom ID for this queue item. If not provided, one will be auto-generated. */
+  id?: string;
+
   body?: unknown;
   query?: unknown;
   params?: Record<string, string | number>;

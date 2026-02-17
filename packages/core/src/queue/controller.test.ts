@@ -662,4 +662,64 @@ describe("createQueueController", () => {
       });
     });
   });
+
+  describe("custom id", () => {
+    it("should use custom id when provided", async () => {
+      const { controller } = createTestController();
+
+      await controller.trigger({ id: "my-custom-id", body: { file: "1" } });
+
+      const queue = controller.getQueue();
+
+      expect(queue[0]!.id).toBe("my-custom-id");
+    });
+
+    it("should auto-generate id when not provided", async () => {
+      const { controller } = createTestController();
+
+      await controller.trigger({ body: { file: "1" } });
+
+      const queue = controller.getQueue();
+
+      expect(queue[0]!.id).toMatch(/^q-\d+-[a-z0-9]+$/);
+    });
+
+    it("should not include id in stored input", async () => {
+      const { controller } = createTestController();
+
+      await controller.trigger({
+        id: "my-id",
+        body: { filename: "test.txt" },
+      });
+
+      const queue = controller.getQueue();
+
+      expect(queue[0]!.input).toEqual({
+        body: { filename: "test.txt" },
+      });
+      expect(queue[0]!.input).not.toHaveProperty("id");
+    });
+
+    it("should allow abort/retry/remove with custom id", async () => {
+      const { controller, setMockResponse } = createTestController({
+        delay: 50,
+      });
+
+      setMockResponse({ status: 500, error: new Error("Failed") });
+
+      await controller.trigger({ id: "file-1", body: { file: "1" } });
+
+      expect(controller.getQueue()[0]!.status).toBe("error");
+
+      setMockResponse({ status: 200, data: { id: 1, name: "success" } });
+
+      await controller.retry("file-1");
+
+      expect(controller.getQueue()[0]!.status).toBe("success");
+
+      controller.remove("file-1");
+
+      expect(controller.getQueue()).toHaveLength(0);
+    });
+  });
 });

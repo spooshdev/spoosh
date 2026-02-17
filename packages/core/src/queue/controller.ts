@@ -206,11 +206,13 @@ export function createQueueController<
 
   return {
     trigger(input: QueueTriggerInput) {
-      const id = generateId();
+      const { id: customId, ...requestInput } = input;
+      const id = customId ?? generateId();
+
       const item: QueueItem<TData, TError, TMeta> = {
         id,
         status: "pending",
-        input,
+        input: requestInput,
       };
       queue.push(item);
       notify();
