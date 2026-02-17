@@ -44,6 +44,13 @@ export type InvalidationReadResult = object;
 
 export type InvalidationWriteResult = object;
 
+export interface InvalidationQueueTriggerOptions<TSchema = unknown> {
+  /** Unified invalidation configuration */
+  invalidate?: InvalidateOption<TSchema>;
+}
+
+export type InvalidationQueueResult = object;
+
 /**
  * Manual invalidation - tags only, or "*" for global refetch
  */

@@ -5,10 +5,12 @@ import type {
   InvalidationPluginConfig,
   InvalidationWriteOptions,
   InvalidationWriteTriggerOptions,
+  InvalidationQueueTriggerOptions,
   InvalidationReadOptions,
   InvalidationInfiniteReadOptions,
   InvalidationReadResult,
   InvalidationWriteResult,
+  InvalidationQueueResult,
   InvalidationMode,
   InvalidationPluginExports,
   InvalidationInstanceApi,
@@ -132,16 +134,18 @@ export function invalidationPlugin(
   readOptions: InvalidationReadOptions;
   writeOptions: InvalidationWriteOptions;
   writeTriggerOptions: InvalidationWriteTriggerOptions;
+  queueTriggerOptions: InvalidationQueueTriggerOptions;
   infiniteReadOptions: InvalidationInfiniteReadOptions;
   readResult: InvalidationReadResult;
   writeResult: InvalidationWriteResult;
+  queueResult: InvalidationQueueResult;
   instanceApi: InvalidationInstanceApi;
 }> {
   const { defaultMode = "all" } = config;
 
   return {
     name: PLUGIN_NAME,
-    operations: ["write"],
+    operations: ["write", "queue"],
 
     exports(context): InvalidationPluginExports {
       return {

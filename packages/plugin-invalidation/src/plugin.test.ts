@@ -36,9 +36,9 @@ describe("invalidationPlugin", () => {
       expect(plugin.name).toBe("spoosh:invalidation");
     });
 
-    it("should operate on write operations only", () => {
+    it("should operate on write and queue operations", () => {
       const plugin = invalidationPlugin();
-      expect(plugin.operations).toEqual(["write"]);
+      expect(plugin.operations).toEqual(["write", "queue"]);
     });
   });
 

@@ -1,5 +1,9 @@
 # @spoosh/plugin-invalidation
 
+## 0.8.0
+
+- Support `queue` operation type in invalidation plugin
+
 ## 0.7.1
 
 - Fix params not resolving correctly
