@@ -250,12 +250,23 @@ export function createQueueController<
     abort: (id) => {
       const queryKeysToDiscard: string[] = [];
 
+      const abortedResponse = {
+        error: new Error("Aborted") as TError,
+        aborted: true,
+      } as SpooshResponse<TData, TError>;
+
       if (id) {
         const item = queue.find((i) => i.id === id);
 
         if (item && (item.status === "pending" || item.status === "running")) {
+          const wasPending = item.status === "pending";
           abortControllers.get(id)?.abort();
           updateItem(id, { status: "aborted" });
+
+          if (wasPending) {
+            itemPromises.get(id)?.resolve(abortedResponse);
+            itemPromises.delete(id);
+          }
 
           const queryKey = stateManager.createQueryKey({
             path,
@@ -270,7 +281,13 @@ export function createQueueController<
         for (const item of queue) {
           if (item.status === "pending" || item.status === "running") {
             abortControllers.get(item.id)?.abort();
+            const wasPending = item.status === "pending";
             updateItem(item.id, { status: "aborted" });
+
+            if (wasPending) {
+              itemPromises.get(item.id)?.resolve(abortedResponse);
+              itemPromises.delete(item.id);
+            }
 
             const queryKey = stateManager.createQueryKey({
               path,
@@ -299,16 +316,22 @@ export function createQueueController<
           )
         : queue.filter((i) => i.status === "error" || i.status === "aborted");
 
+      const promises: Promise<SpooshResponse<TData, TError>>[] = [];
+
       for (const item of items) {
         updateItem(item.id, { status: "pending", error: undefined });
 
-        itemPromises.set(item.id, {
-          resolve: () => {},
-          reject: () => {},
-        });
+        const promise = new Promise<SpooshResponse<TData, TError>>(
+          (resolve) => {
+            itemPromises.set(item.id, { resolve, reject: () => {} });
+          }
+        );
 
+        promises.push(promise);
         executeItem(item);
       }
+
+      await Promise.all(promises);
     },
 
     remove: (id) => {
@@ -367,6 +390,10 @@ export function createQueueController<
     },
 
     setConcurrency: (newConcurrency: number) => {
+      if (newConcurrency < 1 || !Number.isInteger(newConcurrency)) {
+        return;
+      }
+
       semaphore.setConcurrency(newConcurrency);
     },
   };
