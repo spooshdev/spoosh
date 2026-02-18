@@ -248,7 +248,7 @@ export class MessageThreadComponent {
 
 ## Combining with Plugins
 
-`injectInfiniteRead` works with plugins like cache and deduplication. Each page is cached independently, and deduplication prevents duplicate requests when scrolling quickly:
+`injectInfiniteRead` works with plugins like cache and deduplication. Each page request has its own cache key, and the merged list is derived from these cached responses. Deduplication prevents duplicate requests when scrolling quickly:
 
 ```typescript
 const spoosh = new Spoosh<ApiSchema, Error>("/api").use([
@@ -258,11 +258,140 @@ const spoosh = new Spoosh<ApiSchema, Error>("/api").use([
 ]);
 ```
 
-When a mutation invalidates tags that match infinite scroll queries, all loaded pages are refetched automatically.
+When a mutation invalidates tags that match infinite scroll queries, all loaded pages are refetched automatically. When returning to a previously loaded query (e.g., same parameters), Spoosh reuses cached page responses and rebuilds the merged list automatically.
+
+## Trigger Mode
+
+Use the `trigger` function to start a new fetch with different request options. This is useful for search or filter functionality:
+
+```typescript
+@Component({
+  selector: "app-searchable-posts",
+  template: `
+    <input [ngModel]="search()" (ngModelChange)="search.set($event)" />
+    <button (click)="handleSearch()">Search</button>
+
+    @for (post of data(); track post.id) {
+      <app-post-card [post]="post" />
+    }
+  `,
+})
+export class SearchablePostsComponent {
+  search = signal("");
+
+  private posts = injectInfiniteRead(
+    (api) => api("posts").GET({ query: { page: 1, limit: 20 } }),
+    {
+      enabled: false, // Don't fetch on mount - use trigger instead
+      canFetchNext: ({ response }) => response?.meta.hasMore ?? false,
+      nextPageRequest: ({ response }) => ({
+        query: { page: (response?.meta.page ?? 0) + 1 },
+      }),
+      merger: (allResponses) => allResponses.flatMap((r) => r.items),
+    }
+  );
+
+  data = this.posts.data;
+
+  handleSearch() {
+    // Pass new query params to trigger
+    // force: false uses cache if same search was done before
+    this.posts.trigger({
+      query: { search: this.search(), page: 1, limit: 20 },
+      force: false,
+    });
+  }
+}
+```
+
+### Trigger Options
+
+| Option   | Type      | Default | Description                                                                    |
+| -------- | --------- | ------- | ------------------------------------------------------------------------------ |
+| `query`  | `object`  | -       | Query parameters to merge                                                      |
+| `params` | `object`  | -       | Path parameters to merge                                                       |
+| `body`   | `unknown` | -       | Request body                                                                   |
+| `force`  | `boolean` | `true`  | Delete all endpoint caches (including other search variations) and fetch fresh |
+
+```typescript
+// Force refetch (default) - deletes all caches for this endpoint
+// This includes caches from different search terms or query params
+this.posts.trigger();
+
+// Use cache if available - keeps existing page caches
+this.posts.trigger({ force: false });
+
+// New search with custom params
+this.posts.trigger({ query: { search: "angular", category: "tech" } });
+```
+
+## Reactive State Changes
+
+Like `injectRead`, `injectInfiniteRead` reacts to changes in the request function. When query parameters change via signals, it automatically fetches with the new parameters:
+
+```typescript
+@Component({
+  selector: "app-filtered-posts",
+  template: `
+    @for (post of data(); track post.id) {
+      <app-post-card [post]="post" />
+    }
+
+    @if (canFetchNext()) {
+      <button (click)="fetchNext()">Load More</button>
+    }
+  `,
+})
+export class FilteredPostsComponent {
+  // Input signal that changes externally
+  category = input.required<string>();
+
+  private posts = injectInfiniteRead(
+    // When category() changes, this triggers a new fetch automatically
+    (api) =>
+      api("posts").GET({ query: { page: 1, category: this.category() } }),
+    {
+      canFetchNext: ({ response }) => response?.meta.hasMore ?? false,
+      nextPageRequest: ({ response }) => ({
+        query: { page: (response?.meta.page ?? 0) + 1 },
+      }),
+      merger: (allResponses) => allResponses.flatMap((r) => r.items),
+    }
+  );
+
+  data = this.posts.data;
+  canFetchNext = this.posts.canFetchNext;
+  fetchNext = this.posts.fetchNext;
+}
+```
+
+### Reactive vs Trigger Mode
+
+Choose based on your use case:
+
+| Approach     | When to Use                                     |
+| ------------ | ----------------------------------------------- |
+| **Reactive** | Filter buttons, dropdowns, URL-driven filters   |
+| **Trigger**  | Search inputs, manual refresh, form submissions |
+
+```typescript
+// Reactive: category from input signal
+private posts = injectInfiniteRead(
+  (api) => api("posts").GET({ query: { page: 1, category: this.category() } }),
+  { /* options */ }
+);
+
+// Trigger: manual search (force: false to use cache if available)
+private posts = injectInfiniteRead(
+  (api) => api("posts").GET({ query: { page: 1 } }),
+  { enabled: false, /* options */ }
+);
+this.posts.trigger({ query: { search: searchTerm }, force: false });
+```
 
 ## Refetching All Pages
 
-Use the `trigger` function to reload all currently loaded pages from the beginning:
+Use the `trigger` function without options to reset to the initial request and refetch from the beginning:
 
 ```typescript
 @Component({
@@ -287,6 +416,10 @@ export class PostFeedComponent {
   );
 
   data = this.posts.data;
-  refresh = this.posts.trigger;
+
+  // Reset to first page and refetch
+  refresh() {
+    this.posts.trigger();
+  }
 }
 ```

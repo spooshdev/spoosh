@@ -205,14 +205,14 @@ export class PostListComponent {
 
 ### injectInfiniteRead(readFn, options)
 
-| Option            | Type                                          | Required | Description                     |
-| ----------------- | --------------------------------------------- | -------- | ------------------------------- |
-| `canFetchNext`    | `(ctx) => boolean`                            | Yes      | Check if next page exists       |
-| `nextPageRequest` | `(ctx) => Partial<TRequest>`                  | Yes      | Build request for next page     |
-| `merger`          | `(allResponses) => TItem[]`                   | Yes      | Merge all responses into items  |
-| `canFetchPrev`    | `(ctx) => boolean`                            | No       | Check if previous page exists   |
-| `prevPageRequest` | `(ctx) => Partial<TRequest>`                  | No       | Build request for previous page |
-| `enabled`         | `boolean \| Signal<boolean> \| () => boolean` | No       | Whether to fetch automatically  |
+| Option            | Type                                          | Required | Description                                       |
+| ----------------- | --------------------------------------------- | -------- | ------------------------------------------------- |
+| `merger`          | `(allResponses) => TItem[]`                   | Yes      | Merge all responses into items                    |
+| `canFetchNext`    | `(ctx) => boolean`                            | No       | Check if next page exists. Default: `() => false` |
+| `nextPageRequest` | `(ctx) => Partial<TRequest>`                  | No       | Build request for next page                       |
+| `canFetchPrev`    | `(ctx) => boolean`                            | No       | Check if previous page exists                     |
+| `prevPageRequest` | `(ctx) => Partial<TRequest>`                  | No       | Build request for previous page                   |
+| `enabled`         | `boolean \| Signal<boolean> \| () => boolean` | No       | Whether to fetch automatically                    |
 
 **Context object passed to callbacks:**
 
@@ -226,19 +226,19 @@ type Context<TData, TRequest> = {
 
 **Returns:**
 
-| Property       | Type                           | Description                     |
-| -------------- | ------------------------------ | ------------------------------- |
-| `data`         | `Signal<TItem[] \| undefined>` | Merged items from all responses |
-| `allResponses` | `Signal<TData[] \| undefined>` | Array of all raw responses      |
-| `loading`      | `Signal<boolean>`              | True during initial load        |
-| `fetching`     | `Signal<boolean>`              | True during any fetch           |
-| `fetchingNext` | `Signal<boolean>`              | True while fetching next page   |
-| `fetchingPrev` | `Signal<boolean>`              | True while fetching previous    |
-| `canFetchNext` | `Signal<boolean>`              | Whether next page exists        |
-| `canFetchPrev` | `Signal<boolean>`              | Whether previous page exists    |
-| `meta`         | `Signal<PluginResults>`        | Plugin metadata                 |
-| `fetchNext`    | `() => Promise<void>`          | Fetch the next page             |
-| `fetchPrev`    | `() => Promise<void>`          | Fetch the previous page         |
-| `refetch`      | `() => Promise<void>`          | Refetch all pages               |
-| `abort`        | `() => void`                   | Abort current request           |
-| `error`        | `Signal<TError \| undefined>`  | Error if request failed         |
+| Property       | Type                           | Description                                     |
+| -------------- | ------------------------------ | ----------------------------------------------- |
+| `data`         | `Signal<TItem[] \| undefined>` | Merged items from all responses                 |
+| `allResponses` | `Signal<TData[] \| undefined>` | Array of all raw responses                      |
+| `loading`      | `Signal<boolean>`              | True during initial load                        |
+| `fetching`     | `Signal<boolean>`              | True during any fetch                           |
+| `fetchingNext` | `Signal<boolean>`              | True while fetching next page                   |
+| `fetchingPrev` | `Signal<boolean>`              | True while fetching previous                    |
+| `canFetchNext` | `Signal<boolean>`              | Whether next page exists                        |
+| `canFetchPrev` | `Signal<boolean>`              | Whether previous page exists                    |
+| `meta`         | `Signal<PluginResults>`        | Plugin metadata                                 |
+| `fetchNext`    | `() => Promise<void>`          | Fetch the next page                             |
+| `fetchPrev`    | `() => Promise<void>`          | Fetch the previous page                         |
+| `trigger`      | `(options?) => Promise<void>`  | Trigger fetch with optional new request options |
+| `abort`        | `() => void`                   | Abort current request                           |
+| `error`        | `Signal<TError \| undefined>`  | Error if request failed                         |

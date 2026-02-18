@@ -3,6 +3,9 @@
 ## 0.10.0
 
 - Improve infinite read to allow reactive state changes and custom trigger options
+- `canFetchNext` and `nextPageRequest` is now optional
+- `trigger` now support passing request options for more flexible usage
+- Remove infinite tracker and use state derivation directly
 
 ## 0.9.1
 

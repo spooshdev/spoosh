@@ -7,45 +7,41 @@ description: Bidirectional paginated data fetching with infinite scroll support
 
 ## Basic Usage
 
+Given an API that returns:
+
+```json
+{
+  "items": [
+    { "id": 1, "title": "Post 1" },
+    { "id": 2, "title": "Post 2" }
+  ],
+  "meta": { "page": 1, "hasMore": true }
+}
+```
+
 ```typescript
 function PostList() {
-  const {
-    data,
-    loading,
-    canFetchNext,
-    canFetchPrev,
-    fetchNext,
-    fetchPrev,
-    fetchingNext,
-    fetchingPrev,
-  } = useInfiniteRead(
-    (api) => api("posts/paginated").GET({ query: { page: 1 } }),
-    {
-      canFetchNext: ({ response }) => response?.meta.hasMore ?? false,
-      nextPageRequest: ({ response }) => ({
-        query: { page: (response?.meta.page ?? 0) + 1 },
-      }),
-      merger: (allResponses) => allResponses.flatMap((r) => r.items),
-      canFetchPrev: ({ response }) => (response?.meta.page ?? 1) > 1,
-      prevPageRequest: ({ response }) => ({
-        query: { page: (response?.meta.page ?? 2) - 1 },
-      }),
-    }
-  );
+  const { data, loading, canFetchNext, fetchNext, fetchingNext } =
+    useInfiniteRead(
+      (api) => api("posts").GET({ query: { page: 1, limit: 20 } }),
+      {
+        canFetchNext: ({ response }) => response?.meta.hasMore ?? false,
+        nextPageRequest: ({ response }) => ({
+          query: { page: (response?.meta.page ?? 0) + 1 },
+        }),
+        merger: (allResponses) => allResponses.flatMap((r) => r.items),
+      }
+    );
+
+  if (loading) return <div>Loading...</div>;
 
   return (
     <div>
-      {canFetchPrev && (
-        <button onClick={fetchPrev} disabled={fetchingPrev}>
-          Load Previous
-        </button>
-      )}
-
       {data?.map((post) => <PostCard key={post.id} post={post} />)}
 
       {canFetchNext && (
         <button onClick={fetchNext} disabled={fetchingNext}>
-          Load More
+          {fetchingNext ? "Loading..." : "Load More"}
         </button>
       )}
     </div>
@@ -55,14 +51,14 @@ function PostList() {
 
 ## Options
 
-| Option            | Type                         | Required | Description                     |
-| ----------------- | ---------------------------- | -------- | ------------------------------- |
-| `canFetchNext`    | `(ctx) => boolean`           | Yes      | Check if next page exists       |
-| `nextPageRequest` | `(ctx) => Partial<TRequest>` | Yes      | Build request for next page     |
-| `merger`          | `(allResponses) => TItem[]`  | Yes      | Merge all responses into items  |
-| `canFetchPrev`    | `(ctx) => boolean`           | No       | Check if previous page exists   |
-| `prevPageRequest` | `(ctx) => Partial<TRequest>` | No       | Build request for previous page |
-| `enabled`         | `boolean`                    | No       | Whether to fetch automatically  |
+| Option            | Type                         | Required | Description                                       |
+| ----------------- | ---------------------------- | -------- | ------------------------------------------------- |
+| `merger`          | `(allResponses) => TItem[]`  | Yes      | Merge all responses into items                    |
+| `canFetchNext`    | `(ctx) => boolean`           | No       | Check if next page exists. Default: `() => false` |
+| `nextPageRequest` | `(ctx) => Partial<TRequest>` | No       | Build request for next page                       |
+| `canFetchPrev`    | `(ctx) => boolean`           | No       | Check if previous page exists                     |
+| `prevPageRequest` | `(ctx) => Partial<TRequest>` | No       | Build request for previous page                   |
+| `enabled`         | `boolean`                    | No       | Whether to fetch automatically                    |
 
 ## Context Object
 
@@ -76,19 +72,19 @@ type Context<TData, TRequest> = {
 
 ## Returns
 
-| Property       | Type                   | Description                          |
-| -------------- | ---------------------- | ------------------------------------ |
-| `data`         | `TItem[] \| undefined` | Merged items from all responses      |
-| `allResponses` | `TData[] \| undefined` | Array of all raw responses           |
-| `loading`      | `boolean`              | True during initial load             |
-| `fetching`     | `boolean`              | True during any fetch                |
-| `fetchingNext` | `boolean`              | True while fetching next page        |
-| `fetchingPrev` | `boolean`              | True while fetching previous         |
-| `canFetchNext` | `boolean`              | Whether next page exists             |
-| `canFetchPrev` | `boolean`              | Whether previous page exists         |
-| `fetchNext`    | `() => Promise<void>`  | Fetch the next page                  |
-| `fetchPrev`    | `() => Promise<void>`  | Fetch the previous page              |
-| `trigger`      | `() => Promise<void>`  | Refetch all pages from the beginning |
-| `abort`        | `() => void`           | Abort current request                |
-| `error`        | `TError \| undefined`  | Error if request failed              |
-| `meta`         | `object`               | Plugin-provided metadata             |
+| Property       | Type                          | Description                                     |
+| -------------- | ----------------------------- | ----------------------------------------------- |
+| `data`         | `TItem[] \| undefined`        | Merged items from all responses                 |
+| `allResponses` | `TData[] \| undefined`        | Array of all raw responses                      |
+| `loading`      | `boolean`                     | True during initial load                        |
+| `fetching`     | `boolean`                     | True during any fetch                           |
+| `fetchingNext` | `boolean`                     | True while fetching next page                   |
+| `fetchingPrev` | `boolean`                     | True while fetching previous                    |
+| `canFetchNext` | `boolean`                     | Whether next page exists                        |
+| `canFetchPrev` | `boolean`                     | Whether previous page exists                    |
+| `fetchNext`    | `() => Promise<void>`         | Fetch the next page                             |
+| `fetchPrev`    | `() => Promise<void>`         | Fetch the previous page                         |
+| `trigger`      | `(options?) => Promise<void>` | Trigger fetch with optional new request options |
+| `abort`        | `() => void`                  | Abort current request                           |
+| `error`        | `TError \| undefined`         | Error if request failed                         |
+| `meta`         | `object`                      | Plugin-provided metadata                        |

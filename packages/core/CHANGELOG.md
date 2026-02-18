@@ -3,6 +3,7 @@
 ## 0.14.2
 
 - Add reactive state change event to infinite read controller
+- Remove infinite tracker and use state derivation directly
 
 ## 0.14.1
 

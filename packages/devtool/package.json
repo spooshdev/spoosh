@@ -41,7 +41,7 @@
     "format": "prettier --write 'src/**/*.ts'"
   },
   "peerDependencies": {
-    "@spoosh/core": ">=0.14.0"
+    "@spoosh/core": ">=0.14.2"
   },
   "devDependencies": {
     "@spoosh/core": "workspace:*",

@@ -845,6 +845,90 @@ describe("useInfiniteRead", () => {
       const lastCall = calls[calls.length - 1];
       expect((lastCall?.options as any)?.query?.search).toBe("original");
     });
+
+    it("should delete page caches when trigger is called with force: true (default)", async () => {
+      const { useInfiniteRead, stateManager, calls } = createTestHooks();
+
+      const { result } = renderHook(() =>
+        useInfiniteRead<PageResponse, { id: number }>(
+          (api: any) => api("/posts").GET(),
+          {
+            canFetchNext: (ctx) => ctx.response?.nextCursor !== undefined,
+            nextPageRequest: (ctx) => ({
+              query: { cursor: ctx.response?.nextCursor },
+            }),
+            merger: (responses) => responses.flatMap((r) => r.items),
+          }
+        )
+      );
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      await act(async () => {
+        await result.current.fetchNext();
+      });
+
+      expect(result.current.data?.length).toBe(4);
+
+      const cacheEntriesBefore = stateManager.getAllCacheEntries();
+      expect(cacheEntriesBefore.length).toBeGreaterThan(0);
+
+      const callCountBefore = calls.length;
+
+      await act(async () => {
+        await result.current.trigger();
+      });
+
+      await act(async () => {
+        await result.current.fetchNext();
+      });
+
+      expect(calls.length).toBe(callCountBefore + 2);
+    });
+
+    it("should not delete page caches when trigger is called with force: false", async () => {
+      const { useInfiniteRead, stateManager } = createTestHooks();
+
+      const { result } = renderHook(() =>
+        useInfiniteRead<PageResponse, { id: number }>(
+          (api: any) => api("/posts").GET(),
+          {
+            canFetchNext: (ctx) => ctx.response?.nextCursor !== undefined,
+            nextPageRequest: (ctx) => ({
+              query: { cursor: ctx.response?.nextCursor },
+            }),
+            merger: (responses) => responses.flatMap((r) => r.items),
+          }
+        )
+      );
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      await act(async () => {
+        await result.current.fetchNext();
+      });
+
+      expect(result.current.data?.length).toBe(4);
+
+      // Count cache entries before trigger (should be 2: page 1 and page 2)
+      const cacheCountBefore = stateManager.getSize();
+      expect(cacheCountBefore).toBe(2);
+
+      await act(async () => {
+        await result.current.trigger({ force: false });
+      });
+
+      // With force: false, page 2 cache should not be deleted
+      // (page 1 gets refetched, page 2 remains)
+      const cacheCountAfter = stateManager.getSize();
+
+      // Cache count should stay the same (page 2 not deleted)
+      expect(cacheCountAfter).toBe(cacheCountBefore);
+    });
   });
 
   describe("Reactive Query Changes", () => {

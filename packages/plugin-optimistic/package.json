@@ -40,7 +40,7 @@
     "format": "prettier --write 'src/**/*.ts'"
   },
   "peerDependencies": {
-    "@spoosh/core": ">=0.13.1",
+    "@spoosh/core": ">=0.14.2",
     "@spoosh/plugin-invalidation": ">=0.7.0"
   },
   "devDependencies": {

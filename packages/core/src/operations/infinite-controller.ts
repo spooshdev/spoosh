@@ -486,10 +486,21 @@ export function createInfiniteReadController<
         abortController = null;
       }
 
-      // Clear pending state
+      // Clear pending state for current pageKeys
       for (const key of pageKeys) {
         stateManager.setPendingPromise(key, undefined);
       }
+
+      // When force: true, delete ALL caches with the same path (selfTag)
+      // This ensures all search variations are cleared, not just current pageKeys
+      if (force) {
+        const allPathCaches = stateManager.getCacheEntriesBySelfTag(path);
+
+        for (const { key } of allPathCaches) {
+          stateManager.deleteCache(key);
+        }
+      }
+
       pendingFetches.clear();
       fetchingDirection = null;
 
