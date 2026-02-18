@@ -183,7 +183,7 @@ export function createInfiniteReadController<
 
     const coreFetch = async (): Promise<SpooshResponse<TData, TError>> => {
       try {
-        const response = await fetchFn(mergedRequest, signal);
+        const response = await fetchFn(context.request, signal);
 
         if (signal.aborted) {
           return {
@@ -401,7 +401,7 @@ export function createInfiniteReadController<
 
       const coreFetch = async (): Promise<SpooshResponse<TData, TError>> => {
         try {
-          const response = await fetchFn(activeInitialRequest, signal);
+          const response = await fetchFn(context.request, signal);
 
           if (signal.aborted) {
             return {
@@ -511,10 +511,10 @@ export function createInfiniteReadController<
       const firstPageKey = stateManager.createQueryKey({
         path,
         method,
-        options: initialRequest,
+        options: activeInitialRequest,
       });
 
-      const context = createContext(firstPageKey, initialRequest);
+      const context = createContext(firstPageKey, activeInitialRequest);
       pluginExecutor.executeUpdateLifecycle(
         "infiniteRead",
         context,
@@ -526,10 +526,10 @@ export function createInfiniteReadController<
       const firstPageKey = stateManager.createQueryKey({
         path,
         method,
-        options: initialRequest,
+        options: activeInitialRequest,
       });
 
-      return createContext(firstPageKey, initialRequest);
+      return createContext(firstPageKey, activeInitialRequest);
     },
 
     setPluginOptions(opts) {
