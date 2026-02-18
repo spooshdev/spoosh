@@ -75,7 +75,6 @@ function isParameterSegment(segment: string): boolean {
   return segment.startsWith(":");
 }
 
-
 function pathMatchesPattern(
   actualPath: string,
   pattern: string

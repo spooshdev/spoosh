@@ -26,7 +26,7 @@ const spoosh = new Spoosh<ApiSchema, Error>("/api").use([
   deduplicationPlugin({ read: "in-flight" }),
 ]);
 
-export const { useRead, useWrite, useInfiniteRead } = create(spoosh);
+export const { useRead, useWrite, useInfiniteRead, useQueue } = create(spoosh);
 ```
 
 ## Automatic Tag Generation

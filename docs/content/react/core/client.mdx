@@ -62,7 +62,7 @@ const spoosh = new Spoosh<ApiSchema, Error>("/api").use([
   invalidationPlugin(),
 ]);
 
-export const { useRead, useWrite, useInfiniteRead } = create(spoosh);
+export const { useRead, useWrite, useInfiniteRead, useQueue } = create(spoosh);
 ```
 
 ## Request Options

@@ -122,7 +122,7 @@ const { data: user } = await spoosh.api("users/:id").GET({ params: { id: 123 } }
 ```typescript
 import { create } from "@spoosh/react";
 
-const { useRead, useWrite } = create(spoosh);
+const { useRead, useWrite, useQueue } = create(spoosh);
 
 function UserList() {
   const { data, loading, error } = useRead((api) => api("users").GET());
@@ -137,7 +137,7 @@ function UserList() {
 ```typescript
 import { create } from "@spoosh/angular";
 
-const { injectRead, injectWrite } = create(spoosh);
+const { injectRead, injectWrite, injectQueue } = create(spoosh);
 
 @Component({
   selector: 'app-user-list',
@@ -169,8 +169,8 @@ export class UserListComponent {
 | Package                               | Description                                            |
 | ------------------------------------- | ------------------------------------------------------ |
 | [@spoosh/core](./packages/core)       | Core client and plugin system                            |
-| [@spoosh/react](./packages/react)     | React hooks (`useRead`, `useWrite`, `useInfiniteRead`)   |
-| [@spoosh/angular](./packages/angular) | Angular signals (`injectRead`, `injectWrite`, `injectInfiniteRead`) |
+| [@spoosh/react](./packages/react)     | React hooks (`useRead`, `useWrite`, `useInfiniteRead`, `useQueue`)   |
+| [@spoosh/angular](./packages/angular) | Angular signals (`injectRead`, `injectWrite`, `injectInfiniteRead`, `injectQueue`) |
 | [@spoosh/hono](./packages/hono)       | Hono type adapter for server-to-client type inference    |
 | [@spoosh/elysia](./packages/elysia)   | Elysia type adapter for server-to-client type inference  |
 | [@spoosh/openapi](./packages/openapi) | Generate OpenAPI specs from TypeScript types             |
