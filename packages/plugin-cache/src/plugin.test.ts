@@ -33,9 +33,9 @@ describe("cachePlugin", () => {
       expect(plugin.name).toBe("spoosh:cache");
     });
 
-    it("should operate on read, infiniteRead, and write operations", () => {
+    it("should operate on read, pages, and write operations", () => {
       const plugin = cachePlugin();
-      expect(plugin.operations).toEqual(["read", "infiniteRead", "write"]);
+      expect(plugin.operations).toEqual(["read", "pages", "write"]);
     });
   });
 

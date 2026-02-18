@@ -12,7 +12,7 @@ export interface QsWriteHookOptions {
   qs?: QsOptions;
 }
 
-export interface QsInfiniteReadHookOptions {
+export interface QsPagesHookOptions {
   qs?: QsOptions;
 }
 

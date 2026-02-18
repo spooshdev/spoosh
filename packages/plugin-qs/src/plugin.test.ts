@@ -9,14 +9,9 @@ describe("qsPlugin", () => {
       expect(plugin.name).toBe("spoosh:qs");
     });
 
-    it("should operate on read, write, infiniteRead, and queue operations", () => {
+    it("should operate on read, write, pages, and queue operations", () => {
       const plugin = qsPlugin();
-      expect(plugin.operations).toEqual([
-        "read",
-        "write",
-        "infiniteRead",
-        "queue",
-      ]);
+      expect(plugin.operations).toEqual(["read", "write", "pages", "queue"]);
     });
   });
 
@@ -344,11 +339,11 @@ describe("qsPlugin", () => {
     });
   });
 
-  describe("infiniteRead operations", () => {
-    it("should serialize query in infiniteRead operations", async () => {
+  describe("pages operations", () => {
+    it("should serialize query in pages operations", async () => {
       const plugin = qsPlugin();
       const context = createMockContext({
-        operationType: "infiniteRead",
+        operationType: "pages",
         request: {
           query: { pagination: { cursor: "abc123" } },
         },

@@ -1,5 +1,5 @@
 ---
-title: injectInfiniteRead
+title: injectPages
 description: Bidirectional paginated data fetching with infinite scroll support using Signals
 ---
 
@@ -39,7 +39,7 @@ Given an API that returns:
   `,
 })
 export class PostListComponent {
-  posts = injectInfiniteRead(
+  posts = injectPages(
     (api) => api("posts").GET({ query: { page: 1, limit: 20 } }),
     {
       canFetchNext: ({ lastPage }) => lastPage?.data?.meta.hasMore ?? false,

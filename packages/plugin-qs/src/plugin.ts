@@ -5,7 +5,7 @@ import type {
   QsPluginConfig,
   QsReadHookOptions,
   QsWriteHookOptions,
-  QsInfiniteReadHookOptions,
+  QsPagesHookOptions,
   QsQueueHookOptions,
   QsReadResult,
   QsWriteResult,
@@ -47,7 +47,7 @@ const DEFAULT_OPTIONS = {
 export function qsPlugin(config: QsPluginConfig = {}): SpooshPlugin<{
   readOptions: QsReadHookOptions;
   writeOptions: QsWriteHookOptions;
-  infiniteReadOptions: QsInfiniteReadHookOptions;
+  pagesOptions: QsPagesHookOptions;
   queueOptions: QsQueueHookOptions;
   readResult: QsReadResult;
   writeResult: QsWriteResult;
@@ -55,7 +55,7 @@ export function qsPlugin(config: QsPluginConfig = {}): SpooshPlugin<{
 }> {
   return {
     name: PLUGIN_NAME,
-    operations: ["read", "write", "infiniteRead", "queue"],
+    operations: ["read", "write", "pages", "queue"],
 
     middleware: async (context, next) => {
       const t = context.tracer?.(PLUGIN_NAME);

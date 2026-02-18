@@ -16,12 +16,12 @@ export type {
   WriteApiClient,
 } from "./useWrite/types";
 export type {
-  UseInfiniteReadResult,
-  BaseInfiniteReadResult,
-  BaseInfiniteReadOptions,
-  InfiniteReadApiClient,
-  InfiniteTriggerOptions,
-} from "./useInfiniteRead/types";
+  UsePagesResult,
+  BasePagesResult,
+  BasePagesOptions,
+  PagesApiClient,
+  PagesTriggerOptions,
+} from "./usePages/types";
 export type {
   UseQueueResult,
   UseQueueOptions,

@@ -4,7 +4,7 @@ A minimal Vite React example for Spoosh with:
 
 - `useRead`
 - `useWrite`
-- `useInfiniteRead`
+- `usePages`
 - `cache`, `retry`, `invalidation`, and `devtool`
 - `msw` for mocked network calls
 

@@ -175,7 +175,7 @@ Modify the request context, then pass through to `next()`.
 function authPlugin(getToken: () => string): SpooshPlugin {
   return {
     name: "my-app:auth",
-    operations: ["read", "write", "infiniteRead"],
+    operations: ["read", "write", "pages"],
 
     middleware: async (context, next) => {
       const token = getToken();
@@ -234,7 +234,7 @@ You can combine multiple patterns in one plugin:
 function analyticsPlugin(): SpooshPlugin {
   return {
     name: "my-app:analytics",
-    operations: ["read", "write", "infiniteRead"],
+    operations: ["read", "write", "pages"],
 
     middleware: async (context, next) => {
       context.request.headers["X-Request-ID"] = generateId();

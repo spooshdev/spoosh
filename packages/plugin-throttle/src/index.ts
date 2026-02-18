@@ -1,7 +1,7 @@
 export { throttlePlugin } from "./plugin";
 export type {
   ThrottleReadOptions,
-  ThrottleInfiniteReadOptions,
+  ThrottlePagesOptions,
   ThrottleReadResult,
   ThrottleWriteOptions,
   ThrottleWriteResult,

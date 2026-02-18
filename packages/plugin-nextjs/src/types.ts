@@ -23,7 +23,7 @@ export interface NextjsWriteTriggerOptions {
   serverRevalidate?: boolean;
 }
 
-export type NextjsInfiniteReadOptions = object;
+export type NextjsPagesOptions = object;
 
 export interface NextjsQueueTriggerOptions {
   /** Additional paths to revalidate after queue item completes */

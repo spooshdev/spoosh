@@ -33,7 +33,7 @@ export function devtool(
   if (!enabled || typeof window === "undefined") {
     return {
       name: "spoosh:devtool",
-      operations: ["read", "write", "infiniteRead", "queue"],
+      operations: ["read", "write", "pages", "queue"],
     };
   }
 
@@ -63,7 +63,7 @@ export function devtool(
 
   return {
     name: "spoosh:devtool",
-    operations: ["read", "write", "infiniteRead", "queue"],
+    operations: ["read", "write", "pages", "queue"],
     priority: -100,
 
     middleware: async (context, next) => {

@@ -113,7 +113,7 @@ function tokenRefreshPlugin(): SpooshPlugin {
 
   return {
     name: "token-refresh",
-    operations: ["read", "write", "infiniteRead"],
+    operations: ["read", "write", "pages"],
     // Priority -20: Run before cache plugin (-10) to ensure tokens are refreshed
     // before checking cache, preventing stale token issues
     priority: -20,
@@ -164,7 +164,7 @@ Use `afterResponse` to globally handle 403 (forbidden) errors — for example, r
 function authErrorPlugin(): SpooshPlugin {
   return {
     name: "auth-error",
-    operations: ["read", "write", "infiniteRead"],
+    operations: ["read", "write", "pages"],
     afterResponse: (context, response) => {
       if (response.status === 403) {
         localStorage.removeItem("accessToken");

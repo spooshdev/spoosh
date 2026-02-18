@@ -1,23 +1,23 @@
 import type { PluginArray } from "@spoosh/core";
 import { createUseRead } from "../useRead";
 import { createUseWrite } from "../useWrite";
-import { createUseInfiniteRead } from "../useInfiniteRead";
+import { createUsePages } from "../usePages";
 import { createUseQueue } from "../useQueue";
 import type { SpooshReactHooks, SpooshInstanceShape } from "./types";
 
 /**
- * Creates React hooks (useRead, useWrite, useInfiniteRead) from a Spoosh instance.
+ * Creates React hooks (useRead, useWrite, usePages) from a Spoosh instance.
  *
  * @template TSchema - The API schema type
  * @template TDefaultError - The default error type
  * @template TPlugins - The plugins array type
  * @template TApi - The API type
  * @param instance - The Spoosh instance containing api, stateManager, eventEmitter, and pluginExecutor
- * @returns An object containing useRead, useWrite, useInfiniteRead hooks and plugin instance APIs
+ * @returns An object containing useRead, useWrite, usePages hooks and plugin instance APIs
  *
  * @example
  * ```ts
- * const { useRead, useWrite, useInfiniteRead } = create(spooshInstance);
+ * const { useRead, useWrite, usePages } = create(spooshInstance);
  *
  * function MyComponent() {
  *   const { data, loading } = useRead((api) => api("posts").GET());
@@ -49,11 +49,7 @@ export function create<
     pluginExecutor,
   });
 
-  const useInfiniteRead = createUseInfiniteRead<
-    TSchema,
-    TDefaultError,
-    TPlugins
-  >({
+  const usePages = createUsePages<TSchema, TDefaultError, TPlugins>({
     api,
     stateManager,
     eventEmitter,
@@ -99,7 +95,7 @@ export function create<
   return {
     useRead,
     useWrite,
-    useInfiniteRead,
+    usePages,
     useQueue,
     ...instanceApis,
   } as SpooshReactHooks<TDefaultError, TSchema, TPlugins>;

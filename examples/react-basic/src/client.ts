@@ -18,4 +18,4 @@ const spoosh = new Spoosh<ApiSchema, ApiError>("/api").use([
   devtool({ enabled: true }),
 ]);
 
-export const { useRead, useWrite, useInfiniteRead } = create(spoosh);
+export const { useRead, useWrite, usePages } = create(spoosh);

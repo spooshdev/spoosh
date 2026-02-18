@@ -4,7 +4,7 @@ import type {
   DeduplicationConfig,
   DeduplicationReadOptions,
   DeduplicationWriteOptions,
-  DeduplicationInfiniteReadOptions,
+  DeduplicationPagesOptions,
   DeduplicationReadResult,
   DeduplicationWriteResult,
   DedupeMode,
@@ -43,7 +43,7 @@ export function deduplicationPlugin(
 ): SpooshPlugin<{
   readOptions: DeduplicationReadOptions;
   writeOptions: DeduplicationWriteOptions;
-  infiniteReadOptions: DeduplicationInfiniteReadOptions;
+  pagesOptions: DeduplicationPagesOptions;
   readResult: DeduplicationReadResult;
   writeResult: DeduplicationWriteResult;
 }> {
@@ -54,7 +54,7 @@ export function deduplicationPlugin(
 
   return {
     name: PLUGIN_NAME,
-    operations: ["read", "infiniteRead", "write"],
+    operations: ["read", "pages", "write"],
 
     middleware: async (context, next) => {
       const et = context.eventTracer?.(PLUGIN_NAME);

@@ -1,5 +1,5 @@
 ---
-title: useInfiniteRead
+title: usePages
 description: Bidirectional paginated data fetching with infinite scroll support
 ---
 
@@ -22,7 +22,7 @@ Given an API that returns:
 ```typescript
 function PostList() {
   const { data, loading, canFetchNext, fetchNext, fetchingNext } =
-    useInfiniteRead(
+    usePages(
       (api) => api("posts").GET({ query: { page: 1, limit: 20 } }),
       {
         canFetchNext: ({ lastPage }) => lastPage?.data?.meta.hasMore ?? false,

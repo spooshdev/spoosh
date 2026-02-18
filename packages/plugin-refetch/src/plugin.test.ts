@@ -70,9 +70,9 @@ describe("refetchPlugin", () => {
       expect(plugin.name).toBe("spoosh:refetch");
     });
 
-    it("should operate on read and infiniteRead operations", () => {
+    it("should operate on read and pages operations", () => {
       const plugin = refetchPlugin();
-      expect(plugin.operations).toEqual(["read", "infiniteRead"]);
+      expect(plugin.operations).toEqual(["read", "pages"]);
     });
   });
 

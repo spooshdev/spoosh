@@ -7,7 +7,7 @@ import type {
   InvalidationWriteTriggerOptions,
   InvalidationQueueTriggerOptions,
   InvalidationReadOptions,
-  InvalidationInfiniteReadOptions,
+  InvalidationPagesOptions,
   InvalidationReadResult,
   InvalidationWriteResult,
   InvalidationQueueResult,
@@ -135,7 +135,7 @@ export function invalidationPlugin(
   writeOptions: InvalidationWriteOptions;
   writeTriggerOptions: InvalidationWriteTriggerOptions;
   queueTriggerOptions: InvalidationQueueTriggerOptions;
-  infiniteReadOptions: InvalidationInfiniteReadOptions;
+  pagesOptions: InvalidationPagesOptions;
   readResult: InvalidationReadResult;
   writeResult: InvalidationWriteResult;
   queueResult: InvalidationQueueResult;

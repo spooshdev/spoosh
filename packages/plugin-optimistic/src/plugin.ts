@@ -9,7 +9,7 @@ import type {
   OptimisticWriteOptions,
   OptimisticWriteTriggerOptions,
   OptimisticReadOptions,
-  OptimisticInfiniteReadOptions,
+  OptimisticPagesOptions,
   OptimisticReadResult,
   OptimisticWriteResult,
   OptimisticTarget,
@@ -473,7 +473,7 @@ export function optimisticPlugin(): SpooshPlugin<{
   readOptions: OptimisticReadOptions;
   writeOptions: OptimisticWriteOptions;
   writeTriggerOptions: OptimisticWriteTriggerOptions;
-  infiniteReadOptions: OptimisticInfiniteReadOptions;
+  pagesOptions: OptimisticPagesOptions;
   readResult: OptimisticReadResult;
   writeResult: OptimisticWriteResult;
 }> {

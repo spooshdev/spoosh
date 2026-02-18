@@ -4,7 +4,7 @@ import type {
   RefetchPluginConfig,
   RefetchReadOptions,
   RefetchWriteOptions,
-  RefetchInfiniteReadOptions,
+  RefetchPagesOptions,
   RefetchReadResult,
   RefetchWriteResult,
 } from "./types";
@@ -47,7 +47,7 @@ type HookListenerEntry = {
 export function refetchPlugin(config: RefetchPluginConfig = {}): SpooshPlugin<{
   readOptions: RefetchReadOptions;
   writeOptions: RefetchWriteOptions;
-  infiniteReadOptions: RefetchInfiniteReadOptions;
+  pagesOptions: RefetchPagesOptions;
   readResult: RefetchReadResult;
   writeResult: RefetchWriteResult;
 }> {
@@ -181,7 +181,7 @@ export function refetchPlugin(config: RefetchPluginConfig = {}): SpooshPlugin<{
 
   return {
     name: PLUGIN_NAME,
-    operations: ["read", "infiniteRead"],
+    operations: ["read", "pages"],
 
     lifecycle: {
       onMount(context) {

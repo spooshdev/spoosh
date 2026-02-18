@@ -237,7 +237,7 @@ Here's an example of a simple logging plugin using `afterResponse`:
 function loggingPlugin(): SpooshPlugin {
   return {
     name: "my-app:logging",
-    operations: ["read", "write", "infiniteRead"],
+    operations: ["read", "write", "pages"],
 
     afterResponse(context, response) {
       const duration = Date.now() - context.requestTimestamp;

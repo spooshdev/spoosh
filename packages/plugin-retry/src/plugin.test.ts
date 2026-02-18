@@ -17,14 +17,9 @@ describe("retryPlugin", () => {
       expect(plugin.name).toBe("spoosh:retry");
     });
 
-    it("should operate on read, write, infiniteRead, and queue operations", () => {
+    it("should operate on read, write, pages, and queue operations", () => {
       const plugin = retryPlugin();
-      expect(plugin.operations).toEqual([
-        "read",
-        "write",
-        "infiniteRead",
-        "queue",
-      ]);
+      expect(plugin.operations).toEqual(["read", "write", "pages", "queue"]);
     });
   });
 
@@ -496,10 +491,10 @@ describe("retryPlugin", () => {
       expect(result).toEqual(successResponse);
     });
 
-    it("should retry infiniteRead operations", async () => {
+    it("should retry pages operations", async () => {
       const plugin = retryPlugin({ retries: 2, retryDelay: 1000 });
       const context = createMockContext({
-        operationType: "infiniteRead",
+        operationType: "pages",
       });
       const networkError = new TypeError("Failed to fetch");
       const successResponse = { data: { items: [] }, status: 200 };

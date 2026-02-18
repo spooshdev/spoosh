@@ -1,15 +1,15 @@
 ---
 title: Infinite Queries
-description: Load more data as the user scrolls with injectInfiniteRead
+description: Load more data as the user scrolls with injectPages
 ---
 
-`injectInfiniteRead` is designed for infinite scroll interfaces where new data appends to an ever-growing list as the user scrolls down. All return values are Angular Signals.
+`injectPages` is designed for infinite scroll interfaces where new data appends to an ever-growing list as the user scrolls down. All return values are Angular Signals.
 
-> For complete API reference, see [injectInfiniteRead](/docs/angular/injects/inject-infinite-read).
+> For complete API reference, see [injectPages](/docs/angular/injects/inject-pages).
 
 ## How It Works
 
-`injectInfiniteRead` doesn't assume any specific response shape — you tell it how to read your API's response via callback functions. The `nextPageRequest` function returns only the fields that change between pages. These are automatically merged with the original request, so you don't need to spread existing query parameters.
+`injectPages` doesn't assume any specific response shape — you tell it how to read your API's response via callback functions. The `nextPageRequest` function returns only the fields that change between pages. These are automatically merged with the original request, so you don't need to spread existing query parameters.
 
 Given an API that returns:
 
@@ -26,7 +26,7 @@ Given an API that returns:
 You map those fields in the options:
 
 ```typescript
-private posts = injectInfiniteRead(
+private posts = injectPages(
   (api) => api("posts").GET({ query: { page: 1, limit: 20 } }),
   {
     canFetchNext: ({ lastPage }) => lastPage?.data?.meta.hasMore ?? false,
@@ -59,7 +59,7 @@ merger: (pages) => pages.flatMap((p) => p.data?.items ?? []),
 If you need access to the raw pages (e.g., for page metadata or per-page status), use `pages` from the inject return:
 
 ```typescript
-private posts = injectInfiniteRead(...);
+private posts = injectPages(...);
 
 data = this.posts.data;   // merged flat list from merger()
 pages = this.posts.pages; // array of page objects with status, data, error, and meta
@@ -87,7 +87,7 @@ pages = this.posts.pages; // array of page objects with status, data, error, and
   `,
 })
 export class PostFeedComponent {
-  private posts = injectInfiniteRead(
+  private posts = injectPages(
     (api) => api("posts").GET({ query: { page: 1, limit: 20 } }),
     {
       canFetchNext: ({ lastPage }) => lastPage?.data?.meta.hasMore ?? false,
@@ -133,7 +133,7 @@ export class InfinitePostFeedComponent implements AfterViewInit, OnDestroy {
 
   private observer: IntersectionObserver | null = null;
 
-  private posts = injectInfiniteRead(
+  private posts = injectPages(
     (api) => api("posts").GET({ query: { page: 1, limit: 20 } }),
     {
       canFetchNext: ({ lastPage }) => lastPage?.data?.meta.hasMore ?? false,
@@ -183,7 +183,7 @@ For APIs that return a cursor instead of page numbers:
 ```
 
 ```typescript
-private feed = injectInfiniteRead(
+private feed = injectPages(
   (api) => api("feed").GET({ query: { limit: 20 } }),
   {
     canFetchNext: ({ lastPage }) => !!lastPage?.data?.nextCursor,
@@ -221,7 +221,7 @@ Load content in both directions — useful for chat threads or timelines where t
   `,
 })
 export class MessageThreadComponent {
-  private messages = injectInfiniteRead(
+  private messages = injectPages(
     (api) => api("messages").GET({ query: { page: 5, limit: 20 } }),
     {
       canFetchNext: ({ lastPage }) => lastPage?.data?.meta.hasMore ?? false,
@@ -248,7 +248,7 @@ export class MessageThreadComponent {
 
 ## Combining with Plugins
 
-`injectInfiniteRead` works with plugins like cache and deduplication. Each page request has its own cache key, and the merged list is derived from these cached responses. Deduplication prevents duplicate requests when scrolling quickly:
+`injectPages` works with plugins like cache and deduplication. Each page request has its own cache key, and the merged list is derived from these cached responses. Deduplication prevents duplicate requests when scrolling quickly:
 
 ```typescript
 const spoosh = new Spoosh<ApiSchema, Error>("/api").use([
@@ -279,7 +279,7 @@ Use the `trigger` function to start a new fetch with different request options. 
 export class SearchablePostsComponent {
   search = signal("");
 
-  private posts = injectInfiniteRead(
+  private posts = injectPages(
     (api) => api("posts").GET({ query: { page: 1, limit: 20 } }),
     {
       enabled: false, // Don't fetch on mount - use trigger instead
@@ -327,7 +327,7 @@ this.posts.trigger({ query: { search: "angular", category: "tech" } });
 
 ## Reactive State Changes
 
-Like `injectRead`, `injectInfiniteRead` reacts to changes in the request function. When query parameters change via signals, it automatically fetches with the new parameters:
+Like `injectRead`, `injectPages` reacts to changes in the request function. When query parameters change via signals, it automatically fetches with the new parameters:
 
 ```typescript
 @Component({
@@ -346,7 +346,7 @@ export class FilteredPostsComponent {
   // Input signal that changes externally
   category = input.required<string>();
 
-  private posts = injectInfiniteRead(
+  private posts = injectPages(
     // When category() changes, this triggers a new fetch automatically
     (api) =>
       api("posts").GET({ query: { page: 1, category: this.category() } }),
@@ -376,13 +376,13 @@ Choose based on your use case:
 
 ```typescript
 // Reactive: category from input signal
-private posts = injectInfiniteRead(
+private posts = injectPages(
   (api) => api("posts").GET({ query: { page: 1, category: this.category() } }),
   { /* options */ }
 );
 
 // Trigger: manual search (force: false to use cache if available)
-private posts = injectInfiniteRead(
+private posts = injectPages(
   (api) => api("posts").GET({ query: { page: 1 } }),
   { enabled: false, /* options */ }
 );
@@ -404,7 +404,7 @@ Use the `trigger` function without options to reset to the initial request and r
   `,
 })
 export class PostFeedComponent {
-  private posts = injectInfiniteRead(
+  private posts = injectPages(
     (api) => api("posts").GET({ query: { page: 1, limit: 20 } }),
     {
       canFetchNext: ({ lastPage }) => lastPage?.data?.meta.hasMore ?? false,

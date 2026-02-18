@@ -2,7 +2,7 @@ import type { SpooshPlugin } from "@spoosh/core";
 
 import type {
   ThrottleReadOptions,
-  ThrottleInfiniteReadOptions,
+  ThrottlePagesOptions,
   ThrottleReadResult,
   ThrottleWriteOptions,
   ThrottleWriteResult,
@@ -40,7 +40,7 @@ const PLUGIN_NAME = "spoosh:throttle";
 export function throttlePlugin(): SpooshPlugin<{
   readOptions: ThrottleReadOptions;
   writeOptions: ThrottleWriteOptions;
-  infiniteReadOptions: ThrottleInfiniteReadOptions;
+  pagesOptions: ThrottlePagesOptions;
   readResult: ThrottleReadResult;
   writeResult: ThrottleWriteResult;
 }> {
@@ -48,7 +48,7 @@ export function throttlePlugin(): SpooshPlugin<{
 
   return {
     name: PLUGIN_NAME,
-    operations: ["read", "infiniteRead"],
+    operations: ["read", "pages"],
     priority: 100,
 
     middleware: async (context, next) => {

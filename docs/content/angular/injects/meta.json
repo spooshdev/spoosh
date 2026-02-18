@@ -5,7 +5,7 @@
     "index",
     "inject-read",
     "inject-write",
-    "inject-infinite-read",
+    "inject-pages",
     "inject-queue"
   ]
 }

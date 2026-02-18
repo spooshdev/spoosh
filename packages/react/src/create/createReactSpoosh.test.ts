@@ -50,12 +50,12 @@ describe("create", () => {
       expect(typeof result.useWrite).toBe("function");
     });
 
-    it("returns useInfiniteRead hook", () => {
+    it("returns usePages hook", () => {
       const instance = createTestInstance();
       const result = create(instance);
 
-      expect(result.useInfiniteRead).toBeDefined();
-      expect(typeof result.useInfiniteRead).toBe("function");
+      expect(result.usePages).toBeDefined();
+      expect(typeof result.usePages).toBe("function");
     });
   });
 

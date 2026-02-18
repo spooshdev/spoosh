@@ -7,7 +7,7 @@ export type {
   InvalidationWriteTriggerOptions,
   InvalidationQueueTriggerOptions,
   InvalidationReadOptions,
-  InvalidationInfiniteReadOptions,
+  InvalidationPagesOptions,
   InvalidationReadResult,
   InvalidationWriteResult,
   InvalidationQueueResult,

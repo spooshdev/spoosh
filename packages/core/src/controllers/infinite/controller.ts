@@ -136,7 +136,7 @@ export function createInfiniteReadController<
     requestOptions?: InfiniteRequestOptions
   ): PluginContext => {
     return pluginExecutor.createContext({
-      operationType: "infiniteRead",
+      operationType: "pages",
       path,
       method,
       queryKey: pageKey,
@@ -223,7 +223,7 @@ export function createInfiniteReadController<
     };
 
     const middlewarePromise = pluginExecutor.executeMiddleware(
-      "infiniteRead",
+      "pages",
       context,
       coreFetch
     );
@@ -427,7 +427,7 @@ export function createInfiniteReadController<
       };
 
       const middlewarePromise = pluginExecutor.executeMiddleware(
-        "infiniteRead",
+        "pages",
         context,
         coreFetch
       );
@@ -479,7 +479,7 @@ export function createInfiniteReadController<
       });
 
       const context = createContext(firstPageKey, initialRequest);
-      pluginExecutor.executeLifecycle("onMount", "infiniteRead", context);
+      pluginExecutor.executeLifecycle("onMount", "pages", context);
 
       refetchUnsubscribe = eventEmitter.on("refetch", (event) => {
         if (pageKeys.includes(event.queryKey)) {
@@ -496,7 +496,7 @@ export function createInfiniteReadController<
       });
 
       const context = createContext(firstPageKey, initialRequest);
-      pluginExecutor.executeLifecycle("onUnmount", "infiniteRead", context);
+      pluginExecutor.executeLifecycle("onUnmount", "pages", context);
 
       pageSubscriptions.forEach((unsub) => unsub());
       pageSubscriptions = [];
@@ -512,11 +512,7 @@ export function createInfiniteReadController<
       });
 
       const context = createContext(firstPageKey, activeInitialRequest);
-      pluginExecutor.executeUpdateLifecycle(
-        "infiniteRead",
-        context,
-        previousContext
-      );
+      pluginExecutor.executeUpdateLifecycle("pages", context, previousContext);
     },
 
     getContext() {

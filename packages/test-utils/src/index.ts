@@ -38,7 +38,7 @@ export type MockContextOptions<TData = unknown, TError = unknown> = {
 
   tags?: string[];
 
-  operationType?: "read" | "write" | "infiniteRead";
+  operationType?: "read" | "write" | "pages";
 
   pluginOptions?: unknown;
 

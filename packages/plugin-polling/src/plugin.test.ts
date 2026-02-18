@@ -22,9 +22,9 @@ describe("pollingPlugin", () => {
       expect(plugin.name).toBe("spoosh:polling");
     });
 
-    it("should operate on read and infiniteRead operations", () => {
+    it("should operate on read and pages operations", () => {
       const plugin = pollingPlugin();
-      expect(plugin.operations).toEqual(["read", "infiniteRead"]);
+      expect(plugin.operations).toEqual(["read", "pages"]);
     });
   });
 

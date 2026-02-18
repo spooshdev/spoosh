@@ -26,7 +26,7 @@ type BaseTriggerOptions = {
   force?: boolean;
 };
 
-export type InfiniteTriggerOptions<TReadFn> =
+export type PagesTriggerOptions<TReadFn> =
   ExtractInputFromResponse<TriggerAwaitedReturn<TReadFn>> extends infer I
     ? [I] extends [never]
       ? BaseTriggerOptions
@@ -37,7 +37,7 @@ export type InfiniteTriggerOptions<TReadFn> =
     : BaseTriggerOptions;
 
 /**
- * Options for `useInfiniteRead` hook.
+ * Options for `usePages` hook.
  *
  * @template TData - The response data type for each page
  * @template TItem - The item type after merging all responses
@@ -45,7 +45,7 @@ export type InfiniteTriggerOptions<TReadFn> =
  * @template TRequest - The request options type (query, params, body)
  * @template TMeta - Plugin metadata type
  */
-export type BaseInfiniteReadOptions<
+export type BasePagesOptions<
   TData,
   TItem,
   TError = unknown,
@@ -124,7 +124,7 @@ export type BaseInfiniteReadOptions<
 };
 
 /**
- * Result returned by `useInfiniteRead` hook.
+ * Result returned by `usePages` hook.
  *
  * @template TData - The response data type for each page
  * @template TError - The error type
@@ -132,7 +132,7 @@ export type BaseInfiniteReadOptions<
  * @template TPluginResult - Plugin-provided result fields
  * @template TTriggerOptions - Options that can be passed to trigger()
  */
-export type BaseInfiniteReadResult<
+export type BasePagesResult<
   TData,
   TError,
   TItem,
@@ -179,13 +179,13 @@ export type BaseInfiniteReadResult<
   error: TError | undefined;
 };
 
-export type UseInfiniteReadResult<
+export type UsePagesResult<
   TData,
   TError,
   TItem,
   TPlugins extends readonly SpooshPlugin<PluginTypeConfig>[],
   TTriggerOptions = object,
-> = BaseInfiniteReadResult<
+> = BasePagesResult<
   TData,
   TError,
   TItem,
@@ -193,7 +193,7 @@ export type UseInfiniteReadResult<
   TTriggerOptions
 >;
 
-export type InfiniteReadApiClient<TSchema, TDefaultError> = ReadClient<
+export type PagesApiClient<TSchema, TDefaultError> = ReadClient<
   TSchema,
   TDefaultError
 >;

@@ -169,8 +169,8 @@ export class UserListComponent {
 | Package                               | Description                                            |
 | ------------------------------------- | ------------------------------------------------------ |
 | [@spoosh/core](./packages/core)       | Core client and plugin system                            |
-| [@spoosh/react](./packages/react)     | React hooks (`useRead`, `useWrite`, `useInfiniteRead`, `useQueue`)   |
-| [@spoosh/angular](./packages/angular) | Angular signals (`injectRead`, `injectWrite`, `injectInfiniteRead`, `injectQueue`) |
+| [@spoosh/react](./packages/react)     | React hooks (`useRead`, `useWrite`, `usePages`, `useQueue`)   |
+| [@spoosh/angular](./packages/angular) | Angular signals (`injectRead`, `injectWrite`, `injectPages`, `injectQueue`) |
 | [@spoosh/hono](./packages/hono)       | Hono type adapter for server-to-client type inference    |
 | [@spoosh/elysia](./packages/elysia)   | Elysia type adapter for server-to-client type inference  |
 | [@spoosh/openapi](./packages/openapi) | Generate OpenAPI specs from TypeScript types             |

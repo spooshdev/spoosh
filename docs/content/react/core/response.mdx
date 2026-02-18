@@ -96,11 +96,11 @@ function CreatePost() {
 }
 ```
 
-### useInfiniteRead Abort
+### usePages Abort
 
 ```typescript
 function PostFeed() {
-  const { data, loading, abort, fetchNext } = useInfiniteRead(
+  const { data, loading, abort, fetchNext } = usePages(
     (api) => api("posts").GET({ query: { limit: 20 } }),
     {
       canFetchNext: ({ lastPage }) => !!lastPage?.data?.nextCursor,

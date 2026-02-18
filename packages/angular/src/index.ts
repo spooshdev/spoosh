@@ -28,11 +28,11 @@ export type {
   WriteResponseInputFields,
 } from "./injectWrite/types";
 export type {
-  BaseInfiniteReadOptions,
-  BaseInfiniteReadResult,
-  InfiniteReadApiClient,
-  InfiniteTriggerOptions,
-} from "./injectInfiniteRead/types";
+  BasePagesOptions,
+  BasePagesResult,
+  PagesApiClient,
+  PagesTriggerOptions,
+} from "./injectPages/types";
 export type {
   BaseQueueResult,
   QueueApiClient,

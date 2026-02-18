@@ -7,7 +7,7 @@ import type { RequestTracer, EventTracer } from "./devtool.types";
 
 export * from "./devtool.types";
 
-export type OperationType = "read" | "write" | "infiniteRead" | "queue";
+export type OperationType = "read" | "write" | "pages" | "queue";
 
 export type LifecyclePhase = "onMount" | "onUnmount" | "onUpdate";
 
@@ -84,7 +84,7 @@ export type PluginContextBase = {
   /** Access other plugins' exported APIs */
   plugins: PluginAccessor;
 
-  /** Plugin-specific options passed from hooks (useRead/useWrite/useInfiniteRead) */
+  /** Plugin-specific options passed from hooks (useRead/useWrite/usePages) */
   pluginOptions?: unknown;
 
   /** Force a network request even if cached data exists. Used by plugins to communicate intent. */
@@ -222,7 +222,7 @@ export type PluginLifecycle = {
 export type PluginTypeConfig = {
   readOptions?: object;
   writeOptions?: object;
-  infiniteReadOptions?: object;
+  pagesOptions?: object;
   writeTriggerOptions?: object;
   queueOptions?: object;
   queueTriggerOptions?: object;

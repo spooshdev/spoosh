@@ -19,7 +19,7 @@ export interface ProgressWriteOptions {
   progress?: boolean | ProgressOptions;
 }
 
-export type ProgressInfiniteReadOptions = ProgressReadOptions;
+export type ProgressPagesOptions = ProgressReadOptions;
 
 export type ProgressQueueOptions = ProgressReadOptions;
 

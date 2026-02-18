@@ -5,7 +5,7 @@ import type {
   RetryPluginConfig,
   RetryReadOptions,
   RetryWriteOptions,
-  RetryInfiniteReadOptions,
+  RetryPagesOptions,
   RetryQueueOptions,
   RetryReadResult,
   RetryWriteResult,
@@ -52,7 +52,7 @@ const defaultShouldRetry: ShouldRetryCallback = ({ status }) => {
 export function retryPlugin(config: RetryPluginConfig = {}): SpooshPlugin<{
   readOptions: RetryReadOptions;
   writeOptions: RetryWriteOptions;
-  infiniteReadOptions: RetryInfiniteReadOptions;
+  pagesOptions: RetryPagesOptions;
   queueOptions: RetryQueueOptions;
   readResult: RetryReadResult;
   writeResult: RetryWriteResult;
@@ -66,7 +66,7 @@ export function retryPlugin(config: RetryPluginConfig = {}): SpooshPlugin<{
 
   return {
     name: PLUGIN_NAME,
-    operations: ["read", "write", "infiniteRead", "queue"],
+    operations: ["read", "write", "pages", "queue"],
     priority: 200,
 
     middleware: async (context, next) => {

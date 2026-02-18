@@ -1,5 +1,5 @@
 {
   "title": "Hooks",
   "defaultOpen": false,
-  "pages": ["index", "use-read", "use-write", "use-infinite-read", "use-queue"]
+  "pages": ["index", "use-read", "use-write", "use-pages", "use-queue"]
 }

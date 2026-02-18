@@ -16,7 +16,7 @@ export interface RefetchReadOptions {
 
 export type RefetchWriteOptions = object;
 
-export type RefetchInfiniteReadOptions = object;
+export type RefetchPagesOptions = object;
 
 export type RefetchReadResult = object;
 

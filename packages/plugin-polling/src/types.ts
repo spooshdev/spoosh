@@ -22,7 +22,7 @@ export interface PollingReadOptions {
 
 export type PollingWriteOptions = object;
 
-export type PollingInfiniteReadOptions = object;
+export type PollingPagesOptions = object;
 
 export type PollingReadResult = object;
 

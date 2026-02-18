@@ -40,7 +40,7 @@ That's it! Your plugin will now log all requests and responses.
 Every plugin has:
 
 - `name` - A unique identifier (use `"your-app:plugin-name"` format)
-- `operations` - Which operations it handles (`"read"`, `"write"`, `"infiniteRead"`)
+- `operations` - Which operations it handles (`"read"`, `"write"`, `"pages"`)
 - `middleware` - A function that runs during requests (optional)
 - `afterResponse` - A function that runs after every response (optional)
 
@@ -275,7 +275,7 @@ Here are the main properties you can use in a plugin:
 ```typescript
 {
   name: string;                    // Required: unique identifier
-  operations: string[];            // Required: ["read", "write", "infiniteRead"]
+  operations: string[];            // Required: ["read", "write", "pages"]
   priority?: number;               // Optional: execution order (lower runs first)
 
   setup?: Function;                // Run once when app starts

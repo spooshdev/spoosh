@@ -7,7 +7,7 @@ import type {
   NextjsWriteOptions,
   NextjsWriteTriggerOptions,
   NextjsQueueTriggerOptions,
-  NextjsInfiniteReadOptions,
+  NextjsPagesOptions,
   NextjsReadResult,
   NextjsWriteResult,
   NextjsQueueResult,
@@ -49,7 +49,7 @@ export function nextjsPlugin(config: NextjsPluginConfig = {}): SpooshPlugin<{
   writeOptions: NextjsWriteOptions;
   writeTriggerOptions: NextjsWriteTriggerOptions;
   queueTriggerOptions: NextjsQueueTriggerOptions;
-  infiniteReadOptions: NextjsInfiniteReadOptions;
+  pagesOptions: NextjsPagesOptions;
   readResult: NextjsReadResult;
   writeResult: NextjsWriteResult;
   queueResult: NextjsQueueResult;

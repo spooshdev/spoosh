@@ -15,9 +15,9 @@ describe("deduplicationPlugin", () => {
       expect(plugin.name).toBe("spoosh:deduplication");
     });
 
-    it("should operate on read, infiniteRead, and write operations", () => {
+    it("should operate on read, pages, and write operations", () => {
       const plugin = deduplicationPlugin();
-      expect(plugin.operations).toEqual(["read", "infiniteRead", "write"]);
+      expect(plugin.operations).toEqual(["read", "pages", "write"]);
     });
 
     it("should export getConfig function", () => {
@@ -292,8 +292,8 @@ describe("deduplicationPlugin", () => {
     });
   });
 
-  describe("infiniteRead operation", () => {
-    it("should dedupe infiniteRead by default", async () => {
+  describe("pages operation", () => {
+    it("should dedupe pages by default", async () => {
       const plugin = deduplicationPlugin();
       const stateManager = createStateManager();
       const queryKey = '{"method":"GET","path":["posts"]}';
@@ -307,7 +307,7 @@ describe("deduplicationPlugin", () => {
 
       const context = createMockContext({
         stateManager,
-        operationType: "infiniteRead",
+        operationType: "pages",
         path: "posts",
         queryKey,
       });

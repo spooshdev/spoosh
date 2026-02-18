@@ -38,8 +38,8 @@ export interface MyWriteTriggerOptions {
   invalidate?: string[];
 }
 
-export interface MyInfiniteReadOptions {
-  // Hook-level options for infinite read operations
+export interface MyPagesOptions {
+  // Hook-level options for pages operations
   timeout?: number;
 }
 
@@ -240,7 +240,7 @@ export interface CacheWriteTriggerOptions {
   clearCache?: boolean;
 }
 
-export interface CacheInfiniteReadOptions {
+export interface CachePagesOptions {
   /** Time in milliseconds before cached data is considered stale. */
   staleTime?: number;
 }
@@ -260,7 +260,7 @@ import type {
   CacheReadOptions,
   CacheWriteOptions,
   CacheWriteTriggerOptions,
-  CacheInfiniteReadOptions,
+  CachePagesOptions,
   CacheReadResult,
   CacheWriteResult,
   CacheInstanceApi,
@@ -271,7 +271,7 @@ export function cachePlugin(config: CachePluginConfig = {}): SpooshPlugin<{
   readOptions: CacheReadOptions;
   writeOptions: CacheWriteOptions;
   writeTriggerOptions: CacheWriteTriggerOptions;
-  infiniteReadOptions: CacheInfiniteReadOptions;
+  pagesOptions: CachePagesOptions;
   readResult: CacheReadResult;
   writeResult: CacheWriteResult;
   instanceApi: CacheInstanceApi;
@@ -280,7 +280,7 @@ export function cachePlugin(config: CachePluginConfig = {}): SpooshPlugin<{
 
   return {
     name: "spoosh:cache",
-    operations: ["read", "infiniteRead", "write"],
+    operations: ["read", "pages", "write"],
     priority: -10,
 
     middleware: async (context, next) => {
@@ -516,7 +516,7 @@ export interface InitialDataReadOptions<TData = unknown> {
   refetchOnInitialData?: boolean;
 }
 
-export type InitialDataInfiniteReadOptions<TData = unknown> =
+export type InitialDataPagesOptions<TData = unknown> =
   InitialDataReadOptions<TData>;
 
 export interface InitialDataReadResult {

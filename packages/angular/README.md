@@ -1,6 +1,6 @@
 # @spoosh/angular
 
-Angular signals integration for Spoosh - `injectRead`, `injectWrite`, and `injectInfiniteRead`.
+Angular signals integration for Spoosh - `injectRead`, `injectWrite`, and `injectPages`.
 
 **[Documentation](https://spoosh.dev/docs/angular)** · **Requirements:** TypeScript >= 5.0, Angular >= 16.0
 
@@ -23,7 +23,7 @@ const spoosh = new Spoosh<ApiSchema, Error>("/api").use([
   cachePlugin({ staleTime: 5000 }),
 ]);
 
-export const { injectRead, injectWrite, injectInfiniteRead } = create(spoosh);
+export const { injectRead, injectWrite, injectPages } = create(spoosh);
 ```
 
 ### injectRead
@@ -115,7 +115,7 @@ async updateUserName(userId: number, name: string) {
 }
 ```
 
-### injectInfiniteRead
+### injectPages
 
 Bidirectional paginated data fetching with infinite scroll support.
 
@@ -140,29 +140,26 @@ Bidirectional paginated data fetching with infinite scroll support.
   `,
 })
 export class PostListComponent {
-  posts = injectInfiniteRead(
-    (api) => api("posts").GET({ query: { page: 1 } }),
-    {
-      // Required: Check if next page exists
-      canFetchNext: ({ lastPage }) => lastPage?.data?.meta.hasMore ?? false,
+  posts = injectPages((api) => api("posts").GET({ query: { page: 1 } }), {
+    // Required: Check if next page exists
+    canFetchNext: ({ lastPage }) => lastPage?.data?.meta.hasMore ?? false,
 
-      // Required: Build request for next page
-      nextPageRequest: ({ lastPage }) => ({
-        query: { page: (lastPage?.data?.meta.page ?? 0) + 1 },
-      }),
+    // Required: Build request for next page
+    nextPageRequest: ({ lastPage }) => ({
+      query: { page: (lastPage?.data?.meta.page ?? 0) + 1 },
+    }),
 
-      // Required: Merge all pages into items
-      merger: (pages) => pages.flatMap((p) => p.data?.items ?? []),
+    // Required: Merge all pages into items
+    merger: (pages) => pages.flatMap((p) => p.data?.items ?? []),
 
-      // Optional: Check if previous page exists
-      canFetchPrev: ({ firstPage }) => (firstPage?.data?.meta.page ?? 1) > 1,
+    // Optional: Check if previous page exists
+    canFetchPrev: ({ firstPage }) => (firstPage?.data?.meta.page ?? 1) > 1,
 
-      // Optional: Build request for previous page
-      prevPageRequest: ({ firstPage }) => ({
-        query: { page: (firstPage?.data?.meta.page ?? 2) - 1 },
-      }),
-    }
-  );
+    // Optional: Build request for previous page
+    prevPageRequest: ({ firstPage }) => ({
+      query: { page: (firstPage?.data?.meta.page ?? 2) - 1 },
+    }),
+  });
 }
 ```
 
@@ -203,7 +200,7 @@ export class PostListComponent {
 | `input`   | `TriggerOptions \| undefined` | Last trigger input                 |
 | `abort`   | `() => void`                  | Abort current request              |
 
-### injectInfiniteRead(readFn, options)
+### injectPages(readFn, options)
 
 | Option            | Type                                          | Required | Description                                       |
 | ----------------- | --------------------------------------------- | -------- | ------------------------------------------------- |

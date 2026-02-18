@@ -8,7 +8,7 @@ import type {
 import type {
   PollingReadOptions,
   PollingWriteOptions,
-  PollingInfiniteReadOptions,
+  PollingPagesOptions,
   PollingReadResult,
   PollingWriteResult,
 } from "./types";
@@ -47,7 +47,7 @@ const PLUGIN_NAME = "spoosh:polling";
 export function pollingPlugin(): SpooshPlugin<{
   readOptions: PollingReadOptions;
   writeOptions: PollingWriteOptions;
-  infiniteReadOptions: PollingInfiniteReadOptions;
+  pagesOptions: PollingPagesOptions;
   readResult: PollingReadResult;
   writeResult: PollingWriteResult;
 }> {
@@ -127,7 +127,7 @@ export function pollingPlugin(): SpooshPlugin<{
 
   return {
     name: PLUGIN_NAME,
-    operations: ["read", "infiniteRead"],
+    operations: ["read", "pages"],
 
     afterResponse(context, response) {
       scheduleNextPoll(context, response);

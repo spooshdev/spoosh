@@ -73,7 +73,7 @@ export interface RetryWriteOptions {
   shouldRetry?: ShouldRetryCallback;
 }
 
-export type RetryInfiniteReadOptions = RetryReadOptions;
+export type RetryPagesOptions = RetryReadOptions;
 
 export type RetryQueueOptions = RetryReadOptions;
 

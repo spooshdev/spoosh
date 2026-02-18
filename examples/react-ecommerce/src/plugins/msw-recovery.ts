@@ -101,7 +101,7 @@ function isHtmlResponse(data: unknown): boolean {
 export function mswRecoveryPlugin(): SpooshPlugin {
   return {
     name: PLUGIN_NAME,
-    operations: ["read", "write", "infiniteRead"],
+    operations: ["read", "write", "pages"],
 
     async middleware(context, next) {
       const response = await next();

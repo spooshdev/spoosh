@@ -41,11 +41,11 @@ import type {
   QueueTriggerInput,
 } from "../useQueue/types";
 import type {
-  BaseInfiniteReadOptions,
-  BaseInfiniteReadResult,
-  InfiniteReadApiClient,
-  InfiniteTriggerOptions,
-} from "../useInfiniteRead/types";
+  BasePagesOptions,
+  BasePagesResult,
+  PagesApiClient,
+  PagesTriggerOptions,
+} from "../usePages/types";
 
 type InferError<T, TDefaultError> = [T] extends [unknown] ? TDefaultError : T;
 
@@ -220,39 +220,38 @@ type UseQueueFn<TDefaultError, TSchema, TPlugins extends PluginArray> = {
   >;
 };
 
-type InfiniteReadResolverContext<TSchema, TData, TError, TRequest> =
-  ResolverContext<
-    TSchema,
-    TData,
-    TError,
-    TRequest extends { query: infer Q } ? Q : never,
-    TRequest extends { body: infer B } ? B : never,
-    TRequest extends { params: infer P } ? P : never
-  >;
+type PagesResolverContext<TSchema, TData, TError, TRequest> = ResolverContext<
+  TSchema,
+  TData,
+  TError,
+  TRequest extends { query: infer Q } ? Q : never,
+  TRequest extends { body: infer B } ? B : never,
+  TRequest extends { params: infer P } ? P : never
+>;
 
-type ResolvedInfiniteReadOptions<
+type ResolvedPagesOptions<
   TSchema,
   TPlugins extends PluginArray,
   TData,
   TError,
   TRequest,
 > = ResolveTypes<
-  MergePluginOptions<TPlugins>["infiniteRead"],
-  InfiniteReadResolverContext<TSchema, TData, TError, TRequest>
+  MergePluginOptions<TPlugins>["pages"],
+  PagesResolverContext<TSchema, TData, TError, TRequest>
 >;
 
-type UseInfiniteReadFn<TDefaultError, TSchema, TPlugins extends PluginArray> = <
+type UsePagesFn<TDefaultError, TSchema, TPlugins extends PluginArray> = <
   TReadFn extends (
-    api: InfiniteReadApiClient<TSchema, TDefaultError>
+    api: PagesApiClient<TSchema, TDefaultError>
   ) => Promise<SpooshResponse<unknown, unknown>>,
   TData = TReadFn extends (
-    api: InfiniteReadApiClient<TSchema, TDefaultError>
+    api: PagesApiClient<TSchema, TDefaultError>
   ) => Promise<SpooshResponse<infer D, unknown>>
     ? D
     : unknown,
   TItem = unknown,
   TError = TReadFn extends (
-    api: InfiniteReadApiClient<TSchema, TDefaultError>
+    api: PagesApiClient<TSchema, TDefaultError>
   ) => Promise<SpooshResponse<unknown, infer E>>
     ? [E] extends [unknown]
       ? TDefaultError
@@ -261,18 +260,18 @@ type UseInfiniteReadFn<TDefaultError, TSchema, TPlugins extends PluginArray> = <
   TRequest extends InfiniteRequestOptions = InfiniteRequestOptions,
 >(
   readFn: TReadFn,
-  readOptions: BaseInfiniteReadOptions<TData, TItem, TRequest> &
-    ResolvedInfiniteReadOptions<TSchema, TPlugins, TData, TError, TRequest>
-) => BaseInfiniteReadResult<
+  readOptions: BasePagesOptions<TData, TItem, TRequest> &
+    ResolvedPagesOptions<TSchema, TPlugins, TData, TError, TRequest>
+) => BasePagesResult<
   TData,
   TError,
   TItem,
   MergePluginResults<TPlugins>["read"],
-  InfiniteTriggerOptions<TReadFn>
+  PagesTriggerOptions<TReadFn>
 >;
 
 /**
- * Spoosh React hooks interface containing useRead, useWrite, and useInfiniteRead.
+ * Spoosh React hooks interface containing useRead, useWrite, and usePages.
  *
  * @template TDefaultError - The default error type
  * @template TSchema - The API schema type
@@ -329,7 +328,7 @@ export type SpooshReactHooks<
    *
    * @example
    * ```tsx
-   * const { data, fetchNext, canFetchNext, loading } = useInfiniteRead(
+   * const { data, fetchNext, canFetchNext, loading } = usePages(
    *   (api) => api("posts").GET(),
    *   {
    *     canFetchNext: ({ lastPage }) => !!lastPage?.data?.nextCursor,
@@ -339,7 +338,7 @@ export type SpooshReactHooks<
    * );
    * ```
    */
-  useInfiniteRead: UseInfiniteReadFn<TDefaultError, TSchema, TPlugins>;
+  usePages: UsePagesFn<TDefaultError, TSchema, TPlugins>;
 
   /**
    * React hook for queued operations with concurrency control.

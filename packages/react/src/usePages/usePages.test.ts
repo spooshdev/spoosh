@@ -6,7 +6,7 @@ import { renderHook, act, waitFor } from "@testing-library/react";
 import { vi, describe, it, expect } from "vitest";
 import { createStateManager, createEventEmitter } from "@spoosh/test-utils";
 import { createPluginExecutor } from "@spoosh/core";
-import { createUseInfiniteRead } from "./index";
+import { createUsePages } from "./index";
 
 type PageResponse = {
   items: { id: number }[];
@@ -72,14 +72,14 @@ function createTestHooks() {
   const pluginExecutor = createPluginExecutor([]);
   const { api, calls } = createMockApi();
 
-  const useInfiniteRead = createUseInfiniteRead<any, unknown, []>({
+  const usePages = createUsePages<any, unknown, []>({
     api,
     stateManager,
     eventEmitter,
     pluginExecutor,
   });
 
-  return { useInfiniteRead, stateManager, eventEmitter, calls };
+  return { usePages, stateManager, eventEmitter, calls };
 }
 
 function createErrorTestHooks() {
@@ -88,23 +88,23 @@ function createErrorTestHooks() {
   const pluginExecutor = createPluginExecutor([]);
   const { api } = createErrorApi();
 
-  const useInfiniteRead = createUseInfiniteRead<any, unknown, []>({
+  const usePages = createUsePages<any, unknown, []>({
     api,
     stateManager,
     eventEmitter,
     pluginExecutor,
   });
 
-  return { useInfiniteRead, stateManager, eventEmitter };
+  return { usePages, stateManager, eventEmitter };
 }
 
-describe("useInfiniteRead", () => {
+describe("usePages", () => {
   describe("Basic Functionality", () => {
     it("should return data, loading, and pages", async () => {
-      const { useInfiniteRead } = createTestHooks();
+      const { usePages } = createTestHooks();
 
       const { result } = renderHook(() =>
-        useInfiniteRead<PageResponse, { id: number }>(
+        usePages<PageResponse, { id: number }>(
           (api: any) => api("/posts").GET(),
           {
             canFetchNext: (ctx) => ctx.lastPage?.data?.nextCursor !== undefined,
@@ -127,10 +127,10 @@ describe("useInfiniteRead", () => {
     });
 
     it("should return canFetchNext and canFetchPrev flags", async () => {
-      const { useInfiniteRead } = createTestHooks();
+      const { usePages } = createTestHooks();
 
       const { result } = renderHook(() =>
-        useInfiniteRead<PageResponse, { id: number }>(
+        usePages<PageResponse, { id: number }>(
           (api: any) => api("/posts").GET(),
           {
             canFetchNext: (ctx) => ctx.lastPage?.data?.nextCursor !== undefined,
@@ -156,10 +156,10 @@ describe("useInfiniteRead", () => {
     });
 
     it("should return fetchNext and fetchPrev functions", async () => {
-      const { useInfiniteRead } = createTestHooks();
+      const { usePages } = createTestHooks();
 
       const { result } = renderHook(() =>
-        useInfiniteRead<PageResponse, { id: number }>(
+        usePages<PageResponse, { id: number }>(
           (api: any) => api("/posts").GET(),
           {
             canFetchNext: (ctx) => ctx.lastPage?.data?.nextCursor !== undefined,
@@ -182,10 +182,10 @@ describe("useInfiniteRead", () => {
 
   describe("Pagination", () => {
     it("should fetch initial page on mount", async () => {
-      const { useInfiniteRead, calls } = createTestHooks();
+      const { usePages, calls } = createTestHooks();
 
       renderHook(() =>
-        useInfiniteRead<PageResponse, { id: number }>(
+        usePages<PageResponse, { id: number }>(
           (api: any) => api("/posts").GET(),
           {
             canFetchNext: (ctx) => ctx.lastPage?.data?.nextCursor !== undefined,
@@ -206,10 +206,10 @@ describe("useInfiniteRead", () => {
     });
 
     it("should fetch next page when fetchNext is called", async () => {
-      const { useInfiniteRead, calls } = createTestHooks();
+      const { usePages, calls } = createTestHooks();
 
       const { result } = renderHook(() =>
-        useInfiniteRead<PageResponse, { id: number }>(
+        usePages<PageResponse, { id: number }>(
           (api: any) => api("/posts").GET(),
           {
             canFetchNext: (ctx) => ctx.lastPage?.data?.nextCursor !== undefined,
@@ -235,10 +235,10 @@ describe("useInfiniteRead", () => {
     });
 
     it("should fetch previous page when fetchPrev is called", async () => {
-      const { useInfiniteRead, calls } = createTestHooks();
+      const { usePages, calls } = createTestHooks();
 
       const { result } = renderHook(() =>
-        useInfiniteRead<PageResponse, { id: number }>(
+        usePages<PageResponse, { id: number }>(
           (api: any) =>
             api("/posts").GET({
               query: { cursor: "2" },
@@ -272,10 +272,10 @@ describe("useInfiniteRead", () => {
     });
 
     it("should merge responses correctly using merger function", async () => {
-      const { useInfiniteRead } = createTestHooks();
+      const { usePages } = createTestHooks();
 
       const { result } = renderHook(() =>
-        useInfiniteRead<PageResponse, { id: number }>(
+        usePages<PageResponse, { id: number }>(
           (api: any) => api("/posts").GET(),
           {
             canFetchNext: (ctx) => ctx.lastPage?.data?.nextCursor !== undefined,
@@ -308,10 +308,10 @@ describe("useInfiniteRead", () => {
 
   describe("State Flags", () => {
     it("should set fetchingNext to true during next page fetch", async () => {
-      const { useInfiniteRead } = createTestHooks();
+      const { usePages } = createTestHooks();
 
       const { result } = renderHook(() =>
-        useInfiniteRead<PageResponse, { id: number }>(
+        usePages<PageResponse, { id: number }>(
           (api: any) => api("/posts").GET(),
           {
             canFetchNext: (ctx) => ctx.lastPage?.data?.nextCursor !== undefined,
@@ -336,10 +336,10 @@ describe("useInfiniteRead", () => {
     });
 
     it("should set fetchingPrev to true during prev page fetch", async () => {
-      const { useInfiniteRead } = createTestHooks();
+      const { usePages } = createTestHooks();
 
       const { result } = renderHook(() =>
-        useInfiniteRead<PageResponse, { id: number }>(
+        usePages<PageResponse, { id: number }>(
           (api: any) =>
             api("/posts").GET({
               query: { cursor: "2" },
@@ -371,10 +371,10 @@ describe("useInfiniteRead", () => {
     });
 
     it("should correctly differentiate loading vs fetching states", async () => {
-      const { useInfiniteRead } = createTestHooks();
+      const { usePages } = createTestHooks();
 
       const { result } = renderHook(() =>
-        useInfiniteRead<PageResponse, { id: number }>(
+        usePages<PageResponse, { id: number }>(
           (api: any) => api("/posts").GET(),
           {
             canFetchNext: (ctx) => ctx.lastPage?.data?.nextCursor !== undefined,
@@ -399,11 +399,11 @@ describe("useInfiniteRead", () => {
 
   describe("Callbacks", () => {
     it("should use canFetchNext predicate to control pagination", async () => {
-      const { useInfiniteRead } = createTestHooks();
+      const { usePages } = createTestHooks();
       const canFetchNextFn = vi.fn(() => false);
 
       const { result } = renderHook(() =>
-        useInfiniteRead<PageResponse, { id: number }>(
+        usePages<PageResponse, { id: number }>(
           (api: any) => api("/posts").GET(),
           {
             canFetchNext: canFetchNextFn,
@@ -423,11 +423,11 @@ describe("useInfiniteRead", () => {
     });
 
     it("should use canFetchPrev predicate to control pagination", async () => {
-      const { useInfiniteRead } = createTestHooks();
+      const { usePages } = createTestHooks();
       const canFetchPrevFn = vi.fn(() => false);
 
       const { result } = renderHook(() =>
-        useInfiniteRead<PageResponse, { id: number }>(
+        usePages<PageResponse, { id: number }>(
           (api: any) => api("/posts").GET(),
           {
             canFetchNext: (ctx) => ctx.lastPage?.data?.nextCursor !== undefined,
@@ -451,10 +451,10 @@ describe("useInfiniteRead", () => {
     });
 
     it("should use nextPageRequest to generate correct options", async () => {
-      const { useInfiniteRead, calls } = createTestHooks();
+      const { usePages, calls } = createTestHooks();
 
       const { result } = renderHook(() =>
-        useInfiniteRead<PageResponse, { id: number }>(
+        usePages<PageResponse, { id: number }>(
           (api: any) => api("/posts").GET(),
           {
             canFetchNext: (ctx) => ctx.lastPage?.data?.nextCursor !== undefined,
@@ -485,10 +485,10 @@ describe("useInfiniteRead", () => {
     });
 
     it("should use prevPageRequest to generate correct options", async () => {
-      const { useInfiniteRead, calls } = createTestHooks();
+      const { usePages, calls } = createTestHooks();
 
       const { result } = renderHook(() =>
-        useInfiniteRead<PageResponse, { id: number }>(
+        usePages<PageResponse, { id: number }>(
           (api: any) =>
             api("/posts").GET({
               query: { cursor: "2" },
@@ -534,7 +534,7 @@ describe("useInfiniteRead", () => {
       const pluginExecutor = createPluginExecutor([]);
       const api = () => ({});
 
-      const useInfiniteRead = createUseInfiniteRead({
+      const usePages = createUsePages({
         api: api as unknown,
         stateManager,
         eventEmitter,
@@ -543,23 +543,20 @@ describe("useInfiniteRead", () => {
 
       expect(() => {
         renderHook(() =>
-          useInfiniteRead(
-            () => Promise.resolve({ data: undefined, status: 200 }),
-            {
-              canFetchNext: () => false,
-              nextPageRequest: () => ({}),
-              merger: () => [],
-            }
-          )
+          usePages(() => Promise.resolve({ data: undefined, status: 200 }), {
+            canFetchNext: () => false,
+            nextPageRequest: () => ({}),
+            merger: () => [],
+          })
         );
-      }).toThrow("useInfiniteRead requires calling an HTTP method");
+      }).toThrow("usePages requires calling an HTTP method");
     });
 
     it("should handle failed fetch gracefully", async () => {
-      const { useInfiniteRead } = createErrorTestHooks();
+      const { usePages } = createErrorTestHooks();
 
       const { result } = renderHook(() =>
-        useInfiniteRead<PageResponse, { id: number }>(
+        usePages<PageResponse, { id: number }>(
           (api: any) => api("/posts").GET(),
           {
             canFetchNext: () => false,
@@ -579,10 +576,10 @@ describe("useInfiniteRead", () => {
 
   describe("Event Handling", () => {
     it("should respond to invalidate events", async () => {
-      const { useInfiniteRead, eventEmitter, calls } = createTestHooks();
+      const { usePages, eventEmitter, calls } = createTestHooks();
 
       const { result } = renderHook(() =>
-        useInfiniteRead<PageResponse, { id: number }>(
+        usePages<PageResponse, { id: number }>(
           (api: any) => api("/posts").GET(),
           {
             tags: ["posts"],
@@ -611,10 +608,10 @@ describe("useInfiniteRead", () => {
     });
 
     it("should refetch on invalidation", async () => {
-      const { useInfiniteRead, eventEmitter, calls } = createTestHooks();
+      const { usePages, eventEmitter, calls } = createTestHooks();
 
       const { result } = renderHook(() =>
-        useInfiniteRead<PageResponse, { id: number }>(
+        usePages<PageResponse, { id: number }>(
           (api: any) => api("/posts").GET(),
           {
             tags: ["posts"],
@@ -645,10 +642,10 @@ describe("useInfiniteRead", () => {
     });
 
     it("should respond to refetchAll events", async () => {
-      const { useInfiniteRead, eventEmitter, calls } = createTestHooks();
+      const { usePages, eventEmitter, calls } = createTestHooks();
 
       const { result } = renderHook(() =>
-        useInfiniteRead<PageResponse, { id: number }>(
+        usePages<PageResponse, { id: number }>(
           (api: any) => api("/posts").GET(),
           {
             canFetchNext: (ctx) => ctx.lastPage?.data?.nextCursor !== undefined,
@@ -680,10 +677,10 @@ describe("useInfiniteRead", () => {
 
   describe("Additional Edge Cases", () => {
     it("should not fetch when enabled is false", async () => {
-      const { useInfiniteRead, calls } = createTestHooks();
+      const { usePages, calls } = createTestHooks();
 
       renderHook(() =>
-        useInfiniteRead<PageResponse, { id: number }>(
+        usePages<PageResponse, { id: number }>(
           (api: any) => api("/posts").GET(),
           {
             enabled: false,
@@ -702,10 +699,10 @@ describe("useInfiniteRead", () => {
     });
 
     it("should return trigger function for manual refetch", async () => {
-      const { useInfiniteRead, calls } = createTestHooks();
+      const { usePages, calls } = createTestHooks();
 
       const { result } = renderHook(() =>
-        useInfiniteRead<PageResponse, { id: number }>(
+        usePages<PageResponse, { id: number }>(
           (api: any) => api("/posts").GET(),
           {
             canFetchNext: (ctx) => ctx.lastPage?.data?.nextCursor !== undefined,
@@ -733,10 +730,10 @@ describe("useInfiniteRead", () => {
     });
 
     it("should return abort function", async () => {
-      const { useInfiniteRead } = createTestHooks();
+      const { usePages } = createTestHooks();
 
       const { result } = renderHook(() =>
-        useInfiniteRead<PageResponse, { id: number }>(
+        usePages<PageResponse, { id: number }>(
           (api: any) => api("/posts").GET(),
           {
             canFetchNext: (ctx) => ctx.lastPage?.data?.nextCursor !== undefined,
@@ -758,10 +755,10 @@ describe("useInfiniteRead", () => {
 
   describe("Trigger with Options", () => {
     it("should restart pagination with new query params when trigger is called with options", async () => {
-      const { useInfiniteRead, calls } = createTestHooks();
+      const { usePages, calls } = createTestHooks();
 
       const { result } = renderHook(() =>
-        useInfiniteRead<PageResponse, { id: number }>(
+        usePages<PageResponse, { id: number }>(
           (api: any) => api("/posts").GET({ query: { search: "initial" } }),
           {
             canFetchNext: (ctx) => ctx.lastPage?.data?.nextCursor !== undefined,
@@ -789,10 +786,10 @@ describe("useInfiniteRead", () => {
     });
 
     it("should preserve trigger options in subsequent fetchNext calls", async () => {
-      const { useInfiniteRead, calls } = createTestHooks();
+      const { usePages, calls } = createTestHooks();
 
       const { result } = renderHook(() =>
-        useInfiniteRead<PageResponse, { id: number }>(
+        usePages<PageResponse, { id: number }>(
           (api: any) => api("/posts").GET({ query: { search: "initial" } }),
           {
             canFetchNext: (ctx) => ctx.lastPage?.data?.nextCursor !== undefined,
@@ -822,10 +819,10 @@ describe("useInfiniteRead", () => {
     });
 
     it("should reset to original request when trigger is called without options", async () => {
-      const { useInfiniteRead, calls } = createTestHooks();
+      const { usePages, calls } = createTestHooks();
 
       const { result } = renderHook(() =>
-        useInfiniteRead<PageResponse, { id: number }>(
+        usePages<PageResponse, { id: number }>(
           (api: any) => api("/posts").GET({ query: { search: "original" } }),
           {
             canFetchNext: (ctx) => ctx.lastPage?.data?.nextCursor !== undefined,
@@ -854,10 +851,10 @@ describe("useInfiniteRead", () => {
     });
 
     it("should delete page caches when trigger is called with force: true (default)", async () => {
-      const { useInfiniteRead, stateManager, calls } = createTestHooks();
+      const { usePages, stateManager, calls } = createTestHooks();
 
       const { result } = renderHook(() =>
-        useInfiniteRead<PageResponse, { id: number }>(
+        usePages<PageResponse, { id: number }>(
           (api: any) => api("/posts").GET(),
           {
             canFetchNext: (ctx) => ctx.lastPage?.data?.nextCursor !== undefined,
@@ -896,10 +893,10 @@ describe("useInfiniteRead", () => {
     });
 
     it("should not delete page caches when trigger is called with force: false", async () => {
-      const { useInfiniteRead, stateManager } = createTestHooks();
+      const { usePages, stateManager } = createTestHooks();
 
       const { result } = renderHook(() =>
-        useInfiniteRead<PageResponse, { id: number }>(
+        usePages<PageResponse, { id: number }>(
           (api: any) => api("/posts").GET(),
           {
             canFetchNext: (ctx) => ctx.lastPage?.data?.nextCursor !== undefined,
@@ -936,11 +933,11 @@ describe("useInfiniteRead", () => {
 
   describe("Reactive Query Changes", () => {
     it("should restart pagination when query params change in read function", async () => {
-      const { useInfiniteRead, calls } = createTestHooks();
+      const { usePages, calls } = createTestHooks();
 
       const { result, rerender } = renderHook(
         ({ search }: { search: string }) =>
-          useInfiniteRead<PageResponse, { id: number }>(
+          usePages<PageResponse, { id: number }>(
             (api: any) => api("/posts").GET({ query: { search } }),
             {
               canFetchNext: (ctx) =>
@@ -972,11 +969,11 @@ describe("useInfiniteRead", () => {
     });
 
     it("should create fresh pagination state when query changes", async () => {
-      const { useInfiniteRead } = createTestHooks();
+      const { usePages } = createTestHooks();
 
       const { result, rerender } = renderHook(
         ({ search }: { search: string }) =>
-          useInfiniteRead<PageResponse, { id: number }>(
+          usePages<PageResponse, { id: number }>(
             (api: any) => api("/posts").GET({ query: { search } }),
             {
               canFetchNext: (ctx) =>
@@ -1008,11 +1005,11 @@ describe("useInfiniteRead", () => {
     });
 
     it("should not refetch when query params remain the same", async () => {
-      const { useInfiniteRead, calls } = createTestHooks();
+      const { usePages, calls } = createTestHooks();
 
       const { result, rerender } = renderHook(
         ({ search }: { search: string }) =>
-          useInfiniteRead<PageResponse, { id: number }>(
+          usePages<PageResponse, { id: number }>(
             (api: any) => api("/posts").GET({ query: { search } }),
             {
               canFetchNext: (ctx) =>

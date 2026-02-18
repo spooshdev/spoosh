@@ -6,7 +6,7 @@ export interface InitialDataReadOptions<TData = unknown> {
   refetchOnInitialData?: boolean;
 }
 
-export type InitialDataInfiniteReadOptions<TData = unknown> =
+export type InitialDataPagesOptions<TData = unknown> =
   InitialDataReadOptions<TData>;
 
 export interface InitialDataReadResult {

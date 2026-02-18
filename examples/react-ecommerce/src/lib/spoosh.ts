@@ -40,7 +40,7 @@ const spoosh = new Spoosh<ApiSchema, ApiError>("/api").use([
 export const {
   useRead,
   useWrite,
-  useInfiniteRead,
+  usePages,
   prefetch,
   invalidate,
   clearCache,

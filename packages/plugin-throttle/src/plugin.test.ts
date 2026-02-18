@@ -17,9 +17,9 @@ describe("throttlePlugin", () => {
       expect(plugin.name).toBe("spoosh:throttle");
     });
 
-    it("should operate on read and infiniteRead operations", () => {
+    it("should operate on read and pages operations", () => {
       const plugin = throttlePlugin();
-      expect(plugin.operations).toEqual(["read", "infiniteRead"]);
+      expect(plugin.operations).toEqual(["read", "pages"]);
     });
   });
 
@@ -291,17 +291,17 @@ describe("throttlePlugin", () => {
     });
   });
 
-  describe("infiniteRead operations", () => {
-    it("should throttle infiniteRead operations", async () => {
+  describe("pages operations", () => {
+    it("should throttle pages operations", async () => {
       const plugin = throttlePlugin();
 
       const context1 = createMockContext({
-        operationType: "infiniteRead",
+        operationType: "pages",
         path: "users",
         pluginOptions: { throttle: 1000 },
       });
       const context2 = createMockContext({
-        operationType: "infiniteRead",
+        operationType: "pages",
         path: "users",
         pluginOptions: { throttle: 1000 },
       });

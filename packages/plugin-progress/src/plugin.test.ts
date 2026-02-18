@@ -9,14 +9,9 @@ describe("progressPlugin", () => {
       expect(plugin.name).toBe("spoosh:progress");
     });
 
-    it("should operate on read, write, infiniteRead, and queue operations", () => {
+    it("should operate on read, write, pages, and queue operations", () => {
       const plugin = progressPlugin();
-      expect(plugin.operations).toEqual([
-        "read",
-        "write",
-        "infiniteRead",
-        "queue",
-      ]);
+      expect(plugin.operations).toEqual(["read", "write", "pages", "queue"]);
     });
   });
 
@@ -343,11 +338,11 @@ describe("progressPlugin", () => {
     });
   });
 
-  describe("infiniteRead operations", () => {
-    it("should set xhr transport for infiniteRead operations with progress", async () => {
+  describe("pages operations", () => {
+    it("should set xhr transport for pages operations with progress", async () => {
       const plugin = progressPlugin();
       const context = createMockContext({
-        operationType: "infiniteRead",
+        operationType: "pages",
         pluginOptions: { progress: true },
       });
       const next = vi

@@ -18,7 +18,7 @@ export type DeduplicationWriteOptions = {
   dedupe?: DedupeMode;
 };
 
-export type DeduplicationInfiniteReadOptions = {
+export type DeduplicationPagesOptions = {
   /** Override deduplication for this request. */
   dedupe?: DedupeMode;
 };

@@ -22,7 +22,7 @@ type BaseTriggerOptions = {
   force?: boolean;
 };
 
-export type InfiniteTriggerOptions<TReadFn> =
+export type PagesTriggerOptions<TReadFn> =
   ExtractInputFromResponse<TriggerAwaitedReturn<TReadFn>> extends infer I
     ? [I] extends [never]
       ? BaseTriggerOptions
@@ -33,7 +33,7 @@ export type InfiniteTriggerOptions<TReadFn> =
     : BaseTriggerOptions;
 
 /**
- * Options for `injectInfiniteRead`.
+ * Options for `injectPages`.
  *
  * @template TData - The response data type for each page
  * @template TItem - The item type after merging all pages
@@ -41,7 +41,7 @@ export type InfiniteTriggerOptions<TReadFn> =
  * @template TRequest - The request options type
  * @template TMeta - Plugin metadata type
  */
-export interface BaseInfiniteReadOptions<
+export interface BasePagesOptions<
   TData,
   TItem,
   TError = unknown,
@@ -111,7 +111,7 @@ export interface BaseInfiniteReadOptions<
 }
 
 /**
- * Result returned by `injectInfiniteRead`.
+ * Result returned by `injectPages`.
  *
  * @template TData - The response data type for each page
  * @template TError - The error type
@@ -119,7 +119,7 @@ export interface BaseInfiniteReadOptions<
  * @template TPluginResult - Plugin-provided result fields
  * @template TTriggerOptions - Options that can be passed to trigger()
  */
-export interface BaseInfiniteReadResult<
+export interface BasePagesResult<
   TData,
   TError,
   TItem,
@@ -166,7 +166,7 @@ export interface BaseInfiniteReadResult<
   abort: () => void;
 }
 
-export type InfiniteReadApiClient<TSchema, TDefaultError> = ReadClient<
+export type PagesApiClient<TSchema, TDefaultError> = ReadClient<
   TSchema,
   TDefaultError
 >;

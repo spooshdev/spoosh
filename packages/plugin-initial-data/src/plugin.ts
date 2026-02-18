@@ -2,7 +2,7 @@ import type { SpooshPlugin } from "@spoosh/core";
 
 import type {
   InitialDataReadOptions,
-  InitialDataInfiniteReadOptions,
+  InitialDataPagesOptions,
   InitialDataReadResult,
   InitialDataWriteOptions,
   InitialDataWriteResult,
@@ -46,7 +46,7 @@ const PLUGIN_NAME = "spoosh:initialData";
 export function initialDataPlugin(): SpooshPlugin<{
   readOptions: InitialDataReadOptions;
   writeOptions: InitialDataWriteOptions;
-  infiniteReadOptions: InitialDataInfiniteReadOptions;
+  pagesOptions: InitialDataPagesOptions;
   readResult: InitialDataReadResult;
   writeResult: InitialDataWriteResult;
 }> {
@@ -54,7 +54,7 @@ export function initialDataPlugin(): SpooshPlugin<{
 
   return {
     name: PLUGIN_NAME,
-    operations: ["read", "infiniteRead"],
+    operations: ["read", "pages"],
 
     middleware: async (context, next) => {
       const t = context.tracer?.(PLUGIN_NAME);

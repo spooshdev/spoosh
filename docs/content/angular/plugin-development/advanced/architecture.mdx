@@ -51,7 +51,7 @@ The `PluginContext` object is passed to every plugin function and contains all i
 
 ```typescript
 interface PluginContext {
-  readonly operationType: "read" | "write" | "infiniteRead";
+  readonly operationType: "read" | "write" | "pages";
   readonly path: string;
   readonly method: HttpMethod;
   readonly queryKey: string;
@@ -265,7 +265,7 @@ The `PluginTypeConfig` generic parameter defines what types your plugin contribu
 interface PluginTypeConfig {
   readOptions?: object;
   writeOptions?: object;
-  infiniteReadOptions?: object;
+  pagesOptions?: object;
   readResult?: object;
   writeResult?: object;
   instanceApi?: object;

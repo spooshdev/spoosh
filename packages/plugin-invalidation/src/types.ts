@@ -38,7 +38,7 @@ export interface InvalidationWriteTriggerOptions<TSchema = unknown> {
 
 export type InvalidationReadOptions = object;
 
-export type InvalidationInfiniteReadOptions = object;
+export type InvalidationPagesOptions = object;
 
 export type InvalidationReadResult = object;
 

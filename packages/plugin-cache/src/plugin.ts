@@ -5,7 +5,7 @@ import type {
   CacheReadOptions,
   CacheWriteOptions,
   CacheWriteTriggerOptions,
-  CacheInfiniteReadOptions,
+  CachePagesOptions,
   CacheReadResult,
   CacheWriteResult,
   CacheInstanceApi,
@@ -47,7 +47,7 @@ export function cachePlugin(config: CachePluginConfig = {}): SpooshPlugin<{
   readOptions: CacheReadOptions;
   writeOptions: CacheWriteOptions;
   writeTriggerOptions: CacheWriteTriggerOptions;
-  infiniteReadOptions: CacheInfiniteReadOptions;
+  pagesOptions: CachePagesOptions;
   readResult: CacheReadResult;
   writeResult: CacheWriteResult;
   instanceApi: CacheInstanceApi;
@@ -56,7 +56,7 @@ export function cachePlugin(config: CachePluginConfig = {}): SpooshPlugin<{
 
   return {
     name: PLUGIN_NAME,
-    operations: ["read", "infiniteRead", "write"],
+    operations: ["read", "pages", "write"],
     priority: -10,
 
     middleware: async (context, next) => {

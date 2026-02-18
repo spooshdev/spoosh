@@ -4,7 +4,7 @@ E-commerce demo showcasing Spoosh data layer capabilities.
 
 ## Spoosh Features Demonstrated
 
-- **Infinite Scroll** — Paginated product list with `useInfiniteRead`
+- **Infinite Scroll** — Paginated product list with `usePages`
 - **Search Debounce** — Debounced search input with `debouncePlugin`
 - **Hover Prefetch** — Preload product details on hover with `prefetch`
 - **Optimistic Updates** — Instant UI feedback for likes, comments, and cart actions

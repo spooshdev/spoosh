@@ -120,7 +120,7 @@ import { SpooshPlugin } from "@spoosh/core";
 function globalErrorPlugin(): SpooshPlugin {
   return {
     name: "global-error",
-    operations: ["read", "write", "infiniteRead"],
+    operations: ["read", "write", "pages"],
     afterResponse: (context, response) => {
       const error = response.error as ApiError | undefined;
 

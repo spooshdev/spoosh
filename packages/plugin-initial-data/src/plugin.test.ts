@@ -30,9 +30,9 @@ describe("initialDataPlugin", () => {
       expect(plugin.name).toBe("spoosh:initialData");
     });
 
-    it("should operate on read and infiniteRead operations", () => {
+    it("should operate on read and pages operations", () => {
       const plugin = initialDataPlugin();
-      expect(plugin.operations).toEqual(["read", "infiniteRead"]);
+      expect(plugin.operations).toEqual(["read", "pages"]);
     });
   });
 
@@ -473,7 +473,7 @@ describe("initialDataPlugin", () => {
       expect(result.status).toBe(200);
     });
 
-    it("should work correctly for infiniteRead operation", async () => {
+    it("should work correctly for pages operation", async () => {
       const plugin = initialDataPlugin();
       const stateManager = createStateManager();
       const initialData = { items: [], nextCursor: null };
@@ -481,7 +481,7 @@ describe("initialDataPlugin", () => {
       const context = createMockContext({
         stateManager,
         instanceId: "hook-18",
-        operationType: "infiniteRead",
+        operationType: "pages",
         pluginOptions: { initialData },
       });
 

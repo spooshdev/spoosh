@@ -24,13 +24,13 @@ import {
   resolveTags,
 } from "@spoosh/core";
 import type {
-  BaseInfiniteReadOptions,
-  BaseInfiniteReadResult,
-  InfiniteReadApiClient,
+  BasePagesOptions,
+  BasePagesResult,
+  PagesApiClient,
 } from "./types";
 import type { SpooshInstanceShape } from "../create/types";
 
-export function createUseInfiniteRead<
+export function createUsePages<
   TSchema,
   TDefaultError,
   TPlugins extends readonly SpooshPlugin<PluginTypeConfig>[],
@@ -45,24 +45,24 @@ export function createUseInfiniteRead<
   type PluginOptions = MergePluginOptions<TPlugins>;
   type PluginResults = MergePluginResults<TPlugins>;
 
-  return function useInfiniteRead<
+  return function usePages<
     TData,
     TItem,
     TError = TDefaultError,
     TRequest extends InfiniteRequestOptions = InfiniteRequestOptions,
   >(
     readFn: (
-      api: InfiniteReadApiClient<TSchema, TDefaultError>
+      api: PagesApiClient<TSchema, TDefaultError>
     ) => Promise<SpooshResponse<TData, TError>>,
-    readOptions: BaseInfiniteReadOptions<
+    readOptions: BasePagesOptions<
       TData,
       TItem,
       TError,
       TRequest,
       PluginResults["read"]
     > &
-      PluginOptions["infiniteRead"]
-  ): BaseInfiniteReadResult<TData, TError, TItem, PluginResults["read"]> {
+      PluginOptions["pages"]
+  ): BasePagesResult<TData, TError, TItem, PluginResults["read"]> {
     const {
       enabled = true,
       tags,
@@ -91,8 +91,8 @@ export function createUseInfiniteRead<
 
     if (!capturedCall) {
       throw new Error(
-        "useInfiniteRead requires calling an HTTP method (GET). " +
-          'Example: useInfiniteRead((api) => api("posts").GET())'
+        "usePages requires calling an HTTP method (GET). " +
+          'Example: usePages((api) => api("posts").GET())'
       );
     }
 
@@ -367,7 +367,7 @@ export function createUseInfiniteRead<
       error: state.error,
     };
 
-    return result as BaseInfiniteReadResult<
+    return result as BasePagesResult<
       TData,
       TError,
       TItem,

@@ -27,14 +27,14 @@ import {
   resolveTags,
 } from "@spoosh/core";
 import type {
-  BaseInfiniteReadOptions,
-  BaseInfiniteReadResult,
-  InfiniteReadApiClient as ReadApiClient,
-  InfiniteTriggerOptions,
+  BasePagesOptions,
+  BasePagesResult,
+  PagesApiClient as ReadApiClient,
+  PagesTriggerOptions,
 } from "./types";
 import type { SpooshInstanceShape } from "../types/shared";
 
-export function createInjectInfiniteRead<
+export function createInjectPages<
   TSchema,
   TDefaultError,
   TPlugins extends readonly SpooshPlugin<PluginTypeConfig>[],
@@ -66,7 +66,7 @@ export function createInjectInfiniteRead<
 
   type InferError<T> = [T] extends [unknown] ? TDefaultError : T;
 
-  return function injectInfiniteRead<
+  return function injectPages<
     TReadFn extends (
       api: ReadApiClient<TSchema, TDefaultError>
     ) => Promise<SpooshResponse<unknown, unknown>>,
@@ -74,7 +74,7 @@ export function createInjectInfiniteRead<
     TItem = unknown,
   >(
     readFn: TReadFn,
-    readOptions: BaseInfiniteReadOptions<
+    readOptions: BasePagesOptions<
       ExtractData<TReadFn>,
       TItem,
       InferError<ExtractError<TReadFn>>,
@@ -89,12 +89,12 @@ export function createInjectInfiniteRead<
           InferError<ExtractError<TReadFn>>
         >
       >
-  ): BaseInfiniteReadResult<
+  ): BasePagesResult<
     ExtractData<TReadFn>,
     InferError<ExtractError<TReadFn>>,
     TItem,
     PluginResults["read"],
-    InfiniteTriggerOptions<TReadFn>
+    PagesTriggerOptions<TReadFn>
   > {
     type TData = ExtractData<TReadFn>;
     type TError = InferError<ExtractError<TReadFn>>;
@@ -140,8 +140,8 @@ export function createInjectInfiniteRead<
 
       if (!selectorResult.call) {
         throw new Error(
-          "injectInfiniteRead requires calling an HTTP method (GET). " +
-            'Example: injectInfiniteRead((api) => api("posts").GET())'
+          "injectPages requires calling an HTTP method (GET). " +
+            'Example: injectPages((api) => api("posts").GET())'
         );
       }
 
@@ -578,12 +578,12 @@ export function createInjectInfiniteRead<
       abort,
     };
 
-    return result as unknown as BaseInfiniteReadResult<
+    return result as unknown as BasePagesResult<
       TData,
       TError,
       TItem,
       PluginResults["read"],
-      InfiniteTriggerOptions<TReadFn>
+      PagesTriggerOptions<TReadFn>
     >;
   };
 }

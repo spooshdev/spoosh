@@ -346,12 +346,12 @@ export function myPlugin(): SpooshPlugin<{
   // Per-request options users can pass
   readOptions: MyReadOptions;
   writeOptions: MyWriteOptions;
-  infiniteReadOptions: MyInfiniteReadOptions;
+  pagesOptions: MyPagesOptions;
 
   // What gets added to hook results
   readResult: MyReadResult; // Includes meta
   writeResult: MyWriteResult; // Includes meta
-  infiniteReadResult: MyInfiniteReadResult;
+  pagesResult: MyPagesResult;
 
   // What gets added to create() return
   instanceApi: MyInstanceApi;

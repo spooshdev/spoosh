@@ -3,7 +3,7 @@ import type { SpooshPlugin } from "@spoosh/core";
 import type {
   ProgressReadOptions,
   ProgressWriteOptions,
-  ProgressInfiniteReadOptions,
+  ProgressPagesOptions,
   ProgressQueueOptions,
   ProgressReadResult,
   ProgressWriteResult,
@@ -16,7 +16,7 @@ const PLUGIN_NAME = "spoosh:progress";
 export function progressPlugin(): SpooshPlugin<{
   readOptions: ProgressReadOptions;
   writeOptions: ProgressWriteOptions;
-  infiniteReadOptions: ProgressInfiniteReadOptions;
+  pagesOptions: ProgressPagesOptions;
   queueOptions: ProgressQueueOptions;
   readResult: ProgressReadResult;
   writeResult: ProgressWriteResult;
@@ -24,7 +24,7 @@ export function progressPlugin(): SpooshPlugin<{
 }> {
   return {
     name: PLUGIN_NAME,
-    operations: ["read", "write", "infiniteRead", "queue"],
+    operations: ["read", "write", "pages", "queue"],
 
     middleware: async (context, next) => {
       const t = context.tracer?.(PLUGIN_NAME);

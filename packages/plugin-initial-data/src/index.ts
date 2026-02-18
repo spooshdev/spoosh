@@ -1,7 +1,7 @@
 export { initialDataPlugin } from "./plugin";
 export type {
   InitialDataReadOptions,
-  InitialDataInfiniteReadOptions,
+  InitialDataPagesOptions,
   InitialDataReadResult,
   InitialDataWriteOptions,
   InitialDataWriteResult,

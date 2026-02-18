@@ -17,12 +17,12 @@ export function renderHeader(ctx: HeaderRenderContext): string {
     ? ""
     : `
     <div class="spoosh-filters">
-      ${(["read", "write", "infiniteRead", "queue"] as const)
+      ${(["read", "write", "pages", "queue"] as const)
         .map((type) => {
           const active = filters.operationTypes.has(type);
           const label =
-            type === "infiniteRead"
-              ? "Infinite"
+            type === "pages"
+              ? "Pages"
               : type.charAt(0).toUpperCase() + type.slice(1);
           return `<button class="spoosh-filter ${active ? "active" : ""}" data-filter="${type}">${label}</button>`;
         })

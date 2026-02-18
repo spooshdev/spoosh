@@ -460,8 +460,8 @@ describe("debouncePlugin", () => {
     });
   });
 
-  describe("infiniteRead operation", () => {
-    it("should debounce infiniteRead operations", async () => {
+  describe("pages operation", () => {
+    it("should debounce pages operations", async () => {
       const plugin = debouncePlugin();
       const stateManager = createStateManager();
       const eventEmitter = createEventEmitter();
@@ -470,7 +470,7 @@ describe("debouncePlugin", () => {
       const context = createMockContext({
         stateManager,
         eventEmitter,
-        operationType: "infiniteRead",
+        operationType: "pages",
         queryKey: '{"method":"GET","path":["posts"],"query":{"cursor":"abc"}}',
         request: { query: { cursor: "abc" } },
         pluginOptions: { debounce: 250 },

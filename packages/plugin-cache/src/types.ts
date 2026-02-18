@@ -25,7 +25,7 @@ export interface CacheWriteTriggerOptions {
   clearCache?: boolean;
 }
 
-export interface CacheInfiniteReadOptions {
+export interface CachePagesOptions {
   /** Time in milliseconds before cached data is considered stale. Overrides plugin default. */
   staleTime?: number;
 }

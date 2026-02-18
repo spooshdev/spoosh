@@ -3,7 +3,7 @@ export interface ThrottleReadOptions {
   throttle?: number;
 }
 
-export type ThrottleInfiniteReadOptions = ThrottleReadOptions;
+export type ThrottlePagesOptions = ThrottleReadOptions;
 
 export type ThrottleWriteOptions = object;
 

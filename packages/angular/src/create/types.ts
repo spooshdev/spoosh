@@ -24,8 +24,8 @@ export type SpooshAngularFunctions<
       TPlugins
     >
   >;
-  injectInfiniteRead: ReturnType<
-    typeof import("../injectInfiniteRead").createInjectInfiniteRead<
+  injectPages: ReturnType<
+    typeof import("../injectPages").createInjectPages<
       TSchema,
       TDefaultError,
       TPlugins

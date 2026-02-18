@@ -1,15 +1,15 @@
 ---
 title: Infinite Queries
-description: Load more data as the user scrolls with useInfiniteRead
+description: Load more data as the user scrolls with usePages
 ---
 
-`useInfiniteRead` is designed for infinite scroll interfaces where new data appends to an ever-growing list as the user scrolls down.
+`usePages` is designed for infinite scroll interfaces where new data appends to an ever-growing list as the user scrolls down.
 
-> For complete API reference, see [useInfiniteRead](/docs/react/hooks/use-infinite-read).
+> For complete API reference, see [usePages](/docs/react/hooks/use-pages).
 
 ## How It Works
 
-`useInfiniteRead` doesn't assume any specific response shape — you tell it how to read your API's response via callback functions. The `nextPageRequest` function returns only the fields that change between pages. These are automatically merged with the original request, so you don't need to spread existing query parameters.
+`usePages` doesn't assume any specific response shape — you tell it how to read your API's response via callback functions. The `nextPageRequest` function returns only the fields that change between pages. These are automatically merged with the original request, so you don't need to spread existing query parameters.
 
 Given an API that returns:
 
@@ -26,7 +26,7 @@ Given an API that returns:
 You map those fields in the options:
 
 ```typescript
-const { data, canFetchNext, fetchNext, fetchingNext } = useInfiniteRead(
+const { data, canFetchNext, fetchNext, fetchingNext } = usePages(
   (api) => api("posts").GET({ query: { page: 1, limit: 20 } }),
   {
     canFetchNext: ({ lastPage }) => lastPage?.data?.meta.hasMore ?? false,
@@ -59,7 +59,7 @@ merger: (pages) => pages.flatMap((p) => p.data?.items ?? []),
 If you need access to the raw pages (e.g., for page metadata or per-page status), use `pages` from the hook return:
 
 ```typescript
-const { data, pages } = useInfiniteRead(...);
+const { data, pages } = usePages(...);
 
 // data  → merged flat list from merger()
 // pages → array of page objects with status, data, error, and meta
@@ -70,7 +70,7 @@ const { data, pages } = useInfiniteRead(...);
 ```typescript
 function PostFeed() {
   const { data, loading, canFetchNext, fetchNext, fetchingNext } =
-    useInfiniteRead(
+    usePages(
       (api) => api("posts").GET({ query: { page: 1, limit: 20 } }),
       {
         canFetchNext: ({ lastPage }) => lastPage?.data?.meta.hasMore ?? false,
@@ -108,7 +108,7 @@ function InfinitePostFeed() {
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   const { data, loading, canFetchNext, fetchNext, fetchingNext } =
-    useInfiniteRead(
+    usePages(
       (api) => api("posts").GET({ query: { page: 1, limit: 20 } }),
       {
         canFetchNext: ({ lastPage }) => lastPage?.data?.meta.hasMore ?? false,
@@ -163,7 +163,7 @@ For APIs that return a cursor instead of page numbers:
 ```
 
 ```typescript
-const { data, canFetchNext, fetchNext, fetchingNext } = useInfiniteRead(
+const { data, canFetchNext, fetchNext, fetchingNext } = usePages(
   (api) => api("feed").GET({ query: { limit: 20 } }),
   {
     canFetchNext: ({ lastPage }) => !!lastPage?.data?.nextCursor,
@@ -188,20 +188,17 @@ const {
   fetchPrev,
   fetchingNext,
   fetchingPrev,
-} = useInfiniteRead(
-  (api) => api("messages").GET({ query: { page: 5, limit: 20 } }),
-  {
-    canFetchNext: ({ lastPage }) => lastPage?.data?.meta.hasMore ?? false,
-    nextPageRequest: ({ lastPage }) => ({
-      query: { page: (lastPage?.data?.meta.page ?? 0) + 1 },
-    }),
-    canFetchPrev: ({ firstPage }) => (firstPage?.data?.meta.page ?? 1) > 1,
-    prevPageRequest: ({ firstPage }) => ({
-      query: { page: (firstPage?.data?.meta.page ?? 2) - 1 },
-    }),
-    merger: (pages) => pages.flatMap((p) => p.data?.messages ?? []),
-  }
-);
+} = usePages((api) => api("messages").GET({ query: { page: 5, limit: 20 } }), {
+  canFetchNext: ({ lastPage }) => lastPage?.data?.meta.hasMore ?? false,
+  nextPageRequest: ({ lastPage }) => ({
+    query: { page: (lastPage?.data?.meta.page ?? 0) + 1 },
+  }),
+  canFetchPrev: ({ firstPage }) => (firstPage?.data?.meta.page ?? 1) > 1,
+  prevPageRequest: ({ firstPage }) => ({
+    query: { page: (firstPage?.data?.meta.page ?? 2) - 1 },
+  }),
+  merger: (pages) => pages.flatMap((p) => p.data?.messages ?? []),
+});
 ```
 
 ```typescript
@@ -228,7 +225,7 @@ function MessageThread() {
 
 ## Combining with Plugins
 
-`useInfiniteRead` works with plugins like cache and deduplication. Each page request has its own cache key, and the merged list is derived from these cached responses. Deduplication prevents duplicate requests when scrolling quickly:
+`usePages` works with plugins like cache and deduplication. Each page request has its own cache key, and the merged list is derived from these cached responses. Deduplication prevents duplicate requests when scrolling quickly:
 
 ```typescript
 const spoosh = new Spoosh<ApiSchema, Error>("/api").use([
@@ -248,7 +245,7 @@ Use the `trigger` function to start a new fetch with different request options. 
 function SearchablePosts() {
   const [search, setSearch] = useState("");
 
-  const { data, trigger, loading } = useInfiniteRead(
+  const { data, trigger, loading } = usePages(
     (api) => api("posts").GET({ query: { page: 1, limit: 20 } }),
     {
       enabled: false, // Don't fetch on mount - use trigger instead
@@ -299,11 +296,11 @@ trigger({ query: { search: "react", category: "tech" } });
 
 ## Reactive State Changes
 
-Like `useRead`, `useInfiniteRead` reacts to changes in the request function. When query parameters change, it automatically fetches with the new parameters:
+Like `useRead`, `usePages` reacts to changes in the request function. When query parameters change, it automatically fetches with the new parameters:
 
 ```typescript
 function FilteredPosts({ category }: { category: string }) {
-  const { data, loading, canFetchNext, fetchNext } = useInfiniteRead(
+  const { data, loading, canFetchNext, fetchNext } = usePages(
     // When category changes, this triggers a new fetch automatically
     (api) => api("posts").GET({ query: { page: 1, category } }),
     {
@@ -335,7 +332,7 @@ Choose based on your use case:
 
 ```typescript
 // Reactive: category from props/state
-const { data } = useInfiniteRead(
+const { data } = usePages(
   (api) => api("posts").GET({ query: { page: 1, category } }),
   {
     /* options */
@@ -343,7 +340,7 @@ const { data } = useInfiniteRead(
 );
 
 // Trigger: manual search (force: false to use cache if available)
-const { data, trigger } = useInfiniteRead(
+const { data, trigger } = usePages(
   (api) => api("posts").GET({ query: { page: 1 } }),
   { enabled: false /* options */ }
 );
@@ -355,7 +352,7 @@ trigger({ query: { search: searchTerm }, force: false });
 Use the `trigger` function without options to reset to the initial request and refetch from the beginning:
 
 ```typescript
-const { data, trigger } = useInfiniteRead(
+const { data, trigger } = usePages(
   (api) => api("posts").GET({ query: { page: 1, limit: 20 } }),
   {
     canFetchNext: ({ lastPage }) => lastPage?.data?.meta.hasMore ?? false,

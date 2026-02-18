@@ -982,36 +982,36 @@ describe("createPluginExecutor", () => {
     });
   });
 
-  describe("infiniteRead operation type", () => {
-    it("executes middleware for infiniteRead operation", async () => {
+  describe("pages operation type", () => {
+    it("executes middleware for pages operation", async () => {
       const middleware = vi
         .fn()
         .mockImplementation(async (_ctx, next) => next());
-      const plugin = createMockPlugin("infinite-plugin", ["infiniteRead"], {
+      const plugin = createMockPlugin("infinite-plugin", ["pages"], {
         middleware,
       });
 
       const executor = createPluginExecutor([plugin]);
-      const context = createMockContext({ operationType: "infiniteRead" });
+      const context = createMockContext({ operationType: "pages" });
       const coreFetch = vi
         .fn()
         .mockResolvedValue({ data: "test", status: 200 });
 
-      await executor.executeMiddleware("infiniteRead", context, coreFetch);
+      await executor.executeMiddleware("pages", context, coreFetch);
 
       expect(middleware).toHaveBeenCalledTimes(1);
     });
 
-    it("executes lifecycle for infiniteRead operation", async () => {
+    it("executes lifecycle for pages operation", async () => {
       const onMount = vi.fn();
-      const plugin = createMockPlugin("infinite-plugin", ["infiniteRead"], {
+      const plugin = createMockPlugin("infinite-plugin", ["pages"], {
         lifecycle: { onMount },
       });
 
       const executor = createPluginExecutor([plugin]);
-      const context = createMockContext({ operationType: "infiniteRead" });
+      const context = createMockContext({ operationType: "pages" });
 
-      await executor.executeLifecycle("onMount", "infiniteRead", context);
+      await executor.executeLifecycle("onMount", "pages", context);
 
       expect(onMount).toHaveBeenCalledTimes(1);
     });
@@ -1051,12 +1051,12 @@ describe("createPluginExecutor", () => {
       });
 
       const executor = createPluginExecutor([plugin]);
-      const context = createMockContext({ operationType: "infiniteRead" });
+      const context = createMockContext({ operationType: "pages" });
       const coreFetch = vi
         .fn()
         .mockResolvedValue({ data: "test", status: 200 });
 
-      await executor.executeMiddleware("infiniteRead", context, coreFetch);
+      await executor.executeMiddleware("pages", context, coreFetch);
 
       expect(middleware).not.toHaveBeenCalled();
     });

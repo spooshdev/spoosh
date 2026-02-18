@@ -78,12 +78,12 @@ describe("create", () => {
       expect(typeof result.injectWrite).toBe("function");
     });
 
-    it("returns injectInfiniteRead function", () => {
+    it("returns injectPages function", () => {
       const instance = createTestInstance();
       const result = create(instance);
 
-      expect(result.injectInfiniteRead).toBeDefined();
-      expect(typeof result.injectInfiniteRead).toBe("function");
+      expect(result.injectPages).toBeDefined();
+      expect(typeof result.injectPages).toBe("function");
     });
   });
 

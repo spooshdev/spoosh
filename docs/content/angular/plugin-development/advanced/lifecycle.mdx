@@ -46,7 +46,7 @@ const initialDataAppliedFor = new Set<string>();
 
 return {
   name: "spoosh:initialData",
-  operations: ["read", "infiniteRead"],
+  operations: ["read", "pages"],
 
   middleware: async (context, next) => {
     if (!context.instanceId) {
@@ -113,7 +113,7 @@ const clearPolling = (queryKey: string) => {
 
 return {
   name: "spoosh:polling",
-  operations: ["read", "infiniteRead"],
+  operations: ["read", "pages"],
 
   afterResponse(context, response) {
     const pollingInterval = (

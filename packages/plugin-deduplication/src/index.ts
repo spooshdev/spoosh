@@ -4,7 +4,7 @@ export type {
   DeduplicationConfig,
   DeduplicationReadOptions,
   DeduplicationWriteOptions,
-  DeduplicationInfiniteReadOptions,
+  DeduplicationPagesOptions,
   DeduplicationReadResult,
   DeduplicationWriteResult,
 } from "./types";

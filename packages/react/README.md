@@ -1,6 +1,6 @@
 # @spoosh/react
 
-React hooks for Spoosh - `useRead`, `useWrite`, and `useInfiniteRead`.
+React hooks for Spoosh - `useRead`, `useWrite`, and `usePages`.
 
 **[Documentation](https://spoosh.dev/docs/react)** · **Requirements:** TypeScript >= 5.0, React >= 18.0
 
@@ -23,7 +23,7 @@ const spoosh = new Spoosh<ApiSchema, Error>("/api").use([
   cachePlugin({ staleTime: 5000 }),
 ]);
 
-export const { useRead, useWrite, useInfiniteRead } = create(spoosh);
+export const { useRead, useWrite, usePages } = create(spoosh);
 ```
 
 ### useRead
@@ -98,7 +98,7 @@ await updateUser.trigger({
 });
 ```
 
-### useInfiniteRead
+### usePages
 
 Bidirectional paginated data fetching with infinite scroll support.
 
@@ -114,7 +114,7 @@ function PostList() {
     fetchPrev,
     fetchingNext,
     fetchingPrev,
-  } = useInfiniteRead(
+  } = usePages(
     (api) => api("posts").GET({ query: { page: 1 } }),
     {
       // Required: Check if next page exists
@@ -192,7 +192,7 @@ function PostList() {
 | `loading` | `boolean`              | True while mutation is in progress |
 | `abort`   | `() => void`           | Abort current request              |
 
-### useInfiniteRead(readFn, options)
+### usePages(readFn, options)
 
 | Option            | Type                         | Required | Description                                       |
 | ----------------- | ---------------------------- | -------- | ------------------------------------------------- |

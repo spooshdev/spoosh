@@ -2,7 +2,7 @@
 import { vi, describe, it, expect, beforeEach } from "vitest";
 import { createStateManager, createEventEmitter } from "@spoosh/test-utils";
 import { createPluginExecutor } from "@spoosh/core";
-import { createInjectInfiniteRead } from "../injectInfiniteRead";
+import { createInjectPages } from "../injectPages";
 
 let destroyCallbacks: Array<() => void> = [];
 let effectCleanups: Array<() => void> = [];
@@ -123,14 +123,14 @@ function createTestHooks() {
   const pluginExecutor = createPluginExecutor([]);
   const { api, calls } = createMockApi();
 
-  const injectInfiniteRead = createInjectInfiniteRead<any, unknown, []>({
+  const injectPages = createInjectPages<any, unknown, []>({
     api,
     stateManager,
     eventEmitter,
     pluginExecutor,
   });
 
-  return { injectInfiniteRead, stateManager, eventEmitter, calls };
+  return { injectPages, stateManager, eventEmitter, calls };
 }
 
 function createErrorTestHooks() {
@@ -139,14 +139,14 @@ function createErrorTestHooks() {
   const pluginExecutor = createPluginExecutor([]);
   const { api } = createErrorApi();
 
-  const injectInfiniteRead = createInjectInfiniteRead<any, unknown, []>({
+  const injectPages = createInjectPages<any, unknown, []>({
     api,
     stateManager,
     eventEmitter,
     pluginExecutor,
   });
 
-  return { injectInfiniteRead, stateManager, eventEmitter };
+  return { injectPages, stateManager, eventEmitter };
 }
 
 async function flushPromises() {
@@ -169,7 +169,7 @@ async function waitFor(
   }
 }
 
-describe("injectInfiniteRead", () => {
+describe("injectPages", () => {
   beforeEach(() => {
     destroyCallbacks = [];
     effectCleanups = [];
@@ -178,9 +178,9 @@ describe("injectInfiniteRead", () => {
 
   describe("Basic Functionality", () => {
     it("should return data, loading, and pages signals", async () => {
-      const { injectInfiniteRead } = createTestHooks();
+      const { injectPages } = createTestHooks();
 
-      const result = injectInfiniteRead((api: any) => api("/posts").GET(), {
+      const result = injectPages((api: any) => api("/posts").GET(), {
         canFetchNext: (ctx: any) =>
           ctx.lastPage?.data?.nextCursor !== undefined,
         nextPageRequest: (ctx: any) => ({
@@ -197,9 +197,9 @@ describe("injectInfiniteRead", () => {
     });
 
     it("should return canFetchNext and canFetchPrev signals", async () => {
-      const { injectInfiniteRead } = createTestHooks();
+      const { injectPages } = createTestHooks();
 
-      const result = injectInfiniteRead((api: any) => api("/posts").GET(), {
+      const result = injectPages((api: any) => api("/posts").GET(), {
         canFetchNext: (ctx: any) =>
           ctx.lastPage?.data?.nextCursor !== undefined,
         canFetchPrev: (ctx: any) =>
@@ -220,9 +220,9 @@ describe("injectInfiniteRead", () => {
     });
 
     it("should return fetchNext and fetchPrev functions", async () => {
-      const { injectInfiniteRead } = createTestHooks();
+      const { injectPages } = createTestHooks();
 
-      const result = injectInfiniteRead((api: any) => api("/posts").GET(), {
+      const result = injectPages((api: any) => api("/posts").GET(), {
         canFetchNext: (ctx: any) =>
           ctx.lastPage?.data?.nextCursor !== undefined,
         nextPageRequest: (ctx: any) => ({
@@ -240,9 +240,9 @@ describe("injectInfiniteRead", () => {
 
   describe("Pagination", () => {
     it("should fetch initial page on mount", async () => {
-      const { injectInfiniteRead, calls } = createTestHooks();
+      const { injectPages, calls } = createTestHooks();
 
-      injectInfiniteRead((api: any) => api("/posts").GET(), {
+      injectPages((api: any) => api("/posts").GET(), {
         canFetchNext: (ctx: any) =>
           ctx.lastPage?.data?.nextCursor !== undefined,
         nextPageRequest: (ctx: any) => ({
@@ -259,9 +259,9 @@ describe("injectInfiniteRead", () => {
     });
 
     it("should fetch next page when fetchNext is called", async () => {
-      const { injectInfiniteRead, calls } = createTestHooks();
+      const { injectPages, calls } = createTestHooks();
 
-      const result = injectInfiniteRead((api: any) => api("/posts").GET(), {
+      const result = injectPages((api: any) => api("/posts").GET(), {
         canFetchNext: (ctx: any) =>
           ctx.lastPage?.data?.nextCursor !== undefined,
         nextPageRequest: (ctx: any) => ({
@@ -281,9 +281,9 @@ describe("injectInfiniteRead", () => {
     });
 
     it("should fetch previous page when fetchPrev is called", async () => {
-      const { injectInfiniteRead, calls } = createTestHooks();
+      const { injectPages, calls } = createTestHooks();
 
-      const result = injectInfiniteRead(
+      const result = injectPages(
         (api: any) =>
           api("/posts").GET({
             query: { cursor: "2" },
@@ -314,9 +314,9 @@ describe("injectInfiniteRead", () => {
     });
 
     it("should merge responses correctly using merger function", async () => {
-      const { injectInfiniteRead } = createTestHooks();
+      const { injectPages } = createTestHooks();
 
-      const result = injectInfiniteRead((api: any) => api("/posts").GET(), {
+      const result = injectPages((api: any) => api("/posts").GET(), {
         canFetchNext: (ctx: any) =>
           ctx.lastPage?.data?.nextCursor !== undefined,
         nextPageRequest: (ctx: any) => ({
@@ -343,9 +343,9 @@ describe("injectInfiniteRead", () => {
 
   describe("State Flags", () => {
     it("should set fetchingNext to false after next page fetch completes", async () => {
-      const { injectInfiniteRead } = createTestHooks();
+      const { injectPages } = createTestHooks();
 
-      const result = injectInfiniteRead((api: any) => api("/posts").GET(), {
+      const result = injectPages((api: any) => api("/posts").GET(), {
         canFetchNext: (ctx: any) =>
           ctx.lastPage?.data?.nextCursor !== undefined,
         nextPageRequest: (ctx: any) => ({
@@ -363,9 +363,9 @@ describe("injectInfiniteRead", () => {
     });
 
     it("should set fetchingPrev to false after prev page fetch completes", async () => {
-      const { injectInfiniteRead } = createTestHooks();
+      const { injectPages } = createTestHooks();
 
-      const result = injectInfiniteRead(
+      const result = injectPages(
         (api: any) =>
           api("/posts").GET({
             query: { cursor: "2" },
@@ -394,9 +394,9 @@ describe("injectInfiniteRead", () => {
     });
 
     it("should correctly differentiate loading vs fetching states", async () => {
-      const { injectInfiniteRead } = createTestHooks();
+      const { injectPages } = createTestHooks();
 
-      const result = injectInfiniteRead((api: any) => api("/posts").GET(), {
+      const result = injectPages((api: any) => api("/posts").GET(), {
         canFetchNext: (ctx: any) =>
           ctx.lastPage?.data?.nextCursor !== undefined,
         nextPageRequest: (ctx: any) => ({
@@ -415,10 +415,10 @@ describe("injectInfiniteRead", () => {
 
   describe("Callbacks", () => {
     it("should use canFetchNext predicate to control pagination", async () => {
-      const { injectInfiniteRead } = createTestHooks();
+      const { injectPages } = createTestHooks();
       const canFetchNextFn = vi.fn(() => false);
 
-      const result = injectInfiniteRead((api: any) => api("/posts").GET(), {
+      const result = injectPages((api: any) => api("/posts").GET(), {
         canFetchNext: canFetchNextFn,
         nextPageRequest: (ctx: any) => ({
           query: { cursor: ctx.lastPage?.data?.nextCursor },
@@ -432,10 +432,10 @@ describe("injectInfiniteRead", () => {
     });
 
     it("should use canFetchPrev predicate to control pagination", async () => {
-      const { injectInfiniteRead } = createTestHooks();
+      const { injectPages } = createTestHooks();
       const canFetchPrevFn = vi.fn(() => false);
 
-      const result = injectInfiniteRead((api: any) => api("/posts").GET(), {
+      const result = injectPages((api: any) => api("/posts").GET(), {
         canFetchNext: (ctx: any) =>
           ctx.lastPage?.data?.nextCursor !== undefined,
         canFetchPrev: canFetchPrevFn,
@@ -454,9 +454,9 @@ describe("injectInfiniteRead", () => {
     });
 
     it("should use nextPageRequest to generate correct options", async () => {
-      const { injectInfiniteRead, calls } = createTestHooks();
+      const { injectPages, calls } = createTestHooks();
 
-      const result = injectInfiniteRead((api: any) => api("/posts").GET(), {
+      const result = injectPages((api: any) => api("/posts").GET(), {
         canFetchNext: (ctx: any) =>
           ctx.lastPage?.data?.nextCursor !== undefined,
         nextPageRequest: (ctx: any) => ({
@@ -481,9 +481,9 @@ describe("injectInfiniteRead", () => {
     });
 
     it("should use prevPageRequest to generate correct options", async () => {
-      const { injectInfiniteRead, calls } = createTestHooks();
+      const { injectPages, calls } = createTestHooks();
 
-      const result = injectInfiniteRead(
+      const result = injectPages(
         (api: any) =>
           api("/posts").GET({
             query: { cursor: "2" },
@@ -526,7 +526,7 @@ describe("injectInfiniteRead", () => {
       const pluginExecutor = createPluginExecutor([]);
       const api = () => ({});
 
-      const injectInfiniteRead = createInjectInfiniteRead({
+      const injectPages = createInjectPages({
         api: api as unknown,
         stateManager,
         eventEmitter,
@@ -534,21 +534,18 @@ describe("injectInfiniteRead", () => {
       });
 
       expect(() => {
-        injectInfiniteRead(
-          () => Promise.resolve({ data: undefined, status: 200 }),
-          {
-            canFetchNext: () => false,
-            nextPageRequest: () => ({}),
-            merger: () => [],
-          }
-        );
-      }).toThrow("injectInfiniteRead requires calling an HTTP method");
+        injectPages(() => Promise.resolve({ data: undefined, status: 200 }), {
+          canFetchNext: () => false,
+          nextPageRequest: () => ({}),
+          merger: () => [],
+        });
+      }).toThrow("injectPages requires calling an HTTP method");
     });
 
     it("should handle failed fetch gracefully", async () => {
-      const { injectInfiniteRead } = createErrorTestHooks();
+      const { injectPages } = createErrorTestHooks();
 
-      const result = injectInfiniteRead((api: any) => api("/posts").GET(), {
+      const result = injectPages((api: any) => api("/posts").GET(), {
         canFetchNext: () => false,
         nextPageRequest: () => ({}),
         merger: (pages: any[]) => pages.flatMap((p) => p.data?.items ?? []),
@@ -562,9 +559,9 @@ describe("injectInfiniteRead", () => {
 
   describe("Event Handling", () => {
     it("should respond to invalidate events", async () => {
-      const { injectInfiniteRead, eventEmitter, calls } = createTestHooks();
+      const { injectPages, eventEmitter, calls } = createTestHooks();
 
-      injectInfiniteRead((api: any) => api("/posts").GET(), {
+      injectPages((api: any) => api("/posts").GET(), {
         tags: ["posts"],
         canFetchNext: (ctx: any) =>
           ctx.lastPage?.data?.nextCursor !== undefined,
@@ -586,9 +583,9 @@ describe("injectInfiniteRead", () => {
     });
 
     it("should refetch on invalidation", async () => {
-      const { injectInfiniteRead, eventEmitter, calls } = createTestHooks();
+      const { injectPages, eventEmitter, calls } = createTestHooks();
 
-      const result = injectInfiniteRead((api: any) => api("/posts").GET(), {
+      const result = injectPages((api: any) => api("/posts").GET(), {
         tags: ["posts"],
         canFetchNext: (ctx: any) =>
           ctx.lastPage?.data?.nextCursor !== undefined,
@@ -611,9 +608,9 @@ describe("injectInfiniteRead", () => {
     });
 
     it("should respond to refetchAll events", async () => {
-      const { injectInfiniteRead, eventEmitter, calls } = createTestHooks();
+      const { injectPages, eventEmitter, calls } = createTestHooks();
 
-      const result = injectInfiniteRead((api: any) => api("/posts").GET(), {
+      const result = injectPages((api: any) => api("/posts").GET(), {
         canFetchNext: (ctx: any) =>
           ctx.lastPage?.data?.nextCursor !== undefined,
         nextPageRequest: (ctx: any) => ({
@@ -637,9 +634,9 @@ describe("injectInfiniteRead", () => {
 
   describe("Additional Edge Cases", () => {
     it("should not fetch when enabled is false", async () => {
-      const { injectInfiniteRead, calls } = createTestHooks();
+      const { injectPages, calls } = createTestHooks();
 
-      injectInfiniteRead((api: any) => api("/posts").GET(), {
+      injectPages((api: any) => api("/posts").GET(), {
         enabled: false,
         canFetchNext: (ctx: any) =>
           ctx.lastPage?.data?.nextCursor !== undefined,
@@ -656,9 +653,9 @@ describe("injectInfiniteRead", () => {
     });
 
     it("should return trigger function for manual refetch", async () => {
-      const { injectInfiniteRead, calls } = createTestHooks();
+      const { injectPages, calls } = createTestHooks();
 
-      const result = injectInfiniteRead((api: any) => api("/posts").GET(), {
+      const result = injectPages((api: any) => api("/posts").GET(), {
         canFetchNext: (ctx: any) =>
           ctx.lastPage?.data?.nextCursor !== undefined,
         nextPageRequest: (ctx: any) => ({
@@ -680,9 +677,9 @@ describe("injectInfiniteRead", () => {
     });
 
     it("should return abort function", async () => {
-      const { injectInfiniteRead } = createTestHooks();
+      const { injectPages } = createTestHooks();
 
-      const result = injectInfiniteRead((api: any) => api("/posts").GET(), {
+      const result = injectPages((api: any) => api("/posts").GET(), {
         canFetchNext: (ctx: any) =>
           ctx.lastPage?.data?.nextCursor !== undefined,
         nextPageRequest: (ctx: any) => ({

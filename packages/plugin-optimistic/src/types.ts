@@ -359,7 +359,7 @@ export interface OptimisticWriteTriggerOptions<
 
 export type OptimisticReadOptions = object;
 
-export type OptimisticInfiniteReadOptions = object;
+export type OptimisticPagesOptions = object;
 
 export interface OptimisticReadResult {
   isOptimistic: boolean;

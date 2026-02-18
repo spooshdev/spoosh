@@ -1,5 +1,5 @@
 import { FormEvent, useState } from "react";
-import { useInfiniteRead, useRead, useWrite } from "./client";
+import { usePages, useRead, useWrite } from "./client";
 
 function getErrorMessage(error: unknown): string {
   if (typeof error === "object" && error !== null && "message" in error) {
@@ -17,7 +17,7 @@ export function App() {
   const createTask = useWrite((api) => api("tasks").POST());
   const toggleTask = useWrite((api) => api("tasks/:id/toggle").POST());
 
-  const activity = useInfiniteRead(
+  const activity = usePages(
     (api) => api("activities").GET({ query: { cursor: 0, limit: 6 } }),
     {
       canFetchNext: ({ lastPage }) => lastPage?.data?.nextCursor != null,
