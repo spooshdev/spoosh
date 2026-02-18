@@ -1,5 +1,9 @@
 # @spoosh/core
 
+## 0.14.2
+
+- Add reactive state change event to infinite read controller
+
 ## 0.14.1
 
 - Add `onDataChange` event to state manager to allow plugins to react to data changes in controllers.

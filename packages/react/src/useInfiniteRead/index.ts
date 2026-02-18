@@ -4,6 +4,7 @@ import {
   useSyncExternalStore,
   useId,
   useState,
+  useCallback,
 } from "react";
 import {
   type SpooshResponse,
@@ -23,7 +24,6 @@ import type {
   BaseInfiniteReadOptions,
   BaseInfiniteReadResult,
   InfiniteReadApiClient,
-  AnyInfiniteRequestOptions,
 } from "./types";
 import type { SpooshInstanceShape } from "../create/types";
 
@@ -46,7 +46,7 @@ export function createUseInfiniteRead<
     TData,
     TItem,
     TError = TDefaultError,
-    TRequest extends AnyInfiniteRequestOptions = AnyInfiniteRequestOptions,
+    TRequest extends InfiniteRequestOptions = InfiniteRequestOptions,
   >(
     readFn: (
       api: InfiniteReadApiClient<TSchema, TDefaultError>
@@ -128,7 +128,17 @@ export function createUseInfiniteRead<
     const queryKey = stateManager.createQueryKey({
       path: capturedCall.path,
       method: capturedCall.method,
-      options: baseOptionsForKey,
+      options: capturedCall.options,
+    });
+
+    const lifecycleRef = useRef<{
+      initialized: boolean;
+      prevContext: PluginContext | null;
+      lastQueryKey: string | null;
+    }>({
+      initialized: false,
+      prevContext: null,
+      lastQueryKey: null,
     });
 
     const controllerRef = useRef<{
@@ -138,7 +148,17 @@ export function createUseInfiniteRead<
       queryKey: string;
     } | null>(null);
 
-    if (!controllerRef.current || controllerRef.current.queryKey !== queryKey) {
+    const queryKeyChanged =
+      controllerRef.current !== null &&
+      controllerRef.current.queryKey !== queryKey;
+
+    if (queryKeyChanged) {
+      lifecycleRef.current.prevContext =
+        controllerRef.current!.controller.getContext();
+      lifecycleRef.current.initialized = false;
+    }
+
+    if (!controllerRef.current || queryKeyChanged) {
       controllerRef.current = {
         controller: createInfiniteReadController<
           TData,
@@ -151,11 +171,15 @@ export function createUseInfiniteRead<
           tags: resolvedTags,
           initialRequest,
           baseOptionsForKey,
-          canFetchNext: (ctx) => canFetchNextRef.current(ctx),
+          canFetchNext: canFetchNext
+            ? (ctx) => canFetchNextRef.current?.(ctx) ?? false
+            : undefined,
           canFetchPrev: canFetchPrev
             ? (ctx) => canFetchPrevRef.current?.(ctx) ?? false
             : undefined,
-          nextPageRequest: (ctx) => nextPageRequestRef.current(ctx),
+          nextPageRequest: nextPageRequest
+            ? (ctx) => nextPageRequestRef.current?.(ctx) ?? {}
+            : undefined,
           prevPageRequest: prevPageRequest
             ? (ctx) => prevPageRequestRef.current?.(ctx) ?? {}
             : undefined,
@@ -191,11 +215,14 @@ export function createUseInfiniteRead<
 
     controller.setPluginOptions(pluginOpts);
 
-    const state = useSyncExternalStore(
-      controller.subscribe,
-      controller.getState,
-      controller.getState
+    const subscribe = useCallback(
+      (callback: () => void) => controller.subscribe(callback),
+      [controller]
     );
+
+    const getSnapshot = useCallback(() => controller.getState(), [controller]);
+
+    const state = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 
     const [isPending, setIsPending] = useState(() => {
       return enabled && state.data === undefined;
@@ -208,14 +235,6 @@ export function createUseInfiniteRead<
     const hasData = state.data !== undefined;
     const loading = (isPending || fetching) && !hasData;
 
-    const lifecycleRef = useRef<{
-      initialized: boolean;
-      prevContext: PluginContext | null;
-    }>({
-      initialized: false,
-      prevContext: null,
-    });
-
     const tagsKey = JSON.stringify(tags);
 
     useEffect(() => {
@@ -226,8 +245,34 @@ export function createUseInfiniteRead<
     }, []);
 
     useEffect(() => {
-      controller.mount();
-      lifecycleRef.current.initialized = true;
+      if (!enabled) return;
+
+      const { initialized, prevContext, lastQueryKey } = lifecycleRef.current;
+      const isQueryKeyChange =
+        lastQueryKey !== null && lastQueryKey !== queryKey;
+
+      if (!initialized) {
+        controller.mount();
+        lifecycleRef.current.initialized = true;
+
+        if (prevContext) {
+          controller.update(prevContext);
+          lifecycleRef.current.prevContext = null;
+        }
+      }
+
+      lifecycleRef.current.lastQueryKey = queryKey;
+
+      const currentState = controller.getState();
+      const isFetching = controller.getFetchingDirection() !== null;
+
+      if (isQueryKeyChange) {
+        setIsPending(true);
+        controller.trigger().finally(() => setIsPending(false));
+      } else if (currentState.data === undefined && !isFetching) {
+        setIsPending(true);
+        controller.fetchNext().finally(() => setIsPending(false));
+      }
 
       const unsubInvalidate = eventEmitter.on(
         "invalidate",
@@ -238,45 +283,38 @@ export function createUseInfiniteRead<
 
           if (hasMatch) {
             setIsPending(true);
-            controller.refetch().finally(() => setIsPending(false));
+            controller.trigger().finally(() => setIsPending(false));
           }
         }
       );
 
       const unsubRefetchAll = eventEmitter.on("refetchAll", () => {
         setIsPending(true);
-        controller.refetch().finally(() => setIsPending(false));
+        controller.trigger().finally(() => setIsPending(false));
       });
 
       return () => {
+        controller.unmount();
         unsubInvalidate();
         unsubRefetchAll();
       };
-    }, [tagsKey]);
+    }, [queryKey, enabled, tagsKey]);
 
-    useEffect(() => {
-      if (!lifecycleRef.current.initialized) return;
-
-      if (enabled) {
-        const currentState = controller.getState();
-        const isFetching = controller.getFetchingDirection() !== null;
-
-        if (currentState.data === undefined && !isFetching) {
-          setIsPending(true);
-          controller.fetchNext().finally(() => setIsPending(false));
-        }
-      }
-    }, [enabled]);
+    const pluginOptsKey = JSON.stringify(pluginOpts);
 
     useEffect(() => {
       if (!enabled || !lifecycleRef.current.initialized) return;
 
       const prevContext = controller.getContext();
       controller.update(prevContext);
-    }, [JSON.stringify(pluginOpts)]);
+    }, [pluginOptsKey]);
 
     const entry = stateManager.getCache(queryKey);
     const pluginResultData = entry?.meta ? Object.fromEntries(entry.meta) : {};
+
+    const trigger = async (options?: Partial<InfiniteRequestOptions>) => {
+      await controller.trigger(options);
+    };
 
     const result = {
       meta: pluginResultData,
@@ -290,7 +328,7 @@ export function createUseInfiniteRead<
       canFetchPrev: state.canFetchPrev,
       fetchNext: controller.fetchNext,
       fetchPrev: controller.fetchPrev,
-      trigger: controller.refetch,
+      trigger,
       abort: controller.abort,
       error: state.error,
     };

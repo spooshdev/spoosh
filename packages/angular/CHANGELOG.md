@@ -1,5 +1,9 @@
 # @spoosh/angular
 
+## 0.10.0
+
+- Improve infinite read to allow reactive state changes and custom trigger options
+
 ## 0.9.1
 
 - Bump @spoosh/core to 0.13.2

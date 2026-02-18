@@ -1,5 +1,12 @@
 import type { Signal } from "@angular/core";
-import type { SpooshResponse, ReadClient, TagOptions } from "@spoosh/core";
+import type {
+  SpooshResponse,
+  ReadClient,
+  TagOptions,
+  ExtractTriggerQuery,
+  ExtractTriggerBody,
+  ExtractTriggerParams,
+} from "@spoosh/core";
 import type { EnabledOption } from "../types/shared";
 
 export interface BaseReadOptions extends TagOptions {
@@ -41,18 +48,6 @@ type AwaitedReturnTypeTrigger<T> = T extends (...args: never[]) => infer R
   : never;
 
 type ExtractInputFromResponse<T> = T extends { input: infer I } ? I : never;
-
-type ExtractTriggerQuery<I> = I extends { query: infer Q }
-  ? { query?: Q }
-  : unknown;
-
-type ExtractTriggerBody<I> = I extends { body: infer B }
-  ? { body?: B }
-  : unknown;
-
-type ExtractTriggerParams<I> = I extends { params: infer P }
-  ? { params?: P }
-  : unknown;
 
 export type TriggerOptions<T> =
   ExtractInputFromResponse<AwaitedReturnTypeTrigger<T>> extends infer I

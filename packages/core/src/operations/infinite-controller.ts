@@ -35,7 +35,7 @@ export type InfiniteReadController<TData, TItem, TError> = {
 
   fetchNext: () => Promise<void>;
   fetchPrev: () => Promise<void>;
-  refetch: () => Promise<void>;
+  trigger: (requestOverride?: Partial<InfiniteRequestOptions>) => Promise<void>;
   abort: () => void;
 
   mount: () => void;
@@ -52,9 +52,9 @@ export type CreateInfiniteReadOptions<TData, TItem, TError, TRequest> = {
   initialRequest: InfiniteRequestOptions;
   baseOptionsForKey: object;
 
-  canFetchNext: (ctx: PageContext<TData, TRequest>) => boolean;
+  canFetchNext?: (ctx: PageContext<TData, TRequest>) => boolean;
   canFetchPrev?: (ctx: PageContext<TData, TRequest>) => boolean;
-  nextPageRequest: (ctx: PageContext<TData, TRequest>) => Partial<TRequest>;
+  nextPageRequest?: (ctx: PageContext<TData, TRequest>) => Partial<TRequest>;
   prevPageRequest?: (ctx: PageContext<TData, TRequest>) => Partial<TRequest>;
   merger: (responses: TData[]) => TItem[];
 
@@ -73,12 +73,14 @@ export type CreateInfiniteReadOptions<TData, TItem, TError, TRequest> = {
 function createTrackerKey(
   path: string,
   method: string,
-  baseOptions: object
+  baseOptions: object,
+  initialRequest: InfiniteRequestOptions
 ): string {
   return JSON.stringify({
     path,
     method,
     baseOptions,
+    initialRequest,
     type: "infinite-tracker",
   });
 }
@@ -167,9 +169,9 @@ export function createInfiniteReadController<
     tags,
     initialRequest,
     baseOptionsForKey,
-    canFetchNext,
+    canFetchNext = () => false,
     canFetchPrev,
-    nextPageRequest,
+    nextPageRequest = () => ({}) as Partial<TRequest>,
     prevPageRequest,
     merger,
     stateManager,
@@ -187,11 +189,17 @@ export function createInfiniteReadController<
   let pluginOptions: unknown = undefined;
   let fetchingDirection: FetchDirection | null = null;
   let latestError: TError | undefined = undefined;
+  let activeInitialRequest = initialRequest;
 
   let cachedState: InfiniteReadState<TData, TItem, TError> =
     createInitialInfiniteState();
 
-  const trackerKey = createTrackerKey(path, method, baseOptionsForKey);
+  const trackerKey = createTrackerKey(
+    path,
+    method,
+    baseOptionsForKey,
+    initialRequest
+  );
 
   let pageSubscriptions: (() => void)[] = [];
   let trackerSubscription: (() => void) | null = null;
@@ -238,7 +246,7 @@ export function createInfiniteReadController<
       pageKeys,
       stateManager,
       pageRequests,
-      initialRequest
+      activeInitialRequest
     );
 
     if (allResponses.length === 0) {
@@ -254,8 +262,8 @@ export function createInfiniteReadController<
 
     const lastResponse = allResponses.at(-1);
     const firstResponse = allResponses.at(0);
-    const lastRequest = allRequests.at(-1) ?? initialRequest;
-    const firstRequest = allRequests.at(0) ?? initialRequest;
+    const lastRequest = allRequests.at(-1) ?? activeInitialRequest;
+    const firstRequest = allRequests.at(0) ?? activeInitialRequest;
 
     const canNext = canFetchNext({
       response: lastResponse,
@@ -326,7 +334,10 @@ export function createInfiniteReadController<
     direction: FetchDirection,
     requestOverride: Partial<InfiniteRequestOptions>
   ): Promise<void> => {
-    const mergedRequest = shallowMergeRequest(initialRequest, requestOverride);
+    const mergedRequest = shallowMergeRequest(
+      activeInitialRequest,
+      requestOverride
+    );
     const pageKey = createPageKey(
       path,
       method,
@@ -455,13 +466,13 @@ export function createInfiniteReadController<
         pageKeys,
         stateManager,
         pageRequests,
-        initialRequest
+        activeInitialRequest
       );
 
       if (allResponses.length === 0) return;
 
       const lastResponse = allResponses.at(-1);
-      const lastRequest = allRequests.at(-1) ?? initialRequest;
+      const lastRequest = allRequests.at(-1) ?? activeInitialRequest;
 
       const canNext = canFetchNext({
         response: lastResponse,
@@ -488,13 +499,13 @@ export function createInfiniteReadController<
         pageKeys,
         stateManager,
         pageRequests,
-        initialRequest
+        activeInitialRequest
       );
 
       if (allResponses.length === 0) return;
 
       const firstResponse = allResponses.at(0);
-      const firstRequest = allRequests.at(0) ?? initialRequest;
+      const firstRequest = allRequests.at(0) ?? activeInitialRequest;
 
       const canPrev = canFetchPrev({
         response: firstResponse,
@@ -513,7 +524,7 @@ export function createInfiniteReadController<
       await doFetch("prev", prevRequest);
     },
 
-    async refetch() {
+    async trigger(requestOverride?: Partial<InfiniteRequestOptions>) {
       for (const key of pageKeys) {
         stateManager.deleteCache(key);
       }
@@ -524,6 +535,15 @@ export function createInfiniteReadController<
       pageSubscriptions = [];
       latestError = undefined;
       saveToTracker();
+
+      if (requestOverride && Object.keys(requestOverride).length > 0) {
+        activeInitialRequest = shallowMergeRequest(
+          initialRequest,
+          requestOverride
+        );
+      } else {
+        activeInitialRequest = initialRequest;
+      }
 
       fetchingDirection = "next";
       notify();
@@ -551,7 +571,7 @@ export function createInfiniteReadController<
           event.queryKey === trackerKey || pageKeys.includes(event.queryKey);
 
         if (isRelevant) {
-          controller.refetch();
+          controller.trigger();
         }
       });
 
@@ -561,7 +581,7 @@ export function createInfiniteReadController<
       });
 
       if (isStale) {
-        controller.refetch();
+        controller.trigger();
       }
     },
 

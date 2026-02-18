@@ -32,6 +32,7 @@ export type {
   BaseInfiniteReadResult,
   PageContext,
   InfiniteReadApiClient,
+  InfiniteTriggerOptions,
 } from "./injectInfiniteRead/types";
 export type {
   BaseQueueResult,

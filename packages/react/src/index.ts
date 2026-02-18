@@ -19,10 +19,10 @@ export type {
   UseInfiniteReadResult,
   BaseInfiniteReadResult,
   BaseInfiniteReadOptions,
-  AnyInfiniteRequestOptions,
   InfiniteReadApiClient,
   InfiniteNextContext,
   InfinitePrevContext,
+  InfiniteTriggerOptions,
 } from "./useInfiniteRead/types";
 export type {
   UseQueueResult,

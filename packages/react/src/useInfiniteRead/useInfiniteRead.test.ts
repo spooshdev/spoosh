@@ -748,4 +748,205 @@ describe("useInfiniteRead", () => {
       expect(typeof result.current.abort).toBe("function");
     });
   });
+
+  describe("Trigger with Options", () => {
+    it("should restart pagination with new query params when trigger is called with options", async () => {
+      const { useInfiniteRead, calls } = createTestHooks();
+
+      const { result } = renderHook(() =>
+        useInfiniteRead<PageResponse, { id: number }>(
+          (api: any) => api("/posts").GET({ query: { search: "initial" } }),
+          {
+            canFetchNext: (ctx) => ctx.response?.nextCursor !== undefined,
+            nextPageRequest: (ctx) => ({
+              query: { cursor: ctx.response?.nextCursor },
+            }),
+            merger: (responses) => responses.flatMap((r) => r.items),
+          }
+        )
+      );
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      const initialCall = calls[0];
+      expect((initialCall?.options as any)?.query?.search).toBe("initial");
+
+      await act(async () => {
+        await result.current.trigger({ query: { search: "updated" } });
+      });
+
+      const triggerCall = calls[calls.length - 1];
+      expect((triggerCall?.options as any)?.query?.search).toBe("updated");
+    });
+
+    it("should preserve trigger options in subsequent fetchNext calls", async () => {
+      const { useInfiniteRead, calls } = createTestHooks();
+
+      const { result } = renderHook(() =>
+        useInfiniteRead<PageResponse, { id: number }>(
+          (api: any) => api("/posts").GET({ query: { search: "initial" } }),
+          {
+            canFetchNext: (ctx) => ctx.response?.nextCursor !== undefined,
+            nextPageRequest: (ctx) => ({
+              query: { cursor: ctx.response?.nextCursor },
+            }),
+            merger: (responses) => responses.flatMap((r) => r.items),
+          }
+        )
+      );
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      await act(async () => {
+        await result.current.trigger({ query: { search: "filtered" } });
+      });
+
+      await act(async () => {
+        await result.current.fetchNext();
+      });
+
+      const lastCall = calls[calls.length - 1];
+      expect((lastCall?.options as any)?.query?.search).toBe("filtered");
+      expect((lastCall?.options as any)?.query?.cursor).toBeDefined();
+    });
+
+    it("should reset to original request when trigger is called without options", async () => {
+      const { useInfiniteRead, calls } = createTestHooks();
+
+      const { result } = renderHook(() =>
+        useInfiniteRead<PageResponse, { id: number }>(
+          (api: any) => api("/posts").GET({ query: { search: "original" } }),
+          {
+            canFetchNext: (ctx) => ctx.response?.nextCursor !== undefined,
+            nextPageRequest: (ctx) => ({
+              query: { cursor: ctx.response?.nextCursor },
+            }),
+            merger: (responses) => responses.flatMap((r) => r.items),
+          }
+        )
+      );
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      await act(async () => {
+        await result.current.trigger({ query: { search: "temporary" } });
+      });
+
+      await act(async () => {
+        await result.current.trigger();
+      });
+
+      const lastCall = calls[calls.length - 1];
+      expect((lastCall?.options as any)?.query?.search).toBe("original");
+    });
+  });
+
+  describe("Reactive Query Changes", () => {
+    it("should restart pagination when query params change in read function", async () => {
+      const { useInfiniteRead, calls } = createTestHooks();
+
+      const { result, rerender } = renderHook(
+        ({ search }: { search: string }) =>
+          useInfiniteRead<PageResponse, { id: number }>(
+            (api: any) => api("/posts").GET({ query: { search } }),
+            {
+              canFetchNext: (ctx) => ctx.response?.nextCursor !== undefined,
+              nextPageRequest: (ctx) => ({
+                query: { cursor: ctx.response?.nextCursor },
+              }),
+              merger: (responses) => responses.flatMap((r) => r.items),
+            }
+          ),
+        { initialProps: { search: "first" } }
+      );
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      const initialCallCount = calls.length;
+      expect((calls[0]?.options as any)?.query?.search).toBe("first");
+
+      rerender({ search: "second" });
+
+      await waitFor(() => {
+        expect(calls.length).toBeGreaterThan(initialCallCount);
+      });
+
+      const lastCall = calls[calls.length - 1];
+      expect((lastCall?.options as any)?.query?.search).toBe("second");
+    });
+
+    it("should create fresh pagination state when query changes", async () => {
+      const { useInfiniteRead } = createTestHooks();
+
+      const { result, rerender } = renderHook(
+        ({ search }: { search: string }) =>
+          useInfiniteRead<PageResponse, { id: number }>(
+            (api: any) => api("/posts").GET({ query: { search } }),
+            {
+              canFetchNext: (ctx) => ctx.response?.nextCursor !== undefined,
+              nextPageRequest: (ctx) => ({
+                query: { cursor: ctx.response?.nextCursor },
+              }),
+              merger: (responses) => responses.flatMap((r) => r.items),
+            }
+          ),
+        { initialProps: { search: "first" } }
+      );
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      await act(async () => {
+        await result.current.fetchNext();
+      });
+
+      expect(result.current.data?.length).toBe(4);
+
+      rerender({ search: "second" });
+
+      await waitFor(() => {
+        expect(result.current.data?.length).toBe(2);
+      });
+    });
+
+    it("should not refetch when query params remain the same", async () => {
+      const { useInfiniteRead, calls } = createTestHooks();
+
+      const { result, rerender } = renderHook(
+        ({ search }: { search: string }) =>
+          useInfiniteRead<PageResponse, { id: number }>(
+            (api: any) => api("/posts").GET({ query: { search } }),
+            {
+              canFetchNext: (ctx) => ctx.response?.nextCursor !== undefined,
+              nextPageRequest: (ctx) => ({
+                query: { cursor: ctx.response?.nextCursor },
+              }),
+              merger: (responses) => responses.flatMap((r) => r.items),
+            }
+          ),
+        { initialProps: { search: "same" } }
+      );
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      const callCountAfterInitial = calls.length;
+
+      rerender({ search: "same" });
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      expect(calls.length).toBe(callCountAfterInitial);
+    });
+  });
 });

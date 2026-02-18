@@ -1,6 +1,6 @@
 {
   "name": "@spoosh/angular",
-  "version": "0.9.1",
+  "version": "0.10.0",
   "license": "MIT",
   "description": "Angular signals integration for Spoosh API toolkit",
   "keywords": [
@@ -41,7 +41,7 @@
     "format": "prettier --write 'src/**/*.ts'"
   },
   "peerDependencies": {
-    "@spoosh/core": ">=0.13.2",
+    "@spoosh/core": ">=0.14.2",
     "@angular/core": ">=16.0.0"
   },
   "devDependencies": {

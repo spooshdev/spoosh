@@ -4,27 +4,44 @@ import type {
   MergePluginResults,
   ReadClient,
   TagMode,
+  ExtractTriggerQuery,
+  ExtractTriggerBody,
+  ExtractTriggerParams,
+  InfiniteRequestOptions,
 } from "@spoosh/core";
 
 type TagModeInArray = "all" | "self";
 
-export type AnyInfiniteRequestOptions = {
-  query?: Record<string, unknown>;
-  params?: Record<string, string | number>;
-  body?: unknown;
-};
+type TriggerAwaitedReturn<T> = T extends (...args: never[]) => infer R
+  ? Awaited<R>
+  : never;
+
+type ExtractInputFromResponse<T> = T extends { input: infer I } ? I : never;
+
+export type InfiniteTriggerOptions<TReadFn> =
+  ExtractInputFromResponse<TriggerAwaitedReturn<TReadFn>> extends infer I
+    ? [I] extends [never]
+      ? object
+      : ExtractTriggerQuery<I> & ExtractTriggerBody<I> & ExtractTriggerParams<I>
+    : object;
 
 /**
  * Context passed to `canFetchNext` and `nextPageRequest` callbacks.
  */
 export type InfiniteNextContext<TData, TRequest> = {
-  /** The latest fetched response data */
+  /**
+   * The last (most recent) page's response data.
+   * Use this to check if more pages exist (e.g., `response?.nextCursor != null`).
+   */
   response: TData | undefined;
 
-  /** All responses fetched so far */
+  /** All responses fetched so far, ordered from first to last page */
   allResponses: TData[];
 
-  /** The current request options (query, params, body) */
+  /**
+   * The request options used to fetch the last page.
+   * Useful for offset-based pagination (e.g., `request.query.page + 1`).
+   */
   request: TRequest;
 };
 
@@ -32,13 +49,19 @@ export type InfiniteNextContext<TData, TRequest> = {
  * Context passed to `canFetchPrev` and `prevPageRequest` callbacks.
  */
 export type InfinitePrevContext<TData, TRequest> = {
-  /** The latest fetched response data */
+  /**
+   * The first (earliest) page's response data.
+   * Use this to check if previous pages exist (e.g., `response?.prevCursor != null`).
+   */
   response: TData | undefined;
 
-  /** All responses fetched so far */
+  /** All responses fetched so far, ordered from first to last page */
   allResponses: TData[];
 
-  /** The current request options (query, params, body) */
+  /**
+   * The request options used to fetch the first page.
+   * Useful for offset-based pagination (e.g., `request.query.page - 1`).
+   */
   request: TRequest;
 };
 
@@ -52,7 +75,7 @@ export type InfinitePrevContext<TData, TRequest> = {
 export type BaseInfiniteReadOptions<
   TData,
   TItem,
-  TRequest = AnyInfiniteRequestOptions,
+  TRequest = InfiniteRequestOptions,
 > = {
   /** Whether to fetch automatically on mount. Default: true */
   enabled?: boolean;
@@ -66,21 +89,49 @@ export type BaseInfiniteReadOptions<
    */
   tags?: TagMode | (TagModeInArray | (string & {}))[];
 
-  /** Callback to determine if there's a next page to fetch */
-  canFetchNext: (ctx: InfiniteNextContext<TData, TRequest>) => boolean;
+  /**
+   * Callback to determine if there's a next page to fetch.
+   * Receives the last page's response to check for pagination indicators.
+   * Default: `() => false` (no next page fetching)
+   *
+   * @example
+   * ```ts
+   * canFetchNext: ({ response }) => response?.nextCursor != null
+   * ```
+   */
+  canFetchNext?: (ctx: InfiniteNextContext<TData, TRequest>) => boolean;
 
-  /** Callback to build the request options for the next page */
-  nextPageRequest: (
+  /**
+   * Callback to build the request options for the next page.
+   * Return only the fields that change - they will be **merged** with the initial request.
+   * Default: `() => ({})` (no changes to request)
+   *
+   * @example
+   * ```ts
+   * // Initial: { query: { cursor: 0, limit: 10 } }
+   * // Only return cursor - limit is preserved automatically
+   * nextPageRequest: ({ response }) => ({
+   *   query: { cursor: response?.nextCursor }
+   * })
+   * ```
+   */
+  nextPageRequest?: (
     ctx: InfiniteNextContext<TData, TRequest>
   ) => Partial<TRequest>;
 
   /** Callback to merge all responses into a single array of items */
   merger: (allResponses: TData[]) => TItem[];
 
-  /** Callback to determine if there's a previous page to fetch */
+  /**
+   * Callback to determine if there's a previous page to fetch.
+   * Receives the first page's response to check for pagination indicators.
+   */
   canFetchPrev?: (ctx: InfinitePrevContext<TData, TRequest>) => boolean;
 
-  /** Callback to build the request options for the previous page */
+  /**
+   * Callback to build the request options for the previous page.
+   * Return only the fields that change - they will be **merged** with the initial request.
+   */
   prevPageRequest?: (
     ctx: InfinitePrevContext<TData, TRequest>
   ) => Partial<TRequest>;
@@ -93,12 +144,14 @@ export type BaseInfiniteReadOptions<
  * @template TError - The error type
  * @template TItem - The item type after merging all responses
  * @template TPluginResult - Plugin-provided result fields
+ * @template TTriggerOptions - Options that can be passed to trigger()
  */
 export type BaseInfiniteReadResult<
   TData,
   TError,
   TItem,
   TPluginResult = Record<string, unknown>,
+  TTriggerOptions = object,
 > = {
   /** Merged items from all fetched responses */
   data: TItem[] | undefined;
@@ -133,8 +186,8 @@ export type BaseInfiniteReadResult<
   /** Fetch the previous page */
   fetchPrev: () => Promise<void>;
 
-  /** Trigger refetch of all pages from the beginning */
-  trigger: () => Promise<void>;
+  /** Trigger refetch of all pages from the beginning, optionally with new request options */
+  trigger: (options?: TTriggerOptions) => Promise<void>;
 
   /** Abort the current fetch operation */
   abort: () => void;
@@ -148,8 +201,14 @@ export type UseInfiniteReadResult<
   TError,
   TItem,
   TPlugins extends readonly SpooshPlugin<PluginTypeConfig>[],
-> = BaseInfiniteReadResult<TData, TError, TItem> &
-  MergePluginResults<TPlugins>["read"];
+  TTriggerOptions = object,
+> = BaseInfiniteReadResult<
+  TData,
+  TError,
+  TItem,
+  MergePluginResults<TPlugins>["read"],
+  TTriggerOptions
+>;
 
 export type InfiniteReadApiClient<TSchema, TDefaultError> = ReadClient<
   TSchema,

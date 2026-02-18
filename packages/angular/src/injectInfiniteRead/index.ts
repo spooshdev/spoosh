@@ -28,10 +28,9 @@ import type {
   BaseInfiniteReadResult,
   InfiniteReadApiClient as ReadApiClient,
   PageContext,
+  InfiniteTriggerOptions,
 } from "./types";
 import type { SpooshInstanceShape } from "../types/shared";
-
-export type AnyInfiniteRequestOptions = InfiniteRequestOptions;
 
 export function createInjectInfiniteRead<
   TSchema,
@@ -69,7 +68,7 @@ export function createInjectInfiniteRead<
     TReadFn extends (
       api: ReadApiClient<TSchema, TDefaultError>
     ) => Promise<SpooshResponse<unknown, unknown>>,
-    TRequest extends AnyInfiniteRequestOptions = AnyInfiniteRequestOptions,
+    TRequest extends InfiniteRequestOptions = InfiniteRequestOptions,
     TItem = unknown,
   >(
     readFn: TReadFn,
@@ -90,7 +89,8 @@ export function createInjectInfiniteRead<
     ExtractData<TReadFn>,
     InferError<ExtractError<TReadFn>>,
     TItem,
-    PluginResults["read"]
+    PluginResults["read"],
+    InfiniteTriggerOptions<TReadFn>
   > {
     type TData = ExtractData<TReadFn>;
     type TError = InferError<ExtractError<TReadFn>>;
@@ -249,14 +249,18 @@ export function createInjectInfiniteRead<
         tags: resolvedTags,
         initialRequest,
         baseOptionsForKey,
-        canFetchNext: (ctx: PageContext<TData, TRequest>) =>
-          callbackRefs.canFetchNext(ctx),
+        canFetchNext: canFetchNext
+          ? (ctx: PageContext<TData, TRequest>) =>
+              callbackRefs.canFetchNext?.(ctx) ?? false
+          : undefined,
         canFetchPrev: canFetchPrev
           ? (ctx: PageContext<TData, TRequest>) =>
               callbackRefs.canFetchPrev?.(ctx) ?? false
           : undefined,
-        nextPageRequest: (ctx: PageContext<TData, TRequest>) =>
-          callbackRefs.nextPageRequest(ctx),
+        nextPageRequest: nextPageRequest
+          ? (ctx: PageContext<TData, TRequest>) =>
+              callbackRefs.nextPageRequest?.(ctx) ?? {}
+          : undefined,
         prevPageRequest: prevPageRequest
           ? (ctx: PageContext<TData, TRequest>) =>
               callbackRefs.prevPageRequest?.(ctx) ?? {}
@@ -320,7 +324,7 @@ export function createInjectInfiniteRead<
 
           if (hasMatch) {
             loadingSignal.set(true);
-            currentController.refetch().finally(() => {
+            currentController.trigger().finally(() => {
               updateSignalsFromState();
               loadingSignal.set(false);
             });
@@ -332,7 +336,7 @@ export function createInjectInfiniteRead<
         if (!getEnabled() || !currentController) return;
 
         loadingSignal.set(true);
-        currentController.refetch().finally(() => {
+        currentController.trigger().finally(() => {
           updateSignalsFromState();
           loadingSignal.set(false);
         });
@@ -357,16 +361,10 @@ export function createInjectInfiniteRead<
       tags !== undefined ? { tags } : undefined,
       initialResolvedPath
     );
-    const initialBaseOptionsForKey = {
-      ...(initialCapturedCall.options as object),
-      query: undefined,
-      params: undefined,
-      body: undefined,
-    };
     const initialQueryKey = stateManager.createQueryKey({
       path: initialCapturedCall.path,
       method: initialCapturedCall.method,
-      options: initialBaseOptionsForKey,
+      options: initialCapturedCall.options,
     });
 
     createController(initialCapturedCall, initialResolvedTags, initialQueryKey);
@@ -391,17 +389,10 @@ export function createInjectInfiniteRead<
           resolvedPath
         );
 
-        const baseOptionsForKey = {
-          ...(capturedCall.options as object),
-          query: undefined,
-          params: undefined,
-          body: undefined,
-        };
-
         const queryKey = stateManager.createQueryKey({
           path: capturedCall.path,
           method: capturedCall.method,
-          options: baseOptionsForKey,
+          options: capturedCall.options,
         });
 
         const queryKeyChanged = queryKey !== currentQueryKey;
@@ -438,7 +429,14 @@ export function createInjectInfiniteRead<
           isMounted = true;
 
           untracked(() => {
-            triggerFetch();
+            loadingSignal.set(true);
+            fetchingNextSignal.set(true);
+            errorSignal.set(undefined);
+            controller.trigger().finally(() => {
+              updateSignalsFromState();
+              loadingSignal.set(false);
+              fetchingNextSignal.set(false);
+            });
           });
         } else if (!isMounted && currentController) {
           currentController.mount();
@@ -508,10 +506,9 @@ export function createInjectInfiniteRead<
       }
     };
 
-    const trigger = async () => {
+    const trigger = async (options?: Partial<InfiniteRequestOptions>) => {
       if (!currentController) return;
 
-      // Mount if not already mounted (allows manual fetch when enabled: false)
       if (!isMounted) {
         currentController.mount();
         isMounted = true;
@@ -520,7 +517,7 @@ export function createInjectInfiniteRead<
       loadingSignal.set(true);
 
       try {
-        await currentController.refetch();
+        await currentController.trigger(options);
         updateSignalsFromState();
       } finally {
         loadingSignal.set(false);
@@ -556,7 +553,8 @@ export function createInjectInfiniteRead<
       TData,
       TError,
       TItem,
-      PluginResults["read"]
+      PluginResults["read"],
+      InfiniteTriggerOptions<TReadFn>
     >;
   };
 }

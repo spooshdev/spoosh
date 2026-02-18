@@ -5,6 +5,9 @@ import type {
   MergePluginResults,
   ReadClient,
   TagMode,
+  ExtractTriggerQuery,
+  ExtractTriggerBody,
+  ExtractTriggerParams,
 } from "@spoosh/core";
 
 type TagModeInArray = "all" | "self";
@@ -61,18 +64,6 @@ type TriggerAwaitedReturn<T> = T extends (...args: never[]) => infer R
   : never;
 
 type ExtractInputFromResponse<T> = T extends { input: infer I } ? I : never;
-
-type ExtractTriggerQuery<I> = I extends { query: infer Q }
-  ? { query?: Q }
-  : unknown;
-
-type ExtractTriggerBody<I> = I extends { body: infer B }
-  ? { body?: B }
-  : unknown;
-
-type ExtractTriggerParams<I> = I extends { params: infer P }
-  ? { params?: P }
-  : unknown;
 
 export type TriggerOptions<T> =
   ExtractInputFromResponse<TriggerAwaitedReturn<T>> extends infer I

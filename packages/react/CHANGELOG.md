@@ -1,6 +1,10 @@
 # @spoosh/react
 
-## 0.14.0
+## 0.12.0
+
+- Improve infinite read to allow reactive state changes and custom trigger options
+
+## 0.11.0
 
 - Add `useQueue` hook for queuing multiple requests to the same endpoint.
 

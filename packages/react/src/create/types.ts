@@ -10,6 +10,7 @@ import type {
   ResolverContext,
   ResolveTypes,
   ResolveResultTypes,
+  InfiniteRequestOptions,
 } from "@spoosh/core";
 import type {
   ExtractMethodData,
@@ -42,8 +43,8 @@ import type {
 import type {
   BaseInfiniteReadOptions,
   BaseInfiniteReadResult,
-  AnyInfiniteRequestOptions,
   InfiniteReadApiClient,
+  InfiniteTriggerOptions,
 } from "../useInfiniteRead/types";
 
 type InferError<T, TDefaultError> = [T] extends [unknown] ? TDefaultError : T;
@@ -241,21 +242,33 @@ type ResolvedInfiniteReadOptions<
 >;
 
 type UseInfiniteReadFn<TDefaultError, TSchema, TPlugins extends PluginArray> = <
-  TData,
-  TItem,
-  TError = TDefaultError,
-  TRequest extends AnyInfiniteRequestOptions = AnyInfiniteRequestOptions,
->(
-  readFn: (
+  TReadFn extends (
     api: InfiniteReadApiClient<TSchema, TDefaultError>
-  ) => Promise<SpooshResponse<TData, TError>>,
+  ) => Promise<SpooshResponse<unknown, unknown>>,
+  TData = TReadFn extends (
+    api: InfiniteReadApiClient<TSchema, TDefaultError>
+  ) => Promise<SpooshResponse<infer D, unknown>>
+    ? D
+    : unknown,
+  TItem = unknown,
+  TError = TReadFn extends (
+    api: InfiniteReadApiClient<TSchema, TDefaultError>
+  ) => Promise<SpooshResponse<unknown, infer E>>
+    ? [E] extends [unknown]
+      ? TDefaultError
+      : E
+    : TDefaultError,
+  TRequest extends InfiniteRequestOptions = InfiniteRequestOptions,
+>(
+  readFn: TReadFn,
   readOptions: BaseInfiniteReadOptions<TData, TItem, TRequest> &
     ResolvedInfiniteReadOptions<TSchema, TPlugins, TData, TError, TRequest>
 ) => BaseInfiniteReadResult<
   TData,
   TError,
   TItem,
-  MergePluginResults<TPlugins>["read"]
+  MergePluginResults<TPlugins>["read"],
+  InfiniteTriggerOptions<TReadFn>
 >;
 
 /**
