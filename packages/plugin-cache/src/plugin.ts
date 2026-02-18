@@ -87,7 +87,7 @@ export function cachePlugin(config: CachePluginConfig = {}): SpooshPlugin<{
           return next();
         }
 
-        t?.log("Cache miss", { color: "info" });
+        t?.skip("Cache miss", { color: "muted" });
         return next();
       }
 
