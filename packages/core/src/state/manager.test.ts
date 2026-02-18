@@ -1,5 +1,6 @@
 import type { OperationState } from "../plugins/types";
-import { createStateManager, createInitialState } from "./manager";
+import { createStateManager } from "./manager";
+import { createInitialState } from "./utils";
 
 function createState<TData = unknown, TError = unknown>(
   overrides: Partial<OperationState<TData, TError>> = {}

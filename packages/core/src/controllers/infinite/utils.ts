@@ -1,4 +1,4 @@
-import type { StateManager } from "../../state/manager";
+import type { StateManager } from "../../state";
 import type { InfiniteReadState, InfiniteRequestOptions } from "./types";
 
 export function shallowMergeRequest(

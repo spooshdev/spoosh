@@ -1,7 +1,7 @@
 import type { SpooshPlugin, PluginContext, OperationType } from "./types";
 import type { SpooshResponse } from "../types/response.types";
 import { createPluginExecutor } from "./executor";
-import { createStateManager } from "../state/manager";
+import { createStateManager } from "../state";
 import { createEventEmitter } from "../events/emitter";
 
 function createMockContext(

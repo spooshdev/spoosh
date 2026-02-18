@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { createQueueController } from "./controller";
-import { createStateManager } from "../../state/manager";
+import { createStateManager } from "../../state";
 import { createEventEmitter } from "../../events/emitter";
 import { createPluginExecutor } from "../../plugins/executor";
 import type { SpooshResponse } from "../../types/response.types";

@@ -1,6 +1,6 @@
 import type { PluginContext } from "../../plugins/types";
 import type { PluginExecutor } from "../../plugins/executor";
-import type { StateManager } from "../../state/manager";
+import type { StateManager } from "../../state";
 import type { EventEmitter } from "../../events/emitter";
 import type { SpooshResponse } from "../../types/response.types";
 import type { HttpMethod } from "../../types/common.types";

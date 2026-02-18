@@ -1,4 +1,4 @@
-import type { StateManager } from "../state/manager";
+import type { StateManager } from "../state";
 import type { EventEmitter } from "../events/emitter";
 import type { PluginExecutor } from "../plugins/executor";
 import type { SpooshClient } from "./client.types";

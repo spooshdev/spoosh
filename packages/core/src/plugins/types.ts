@@ -2,7 +2,7 @@ import type { HttpMethod } from "../types/common.types";
 import type { AnyRequestOptions } from "../types/request.types";
 import type { SpooshResponse } from "../types/response.types";
 import type { EventEmitter } from "../events/emitter";
-import type { StateManager } from "../state/manager";
+import type { StateManager } from "../state";
 import type { RequestTracer, EventTracer } from "./devtool.types";
 
 export * from "./devtool.types";

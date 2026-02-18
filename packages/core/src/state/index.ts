@@ -1,3 +1,3 @@
-export { createStateManager, createInitialState } from "./manager";
-
-export type { StateManager, CacheEntryWithKey } from "./manager";
+export * from "./types";
+export * from "./manager";
+export { createInitialState } from "./utils";

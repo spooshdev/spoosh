@@ -1,5 +1,5 @@
 import { createOperationController } from "./controller";
-import { createStateManager, createInitialState } from "../../state/manager";
+import { createStateManager, createInitialState } from "../../state";
 import { createEventEmitter } from "../../events/emitter";
 import { createPluginExecutor } from "../../plugins/executor";
 import type { SpooshResponse } from "../../types/response.types";

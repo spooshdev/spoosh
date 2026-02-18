@@ -4,7 +4,7 @@ import type {
 } from "../../types/request.types";
 import type { SpooshResponse } from "../../types/response.types";
 import type { OperationState, PluginContext } from "../../plugins/types";
-import { createInitialState } from "../../state/manager";
+import { createInitialState } from "../../state";
 import { resolveHeadersToRecord } from "../../utils";
 import type {
   CreateOperationOptions,

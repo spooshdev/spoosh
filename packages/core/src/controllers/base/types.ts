@@ -7,7 +7,7 @@ import type {
   PluginContext,
 } from "../../plugins/types";
 import type { PluginExecutor } from "../../plugins/executor";
-import type { StateManager } from "../../state/manager";
+import type { StateManager } from "../../state";
 import type { EventEmitter } from "../../events/emitter";
 
 export type ExecuteOptions = {
