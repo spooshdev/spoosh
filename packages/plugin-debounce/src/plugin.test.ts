@@ -21,9 +21,9 @@ describe("debouncePlugin", () => {
       expect(plugin.name).toBe("spoosh:debounce");
     });
 
-    it("should operate on read and infiniteRead operations", () => {
+    it("should operate on read operations", () => {
       const plugin = debouncePlugin();
-      expect(plugin.operations).toEqual(["read", "infiniteRead"]);
+      expect(plugin.operations).toEqual(["read"]);
     });
   });
 

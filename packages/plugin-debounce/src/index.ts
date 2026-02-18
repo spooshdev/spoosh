@@ -5,7 +5,6 @@ export type {
   DebounceFn,
   RequestAwareDebounceFn,
   DebounceReadOptions,
-  DebounceInfiniteReadOptions,
   DebounceReadResult,
   DebounceWriteOptions,
   DebounceWriteResult,

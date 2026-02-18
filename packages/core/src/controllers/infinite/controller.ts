@@ -485,9 +485,7 @@ export function createInfiniteReadController<
       pluginExecutor.executeLifecycle("onMount", "infiniteRead", context);
 
       refetchUnsubscribe = eventEmitter.on("refetch", (event) => {
-        const isRelevant = pageKeys.includes(event.queryKey);
-
-        if (isRelevant) {
+        if (pageKeys.includes(event.queryKey)) {
           controller.trigger();
         }
       });

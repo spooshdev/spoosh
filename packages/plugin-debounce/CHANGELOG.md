@@ -1,5 +1,9 @@
 # @spoosh/plugin-debounce
 
+## 0.4.0
+
+- Remove `debounce` from infinite read operations. Now this only applied in read operation
+
 ## 0.3.0
 
 - Add devtool tracing support

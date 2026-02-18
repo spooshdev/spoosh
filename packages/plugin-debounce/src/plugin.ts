@@ -2,7 +2,6 @@ import type { SpooshPlugin, EventTracer } from "@spoosh/core";
 
 import type {
   DebounceReadOptions,
-  DebounceInfiniteReadOptions,
   DebounceReadResult,
   DebounceWriteOptions,
   DebounceWriteResult,
@@ -62,7 +61,6 @@ function resolveDebounceMs(
 export function debouncePlugin(): SpooshPlugin<{
   readOptions: DebounceReadOptions;
   writeOptions: DebounceWriteOptions;
-  infiniteReadOptions: DebounceInfiniteReadOptions;
   readResult: DebounceReadResult;
   writeResult: DebounceWriteResult;
 }> {
@@ -73,7 +71,7 @@ export function debouncePlugin(): SpooshPlugin<{
 
   return {
     name: PLUGIN_NAME,
-    operations: ["read", "infiniteRead"],
+    operations: ["read"],
 
     lifecycle: {
       onUnmount: (context) => {

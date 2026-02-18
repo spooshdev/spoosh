@@ -29,8 +29,6 @@ export interface DebounceReadOptions {
   debounce?: RequestAwareDebounceFn;
 }
 
-export type DebounceInfiniteReadOptions = DebounceReadOptions;
-
 export type DebounceWriteOptions = object;
 
 export type DebounceReadResult = object;
