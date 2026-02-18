@@ -872,42 +872,6 @@ describe("optimisticPlugin", () => {
       expect(entry?.state.data).toBeUndefined();
     });
 
-    it("should skip infinite-tracker entries", async () => {
-      const plugin = optimisticPlugin();
-      const stateManager = createStateManager();
-
-      const trackerKey =
-        '{"method":"GET","path":["posts"],"type":"infinite-tracker"}';
-      const regularKey = '{"method":"GET","path":["posts"]}';
-
-      setupCacheEntry(stateManager, trackerKey, { pages: [] }, "posts");
-      setupCacheEntry(stateManager, regularKey, [{ id: 1 }], "posts");
-
-      const pluginOptions = createOptimisticPluginOptions("posts", (data) => {
-        if (Array.isArray(data)) {
-          return (data as Array<{ id: number }>).map((p) => ({
-            ...p,
-            updated: true,
-          }));
-        }
-        return { ...(data as Record<string, unknown>), updated: true };
-      });
-
-      const context = createMockContext({
-        stateManager,
-        pluginOptions,
-      });
-
-      const next = vi
-        .fn()
-        .mockResolvedValue({ data: { success: true }, status: 200 });
-
-      await plugin.middleware!(context, next);
-
-      const trackerEntry = stateManager.getCache(trackerKey);
-      expect(trackerEntry?.state.data).toEqual({ pages: [] });
-    });
-
     it("should handle error response without snapshots gracefully", async () => {
       const plugin = optimisticPlugin();
       const context = createMockContext({

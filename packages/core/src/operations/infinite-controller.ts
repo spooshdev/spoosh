@@ -75,21 +75,6 @@ export type CreateInfiniteReadOptions<TData, TItem, TError, TRequest> = {
   instanceId?: string;
 };
 
-function createTrackerKey(
-  path: string,
-  method: string,
-  baseOptions: object,
-  initialRequest: InfiniteRequestOptions
-): string {
-  return JSON.stringify({
-    path,
-    method,
-    baseOptions,
-    initialRequest,
-    type: "infinite-tracker",
-  });
-}
-
 function createPageKey(
   path: string,
   method: string,
@@ -186,6 +171,7 @@ export function createInfiniteReadController<
     instanceId,
   } = options;
 
+  // Local state only - not persisted (derived model)
   let pageKeys: string[] = [];
   let pageRequests = new Map<string, InfiniteRequestOptions>();
   const subscribers = new Set<() => void>();
@@ -199,45 +185,8 @@ export function createInfiniteReadController<
   let cachedState: InfiniteReadState<TData, TItem, TError> =
     createInitialInfiniteState();
 
-  const trackerKey = createTrackerKey(
-    path,
-    method,
-    baseOptionsForKey,
-    initialRequest
-  );
-
   let pageSubscriptions: (() => void)[] = [];
-  let trackerSubscription: (() => void) | null = null;
   let refetchUnsubscribe: (() => void) | null = null;
-
-  const loadFromTracker = (): void => {
-    const cached = stateManager.getCache(trackerKey);
-    const trackerData = cached?.state?.data as
-      | {
-          pageKeys: string[];
-          pageRequests: Record<string, InfiniteRequestOptions>;
-        }
-      | undefined;
-
-    if (trackerData) {
-      pageKeys = trackerData.pageKeys;
-      pageRequests = new Map(Object.entries(trackerData.pageRequests));
-    }
-  };
-
-  const saveToTracker = (): void => {
-    stateManager.setCache(trackerKey, {
-      state: {
-        data: {
-          pageKeys,
-          pageRequests: Object.fromEntries(pageRequests),
-        },
-        error: undefined,
-        timestamp: Date.now(),
-      },
-      tags,
-    });
-  };
 
   const computeState = (): InfiniteReadState<TData, TItem, TError> => {
     if (pageKeys.length === 0) {
@@ -428,7 +377,6 @@ export function createInfiniteReadController<
         }
       }
 
-      saveToTracker();
       subscribeToPages();
 
       stateManager.setCache(pageKey, {
@@ -532,6 +480,19 @@ export function createInfiniteReadController<
     async trigger(options?: InfiniteTriggerOptions) {
       const { force = true, ...requestOverride } = options ?? {};
 
+      // Abort any ongoing fetch to prevent race conditions
+      if (abortController) {
+        abortController.abort();
+        abortController = null;
+      }
+
+      // Clear pending state
+      for (const key of pageKeys) {
+        stateManager.setPendingPromise(key, undefined);
+      }
+      pendingFetches.clear();
+      fetchingDirection = null;
+
       if (requestOverride && Object.keys(requestOverride).length > 0) {
         activeInitialRequest = shallowMergeRequest(
           initialRequest,
@@ -548,26 +509,11 @@ export function createInfiniteReadController<
         activeInitialRequest
       );
 
-      if (!force) {
-        const cached = stateManager.getCache(newFirstPageKey);
-
-        if (cached?.state?.data !== undefined && !cached.stale) {
-          // Cache hit - use existing pageKeys from tracker
-          // Don't reset or delete pages - they're still valid in cache
-          pageSubscriptions.forEach((unsub) => unsub());
-          subscribeToPages();
-
-          latestError = undefined;
-          notify();
-          return;
-        }
-      }
-
-      const oldPageKeys = [...pageKeys];
-      const oldPageRequests = new Map(pageRequests);
-
+      // Reset local state for new fetch
       pageSubscriptions.forEach((unsub) => unsub());
       pageSubscriptions = [];
+      pageKeys = [];
+      pageRequests = new Map();
       latestError = undefined;
 
       fetchingDirection = "next";
@@ -627,10 +573,6 @@ export function createInfiniteReadController<
       stateManager.setPendingPromise(newFirstPageKey, undefined);
 
       if (finalResponse.data !== undefined && !finalResponse.error) {
-        for (const key of oldPageKeys) {
-          stateManager.deleteCache(key);
-        }
-
         pageKeys = [newFirstPageKey];
         pageRequests = new Map([[newFirstPageKey, activeInitialRequest]]);
 
@@ -644,15 +586,10 @@ export function createInfiniteReadController<
           stale: false,
         });
 
-        saveToTracker();
         subscribeToPages();
         latestError = undefined;
       } else if (finalResponse.error) {
         latestError = finalResponse.error;
-
-        pageKeys = oldPageKeys;
-        pageRequests = oldPageRequests;
-        subscribeToPages();
       }
 
       notify();
@@ -664,48 +601,56 @@ export function createInfiniteReadController<
     },
 
     mount() {
-      loadFromTracker();
+      // No tracker loading - pageKeys starts empty (derived model)
+      // First trigger/fetchNext will check cache for first page
       cachedState = computeState();
       subscribeToPages();
 
-      trackerSubscription = stateManager.subscribeCache(trackerKey, notify);
+      const firstPageKey = createPageKey(
+        path,
+        method,
+        baseOptionsForKey,
+        initialRequest
+      );
 
-      const context = createContext(trackerKey, initialRequest);
+      const context = createContext(firstPageKey, initialRequest);
       pluginExecutor.executeLifecycle("onMount", "infiniteRead", context);
 
       refetchUnsubscribe = eventEmitter.on("refetch", (event) => {
-        const isRelevant =
-          event.queryKey === trackerKey || pageKeys.includes(event.queryKey);
+        const isRelevant = pageKeys.includes(event.queryKey);
 
         if (isRelevant) {
           controller.trigger();
         }
       });
-
-      const isStale = pageKeys.some((key) => {
-        const cached = stateManager.getCache(key);
-        return cached?.stale === true;
-      });
-
-      if (isStale) {
-        controller.trigger();
-      }
     },
 
     unmount() {
-      const context = createContext(trackerKey, initialRequest);
+      const firstPageKey = createPageKey(
+        path,
+        method,
+        baseOptionsForKey,
+        initialRequest
+      );
+
+      const context = createContext(firstPageKey, initialRequest);
       pluginExecutor.executeLifecycle("onUnmount", "infiniteRead", context);
 
       pageSubscriptions.forEach((unsub) => unsub());
       pageSubscriptions = [];
-      trackerSubscription?.();
-      trackerSubscription = null;
       refetchUnsubscribe?.();
       refetchUnsubscribe = null;
     },
 
     update(previousContext) {
-      const context = createContext(trackerKey, initialRequest);
+      const firstPageKey = createPageKey(
+        path,
+        method,
+        baseOptionsForKey,
+        initialRequest
+      );
+
+      const context = createContext(firstPageKey, initialRequest);
       pluginExecutor.executeUpdateLifecycle(
         "infiniteRead",
         context,
@@ -714,7 +659,14 @@ export function createInfiniteReadController<
     },
 
     getContext() {
-      return createContext(trackerKey, initialRequest);
+      const firstPageKey = createPageKey(
+        path,
+        method,
+        baseOptionsForKey,
+        initialRequest
+      );
+
+      return createContext(firstPageKey, initialRequest);
     },
 
     setPluginOptions(opts) {

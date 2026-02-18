@@ -226,7 +226,6 @@ function getMatchingEntries(
     const allEntries = stateManager.getAllCacheEntries();
 
     for (const { key, entry } of allEntries) {
-      if (key.includes('"type":"infinite-tracker"')) continue;
       if (!key.includes(`"method":"${targetMethod}"`)) continue;
 
       const actualPath = extractPathFromKey(key);
@@ -246,7 +245,6 @@ function getMatchingEntries(
     const allEntries = stateManager.getAllCacheEntries();
 
     for (const { key, entry } of allEntries) {
-      if (key.includes('"type":"infinite-tracker"')) continue;
       if (!key.includes(`"method":"${targetMethod}"`)) continue;
 
       const actualPath = extractPathFromKey(key);

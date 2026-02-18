@@ -77,10 +77,6 @@ export class DevToolStore implements DevToolStoreInterface {
 
     return entries
       .filter((e) => {
-        if (e.key.includes("infinite-tracker")) {
-          return false;
-        }
-
         try {
           const parsed = JSON.parse(e.key) as { method?: string };
 
