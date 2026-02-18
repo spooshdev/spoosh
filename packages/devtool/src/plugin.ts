@@ -147,20 +147,6 @@ export function devtool(
       return response;
     },
 
-    lifecycle: {
-      onMount(context) {
-        store.recordLifecycle("onMount", context);
-      },
-
-      onUpdate(context, prevContext) {
-        store.recordLifecycle("onUpdate", context, prevContext);
-      },
-
-      onUnmount(context) {
-        store.recordLifecycle("onUnmount", context);
-      },
-    },
-
     setup(ctx) {
       ctx.eventTracer = createEventTracer;
       ctx.pluginExecutor.registerContextEnhancer((context) => {

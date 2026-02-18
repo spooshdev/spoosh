@@ -416,30 +416,6 @@ export class DevToolStore implements DevToolStoreInterface {
     return this.resolvedPaths.get(queryKey);
   }
 
-  recordLifecycle(
-    phase: "onMount" | "onUpdate" | "onUnmount",
-    context: PluginContext,
-    prevContext?: PluginContext
-  ): void {
-    const trace = this.getCurrentTrace(context.queryKey);
-
-    if (trace) {
-      const reason =
-        phase === "onUpdate" && prevContext
-          ? `Lifecycle: ${phase} (from ${prevContext.queryKey})`
-          : `Lifecycle: ${phase}`;
-
-      trace.addStep(
-        {
-          plugin: "lifecycle",
-          stage: "log",
-          reason,
-        },
-        performance.now()
-      );
-    }
-  }
-
   setFilter<K extends keyof DevToolFilters>(
     key: K,
     value: DevToolFilters[K]

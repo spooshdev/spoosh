@@ -146,11 +146,6 @@ export interface DevToolStoreInterface {
     value: DevToolFilters[K]
   ): void;
   recordInvalidation(event: InvalidationEvent): void;
-  recordLifecycle(
-    phase: "onMount" | "onUpdate" | "onUnmount",
-    context: PluginContext,
-    prevContext?: PluginContext
-  ): void;
   addEvent(event: StandaloneEvent): void;
   getEvents(): StandaloneEvent[];
   getResolvedPath(queryKey: string): string | undefined;

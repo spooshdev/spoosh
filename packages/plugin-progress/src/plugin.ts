@@ -60,8 +60,10 @@ export function progressPlugin(): SpooshPlugin<{
               }
             }
 
-            if (event.loaded && total) {
-              t?.log(`Progress: ${event.loaded}/${total}`, { color: "info" });
+            if (event.loaded) {
+              t?.log(`Progress: ${event.loaded} / ${total || "?"}`, {
+                color: "info",
+              });
             }
 
             context.stateManager.setMeta(context.queryKey, {

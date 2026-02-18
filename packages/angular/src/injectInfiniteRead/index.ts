@@ -276,9 +276,7 @@ export function createInjectInfiniteRead<
 
           const fetchOptions = {
             ...(capturedCall.options as object),
-            query: opts.query,
-            params: opts.params,
-            body: opts.body,
+            ...opts,
             signal: abortSignal,
           };
 
