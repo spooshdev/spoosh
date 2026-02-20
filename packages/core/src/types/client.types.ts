@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-empty-object-type */
 import type { SpooshResponse } from "./response.types";
 import type {
-  HttpMethod,
   ExtractData,
   ExtractError,
   FindMatchingKey,
@@ -12,7 +11,7 @@ import type {
   HasReadMethod,
   HasWriteMethod,
 } from "./schema.types";
-import type { WriteMethod } from "./common.types";
+import type { HttpMethod, WriteMethod } from "./common.types";
 import type { Simplify } from "./common.types";
 import type { HeadersInitOrGetter } from "./request.types";
 import type { SpooshBody } from "../utils/body";
