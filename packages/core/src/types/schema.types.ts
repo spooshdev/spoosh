@@ -3,6 +3,15 @@ import type { HttpMethod, WriteMethod } from "./common.types";
 export type { HttpMethod, WriteMethod };
 
 /**
+ * Registry for subscription methods. Transports extend via module augmentation.
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface SpooshSubscriptionMethodRegistry {}
+
+export type SubscriptionMethod = keyof SpooshSubscriptionMethodRegistry;
+export type AnyMethod = HttpMethod | SubscriptionMethod;
+
+/**
  * An API schema where routes are defined as string keys with path patterns.
  * Define data, body, query, and error directly on each method.
  *
@@ -32,6 +41,8 @@ export type ApiSchema = {
       query?: unknown;
       error?: unknown;
     };
+  } & {
+    [method in SubscriptionMethod]?: SpooshSubscriptionMethodRegistry[method];
   };
 };
 

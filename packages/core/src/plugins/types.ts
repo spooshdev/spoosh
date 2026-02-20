@@ -7,7 +7,7 @@ import type { RequestTracer, EventTracer } from "./devtool.types";
 
 export * from "./devtool.types";
 
-export type OperationType = "read" | "write" | "pages" | "queue";
+export type OperationType = "read" | "write" | "pages" | "queue" | (string & {});
 
 export type LifecyclePhase = "onMount" | "onUnmount" | "onUpdate";
 
@@ -226,9 +226,12 @@ export type PluginTypeConfig = {
   writeTriggerOptions?: object;
   queueOptions?: object;
   queueTriggerOptions?: object;
+  subscribeOptions?: object;
+  subscribeTriggerOptions?: object;
   readResult?: object;
   writeResult?: object;
   queueResult?: object;
+  subscribeResult?: object;
   instanceApi?: object;
 };
 
