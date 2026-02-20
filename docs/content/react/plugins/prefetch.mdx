@@ -43,7 +43,7 @@ Pass plugin options as the second argument:
 ```typescript
 await prefetch((api) => api("users/:id").GET({ params: { id: userId } }), {
   staleTime: 60000,
-  retries: 3,
+  retry: { retries: 3 },
 });
 ```
 

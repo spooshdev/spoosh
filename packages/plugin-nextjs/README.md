@@ -49,7 +49,9 @@ const { trigger } = useWrite((api) => api("posts").POST());
 
 await trigger({
   body: { title: "New Post" },
-  revalidatePaths: ["/", "/posts"],
+  nextjs: {
+    revalidatePaths: ["/", "/posts"],
+  },
 });
 ```
 
@@ -59,7 +61,9 @@ await trigger({
 // Skip for a specific mutation
 await trigger({
   body: { title: "Draft" },
-  serverRevalidate: false,
+  nextjs: {
+    serverRevalidate: false,
+  },
 });
 ```
 
@@ -86,7 +90,9 @@ await trigger({ body: data });
 // Opt-in when mutation affects server-rendered pages
 await trigger({
   body: data,
-  serverRevalidate: true,
+  nextjs: {
+    serverRevalidate: true,
+  },
 });
 ```
 
@@ -110,7 +116,9 @@ await trigger({ body: data });
 // Skip for mutations that don't affect server content
 await trigger({
   body: { theme: "dark" },
-  serverRevalidate: false,
+  nextjs: {
+    serverRevalidate: false,
+  },
 });
 ```
 
@@ -124,6 +132,8 @@ await trigger({
 | `skipServerRevalidation` | `boolean`                          | `false` | Skip revalidation by default      |
 
 ### Per-Request Options
+
+Pass options via the `nextjs` object:
 
 | Option             | Type       | Description                                     |
 | ------------------ | ---------- | ----------------------------------------------- |

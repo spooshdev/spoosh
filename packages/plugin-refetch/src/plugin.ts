@@ -40,7 +40,7 @@ type HookListenerEntry = {
  *
  * // Per-query override
  * useRead((api) => api("posts").GET(), {
- *   refetchOnFocus: false,
+ *   refetch: { onFocus: false },
  * });
  * ```
  */

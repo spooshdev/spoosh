@@ -96,7 +96,7 @@ const spoosh = new Spoosh<API, Error>("/api").use([
 // Options are typed based on installed plugins
 injectRead((api) => api("users").GET(), {
   staleTime: 10000, // ✓ Known from cachePlugin
-  retries: 5, // ✓ Known from retryPlugin
+  retry: { retries: 5 }, // ✓ Known from retryPlugin
   interval: 60000, // ✓ Known from pollingPlugin
   // randomOption: true  // ✗ Type error
 });

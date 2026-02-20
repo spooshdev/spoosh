@@ -136,7 +136,9 @@ Most plugins support per-request overrides:
 injectRead((api) => api("users").GET(), { staleTime: 60000 });
 
 // Disable retries for this query
-injectRead((api) => api("health").GET(), { retries: false });
+injectRead((api) => api("health").GET(), {
+  retry: { retries: false },
+});
 
 // Custom polling interval
 injectRead((api) => api("notifications").GET(), { pollingInterval: 5000 });

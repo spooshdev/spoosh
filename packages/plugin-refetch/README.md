@@ -28,7 +28,9 @@ useRead((api) => api("posts").GET());
 
 // Per-query override
 useRead((api) => api("posts").GET(), {
-  refetchOnFocus: false, // Disable for this query
+  refetch: {
+    onFocus: false, // Disable for this query
+  },
 });
 ```
 
@@ -43,7 +45,9 @@ useRead((api) => api("posts").GET(), {
 
 ### Per-Request Options
 
-| Option               | Type      | Description                         |
-| -------------------- | --------- | ----------------------------------- |
-| `refetchOnFocus`     | `boolean` | Override focus refetch behavior     |
-| `refetchOnReconnect` | `boolean` | Override reconnect refetch behavior |
+Pass options via the `refetch` object:
+
+| Option        | Type      | Description                         |
+| ------------- | --------- | ----------------------------------- |
+| `onFocus`     | `boolean` | Override focus refetch behavior     |
+| `onReconnect` | `boolean` | Override reconnect refetch behavior |

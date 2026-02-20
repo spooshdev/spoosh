@@ -33,10 +33,14 @@ By default, the plugin retries on:
 
 ```typescript
 // More retries for critical requests
-injectRead((api) => api("important").GET(), { retries: 5, retryDelay: 2000 });
+injectRead((api) => api("important").GET(), {
+  retry: { retries: 5, delay: 2000 },
+});
 
 // Disable retries for specific requests
-injectRead((api) => api("health").GET(), { retries: false });
+injectRead((api) => api("health").GET(), {
+  retry: { retries: false },
+});
 ```
 
 ## Custom Retry Logic
@@ -57,7 +61,9 @@ const spoosh = new Spoosh<ApiSchema, Error>("/api").use([
 
 // Per-request override
 injectRead((api) => api("posts").GET(), {
-  shouldRetry: ({ status }) => status === 429,
+  retry: {
+    shouldRetry: ({ status }) => status === 429,
+  },
 });
 ```
 
@@ -78,10 +84,12 @@ injectRead((api) => api("posts").GET(), {
 
 ### Per-Request Options
 
+Pass options via the `retry` object:
+
 | Option        | Type                  | Description                              |
 | ------------- | --------------------- | ---------------------------------------- |
 | `retries`     | `number \| false`     | Override retry attempts for this request |
-| `retryDelay`  | `number`              | Override retry delay for this request    |
+| `delay`       | `number`              | Override retry delay for this request    |
 | `shouldRetry` | `ShouldRetryCallback` | Override retry logic for this request    |
 
 ### ShouldRetryContext

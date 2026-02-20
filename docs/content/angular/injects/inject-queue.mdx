@@ -49,7 +49,7 @@ export class FileUploaderComponent {
 ```typescript
 queue = injectQueue((api) => api("uploads").POST(), {
   concurrency: 5,
-  retries: 3, // from retry plugin
+  retry: { retries: 3 }, // from retry plugin
   progress: true, // from progress plugin
 });
 ```

@@ -142,7 +142,9 @@ Most plugins support per-request overrides:
 useRead((api) => api("users").GET(), { staleTime: 60000 });
 
 // Disable retries for this query
-useRead((api) => api("health").GET(), { retries: false });
+useRead((api) => api("health").GET(), {
+  retry: { retries: false },
+});
 
 // Custom polling interval
 useRead((api) => api("notifications").GET(), { pollingInterval: 5000 });

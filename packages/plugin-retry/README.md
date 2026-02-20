@@ -21,10 +21,14 @@ const spoosh = new Spoosh<ApiSchema, Error>("/api").use([
 ]);
 
 // Per-query override
-useRead((api) => api("posts").GET(), { retries: 5, retryDelay: 2000 });
+useRead((api) => api("posts").GET(), {
+  retry: { retries: 5, delay: 2000 },
+});
 
 // Disable retries for a specific request
-useRead((api) => api("posts").GET(), { retries: false });
+useRead((api) => api("posts").GET(), {
+  retry: { retries: false },
+});
 ```
 
 ## Retry Behavior
@@ -49,7 +53,9 @@ retryPlugin({
 
 // Per-request override
 useRead((api) => api("posts").GET(), {
-  shouldRetry: ({ status }) => status === 429,
+  retry: {
+    shouldRetry: ({ status }) => status === 429,
+  },
 });
 ```
 
@@ -67,10 +73,12 @@ useRead((api) => api("posts").GET(), {
 
 ### Per-Request Options
 
+Pass options via the `retry` object:
+
 | Option        | Type                  | Description                              |
 | ------------- | --------------------- | ---------------------------------------- |
 | `retries`     | `number \| false`     | Override retry attempts for this request |
-| `retryDelay`  | `number`              | Override retry delay for this request    |
+| `delay`       | `number`              | Override retry delay for this request    |
 | `shouldRetry` | `ShouldRetryCallback` | Override retry logic for this request    |
 
 ### ShouldRetryContext

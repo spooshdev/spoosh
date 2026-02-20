@@ -34,12 +34,16 @@ When enabled, queries automatically refetch:
 
 ```typescript
 // Disable focus refetch for this query
-useRead((api) => api("settings").GET(), { refetchOnFocus: false });
+useRead((api) => api("settings").GET(), {
+  refetch: { onFocus: false },
+});
 
 // Enable reconnect refetch only
 useRead((api) => api("user").GET(), {
-  refetchOnFocus: false,
-  refetchOnReconnect: true,
+  refetch: {
+    onFocus: false,
+    onReconnect: true,
+  },
 });
 ```
 
@@ -54,7 +58,9 @@ useRead((api) => api("user").GET(), {
 
 ### Per-Request Options
 
-| Option               | Type      | Description                         |
-| -------------------- | --------- | ----------------------------------- |
-| `refetchOnFocus`     | `boolean` | Override focus refetch behavior     |
-| `refetchOnReconnect` | `boolean` | Override reconnect refetch behavior |
+Pass options via the `refetch` object:
+
+| Option        | Type      | Description                         |
+| ------------- | --------- | ----------------------------------- |
+| `onFocus`     | `boolean` | Override focus refetch behavior     |
+| `onReconnect` | `boolean` | Override reconnect refetch behavior |

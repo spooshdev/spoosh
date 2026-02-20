@@ -44,8 +44,7 @@ const defaultShouldRetry: ShouldRetryCallback = ({ status }) => {
  *
  * // Per-query override
  * useRead((api) => api("posts").GET(), {
- *   retries: 5,
- *   retryDelay: 2000,
+ *   retry: { retries: 5, delay: 2000 },
  * });
  * ```
  */

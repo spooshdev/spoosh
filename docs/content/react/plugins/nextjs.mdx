@@ -60,7 +60,9 @@ await trigger({ body: { title: "New Post" } });
 ```typescript
 await trigger({
   body: { title: "New Post" },
-  revalidatePaths: ["/", "/posts"],
+  nextjs: {
+    revalidatePaths: ["/", "/posts"],
+  },
 });
 ```
 
@@ -69,7 +71,9 @@ await trigger({
 ```typescript
 await trigger({
   body: { title: "Draft" },
-  serverRevalidate: false,
+  nextjs: {
+    serverRevalidate: false,
+  },
 });
 ```
 
@@ -83,6 +87,8 @@ await trigger({
 | `skipServerRevalidation` | `boolean`                          | `false` | Skip revalidation by default      |
 
 ### Per-Request Options
+
+Pass options via the `nextjs` object:
 
 | Option             | Type       | Description                                     |
 | ------------------ | ---------- | ----------------------------------------------- |
@@ -106,7 +112,9 @@ const spoosh = new Spoosh<ApiSchema, Error>("/api").use([
 // Opt-in when mutation affects server-rendered pages
 await trigger({
   body: data,
-  serverRevalidate: true,
+  nextjs: {
+    serverRevalidate: true,
+  },
 });
 ```
 
@@ -125,7 +133,9 @@ const spoosh = new Spoosh<ApiSchema, Error>("/api").use([
 // Opt-out for client-only state changes
 await trigger({
   body: { theme: "dark" },
-  serverRevalidate: false,
+  nextjs: {
+    serverRevalidate: false,
+  },
 });
 ```
 
