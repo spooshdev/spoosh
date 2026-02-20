@@ -1,3 +1,11 @@
+export interface RefetchConfig {
+  /** Automatically refetch when window regains focus. */
+  onFocus?: boolean;
+
+  /** Automatically refetch when network reconnects. */
+  onReconnect?: boolean;
+}
+
 export interface RefetchPluginConfig {
   /** Automatically refetch when window regains focus. Defaults to `false`. */
   refetchOnFocus?: boolean;
@@ -7,11 +15,8 @@ export interface RefetchPluginConfig {
 }
 
 export interface RefetchReadOptions {
-  /** Automatically refetch when window regains focus. Overrides plugin default. */
-  refetchOnFocus?: boolean;
-
-  /** Automatically refetch when network reconnects. Overrides plugin default. */
-  refetchOnReconnect?: boolean;
+  /** Refetch configuration. Overrides plugin defaults. */
+  refetch?: RefetchConfig;
 }
 
 export type RefetchWriteOptions = object;

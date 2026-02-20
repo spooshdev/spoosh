@@ -195,9 +195,9 @@ export function refetchPlugin(config: RefetchPluginConfig = {}): SpooshPlugin<{
           | undefined;
 
         const shouldRefetchOnFocus =
-          pluginOptions?.refetchOnFocus ?? refetchOnFocus;
+          pluginOptions?.refetch?.onFocus ?? refetchOnFocus;
         const shouldRefetchOnReconnect =
-          pluginOptions?.refetchOnReconnect ?? refetchOnReconnect;
+          pluginOptions?.refetch?.onReconnect ?? refetchOnReconnect;
 
         if (shouldRefetchOnFocus) {
           setupFocusListener(instanceId, queryKey, eventEmitter, et);
@@ -219,9 +219,9 @@ export function refetchPlugin(config: RefetchPluginConfig = {}): SpooshPlugin<{
           | undefined;
 
         const shouldRefetchOnFocus =
-          pluginOptions?.refetchOnFocus ?? refetchOnFocus;
+          pluginOptions?.refetch?.onFocus ?? refetchOnFocus;
         const shouldRefetchOnReconnect =
-          pluginOptions?.refetchOnReconnect ?? refetchOnReconnect;
+          pluginOptions?.refetch?.onReconnect ?? refetchOnReconnect;
 
         const entry = listenersByHook.get(instanceId);
         const queryKeyChanged = entry && entry.queryKey !== queryKey;

@@ -1,5 +1,9 @@
 # @spoosh/plugin-refetch
 
+## 0.4.0
+
+- Move `refetchOnWindowFocus` and `refetchOnReconnect` options to `refetch` for better organization
+
 ## 0.3.0
 
 - Update for `pages` operation type rename

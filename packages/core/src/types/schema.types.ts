@@ -1,5 +1,40 @@
 import type { HttpMethod, WriteMethod } from "./common.types";
 
+export type { HttpMethod, WriteMethod };
+
+/**
+ * An API schema where routes are defined as string keys with path patterns.
+ * Define data, body, query, and error directly on each method.
+ *
+ * @example
+ * ```ts
+ * type ApiSchema = {
+ *   "posts": {
+ *     GET: { data: Post[] };
+ *     POST: { data: Post; body: CreatePostBody };
+ *   };
+ *   "posts/:id": {
+ *     GET: { data: Post };
+ *     PUT: { data: Post; body: UpdatePostBody };
+ *     DELETE: { data: void };
+ *   };
+ *   "posts/:id/comments": {
+ *     GET: { data: Comment[]; query: { page?: number } };
+ *   };
+ * };
+ * ```
+ */
+export type ApiSchema = {
+  [path: string]: {
+    [method in HttpMethod]?: {
+      data?: unknown;
+      body?: unknown;
+      query?: unknown;
+      error?: unknown;
+    };
+  };
+};
+
 /**
  * Extract data type from an endpoint.
  */
@@ -45,16 +80,7 @@ export type ExtractError<T, TDefault = unknown> = T extends {
  * const api = createClient<ApiSchema>({ baseUrl: "/api" });
  * ```
  */
-export type SpooshSchema = {
-  [path: string]: {
-    [method in HttpMethod]?: {
-      data?: unknown;
-      body?: unknown;
-      query?: unknown;
-      error?: unknown;
-    };
-  };
-};
+export type SpooshSchema<T extends ApiSchema> = T;
 
 /**
  * Convert a route pattern like "posts/:id" to a path matcher pattern like `posts/${string}`.

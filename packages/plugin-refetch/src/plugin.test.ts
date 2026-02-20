@@ -334,7 +334,7 @@ describe("refetchPlugin", () => {
       const plugin = refetchPlugin({ refetchOnFocus: false });
       const context = createMockContext({
         instanceId: "hook-1",
-        pluginOptions: { refetchOnFocus: true },
+        pluginOptions: { refetch: { onFocus: true } },
       });
 
       plugin.lifecycle!.onMount!(context);
@@ -349,7 +349,7 @@ describe("refetchPlugin", () => {
       const plugin = refetchPlugin({ refetchOnFocus: true });
       const context = createMockContext({
         instanceId: "hook-1",
-        pluginOptions: { refetchOnFocus: false },
+        pluginOptions: { refetch: { onFocus: false } },
       });
 
       plugin.lifecycle!.onMount!(context);
@@ -361,7 +361,7 @@ describe("refetchPlugin", () => {
       const plugin = refetchPlugin({ refetchOnReconnect: false });
       const context = createMockContext({
         instanceId: "hook-1",
-        pluginOptions: { refetchOnReconnect: true },
+        pluginOptions: { refetch: { onReconnect: true } },
       });
 
       plugin.lifecycle!.onMount!(context);
@@ -376,7 +376,7 @@ describe("refetchPlugin", () => {
       const plugin = refetchPlugin({ refetchOnReconnect: true });
       const context = createMockContext({
         instanceId: "hook-1",
-        pluginOptions: { refetchOnReconnect: false },
+        pluginOptions: { refetch: { onReconnect: false } },
       });
 
       plugin.lifecycle!.onMount!(context);
@@ -390,7 +390,7 @@ describe("refetchPlugin", () => {
       const plugin = refetchPlugin({ refetchOnFocus: false });
       const context = createMockContext({
         instanceId: "hook-1",
-        pluginOptions: { refetchOnFocus: false },
+        pluginOptions: { refetch: { onFocus: false } },
       });
 
       plugin.lifecycle!.onMount!(context);
@@ -398,7 +398,7 @@ describe("refetchPlugin", () => {
 
       const updatedContext = createMockContext({
         instanceId: "hook-1",
-        pluginOptions: { refetchOnFocus: true },
+        pluginOptions: { refetch: { onFocus: true } },
       });
 
       plugin.lifecycle!.onUpdate!(updatedContext, context);
@@ -420,7 +420,7 @@ describe("refetchPlugin", () => {
 
       const updatedContext = createMockContext({
         instanceId: "hook-1",
-        pluginOptions: { refetchOnFocus: false },
+        pluginOptions: { refetch: { onFocus: false } },
       });
 
       plugin.lifecycle!.onUpdate!(updatedContext, context);
@@ -435,7 +435,7 @@ describe("refetchPlugin", () => {
       const plugin = refetchPlugin({ refetchOnReconnect: false });
       const context = createMockContext({
         instanceId: "hook-1",
-        pluginOptions: { refetchOnReconnect: false },
+        pluginOptions: { refetch: { onReconnect: false } },
       });
 
       plugin.lifecycle!.onMount!(context);
@@ -443,7 +443,7 @@ describe("refetchPlugin", () => {
 
       const updatedContext = createMockContext({
         instanceId: "hook-1",
-        pluginOptions: { refetchOnReconnect: true },
+        pluginOptions: { refetch: { onReconnect: true } },
       });
 
       plugin.lifecycle!.onUpdate!(updatedContext, context);
@@ -465,7 +465,7 @@ describe("refetchPlugin", () => {
 
       const updatedContext = createMockContext({
         instanceId: "hook-1",
-        pluginOptions: { refetchOnReconnect: false },
+        pluginOptions: { refetch: { onReconnect: false } },
       });
 
       plugin.lifecycle!.onUpdate!(updatedContext, context);

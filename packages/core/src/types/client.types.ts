@@ -21,7 +21,6 @@ import type { SpooshBody } from "../utils/body";
  */
 type BaseRequestOptions = {
   headers?: HeadersInitOrGetter;
-  cache?: RequestCache;
   signal?: AbortSignal;
 };
 
