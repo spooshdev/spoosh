@@ -24,6 +24,8 @@ export {
   resolvePath,
   resolvePathString,
   resolveTags,
+  parseTransportPath,
+  isTransportPath,
   type TagMode,
   type TagOptions,
 } from "./path-utils";

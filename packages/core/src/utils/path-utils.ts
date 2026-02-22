@@ -122,3 +122,25 @@ export function resolvePathString(
     })
     .join("/");
 }
+
+export function isTransportPath(path: string): boolean {
+  return path.startsWith("@");
+}
+
+export function parseTransportPath(path: string): {
+  transport: string;
+  channel: string;
+} | null {
+  if (!isTransportPath(path)) return null;
+
+  const withoutAt = path.slice(1);
+  const parts = withoutAt.split("/");
+  const [transport, ...channelParts] = parts;
+
+  if (!transport) return null;
+
+  return {
+    transport,
+    channel: channelParts.join("/"),
+  };
+}
