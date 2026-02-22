@@ -24,6 +24,8 @@ function createTestInstance(plugins: SpooshPlugin[] = []) {
     stateManager,
     eventEmitter,
     pluginExecutor,
+    transports: new Map(),
+    config: { baseUrl: "/api", defaultOptions: {} },
     _types: {
       schema: {} as unknown,
       defaultError: {} as unknown,

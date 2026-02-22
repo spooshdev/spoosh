@@ -3,6 +3,7 @@ import { createUseRead } from "../useRead";
 import { createUseWrite } from "../useWrite";
 import { createUsePages } from "../usePages";
 import { createUseQueue } from "../useQueue";
+import { createUseSubscription } from "../useSubscription";
 import type { SpooshReactHooks, SpooshInstanceShape } from "./types";
 
 /**
@@ -33,13 +34,16 @@ export function create<
 >(
   instance: SpooshInstanceShape<TApi, TSchema, TDefaultError, TPlugins>
 ): SpooshReactHooks<TDefaultError, TSchema, TPlugins> {
-  const { api, stateManager, eventEmitter, pluginExecutor } = instance;
+  const { api, stateManager, eventEmitter, pluginExecutor, transports } =
+    instance;
 
   const useRead = createUseRead<TSchema, TDefaultError, TPlugins>({
     api,
     stateManager,
     eventEmitter,
     pluginExecutor,
+    transports,
+    config: instance.config,
   });
 
   const useWrite = createUseWrite<TSchema, TDefaultError, TPlugins>({
@@ -47,6 +51,8 @@ export function create<
     stateManager,
     eventEmitter,
     pluginExecutor,
+    transports,
+    config: instance.config,
   });
 
   const usePages = createUsePages<TSchema, TDefaultError, TPlugins>({
@@ -54,6 +60,8 @@ export function create<
     stateManager,
     eventEmitter,
     pluginExecutor,
+    transports,
+    config: instance.config,
   });
 
   const useQueue = createUseQueue<TSchema, TDefaultError, TPlugins>({
@@ -61,6 +69,21 @@ export function create<
     stateManager,
     eventEmitter,
     pluginExecutor,
+    transports,
+    config: instance.config,
+  });
+
+  const useSubscription = createUseSubscription<
+    TSchema,
+    TDefaultError,
+    TPlugins
+  >({
+    api,
+    stateManager,
+    eventEmitter,
+    pluginExecutor,
+    transports,
+    config: instance.config,
   });
 
   const plugins = pluginExecutor.getPlugins();
@@ -97,6 +120,7 @@ export function create<
     useWrite,
     usePages,
     useQueue,
+    useSubscription,
     ...instanceApis,
   } as SpooshReactHooks<TDefaultError, TSchema, TPlugins>;
 }

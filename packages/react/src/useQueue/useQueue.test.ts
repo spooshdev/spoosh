@@ -52,6 +52,8 @@ function createTestHooks() {
     stateManager,
     eventEmitter,
     pluginExecutor,
+    transports: new Map(),
+    config: { baseUrl: "/api", defaultOptions: {} },
   });
 
   return {
@@ -272,6 +274,8 @@ describe("useQueue", () => {
         stateManager,
         eventEmitter,
         pluginExecutor,
+        transports: new Map(),
+        config: { baseUrl: "/api", defaultOptions: {} },
       });
 
       expect(() => {
@@ -572,6 +576,8 @@ describe("useQueue", () => {
         stateManager,
         eventEmitter,
         pluginExecutor,
+        transports: new Map(),
+        config: { baseUrl: "/api", defaultOptions: {} },
       });
 
       const { result } = renderHook(() =>

@@ -75,3 +75,39 @@ export type ExtractResponseParamNames<T> =
       ? K
       : never
     : never;
+
+type SubscriptionReturnType<T> = T extends (...args: never[]) => infer R
+  ? R
+  : never;
+
+export type ExtractSubscriptionEvents<T> =
+  SubscriptionReturnType<T> extends {
+    events: infer E;
+    requestedEvents: infer RequestedEvents;
+  }
+    ? RequestedEvents extends readonly (keyof E)[]
+      ? E extends Record<string, unknown>
+        ? {
+            [K in RequestedEvents[number]]: E[K] extends {
+              data: infer EventData;
+            }
+              ? EventData
+              : unknown;
+          }
+        : unknown
+      : unknown
+    : unknown;
+
+export type ExtractSubscriptionQuery<T> =
+  SubscriptionReturnType<T> extends {
+    query: infer Q;
+  }
+    ? Q
+    : never;
+
+export type ExtractSubscriptionBody<T> =
+  SubscriptionReturnType<T> extends {
+    body: infer B;
+  }
+    ? B
+    : never;

@@ -65,6 +65,8 @@ function createTestHooks() {
     stateManager,
     eventEmitter,
     pluginExecutor,
+    transports: new Map(),
+    config: { baseUrl: "/api", defaultOptions: {} },
   });
 
   return {

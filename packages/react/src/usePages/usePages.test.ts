@@ -77,6 +77,8 @@ function createTestHooks() {
     stateManager,
     eventEmitter,
     pluginExecutor,
+    transports: new Map(),
+    config: { baseUrl: "/api", defaultOptions: {} },
   });
 
   return { usePages, stateManager, eventEmitter, calls };
@@ -93,6 +95,8 @@ function createErrorTestHooks() {
     stateManager,
     eventEmitter,
     pluginExecutor,
+    transports: new Map(),
+    config: { baseUrl: "/api", defaultOptions: {} },
   });
 
   return { usePages, stateManager, eventEmitter };
@@ -533,6 +537,8 @@ describe("usePages", () => {
         stateManager,
         eventEmitter,
         pluginExecutor,
+        transports: new Map(),
+        config: { baseUrl: "/api", defaultOptions: {} },
       });
 
       expect(() => {

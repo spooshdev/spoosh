@@ -20,6 +20,9 @@ import type {
   ExtractResponseQuery,
   ExtractResponseBody,
   ExtractResponseParamNames,
+  ExtractSubscriptionEvents,
+  ExtractSubscriptionQuery,
+  ExtractSubscriptionBody,
 } from "../types/extraction";
 import type {
   BaseReadOptions,
@@ -46,6 +49,12 @@ import type {
   PagesApiClient,
   PagesTriggerOptions,
 } from "../usePages/types";
+import type {
+  BaseSubscriptionOptions,
+  BaseSubscriptionResult,
+  SubscriptionApiClient,
+  SubscriptionTriggerInput,
+} from "../useSubscription/types";
 
 type InferError<T, TDefaultError> = [T] extends [unknown] ? TDefaultError : T;
 
@@ -251,6 +260,24 @@ type UsePagesFn<TDefaultError, TSchema, TPlugins extends PluginArray> = <
   PagesTriggerOptions<TReadFn>
 >;
 
+type UseSubscriptionFn<TDefaultError, TSchema, TPlugins extends PluginArray> = <
+  TSubFn extends (
+    api: SubscriptionApiClient<TSchema, TDefaultError>
+  ) => unknown,
+>(
+  subFn: TSubFn,
+  subOptions?: BaseSubscriptionOptions
+) => BaseSubscriptionResult<
+  ExtractSubscriptionEvents<TSubFn>,
+  InferError<ExtractMethodError<TSubFn>, TDefaultError>,
+  MergePluginResults<TPlugins>["subscribe"],
+  SubscriptionTriggerInput<
+    ExtractSubscriptionQuery<TSubFn>,
+    ExtractSubscriptionBody<TSubFn>,
+    never
+  >
+>;
+
 /**
  * Spoosh React hooks interface containing useRead, useWrite, and usePages.
  *
@@ -341,6 +368,22 @@ export type SpooshReactHooks<
    * ```
    */
   useQueue: UseQueueFn<TDefaultError, TSchema, TPlugins>;
+
+  /**
+   * React hook for subscribing to real-time data streams (SSE, WebSocket, etc.).
+   *
+   * @param subFn - Function that selects the subscription endpoint
+   * @param subOptions - Optional configuration including `enabled`, `tags`
+   * @returns Object containing `data`, `error`, `loading`, `isSubscribed`, `emit`, `unsubscribe`
+   *
+   * @example
+   * ```tsx
+   * const { data } = useSubscription((api) =>
+   *   api("@sse/notifications").GET({ events: ["alert", "message"] })
+   * );
+   * ```
+   */
+  useSubscription: UseSubscriptionFn<TDefaultError, TSchema, TPlugins>;
 } & MergePluginInstanceApi<TPlugins, TSchema>;
 
 /**
@@ -358,6 +401,18 @@ export type SpooshInstanceShape<TApi, TSchema, TDefaultError, TPlugins> = {
 
   /** Plugin executor for running plugins */
   pluginExecutor: PluginExecutor;
+
+  /** Registered transports for subscriptions */
+  transports: Map<string, unknown>;
+
+  /** Config with baseUrl and default options */
+  config: {
+    baseUrl: string;
+    defaultOptions: {
+      headers?: HeadersInit | (() => HeadersInit | Promise<HeadersInit>);
+      [key: string]: unknown;
+    };
+  };
 
   /** Type information (not used at runtime) */
   _types: {
