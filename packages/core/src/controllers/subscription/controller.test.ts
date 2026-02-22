@@ -90,8 +90,15 @@ function createTestController<TData = unknown, TError = unknown>(options?: {
   const stateManager = createStateManager();
   const eventEmitter = createEventEmitter();
   const pluginExecutor = createPluginExecutor([]);
-  const { adapter, subscribeCalls, emitCalls, setMockData, setMockError, triggerData, triggerError } =
-    createMockAdapter<TData, TError>();
+  const {
+    adapter,
+    subscribeCalls,
+    emitCalls,
+    setMockData,
+    setMockError,
+    triggerData,
+    triggerError,
+  } = createMockAdapter<TData, TError>();
 
   const queryKey = stateManager.createQueryKey({
     path: options?.path ?? "@sse/sse/messages",
@@ -144,7 +151,8 @@ describe("createSubscriptionController", () => {
     });
 
     it("should subscribe and update state", async () => {
-      const { controller, adapter, setMockData } = createTestController<string>();
+      const { controller, adapter, setMockData } =
+        createTestController<string>();
 
       setMockData("test message");
       const handle = await controller.subscribe();
@@ -325,7 +333,10 @@ describe("createSubscriptionController", () => {
 
   describe("error handling", () => {
     it("should handle errors in state", async () => {
-      const { controller, setMockError } = createTestController<string, Error>();
+      const { controller, setMockError } = createTestController<
+        string,
+        Error
+      >();
 
       setMockError(new Error("Connection failed"));
       await controller.subscribe();
@@ -336,7 +347,10 @@ describe("createSubscriptionController", () => {
     });
 
     it("should notify subscribers on error", async () => {
-      const { controller, triggerError } = createTestController<string, Error>();
+      const { controller, triggerError } = createTestController<
+        string,
+        Error
+      >();
 
       const callback = vi.fn();
       controller.subscribe(callback);
