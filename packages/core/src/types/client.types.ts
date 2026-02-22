@@ -331,49 +331,48 @@ type ExtractTransportName<TPath extends string> =
  * Typed parse config for streaming transports.
  * Generic utility - opt-in for transports that support event parsing.
  */
-export type TypedParseConfig<TEvents> = TEvents extends Record<string, unknown>
-  ?
-      | {
-          [K in keyof TEvents]?:
-            | "auto"
-            | "json"
-            | "text"
-            | "number"
-            | "boolean"
-            | ((data: string) => ExtractEventData<TEvents[K]>);
-        }
-      | "auto"
-      | "json"
-      | "text"
-      | "number"
-      | "boolean"
-      | ((data: string) => unknown)
-  : never;
+export type TypedParseConfig<TEvents> =
+  TEvents extends Record<string, unknown>
+    ?
+        | {
+            [K in keyof TEvents]?:
+              | "auto"
+              | "json"
+              | "text"
+              | "number"
+              | "boolean"
+              | ((data: string) => ExtractEventData<TEvents[K]>);
+          }
+        | "auto"
+        | "json"
+        | "text"
+        | "number"
+        | "boolean"
+        | ((data: string) => unknown)
+    : never;
 
 /**
  * Typed accumulate config for streaming transports.
  * Generic utility - opt-in for transports that support event accumulation.
  */
-export type TypedAccumulateConfig<TEvents> = TEvents extends Record<
-  string,
-  unknown
->
-  ?
-      | {
-          [K in keyof TEvents]?:
-            | "replace"
-            | "concat"
-            | "merge"
-            | ((
-                prev: ExtractEventData<TEvents[K]> | undefined,
-                current: ExtractEventData<TEvents[K]>
-              ) => ExtractEventData<TEvents[K]>);
-        }
-      | "replace"
-      | "concat"
-      | "merge"
-      | ((prev: unknown, current: unknown) => unknown)
-  : never;
+export type TypedAccumulateConfig<TEvents> =
+  TEvents extends Record<string, unknown>
+    ?
+        | {
+            [K in keyof TEvents]?:
+              | "replace"
+              | "concat"
+              | "merge"
+              | ((
+                  prev: ExtractEventData<TEvents[K]> | undefined,
+                  current: ExtractEventData<TEvents[K]>
+                ) => ExtractEventData<TEvents[K]>);
+          }
+        | "replace"
+        | "concat"
+        | "merge"
+        | ((prev: unknown, current: unknown) => unknown)
+    : never;
 
 /**
  * Get transport options from registry with event-specific types.
@@ -384,9 +383,7 @@ type TransportOptions<
   TEvents = never,
 > = TTransport extends keyof SpooshTransportRegistry
   ? Omit<
-      SpooshTransportRegistry[TTransport] extends { options: infer O }
-        ? O
-        : {},
+      SpooshTransportRegistry[TTransport] extends { options: infer O } ? O : {},
       "parse" | "accumulate"
     > & {
       parse?: TypedParseConfig<TEvents>;
