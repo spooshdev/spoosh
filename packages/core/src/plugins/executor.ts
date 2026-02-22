@@ -33,6 +33,11 @@ export type PluginExecutor = {
 
   getPlugins: () => readonly SpooshPlugin[];
 
+  /** Get plugins that support a specific operation type */
+  getPluginsForOperation: (
+    operationType: OperationType
+  ) => readonly SpooshPlugin[];
+
   /** Creates a full PluginContext with plugins accessor */
   createContext: (input: PluginContextInput) => PluginContext;
 
@@ -192,6 +197,10 @@ export function createPluginExecutor(
 
     getPlugins() {
       return frozenPlugins;
+    },
+
+    getPluginsForOperation(operationType: OperationType) {
+      return frozenPlugins.filter((p) => p.operations.includes(operationType));
     },
 
     registerContextEnhancer(enhancer: (context: PluginContext) => void) {

@@ -50,6 +50,13 @@ type ExtractQueueResult<T> =
       : object
     : object;
 
+type ExtractSubscribeResult<T> =
+  T extends SpooshPlugin<infer Types>
+    ? Types extends { subscribeResult: infer S }
+      ? S
+      : object
+    : object;
+
 type ExtractReadResult<T> =
   T extends SpooshPlugin<infer Types>
     ? Types extends { readResult: infer R }
@@ -98,6 +105,7 @@ export type MergePluginResults<
   read: UnionToIntersection<ExtractReadResult<TPlugins[number]>>;
   write: UnionToIntersection<ExtractWriteResult<TPlugins[number]>>;
   queue: UnionToIntersection<ExtractQueueResult<TPlugins[number]>>;
+  subscribe: UnionToIntersection<ExtractSubscribeResult<TPlugins[number]>>;
 };
 
 export type MergePluginInstanceApi<

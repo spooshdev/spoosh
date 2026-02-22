@@ -4,10 +4,16 @@ import type { SpooshResponse } from "../types/response.types";
 import type { EventEmitter } from "../events/emitter";
 import type { StateManager } from "../state";
 import type { RequestTracer, EventTracer } from "./devtool.types";
+import type { SubscriptionAdapter } from "../transport/subscription";
 
 export * from "./devtool.types";
 
-export type OperationType = "read" | "write" | "pages" | "queue" | (string & {});
+export type OperationType =
+  | "read"
+  | "write"
+  | "pages"
+  | "queue"
+  | (string & {});
 
 export type LifecyclePhase = "onMount" | "onUnmount" | "onUpdate";
 
@@ -334,6 +340,23 @@ export interface SpooshPlugin<T extends PluginTypeConfig = PluginTypeConfig> {
   instanceApi?: (
     context: InstanceApiContext
   ) => T extends { instanceApi: infer A } ? A : object;
+
+  /**
+   * Wrap a subscription adapter to add plugin behavior (e.g., caching, retry, logging).
+   * Called for subscription operations to compose adapter functionality.
+   *
+   * @example
+   * ```ts
+   * wrapAdapter: (inner) => ({
+   *   subscribe: async (ctx) => {
+   *     // Add caching logic
+   *     return inner.subscribe(ctx);
+   *   },
+   *   emit: inner.emit,
+   * })
+   * ```
+   */
+  wrapAdapter?: (inner: SubscriptionAdapter) => SubscriptionAdapter;
 
   /**
    * Plugin execution priority. Lower numbers run first, higher numbers run last.
