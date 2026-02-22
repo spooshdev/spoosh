@@ -27,8 +27,14 @@ export type AnyMethod = HttpMethod | SubscriptionMethod;
  *     PUT: { data: Post; body: UpdatePostBody };
  *     DELETE: { data: void };
  *   };
- *   "posts/:id/comments": {
- *     GET: { data: Comment[]; query: { page?: number } };
+ *   "@sse/notifications": {
+ *     GET: {
+ *       events: {
+ *         alert: { data: Alert };
+ *         message: { data: Message };
+ *       };
+ *       query?: { userId: string };
+ *     };
  *   };
  * };
  * ```
@@ -40,6 +46,12 @@ export type ApiSchema = {
       body?: unknown;
       query?: unknown;
       error?: unknown;
+      events?: {
+        [eventName: string]: {
+          data?: unknown;
+          error?: unknown;
+        };
+      };
     };
   } & {
     [method in SubscriptionMethod]?: SpooshSubscriptionMethodRegistry[method];
@@ -206,6 +218,37 @@ export type HasWriteMethod<TSchema, TPath extends string> =
         : Extract<keyof TSchema[TKey], WriteMethod> extends never
           ? false
           : true
+      : false
+    : false;
+
+/**
+ * Extract paths that have methods with events (subscription endpoints).
+ */
+export type SubscriptionPaths<TSchema> = {
+  [K in keyof TSchema & string]: {
+    [M in keyof TSchema[K]]: TSchema[K][M] extends { events: unknown }
+      ? K
+      : never;
+  }[keyof TSchema[K]] extends never
+    ? never
+    : K;
+}[keyof TSchema & string];
+
+/**
+ * Check if a schema path has any method with events field.
+ */
+export type HasSubscriptionMethod<TSchema, TPath extends string> =
+  FindMatchingKey<TSchema, TPath> extends infer TKey
+    ? TKey extends keyof TSchema
+      ? {
+          [M in keyof TSchema[TKey]]: TSchema[TKey][M] extends {
+            events: unknown;
+          }
+            ? true
+            : never;
+        }[keyof TSchema[TKey]] extends never
+        ? false
+        : true
       : false
     : false;
 
