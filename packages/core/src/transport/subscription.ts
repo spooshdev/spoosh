@@ -15,8 +15,10 @@ export interface SpooshTransportRegistry {}
 
 export type TransportName = keyof SpooshTransportRegistry;
 
-export interface SubscriptionContext<TData = unknown, TError = unknown>
-  extends PluginContext {
+export interface SubscriptionContext<
+  TData = unknown,
+  TError = unknown,
+> extends PluginContext {
   channel: string;
   message?: unknown;
   onData?: (data: TData) => void;

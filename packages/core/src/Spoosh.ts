@@ -4,6 +4,7 @@ import { createEventEmitter } from "./events";
 import { createPluginExecutor } from "./plugins";
 import type { SpooshInstance, PluginArray } from "./types/instance.types";
 import type { SpooshOptions, SpooshOptionsInput } from "./types/request.types";
+import type { SpooshTransport } from "./transport/subscription";
 
 /**
  * Class-based builder for creating Spoosh instances with type-safe plugin inference.
@@ -52,6 +53,7 @@ export class Spoosh<
   private baseUrl: string;
   private defaultOptions: SpooshOptions;
   private _plugins: TPlugins;
+  private _transports: Map<string, SpooshTransport> = new Map();
 
   /**
    * Creates a new Spoosh instance.
@@ -108,11 +110,35 @@ export class Spoosh<
   use<const TNewPlugins extends PluginArray>(
     plugins: TNewPlugins
   ): Omit<Spoosh<TSchema, TError, TNewPlugins>, "use"> {
-    return new Spoosh<TSchema, TError, TNewPlugins>(
+    const instance = new Spoosh<TSchema, TError, TNewPlugins>(
       this.baseUrl,
       this.defaultOptions as SpooshOptionsInput,
       plugins
     );
+    instance._transports = this._transports;
+    return instance;
+  }
+
+  /**
+   * Registers transport implementations for subscription-based operations.
+   *
+   * @param transports - Array of transport instances to register
+   * @returns This Spoosh instance for method chaining
+   *
+   * @example
+   * ```ts
+   * import { createSSETransport } from '@spoosh/transport-sse';
+   *
+   * const spoosh = new Spoosh<Schema, Error>('/api')
+   *   .subscriptions([createSSETransport()])
+   *   .use([...]);
+   * ```
+   */
+  subscriptions(transports: SpooshTransport[]): this {
+    for (const transport of transports) {
+      this._transports.set(transport.name, transport);
+    }
+    return this;
   }
 
   /**
@@ -143,6 +169,7 @@ export class Spoosh<
         stateManager,
         eventEmitter,
         pluginExecutor,
+        transports: this._transports,
         config: {
           baseUrl: this.baseUrl,
           defaultOptions: this.defaultOptions,
@@ -265,5 +292,18 @@ export class Spoosh<
    */
   get _types() {
     return this.getInstance()._types;
+  }
+
+  /**
+   * Map of registered transport implementations.
+   *
+   * @example
+   * ```ts
+   * const { transports } = client;
+   * const sseTransport = transports.get('sse');
+   * ```
+   */
+  get transports() {
+    return this.getInstance().transports;
   }
 }
