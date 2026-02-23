@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
   replaceAccumulate,
-  concatAccumulate,
   mergeAccumulate,
   getAccumulator,
   resolveAccumulator,
@@ -25,46 +24,24 @@ describe("accumulators", () => {
     });
   });
 
-  describe("concatAccumulate", () => {
-    it("should concatenate strings", () => {
-      expect(concatAccumulate("Hello ", "World")).toBe("Hello World");
-    });
-
-    it("should convert to strings and concatenate", () => {
-      expect(concatAccumulate(42, 100)).toBe("42100");
-      expect(concatAccumulate("Count: ", 42)).toBe("Count: 42");
-    });
-
-    it("should handle undefined previous value", () => {
-      expect(concatAccumulate(undefined, "new")).toBe("new");
-    });
-
-    it("should build streaming text", () => {
-      let result = concatAccumulate(undefined, "Hello");
-      result = concatAccumulate(result, " ");
-      result = concatAccumulate(result, "World");
-      expect(result).toBe("Hello World");
-    });
-
-    it("should skip when current is undefined", () => {
-      expect(concatAccumulate("existing", undefined)).toBe("existing");
-      expect(concatAccumulate(undefined, undefined)).toBe("");
-    });
-  });
-
   describe("mergeAccumulate", () => {
+    it("should concatenate strings", () => {
+      expect(mergeAccumulate("Hello ", "World")).toBe("Hello World");
+    });
+
+    it("should replace when types differ", () => {
+      expect(mergeAccumulate("Count: ", 42)).toBe(42);
+      expect(mergeAccumulate(100, "text")).toBe("text");
+    });
+
     it("should merge objects", () => {
       const prev = { a: 1, b: 2 };
       const current = { b: 3, c: 4 };
       expect(mergeAccumulate(prev, current)).toEqual({ a: 1, b: 3, c: 4 });
     });
 
-    it("should replace non-objects with current", () => {
-      expect(mergeAccumulate("old", "new")).toBe("new");
-      expect(mergeAccumulate(42, 100)).toBe(100);
-    });
-
     it("should handle undefined previous value", () => {
+      expect(mergeAccumulate(undefined, "new")).toBe("new");
       expect(mergeAccumulate(undefined, { new: true })).toEqual({ new: true });
     });
 
@@ -73,8 +50,27 @@ describe("accumulators", () => {
       expect(mergeAccumulate({ old: true }, null)).toBe(null);
     });
 
-    it("should not merge arrays", () => {
-      expect(mergeAccumulate([1, 2], [3, 4])).toEqual([3, 4]);
+    it("should concatenate arrays", () => {
+      expect(mergeAccumulate([1, 2], [3, 4])).toEqual([1, 2, 3, 4]);
+    });
+
+    it("should use current array when prev is not array", () => {
+      expect(mergeAccumulate("not array", [1, 2])).toEqual([1, 2]);
+      expect(mergeAccumulate(undefined, [1, 2])).toEqual([1, 2]);
+    });
+
+    it("should build streaming array", () => {
+      let result = mergeAccumulate(undefined, ["chunk1"]);
+      result = mergeAccumulate(result, ["chunk2"]);
+      result = mergeAccumulate(result, ["chunk3"]);
+      expect(result).toEqual(["chunk1", "chunk2", "chunk3"]);
+    });
+
+    it("should build streaming text", () => {
+      let result = mergeAccumulate(undefined, "Hello");
+      result = mergeAccumulate(result, " ");
+      result = mergeAccumulate(result, "World");
+      expect(result).toBe("Hello World");
     });
 
     it("should build partial object updates", () => {
@@ -93,7 +89,6 @@ describe("accumulators", () => {
   describe("getAccumulator", () => {
     it("should return correct accumulator for each strategy", () => {
       expect(getAccumulator("replace")).toBe(replaceAccumulate);
-      expect(getAccumulator("concat")).toBe(concatAccumulate);
       expect(getAccumulator("merge")).toBe(mergeAccumulate);
     });
 
@@ -108,7 +103,8 @@ describe("accumulators", () => {
     });
 
     it("should use global strategy", () => {
-      expect(resolveAccumulator("concat", "message")).toBe(concatAccumulate);
+      expect(resolveAccumulator("merge", "message")).toBe(mergeAccumulate);
+      expect(resolveAccumulator("replace", "message")).toBe(replaceAccumulate);
     });
 
     it("should use custom function", () => {
@@ -118,10 +114,10 @@ describe("accumulators", () => {
 
     it("should use per-event strategy", () => {
       const config = {
-        chunk: "concat" as const,
+        chunk: "merge" as const,
         done: "replace" as const,
       };
-      expect(resolveAccumulator(config, "chunk")).toBe(concatAccumulate);
+      expect(resolveAccumulator(config, "chunk")).toBe(mergeAccumulate);
       expect(resolveAccumulator(config, "done")).toBe(replaceAccumulate);
     });
 
@@ -136,9 +132,75 @@ describe("accumulators", () => {
 
     it("should fallback to replaceAccumulate for unmapped events", () => {
       const config = {
-        chunk: "concat" as const,
+        chunk: "merge" as const,
       };
       expect(resolveAccumulator(config, "unknown")).toBe(replaceAccumulate);
+    });
+
+    describe("field-specific config", () => {
+      it("should merge specific field and replace others", () => {
+        const config = {
+          chunk: { text: "merge" as const },
+        };
+        const accumulator = resolveAccumulator(config, "chunk");
+
+        const prev = { id: "1", text: "hello" };
+        const curr = { id: "2", text: " world" };
+        const result = accumulator(prev, curr);
+
+        expect(result).toEqual({ id: "2", text: "hello world" });
+      });
+
+      it("should handle per-event field config", () => {
+        const config = {
+          chunk: { text: "merge" as const },
+          done: "replace" as const,
+        };
+
+        const chunkAccumulator = resolveAccumulator(config, "chunk");
+        const doneAccumulator = resolveAccumulator(config, "done");
+
+        const prev = { id: "1", text: "hello" };
+        const curr = { text: " world" };
+
+        expect(chunkAccumulator(prev, curr)).toEqual({ id: "1", text: "hello world" });
+        expect(doneAccumulator).toBe(replaceAccumulate);
+      });
+
+      it("should handle multiple field configs", () => {
+        const config = {
+          chunk: { text: "merge" as const, tokens: "merge" as const },
+        };
+        const accumulator = resolveAccumulator(config, "chunk");
+
+        const prev = { id: "1", text: "hello", tokens: "5" };
+        const curr = { text: " world", tokens: "3" };
+        const result = accumulator(prev, curr);
+
+        expect(result).toEqual({ id: "1", text: "hello world", tokens: "53" });
+      });
+
+      it("should handle undefined previous value", () => {
+        const config = {
+          chunk: { text: "merge" as const },
+        };
+        const accumulator = resolveAccumulator(config, "chunk");
+
+        const curr = { id: "1", text: "hello" };
+        const result = accumulator(undefined, curr);
+
+        expect(result).toEqual({ id: "1", text: "hello" });
+      });
+
+      it("should return current if not an object", () => {
+        const config = {
+          chunk: { text: "merge" as const },
+        };
+        const accumulator = resolveAccumulator(config, "chunk");
+
+        expect(accumulator("prev", "curr")).toBe("curr");
+        expect(accumulator(123, 456)).toBe(456);
+      });
     });
   });
 });

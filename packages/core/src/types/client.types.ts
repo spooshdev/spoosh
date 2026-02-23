@@ -380,8 +380,17 @@ export type TypedParseConfig<TEvents, TStrategies> =
     : TStrategies | ((data: string) => unknown);
 
 /**
+ * Field-specific accumulate config.
+ * Keys are field names from event data, values are strategies.
+ */
+type TypedAccumulateFieldConfig<TEventData, TStrategies> =
+  TEventData extends Record<string, unknown>
+    ? { [K in keyof TEventData]?: TStrategies }
+    : never;
+
+/**
  * Typed accumulate config with event-specific inference.
- * Strategies are inferred from transport's options.accumulate type.
+ * Supports: strategy, field config, function, or per-event mapping.
  */
 type TypedAccumulateConfig<TEvents, TStrategies> =
   TEvents extends Record<string, unknown>
@@ -389,6 +398,10 @@ type TypedAccumulateConfig<TEvents, TStrategies> =
         | {
             [K in keyof TEvents]?:
               | TStrategies
+              | TypedAccumulateFieldConfig<
+                  ExtractEventData<TEvents[K]>,
+                  TStrategies
+                >
               | ((
                   prev: ExtractEventData<TEvents[K]> | undefined,
                   current: ExtractEventData<TEvents[K]>

@@ -40,7 +40,7 @@ describe("SSE Transport", () => {
     });
 
     it("should accept custom accumulate config", () => {
-      const transport = sse({ accumulate: "concat" });
+      const transport = sse({ accumulate: "merge" });
 
       expect(transport).toBeDefined();
     });
@@ -289,7 +289,7 @@ describe("SSE Transport", () => {
     });
 
     it("should use transport-level accumulate config", async () => {
-      const transport = sse({ accumulate: "concat" });
+      const transport = sse({ accumulate: "merge" });
 
       mockSuccessfulConnection();
 
@@ -309,7 +309,7 @@ describe("SSE Transport", () => {
       await transport.connect("messages", {
         baseUrl: "/api",
         path: "sse/messages",
-        accumulate: "concat",
+        accumulate: "merge",
       });
 
       expect(transport).toBeDefined();

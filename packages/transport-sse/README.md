@@ -147,22 +147,63 @@ api("@sse/stream").GET({
 
 Control how events are combined over time:
 
-| Strategy    | Description                                    |
-| ----------- | ---------------------------------------------- |
-| `"replace"` | Replace previous value (default)               |
-| `"concat"`  | Concatenate strings                            |
-| `"merge"`   | Shallow merge objects                          |
+| Strategy    | Description                      |
+| ----------- | -------------------------------- |
+| `"replace"` | Replace previous value (default) |
+| `"merge"`   | Smart merge based on type        |
+
+### Merge Behavior
+
+The `"merge"` strategy automatically handles different types:
+
+| prev     | next     | result        |
+| -------- | -------- | ------------- |
+| `string` | `string` | concat        |
+| `number` | `number` | replace       |
+| `string` | `number` | replace       |
+| `number` | `string` | replace       |
+| `object` | `object` | shallow merge |
+| `array`  | `array`  | concat        |
+| `object` | `array`  | replace       |
+| `array`  | `object` | replace       |
 
 ```typescript
 // Global accumulate strategy
-api("@sse/stream").GET({ accumulate: "concat" })
+api("@sse/stream").GET({ accumulate: "merge" })
 
 // Per-event accumulate strategy
 api("@sse/stream").GET({
   accumulate: {
-    chunk: "concat",
+    chunk: "merge",
     status: "replace",
   }
+})
+
+// Field-specific config (merge only specific fields)
+api("@sse/chat").POST({
+  events: ["chunk"],
+  accumulate: {
+    chunk: { text: "merge" },  // Concat text field, replace others
+  },
+})
+
+// Example: Field-specific accumulation in action
+// Schema: events: { chunk: { data: { id: string; text: string; tokens: number } } }
+//
+// Event 1: { id: "1", text: "Hello", tokens: 5 }
+// Event 2: { id: "2", text: " World", tokens: 6 }
+//
+// With { chunk: "merge" }:           { id: "2", text: " World", tokens: 6 }  (shallow merge)
+// With { chunk: { text: "merge" } }: { id: "2", text: "Hello World", tokens: 6 }  (concat text only)
+
+// Same result using custom function:
+api("@sse/chat").POST({
+  accumulate: {
+    chunk: (prev, curr) => ({
+      ...(curr ?? {}),
+      text: (prev?.text || "") + curr.text,
+    }),
+  },
 })
 
 // Custom accumulate function with typed parameters
