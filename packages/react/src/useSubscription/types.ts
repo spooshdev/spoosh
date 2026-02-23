@@ -3,7 +3,6 @@ import type { SpooshBody } from "@spoosh/core";
 
 export interface BaseSubscriptionOptions {
   enabled?: boolean;
-  tags?: string[];
 }
 
 type ExtractTriggerQuery<TQuery> = [TQuery] extends [never]
@@ -48,7 +47,7 @@ export interface BaseSubscriptionResult<
   loading: boolean;
   meta: TPluginResult;
   trigger: (options?: TTriggerOptions) => Promise<void>;
-  unsubscribe: () => void;
+  disconnect: () => void;
 }
 
 export type SubscriptionApiClient<

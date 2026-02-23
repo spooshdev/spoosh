@@ -304,10 +304,9 @@ type InfinitePage<TData> = {
 
 ### useSubscription(subFn, options?)
 
-| Option    | Type       | Default | Description                      |
-| --------- | ---------- | ------- | -------------------------------- |
-| `enabled` | `boolean`  | `true`  | Whether to connect automatically |
-| `tags`    | `string[]` | -       | Tags for cache invalidation      |
+| Option    | Type      | Default | Description                      |
+| --------- | --------- | ------- | -------------------------------- |
+| `enabled` | `boolean` | `true`  | Whether to connect automatically |
 
 **Returns:**
 
@@ -318,7 +317,7 @@ type InfinitePage<TData> = {
 | `loading`     | `boolean`               | True during initial connection |
 | `isConnected` | `boolean`               | True when connected to stream  |
 | `trigger`     | `(options?) => Promise` | Reconnect with new options     |
-| `unsubscribe` | `() => void`            | Disconnect from stream         |
+| `disconnect`  | `() => void`            | Disconnect from stream         |
 
 **Transport Options (SSE):**
 

@@ -190,7 +190,7 @@ describe("useSubscription", () => {
       expect(result.current).toHaveProperty("loading");
       expect(result.current).toHaveProperty("isConnected");
       expect(result.current).toHaveProperty("trigger");
-      expect(result.current).toHaveProperty("unsubscribe");
+      expect(result.current).toHaveProperty("disconnect");
       expect(result.current).toHaveProperty("meta");
     });
 
@@ -311,7 +311,7 @@ describe("useSubscription", () => {
       });
     });
 
-    it("should call unsubscribe function when unmounting", async () => {
+    it("should call disconnect function when unmounting", async () => {
       const { useSubscription, transport } = createTestHooks();
 
       const { result } = renderHook(() =>
@@ -324,7 +324,7 @@ describe("useSubscription", () => {
       });
 
       act(() => {
-        result.current.unsubscribe();
+        result.current.disconnect();
       });
 
       await waitFor(() => {
@@ -332,7 +332,7 @@ describe("useSubscription", () => {
       });
     });
 
-    it("should not reconnect after unsubscribe when data arrives", async () => {
+    it("should not reconnect after disconnect when data arrives", async () => {
       const { useSubscription, transport } = createTestHooks();
 
       const { result } = renderHook(() =>
@@ -354,7 +354,7 @@ describe("useSubscription", () => {
       });
 
       act(() => {
-        result.current.unsubscribe();
+        result.current.disconnect();
       });
 
       await waitFor(() => {
@@ -362,7 +362,7 @@ describe("useSubscription", () => {
       });
 
       act(() => {
-        transport.triggerMessage("message", { text: "After unsubscribe" });
+        transport.triggerMessage("message", { text: "After disconnect" });
       });
 
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -484,22 +484,6 @@ describe("useSubscription", () => {
   });
 
   describe("options", () => {
-    it("should support custom tags", async () => {
-      const { useSubscription, transport } = createTestHooks();
-
-      renderHook(() =>
-        useSubscription(
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (api: any) => api("@sse/sse/messages").GET(),
-          { tags: ["custom", "tags"] }
-        )
-      );
-
-      await waitFor(() => {
-        expect(transport.connect).toHaveBeenCalled();
-      });
-    });
-
     it("should support enabled toggle", async () => {
       const { useSubscription, transport } = createTestHooks();
 

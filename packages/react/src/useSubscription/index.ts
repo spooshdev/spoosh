@@ -210,7 +210,7 @@ export function createUseSubscription<
       };
     }, [queryKey, enabled, getOrCreateController]);
 
-    const unsubscribe = useCallback(() => {
+    const disconnect = useCallback(() => {
       subscriptionVersionRef.current++;
 
       if (controllerRef.current) {
@@ -250,7 +250,7 @@ export function createUseSubscription<
       loading,
       isConnected: state.isConnected,
       trigger,
-      unsubscribe,
+      disconnect,
     };
   }
 
