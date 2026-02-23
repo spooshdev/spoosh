@@ -5,7 +5,12 @@ import { renderHook, act, waitFor } from "@testing-library/react";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 import { createStateManager, createEventEmitter } from "@spoosh/test-utils";
 import { createPluginExecutor } from "@spoosh/core";
-import type { SpooshTransport } from "@spoosh/core";
+import type {
+  SpooshTransport,
+  SubscriptionAdapterFactory,
+  SubscriptionAdapterOptions,
+  SubscriptionContext,
+} from "@spoosh/core";
 import { createUseSubscription } from "./index";
 
 interface MockSubscriptionContext {
@@ -14,11 +19,12 @@ interface MockSubscriptionContext {
   isConnected: boolean;
 }
 
-function createMockTransport(): SpooshTransport & {
-  mockContext: MockSubscriptionContext;
-  triggerMessage: (event: string, data: unknown) => void;
-  triggerError: (error: Error) => void;
-} {
+function createMockTransport(): SpooshTransport &
+  SubscriptionAdapterFactory & {
+    mockContext: MockSubscriptionContext;
+    triggerMessage: (event: string, data: unknown) => void;
+    triggerError: (error: Error) => void;
+  } {
   const mockContext: MockSubscriptionContext = {
     callbacks: new Set(),
     eventCallbacks: new Map(),
@@ -43,24 +49,12 @@ function createMockTransport(): SpooshTransport & {
     console.error("Transport error:", error);
   };
 
-  const transport: SpooshTransport & {
-    mockContext: MockSubscriptionContext;
-    triggerMessage: typeof triggerMessage;
-    triggerError: typeof triggerError;
-    getConnectionUrl: (channel: string, options?: unknown) => string;
-    releaseConnection: (url: string) => void;
-  } = {
-    name: "sse",
-    operationType: "sse",
-    connect: vi.fn(async () => {
-      mockContext.isConnected = true;
-    }),
-    disconnect: vi.fn(async () => {
-      mockContext.isConnected = false;
-      mockContext.callbacks.clear();
-      mockContext.eventCallbacks.clear();
-    }),
-    subscribe: vi.fn((event: string, callback: (message: unknown) => void) => {
+  const connectFn = vi.fn(async () => {
+    mockContext.isConnected = true;
+  });
+
+  const subscribeFn = vi.fn(
+    (event: string, callback: (message: unknown) => void) => {
       if (!mockContext.eventCallbacks.has(event)) {
         mockContext.eventCallbacks.set(event, new Set());
       }
@@ -71,11 +65,73 @@ function createMockTransport(): SpooshTransport & {
         mockContext.eventCallbacks.get(event)?.delete(callback);
         mockContext.callbacks.delete(callback);
       };
+    }
+  );
+
+  const releaseConnectionFn = vi.fn();
+
+  const createSubscriptionAdapter = (
+    adapterOptions: SubscriptionAdapterOptions
+  ) => {
+    return {
+      subscribe: async (context: SubscriptionContext) => {
+        const unsubscribers: Array<() => void> = [];
+        let currentData: unknown = undefined;
+
+        const requestOptions = adapterOptions.getRequestOptions();
+        const capturedEvents = requestOptions?.events as string[] | undefined;
+
+        const sharedCallback = (message: unknown) => {
+          currentData = message;
+          context.onData?.(message);
+        };
+
+        if (Array.isArray(capturedEvents) && capturedEvents.length > 0) {
+          for (const eventType of capturedEvents) {
+            const unsub = subscribeFn(eventType, sharedCallback);
+            unsubscribers.push(unsub);
+          }
+        } else {
+          const unsub = subscribeFn("*", sharedCallback);
+          unsubscribers.push(unsub);
+        }
+
+        await connectFn();
+
+        return {
+          unsubscribe: () => {
+            unsubscribers.forEach((unsub) => unsub());
+            unsubscribers.length = 0;
+            releaseConnectionFn();
+          },
+          getData: () => currentData,
+          getError: () => undefined,
+          onData: () => () => {},
+          onError: () => () => {},
+        };
+      },
+      emit: async () => ({ success: true }),
+    };
+  };
+
+  const transport: SpooshTransport &
+    SubscriptionAdapterFactory & {
+      mockContext: MockSubscriptionContext;
+      triggerMessage: typeof triggerMessage;
+      triggerError: typeof triggerError;
+    } = {
+    name: "sse",
+    operationType: "sse",
+    connect: connectFn,
+    disconnect: vi.fn(async () => {
+      mockContext.isConnected = false;
+      mockContext.callbacks.clear();
+      mockContext.eventCallbacks.clear();
     }),
+    subscribe: subscribeFn,
     send: vi.fn(async () => {}),
     isConnected: () => mockContext.isConnected,
-    getConnectionUrl: vi.fn((channel: string) => `/api/${channel}`),
-    releaseConnection: vi.fn(),
+    createSubscriptionAdapter,
     mockContext,
     triggerMessage,
     triggerError,
@@ -224,13 +280,11 @@ describe("useSubscription", () => {
       await waitFor(() => {
         expect(transport.subscribe).toHaveBeenCalledWith(
           "chunk",
-          expect.any(Function),
-          expect.any(String)
+          expect.any(Function)
         );
         expect(transport.subscribe).toHaveBeenCalledWith(
           "done",
-          expect.any(Function),
-          expect.any(String)
+          expect.any(Function)
         );
       });
     });

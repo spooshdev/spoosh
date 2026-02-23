@@ -44,3 +44,17 @@ export interface SubscriptionHandle<TData = unknown, TError = unknown> {
   onData(callback: (data: TData) => void): () => void;
   onError(callback: (error: TError) => void): () => void;
 }
+
+export interface SubscriptionAdapterOptions {
+  channel: string;
+  method: string;
+  baseUrl: string;
+  globalHeaders?: HeadersInit | (() => HeadersInit | Promise<HeadersInit>);
+  getRequestOptions: () => Record<string, unknown> | undefined;
+}
+
+export interface SubscriptionAdapterFactory<TData = unknown, TError = unknown> {
+  createSubscriptionAdapter(
+    options: SubscriptionAdapterOptions
+  ): SubscriptionAdapter<TData, TError>;
+}

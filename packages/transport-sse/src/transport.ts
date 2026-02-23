@@ -1,5 +1,11 @@
 import { fetchEventSource } from "@microsoft/fetch-event-source";
-import type { SpooshTransport } from "@spoosh/core";
+import type {
+  SpooshTransport,
+  SubscriptionAdapter,
+  SubscriptionAdapterFactory,
+  SubscriptionAdapterOptions,
+  SubscriptionHandle,
+} from "@spoosh/core";
 import { sortObjectKeys } from "@spoosh/core";
 import { resolveParser } from "./parsers";
 import { resolveAccumulator } from "./accumulators";
@@ -17,7 +23,9 @@ interface ConnectionState {
   disconnectCallbacks: Set<() => void>;
 }
 
-export function sse(config: SSETransportConfig = {}): SpooshTransport<SSETransportOptions, unknown> {
+export function sse(
+  config: SSETransportConfig = {}
+): SpooshTransport<SSETransportOptions, unknown> & SubscriptionAdapterFactory {
   const defaultParse = config.parse ?? "auto";
   const defaultAccumulate = config.accumulate ?? "replace";
   const disconnectDelay = config.disconnectDelay ?? 100;
@@ -490,6 +498,74 @@ export function sse(config: SSETransportConfig = {}): SpooshTransport<SSETranspo
     };
   };
 
+  const createSubscriptionAdapter = (
+    adapterOptions: SubscriptionAdapterOptions
+  ): SubscriptionAdapter => {
+    return {
+      subscribe: async (context): Promise<SubscriptionHandle> => {
+        const unsubscribers: Array<() => void> = [];
+        let currentData: unknown = undefined;
+        let disconnectedByServer = false;
+
+        const requestOptions = adapterOptions.getRequestOptions();
+        const capturedEvents = requestOptions?.events as string[] | undefined;
+
+        const transportOptions: SSETransportOptions = {
+          baseUrl: adapterOptions.baseUrl,
+          path: adapterOptions.channel,
+          method: adapterOptions.method,
+          body: requestOptions?.body,
+          query: requestOptions?.query as Record<string, unknown> | undefined,
+          headers: requestOptions?.headers as HeadersInit | undefined,
+          globalHeaders: adapterOptions.globalHeaders,
+          parse: requestOptions?.parse as SSETransportOptions["parse"],
+          accumulate: requestOptions?.accumulate as SSETransportOptions["accumulate"],
+        };
+
+        const connectionUrl = getConnectionUrl(adapterOptions.channel, transportOptions);
+
+        const sharedCallback = (message: unknown) => {
+          currentData = message;
+          context.onData?.(message);
+        };
+
+        if (Array.isArray(capturedEvents) && capturedEvents.length > 0) {
+          for (const eventType of capturedEvents) {
+            const unsub = subscribe(eventType, sharedCallback, connectionUrl);
+            unsubscribers.push(unsub);
+          }
+        } else {
+          const unsub = subscribe("*", sharedCallback, connectionUrl);
+          unsubscribers.push(unsub);
+        }
+
+        await connect(adapterOptions.channel, transportOptions);
+
+        const unsubDisconnect = onDisconnect(connectionUrl, () => {
+          disconnectedByServer = true;
+          context.onDisconnect?.();
+        });
+        unsubscribers.push(unsubDisconnect);
+
+        return {
+          unsubscribe: () => {
+            unsubscribers.forEach((unsub) => unsub());
+            unsubscribers.length = 0;
+
+            if (!disconnectedByServer) {
+              releaseConnection(connectionUrl);
+            }
+          },
+          getData: () => currentData,
+          getError: () => undefined,
+          onData: () => () => {},
+          onError: () => () => {},
+        };
+      },
+      emit: async () => ({ success: true }),
+    };
+  };
+
   return {
     name: "sse",
     operationType: "sse",
@@ -498,12 +574,6 @@ export function sse(config: SSETransportConfig = {}): SpooshTransport<SSETranspo
     subscribe,
     send,
     isConnected,
-    releaseConnection,
-    getConnectionUrl,
-    onDisconnect,
-  } as SpooshTransport<SSETransportOptions, unknown> & {
-    releaseConnection: (fullUrl: string) => void;
-    getConnectionUrl: (channel: string, options?: SSETransportOptions) => string;
-    onDisconnect: (fullUrl: string, callback: () => void) => () => void;
+    createSubscriptionAdapter,
   };
 }

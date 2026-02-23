@@ -10,7 +10,8 @@ import {
   type PluginTypeConfig,
   type SelectorResult,
   type SpooshTransport,
-  type SubscriptionContext,
+  type SubscriptionAdapterFactory,
+  type SubscriptionAdapter,
   createSelectorProxy,
   parseTransportPath,
   isTransportPath,
@@ -28,19 +29,7 @@ import type {
 } from "../types/extraction";
 import type { SpooshInstanceShape } from "../create/types";
 
-interface SSETransportExtended extends SpooshTransport {
-  releaseConnection?: (fullUrl: string) => void;
-  getConnectionUrl?: (
-    channel: string,
-    options?: Record<string, unknown>
-  ) => string;
-  subscribe: (
-    eventType: string,
-    callback: (message: unknown) => void,
-    url?: string
-  ) => () => void;
-  onDisconnect?: (fullUrl: string, callback: () => void) => () => void;
-}
+type TransportWithAdapterFactory = SpooshTransport & SubscriptionAdapterFactory;
 
 export function createUseSubscription<
   TSchema,
@@ -100,9 +89,21 @@ export function createUseSubscription<
       ? parseTransportPath(capturedCall.path)?.transport
       : null;
 
-    const transportInstance = (
-      transportName ? transports.get(transportName) : null
-    ) as SSETransportExtended | null;
+    const transportInstance = transportName
+      ? transports.get(transportName)
+      : null;
+
+    const hasAdapterFactory = (
+      transport: unknown
+    ): transport is TransportWithAdapterFactory => {
+      return (
+        transport !== null &&
+        typeof transport === "object" &&
+        "createSubscriptionAdapter" in transport &&
+        typeof (transport as TransportWithAdapterFactory)
+          .createSubscriptionAdapter === "function"
+      );
+    };
 
     const queryKey = stateManager.createQueryKey({
       path: capturedCall.path,
@@ -117,7 +118,6 @@ export function createUseSubscription<
       typeof createSubscriptionController<TData, TError>
     > | null>(null);
 
-    const connectionUrlRef = useRef<string | null>(null);
     const subscriptionVersionRef = useRef(0);
 
     const getOrCreateController = useCallback(() => {
@@ -125,130 +125,30 @@ export function createUseSubscription<
         return controllerRef.current;
       }
 
-      const baseAdapter = {
-        subscribe: async (context: SubscriptionContext<TData, TError>) => {
-          const thisVersion = subscriptionVersionRef.current;
-          const unsubscribers: Array<() => void> = [];
-          let currentData: TData | undefined = undefined;
-          const currentError: TError | undefined = undefined;
-          let disconnectedByServer = false;
+      const parsed = parseTransportPath(capturedCall.path);
 
-          if (transportInstance) {
-            const parsed = parseTransportPath(capturedCall.path);
+      let baseAdapter: SubscriptionAdapter<TData, TError>;
 
-            if (parsed) {
-              const requestOptions = currentOptionsRef.current;
-              const capturedEvents = requestOptions?.events;
-
-              const transportOptions = {
-                baseUrl: config.baseUrl,
-                path: parsed.channel,
-                method: capturedCall.method,
-                body: requestOptions?.body,
-                query: requestOptions?.query,
-                headers: requestOptions?.headers,
-                globalHeaders: config.defaultOptions.headers,
-                parse: requestOptions?.parse,
-                accumulate: requestOptions?.accumulate,
-              };
-
-              if (transportInstance.getConnectionUrl) {
-                connectionUrlRef.current = transportInstance.getConnectionUrl(
-                  parsed.channel,
-                  transportOptions
-                );
-              }
-
-              const sharedCallback = (message: unknown) => {
-                if (subscriptionVersionRef.current !== thisVersion) {
-                  return;
-                }
-
-                currentData = message as TData;
-
-                if (context.onData) {
-                  context.onData(currentData);
-                }
-              };
-
-              if (Array.isArray(capturedEvents) && capturedEvents.length > 0) {
-                for (const eventType of capturedEvents) {
-                  const unsub = transportInstance.subscribe(
-                    eventType,
-                    sharedCallback,
-                    connectionUrlRef.current || undefined
-                  );
-                  unsubscribers.push(unsub);
-                }
-              } else {
-                const unsub = transportInstance.subscribe(
-                  "*",
-                  sharedCallback,
-                  connectionUrlRef.current || undefined
-                );
-                unsubscribers.push(unsub);
-              }
-
-              await transportInstance.connect(parsed.channel, transportOptions);
-
-              if (subscriptionVersionRef.current !== thisVersion) {
-                unsubscribers.forEach((unsub) => unsub());
-
-                if (
-                  connectionUrlRef.current &&
-                  transportInstance.releaseConnection
-                ) {
-                  transportInstance.releaseConnection(connectionUrlRef.current);
-                }
-
-                return {
-                  unsubscribe: () => {},
-                  getData: () => undefined,
-                  getError: () => undefined,
-                  onData: () => () => {},
-                  onError: () => () => {},
-                };
-              }
-
-              if (connectionUrlRef.current && transportInstance.onDisconnect) {
-                const unsubDisconnect = transportInstance.onDisconnect(
-                  connectionUrlRef.current,
-                  () => {
-                    disconnectedByServer = true;
-
-                    if (context.onDisconnect) {
-                      context.onDisconnect();
-                    }
-                  }
-                );
-                unsubscribers.push(unsubDisconnect);
-              }
-            }
-          }
-
-          return {
-            unsubscribe: () => {
-              unsubscribers.forEach((unsub) => unsub());
-              unsubscribers.length = 0;
-
-              if (
-                !disconnectedByServer &&
-                connectionUrlRef.current &&
-                transportInstance?.releaseConnection
-              ) {
-                transportInstance.releaseConnection(connectionUrlRef.current);
-              }
-            },
-            getData: () => currentData,
-            getError: () => currentError,
+      if (hasAdapterFactory(transportInstance) && parsed) {
+        baseAdapter = transportInstance.createSubscriptionAdapter({
+          channel: parsed.channel,
+          method: capturedCall.method,
+          baseUrl: config.baseUrl,
+          globalHeaders: config.defaultOptions.headers,
+          getRequestOptions: () => currentOptionsRef.current,
+        }) as SubscriptionAdapter<TData, TError>;
+      } else {
+        baseAdapter = {
+          subscribe: async () => ({
+            unsubscribe: () => {},
+            getData: () => undefined,
+            getError: () => undefined,
             onData: () => () => {},
             onError: () => () => {},
-          };
-        },
-        emit: async () => ({ success: true }),
-      };
-
-      const parsed = parseTransportPath(capturedCall.path);
+          }),
+          emit: async () => ({ success: true }),
+        };
+      }
 
       const controller = createSubscriptionController<TData, TError>({
         channel: parsed?.channel || capturedCall.path,
