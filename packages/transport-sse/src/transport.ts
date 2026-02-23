@@ -1,5 +1,6 @@
 import { fetchEventSource } from "@microsoft/fetch-event-source";
 import type { SpooshTransport } from "@spoosh/core";
+import { sortObjectKeys } from "@spoosh/core";
 import type { ParseConfig } from "./parsers";
 import type { AccumulateConfig } from "./accumulators";
 import { resolveParser } from "./parsers";
@@ -55,6 +56,9 @@ export interface SSETransportConfig {
 
   /** Delay before disconnecting when no subscribers left. Helps with React Strict Mode. Defaults to 100ms. */
   disconnectDelay?: number;
+
+  /** Throttle notifications to prevent UI flooding from high-frequency events. Uses requestAnimationFrame batching when set to true, or custom interval in ms. Defaults to false (no throttling). */
+  throttle?: boolean | number;
 }
 
 export interface SSEMessage {
@@ -102,9 +106,11 @@ export function sse(config: SSETransportConfig = {}): SpooshTransport<SSETranspo
   const defaultParse = config.parse ?? "auto";
   const defaultAccumulate = config.accumulate ?? "replace";
   const disconnectDelay = config.disconnectDelay ?? 100;
+  const throttleConfig = config.throttle ?? false;
 
   const connections = new Map<string, ConnectionState>();
   const disconnectTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  const pendingNotifications = new Map<string, boolean>();
 
   interface UrlSubscriptions {
     subscriptions: Map<string, Set<(message: unknown) => void>>;
@@ -128,8 +134,8 @@ export function sse(config: SSETransportConfig = {}): SpooshTransport<SSETranspo
   };
 
   const cleanupUrlSubscriptions = (url: string): void => {
-    console.log("[SSE] Cleaning up subscriptions for URL", { url });
     urlSubscriptionsMap.delete(url);
+    pendingNotifications.delete(url);
   };
 
   const buildUrl = (channel: string, options?: SSETransportOptions): string => {
@@ -138,9 +144,8 @@ export function sse(config: SSETransportConfig = {}): SpooshTransport<SSETranspo
     let fullUrl = `${baseUrl}/${path}`;
 
     if (options?.query) {
-      const queryString = new URLSearchParams(
-        options.query as Record<string, string>
-      ).toString();
+      const sortedQuery = sortObjectKeys(options.query) as Record<string, string>;
+      const queryString = new URLSearchParams(sortedQuery).toString();
 
       if (queryString) {
         fullUrl = `${fullUrl}?${queryString}`;
@@ -244,7 +249,6 @@ export function sse(config: SSETransportConfig = {}): SpooshTransport<SSETranspo
 
                   if (!resolved) {
                     resolved = true;
-                    console.log("[SSE] Connection opened, resolving promise");
                     resolve();
                   }
 
@@ -262,21 +266,14 @@ export function sse(config: SSETransportConfig = {}): SpooshTransport<SSETranspo
               },
 
               onmessage: (event) => {
-                console.log("[SSE] onmessage received", { event: event.event, isAborted: state.isAborted, refCount: state.refCount, url: fullUrl });
-
                 if (state.isAborted) {
-                  console.log("[SSE] Ignoring message - connection is aborted");
                   return;
                 }
 
-                const urlSubs = urlSubscriptionsMap.get(fullUrl);
-
-                if (!urlSubs) {
-                  console.log("[SSE] No subscriptions for this URL, ignoring message");
+                if (!urlSubscriptionsMap.has(fullUrl)) {
                   return;
                 }
 
-                const { subscriptions, callbackEventMap } = urlSubs;
                 const eventType = event.event || "message";
                 const parseConfig = mergeConfig(defaultParse, options?.parse);
                 const accumulateConfig = mergeConfig(defaultAccumulate, options?.accumulate);
@@ -298,36 +295,69 @@ export function sse(config: SSETransportConfig = {}): SpooshTransport<SSETranspo
                   accumulatedData[eventType] = parsedData;
                 }
 
-                const specificCallbacks = subscriptions.get(eventType) || new Set();
-                const wildcardCallbacks = subscriptions.get("*") || new Set();
-                const allCallbacks = new Set([...specificCallbacks, ...wildcardCallbacks]);
+                const notifySubscribers = () => {
+                  const currentUrlSubs = urlSubscriptionsMap.get(fullUrl);
 
-                if (allCallbacks.size === 0) return;
-
-                allCallbacks.forEach((cb) => {
-                  const subscribedEvents = callbackEventMap.get(cb);
-
-                  if (!subscribedEvents) {
-                    cb(accumulatedData);
+                  if (!currentUrlSubs || state.isAborted) {
                     return;
                   }
 
-                  const isWildcard = subscribedEvents.has("*");
+                  const currentSubscriptions = currentUrlSubs.subscriptions;
+                  const currentCallbackEventMap = currentUrlSubs.callbackEventMap;
 
-                  if (isWildcard) {
-                    cb(accumulatedData);
-                  } else {
-                    const filteredData: Record<string, unknown> = {};
+                  const specificCallbacks = currentSubscriptions.get(eventType) || new Set();
+                  const wildcardCallbacks = currentSubscriptions.get("*") || new Set();
+                  const allCallbacks = new Set([...specificCallbacks, ...wildcardCallbacks]);
 
-                    for (const evt of subscribedEvents) {
-                      if (accumulatedData[evt] !== undefined) {
-                        filteredData[evt] = accumulatedData[evt];
-                      }
+                  if (allCallbacks.size === 0) return;
+
+                  allCallbacks.forEach((cb) => {
+                    const subscribedEvents = currentCallbackEventMap.get(cb);
+
+                    if (!subscribedEvents) {
+                      cb(accumulatedData);
+                      return;
                     }
 
-                    cb(filteredData);
-                  }
-                });
+                    const isWildcard = subscribedEvents.has("*");
+
+                    if (isWildcard) {
+                      cb(accumulatedData);
+                    } else {
+                      const filteredData: Record<string, unknown> = {};
+
+                      for (const evt of subscribedEvents) {
+                        if (accumulatedData[evt] !== undefined) {
+                          filteredData[evt] = accumulatedData[evt];
+                        }
+                      }
+
+                      cb(filteredData);
+                    }
+                  });
+                };
+
+                if (!throttleConfig) {
+                  notifySubscribers();
+                  return;
+                }
+
+                if (pendingNotifications.get(fullUrl)) {
+                  return;
+                }
+
+                pendingNotifications.set(fullUrl, true);
+
+                const scheduleNotification = () => {
+                  pendingNotifications.delete(fullUrl);
+                  notifySubscribers();
+                };
+
+                if (throttleConfig === true) {
+                  requestAnimationFrame(scheduleNotification);
+                } else {
+                  setTimeout(scheduleNotification, throttleConfig);
+                }
               },
 
               onerror: (error) => {
@@ -350,11 +380,9 @@ export function sse(config: SSETransportConfig = {}): SpooshTransport<SSETranspo
               },
 
               onclose: () => {
-                console.log("[SSE] Connection closed by server", { url: fullUrl });
                 state.isConnecting = false;
 
                 if (!state.isAborted) {
-                  console.log("[SSE] Notifying disconnect callbacks", { count: state.disconnectCallbacks.size });
                   state.disconnectCallbacks.forEach((cb) => cb());
                   state.disconnectCallbacks.clear();
                   connections.delete(fullUrl);
@@ -387,11 +415,9 @@ export function sse(config: SSETransportConfig = {}): SpooshTransport<SSETranspo
 
   const connect = async (channel: string, options?: SSETransportOptions): Promise<void> => {
     const fullUrl = buildUrl(channel, options);
-    console.log("[SSE] connect called", { fullUrl });
 
     const existingTimer = disconnectTimers.get(fullUrl);
     if (existingTimer) {
-      console.log("[SSE] Cancelling pending disconnect timer", { fullUrl });
       clearTimeout(existingTimer);
       disconnectTimers.delete(fullUrl);
     }
@@ -400,7 +426,6 @@ export function sse(config: SSETransportConfig = {}): SpooshTransport<SSETranspo
 
     if (connectionState) {
       connectionState.refCount++;
-      console.log("[SSE] Reusing existing connection", { fullUrl, refCount: connectionState.refCount });
 
       if (connectionState.connectPromise) {
         await connectionState.connectPromise;
@@ -413,7 +438,6 @@ export function sse(config: SSETransportConfig = {}): SpooshTransport<SSETranspo
       return;
     }
 
-    console.log("[SSE] Creating new connection", { fullUrl });
     connectionState = createConnection(fullUrl, options);
     connectionState.refCount = 1;
     connections.set(fullUrl, connectionState);
@@ -422,23 +446,18 @@ export function sse(config: SSETransportConfig = {}): SpooshTransport<SSETranspo
       await connectionState.connectPromise;
     }
 
-    console.log("[SSE] Connection established", { fullUrl, refCount: connectionState.refCount });
-
     if (connectionState.error) {
       throw connectionState.error;
     }
   };
 
   const disconnectUrl = (fullUrl: string): void => {
-    console.log("[SSE] disconnectUrl called", { fullUrl });
     const connectionState = connections.get(fullUrl);
 
     if (!connectionState) {
-      console.log("[SSE] No connection to disconnect", { fullUrl });
       return;
     }
 
-    console.log("[SSE] Aborting and removing connection", { fullUrl });
     connectionState.isAborted = true;
     connectionState.abortController.abort();
     connections.delete(fullUrl);
@@ -446,34 +465,26 @@ export function sse(config: SSETransportConfig = {}): SpooshTransport<SSETranspo
   };
 
   const releaseConnection = (fullUrl: string): void => {
-    console.log("[SSE] releaseConnection called", { fullUrl });
     const connectionState = connections.get(fullUrl);
 
     if (!connectionState) {
-      console.log("[SSE] No connection to release", { fullUrl });
       return;
     }
 
     connectionState.refCount--;
-    console.log("[SSE] Decremented refCount", { fullUrl, refCount: connectionState.refCount });
 
     if (connectionState.refCount <= 0) {
-      console.log("[SSE] refCount is 0, scheduling disconnect", { fullUrl, delay: disconnectDelay });
-
       const existingTimer = disconnectTimers.get(fullUrl);
       if (existingTimer) {
         clearTimeout(existingTimer);
       }
 
       const timer = setTimeout(() => {
-        console.log("[SSE] Disconnect timer fired", { fullUrl });
         disconnectTimers.delete(fullUrl);
         const currentState = connections.get(fullUrl);
 
         if (currentState && currentState.refCount <= 0) {
           disconnectUrl(fullUrl);
-        } else {
-          console.log("[SSE] Connection was reacquired, not disconnecting", { fullUrl, refCount: currentState?.refCount });
         }
       }, disconnectDelay);
 
@@ -510,19 +521,30 @@ export function sse(config: SSETransportConfig = {}): SpooshTransport<SSETranspo
     callbackEventMap.get(callback)!.add(eventType);
 
     return () => {
-      callbacks.delete(callback);
+      const currentUrlSubs = urlSubscriptionsMap.get(targetUrl);
 
-      const eventSet = callbackEventMap.get(callback);
+      if (!currentUrlSubs) {
+        return;
+      }
+
+      const currentCallbacks = currentUrlSubs.subscriptions.get(eventType);
+
+      if (currentCallbacks) {
+        currentCallbacks.delete(callback);
+
+        if (currentCallbacks.size === 0) {
+          currentUrlSubs.subscriptions.delete(eventType);
+        }
+      }
+
+      const eventSet = currentUrlSubs.callbackEventMap.get(callback);
+
       if (eventSet) {
         eventSet.delete(eventType);
 
         if (eventSet.size === 0) {
-          callbackEventMap.delete(callback);
+          currentUrlSubs.callbackEventMap.delete(callback);
         }
-      }
-
-      if (callbacks.size === 0) {
-        subscriptions.delete(eventType);
       }
     };
   };

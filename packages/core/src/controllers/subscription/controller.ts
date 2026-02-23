@@ -100,10 +100,8 @@ export function createSubscriptionController<TData, TError>(
       if (callbackOrVoid === undefined) {
         subscriptionVersion++;
         const thisVersion = subscriptionVersion;
-        console.log("[Controller] subscribe() called", { thisVersion });
 
         if (handle) {
-          console.log("[Controller] closing existing handle before new subscribe");
           handle.unsubscribe();
           handle = null;
         }
@@ -143,8 +141,6 @@ export function createSubscriptionController<TData, TError>(
             return;
           }
 
-          console.log("[Controller] onDisconnect called", { thisVersion });
-
           cachedState = {
             ...cachedState,
             isConnected: false,
@@ -154,15 +150,11 @@ export function createSubscriptionController<TData, TError>(
         };
 
         return adapter.subscribe(ctx).then((newHandle) => {
-          console.log("[Controller] adapter.subscribe resolved", { thisVersion, currentVersion: subscriptionVersion });
-
           if (thisVersion !== subscriptionVersion) {
-            console.log("[Controller] version mismatch, calling newHandle.unsubscribe");
             newHandle.unsubscribe();
             return newHandle;
           }
 
-          console.log("[Controller] setting handle");
           handle = newHandle;
           updateStateFromHandle();
 
@@ -191,14 +183,10 @@ export function createSubscriptionController<TData, TError>(
 
     unsubscribe: () => {
       subscriptionVersion++;
-      console.log("[Controller] unsubscribe called", { subscriptionVersion, hasHandle: !!handle });
 
       if (handle) {
-        console.log("[Controller] calling handle.unsubscribe");
         handle.unsubscribe();
         handle = null;
-      } else {
-        console.log("[Controller] no handle to unsubscribe");
       }
 
       cachedState = {

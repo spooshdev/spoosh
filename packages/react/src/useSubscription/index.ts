@@ -128,7 +128,6 @@ export function createUseSubscription<
       const baseAdapter = {
         subscribe: async (context: SubscriptionContext<TData, TError>) => {
           const thisVersion = subscriptionVersionRef.current;
-          console.log("[useSubscription] adapter.subscribe called", { thisVersion });
           const unsubscribers: Array<() => void> = [];
           let currentData: TData | undefined = undefined;
           const currentError: TError | undefined = undefined;
@@ -158,7 +157,6 @@ export function createUseSubscription<
                   parsed.channel,
                   transportOptions
                 );
-                console.log("[useSubscription] connectionUrl set", { url: connectionUrlRef.current });
               }
 
               const sharedCallback = (message: unknown) => {
@@ -191,26 +189,20 @@ export function createUseSubscription<
                 unsubscribers.push(unsub);
               }
 
-              console.log("[useSubscription] calling connect", { thisVersion });
               await transportInstance.connect(parsed.channel, transportOptions);
-              console.log("[useSubscription] connect returned", { thisVersion, currentVersion: subscriptionVersionRef.current });
 
               if (subscriptionVersionRef.current !== thisVersion) {
-                console.log("[useSubscription] version mismatch after connect, cleaning up", { thisVersion, currentVersion: subscriptionVersionRef.current });
                 unsubscribers.forEach((unsub) => unsub());
 
                 if (
                   connectionUrlRef.current &&
                   transportInstance.releaseConnection
                 ) {
-                  console.log("[useSubscription] calling releaseConnection (early)", { url: connectionUrlRef.current });
                   transportInstance.releaseConnection(connectionUrlRef.current);
                 }
 
                 return {
-                  unsubscribe: () => {
-                    console.log("[useSubscription] empty unsubscribe called");
-                  },
+                  unsubscribe: () => {},
                   getData: () => undefined,
                   getError: () => undefined,
                   onData: () => () => {},
@@ -225,7 +217,6 @@ export function createUseSubscription<
                 const unsubDisconnect = transportInstance.onDisconnect(
                   connectionUrlRef.current,
                   () => {
-                    console.log("[useSubscription] onDisconnect callback fired");
                     disconnectedByServer = true;
 
                     if (context.onDisconnect) {
@@ -240,7 +231,6 @@ export function createUseSubscription<
 
           return {
             unsubscribe: () => {
-              console.log("[useSubscription] handle.unsubscribe called", { url: connectionUrlRef.current, disconnectedByServer });
               unsubscribers.forEach((unsub) => unsub());
               unsubscribers.length = 0;
 
@@ -249,10 +239,7 @@ export function createUseSubscription<
                 connectionUrlRef.current &&
                 transportInstance?.releaseConnection
               ) {
-                console.log("[useSubscription] calling releaseConnection", { url: connectionUrlRef.current });
                 transportInstance.releaseConnection(connectionUrlRef.current);
-              } else if (disconnectedByServer) {
-                console.log("[useSubscription] skipping releaseConnection - disconnected by server");
               }
             },
             getData: () => currentData,
@@ -312,19 +299,15 @@ export function createUseSubscription<
     }>(() => ({ isPending: enabled, error: undefined }));
 
     useEffect(() => {
-      console.log("[useSubscription] useEffect running", { enabled });
-
       if (!enabled) {
         return;
       }
 
       const controller = getOrCreateController();
       controller.mount();
-      console.log("[useSubscription] calling controller.subscribe()");
       controller.subscribe();
 
       return () => {
-        console.log("[useSubscription] cleanup running, incrementing version and unsubscribing");
         subscriptionVersionRef.current++;
         controller.unsubscribe();
       };
