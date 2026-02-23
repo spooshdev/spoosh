@@ -1,0 +1,169 @@
+---
+title: SSE Transport
+description: Server-Sent Events for real-time streaming
+---
+
+## Installation
+
+```bash
+npm install @spoosh/transport-sse
+```
+
+## Setup
+
+```typescript
+import { Spoosh } from "@spoosh/core";
+import { create } from "@spoosh/react";
+import { sse } from "@spoosh/transport-sse";
+
+const spoosh = new Spoosh<ApiSchema, Error>("/api").withTransports([sse()]);
+
+export const { useSubscription } = create(spoosh);
+```
+
+## Define SSE Endpoints
+
+SSE endpoints use the `@sse/` prefix and require an `events` field:
+
+```typescript
+type ApiSchema = {
+  "@sse/notifications": {
+    GET: {
+      query: { userId: string };
+      events: {
+        message: { data: { id: string; text: string } };
+        alert: { data: { priority: "low" | "high"; text: string } };
+      };
+    };
+  };
+};
+```
+
+<Callout type="info">
+  `message` is the default SSE event type. If your server sends data without an
+  `event:` field, it will be received as `message`.
+</Callout>
+
+## Basic Usage
+
+```typescript
+function Notifications() {
+  const { data, isConnected } = useSubscription(
+    (api) => api("@sse/notifications").GET({ query: { userId: "123" } })
+  );
+
+  return (
+    <div>
+      <p>{isConnected ? "Listening..." : "Not connected"}</p>
+      {data?.message && <p>{data.message.text}</p>}
+      {data?.alert && <p>Alert: {data.alert.text}</p>}
+    </div>
+  );
+}
+```
+
+## Parse Strategies
+
+| Strategy      | What it does                | Example input → output                                    |
+| ------------- | --------------------------- | --------------------------------------------------------- |
+| `"auto"`      | Smart detection (default)   | `"123"` → `123`, `"true"` → `true`, `'{"a":1}'` → `{a:1}` |
+| `"json-done"` | Parse JSON, ignore `[DONE]` | `'{"text":"hi"}'` → `{text:"hi"}`, `"[DONE]"` → ignored   |
+| `"json"`      | Always JSON                 | `'{"a":1}'` → `{a:1}`                                     |
+| `"text"`      | Keep as string              | `"hello"` → `"hello"`                                     |
+| `"number"`    | Convert to number           | `"42"` → `42`                                             |
+| `"boolean"`   | Convert to boolean          | `"true"` → `true`                                         |
+
+### Usage
+
+```typescript
+// One strategy for all events
+api("@sse/stream").GET({ parse: "json" });
+
+// Different strategy per event
+api("@sse/stream").GET({
+  parse: {
+    chunk: "text", // Keep chunks as strings
+    metadata: "json", // Parse metadata as JSON
+  },
+});
+
+// Custom function
+api("@sse/stream").GET({
+  parse: (data) => data.toUpperCase(),
+});
+```
+
+## Accumulate Strategies
+
+| Strategy    | What it does               | Example                            |
+| ----------- | -------------------------- | ---------------------------------- |
+| `"replace"` | New replaces old (default) | `"a"` then `"b"` → `"b"`           |
+| `"concat"`  | Join strings               | `"a"` then `"b"` → `"ab"`          |
+| `"merge"`   | Combine objects            | `{a:1}` then `{b:2}` → `{a:1,b:2}` |
+
+### Usage
+
+```typescript
+// One strategy for all events
+api("@sse/stream").GET({ accumulate: "concat" });
+
+// Different strategy per event
+api("@sse/stream").GET({
+  accumulate: {
+    chunk: "concat", // Build up text
+    status: "replace", // Only keep latest status
+  },
+});
+
+// Custom function
+api("@sse/chat").POST({
+  accumulate: {
+    chunk: (prev, curr) => ({
+      ...curr,
+      text: (prev?.text || "") + curr.text,
+    }),
+  },
+});
+```
+
+## Transport Options
+
+```typescript
+sse({
+  parse: "auto",
+  accumulate: "replace",
+  disconnectDelay: 100,
+  throttle: true,
+});
+```
+
+| Option            | Type                | Default     | Description                           |
+| ----------------- | ------------------- | ----------- | ------------------------------------- |
+| `parse`           | `ParseConfig`       | `"auto"`    | Default parse strategy                |
+| `accumulate`      | `AccumulateConfig`  | `"replace"` | Default accumulate strategy           |
+| `disconnectDelay` | `number`            | `100`       | Delay before closing idle connections |
+| `throttle`        | `boolean \| number` | `false`     | Batch updates                         |
+
+## Connection Options
+
+```typescript
+api("@sse/notifications").GET({
+  headers: { Authorization: "Bearer token" },
+  credentials: "include",
+  maxRetries: 5,
+  retryDelay: 2000,
+});
+```
+
+| Option        | Type                 | Default | Description                                    |
+| ------------- | -------------------- | ------- | ---------------------------------------------- |
+| `headers`     | `HeadersInit`        | -       | Request headers                                |
+| `credentials` | `RequestCredentials` | -       | Include cookies (`"include"`, `"same-origin"`) |
+| `maxRetries`  | `number`             | `3`     | How many times to retry on failure             |
+| `retryDelay`  | `number`             | `1000`  | Ms between retries                             |
+
+## Features
+
+- **Connection Pooling** - Multiple components share one connection to the same URL
+- **Automatic Reconnection** - Retries on failure with configurable `maxRetries` and `retryDelay`
+- **React Strict Mode** - Handles double-mount gracefully with `disconnectDelay`

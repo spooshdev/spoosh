@@ -120,21 +120,21 @@ export class Spoosh<
   }
 
   /**
-   * Registers transport implementations for subscription-based operations.
+   * Registers transport implementations for real-time operations.
    *
    * @param transports - Array of transport instances to register
    * @returns This Spoosh instance for method chaining
    *
    * @example
    * ```ts
-   * import { createSSETransport } from '@spoosh/transport-sse';
+   * import { sse } from '@spoosh/transport-sse';
    *
    * const spoosh = new Spoosh<Schema, Error>('/api')
-   *   .subscriptions([createSSETransport()])
+   *   .withTransports([sse()])
    *   .use([...]);
    * ```
    */
-  subscriptions(transports: SpooshTransport[]): this {
+  withTransports(transports: SpooshTransport[]): this {
     for (const transport of transports) {
       this._transports.set(transport.name, transport);
     }

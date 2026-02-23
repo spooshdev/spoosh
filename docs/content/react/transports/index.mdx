@@ -1,0 +1,47 @@
+---
+title: Transports
+description: Connect to different types of real-time servers
+---
+
+## Available Transports
+
+| Transport | Use Case                               | Package                 |
+| --------- | -------------------------------------- | ----------------------- |
+| **SSE**   | Server-Sent Events (one-way streaming) | `@spoosh/transport-sse` |
+
+## How Transports Work
+
+1. **You add a transport** to your Spoosh instance
+2. **You define endpoints** with a special prefix (like `@sse/`)
+3. **You use hooks** like `useSubscription` to connect
+
+```typescript
+import { Spoosh } from "@spoosh/core";
+import { sse } from "@spoosh/transport-sse";
+
+const spoosh = new Spoosh<ApiSchema, Error>("/api").withTransports([sse()]);
+```
+
+## Schema Prefixes
+
+Each transport uses a prefix to identify its endpoints:
+
+| Transport | Prefix  | Example                |
+| --------- | ------- | ---------------------- |
+| SSE       | `@sse/` | `"@sse/notifications"` |
+
+```typescript
+type ApiSchema = {
+  // Regular HTTP endpoint (no prefix)
+  users: { GET: { data: User[] } };
+
+  // SSE endpoint (with @sse/ prefix)
+  "@sse/notifications": {
+    GET: {
+      events: {
+        message: { data: { text: string } };
+      };
+    };
+  };
+};
+```

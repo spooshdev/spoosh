@@ -1,0 +1,170 @@
+---
+title: useSubscription
+description: Subscribe to real-time data streams
+---
+
+## Setup
+
+First, add the SSE transport to your Spoosh instance:
+
+```typescript
+import { Spoosh } from "@spoosh/core";
+import { create } from "@spoosh/react";
+import { sse } from "@spoosh/transport-sse";
+
+const spoosh = new Spoosh<ApiSchema, Error>("/api").withTransports([sse()]);
+
+export const { useSubscription } = create(spoosh);
+```
+
+## Define Your Schema
+
+SSE endpoints start with `@sse/` and have an `events` field:
+
+```typescript
+type ApiSchema = {
+  // Regular REST endpoint
+  users: {
+    GET: { data: User[] };
+  };
+
+  // SSE endpoint - note the @sse/ prefix
+  "@sse/notifications": {
+    GET: {
+      query: { userId: string };
+      events: {
+        message: { data: { text: string } };
+        alert: { data: { priority: string; text: string } };
+      };
+    };
+  };
+};
+```
+
+<Callout type="info">
+  `message` is the default SSE event type. If your server sends data without an
+  `event:` field, it will be received as `message`.
+</Callout>
+
+## Basic Example
+
+```typescript
+function Notifications() {
+  const { data, isConnected, loading } = useSubscription(
+    (api) => api("@sse/notifications").GET({ query: { userId: "123" } })
+  );
+
+  if (loading) return <p>Connecting...</p>;
+
+  return (
+    <div>
+      <p>Status: {isConnected ? "Connected" : "Disconnected"}</p>
+      {data?.message && <p>New message: {data.message.text}</p>}
+      {data?.alert && <p>Alert: {data.alert.text}</p>}
+    </div>
+  );
+}
+```
+
+## Listen to Specific Events
+
+```typescript
+const { data } = useSubscription((api) =>
+  api("@sse/notifications").GET({
+    query: { userId: "123" },
+    events: ["alert"], // Only listen for alerts
+  })
+);
+
+// data.alert exists
+// data.message does NOT exist
+```
+
+## On-Demand Connection
+
+```typescript
+function ChatBox() {
+  const { data, trigger, isConnected } = useSubscription(
+    (api) => api("@sse/chat").POST({
+      events: ["chunk", "done"],
+    }),
+    { enabled: false }  // Don't connect automatically
+  );
+
+  const startChat = () => {
+    trigger({ body: { message: "Hello!" } });
+  };
+
+  return (
+    <div>
+      <button onClick={startChat} disabled={isConnected}>
+        Start Chat
+      </button>
+      <p>{data?.chunk?.text}</p>
+    </div>
+  );
+}
+```
+
+## Disconnect
+
+```typescript
+const { unsubscribe, isConnected } = useSubscription(...);
+
+// Manually disconnect
+<button onClick={unsubscribe}>
+  Disconnect
+</button>
+```
+
+## AI Streaming
+
+```typescript
+const { data, trigger } = useSubscription(
+  (api) =>
+    api("@sse/chat").POST({
+      events: ["chunk", "done"],
+      parse: "json-done",
+      accumulate: {
+        chunk: (prev, curr) => ({
+          ...curr,
+          text: (prev?.text || "") + curr.text,
+        }),
+      },
+    }),
+  { enabled: false }
+);
+
+trigger({ body: { message: "Tell me a story" } });
+```
+
+## Options
+
+| Option    | Type       | Default | Description                    |
+| --------- | ---------- | ------- | ------------------------------ |
+| `enabled` | `boolean`  | `true`  | Connect automatically on mount |
+| `tags`    | `string[]` | -       | Tags for cache invalidation    |
+
+## Returns
+
+| Property      | Type                    | Description                |
+| ------------- | ----------------------- | -------------------------- |
+| `data`        | `TEvents \| undefined`  | All received event data    |
+| `error`       | `TError \| undefined`   | Error if connection failed |
+| `loading`     | `boolean`               | True while connecting      |
+| `isConnected` | `boolean`               | True when connected        |
+| `trigger`     | `(options?) => Promise` | Connect with new options   |
+| `unsubscribe` | `() => void`            | Disconnect                 |
+
+## Transport Options (SSE)
+
+| Option       | Type               | Description                       |
+| ------------ | ------------------ | --------------------------------- |
+| `events`     | `string[]`         | Events to listen for              |
+| `parse`      | `ParseConfig`      | Parse strategy                    |
+| `accumulate` | `AccumulateConfig` | Accumulate strategy               |
+| `headers`    | `HeadersInit`      | Request headers                   |
+| `maxRetries` | `number`           | Retry attempts (default: 3)       |
+| `retryDelay` | `number`           | Retry delay in ms (default: 1000) |
+
+See [SSE Transport](/docs/react/transports/sse) for parse and accumulate options.

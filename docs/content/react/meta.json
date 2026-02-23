@@ -5,6 +5,7 @@
     "getting-started",
     "core",
     "hooks",
+    "transports",
     "guides",
     "devtool",
     "plugins",
