@@ -1,73 +1,10 @@
 import { fetchEventSource } from "@microsoft/fetch-event-source";
 import type { SpooshTransport } from "@spoosh/core";
 import { sortObjectKeys } from "@spoosh/core";
-import type { ParseConfig } from "./parsers";
-import type { AccumulateConfig } from "./accumulators";
 import { resolveParser } from "./parsers";
 import { resolveAccumulator } from "./accumulators";
-
-export interface SSETransportOptions {
-  /** Base URL from client config */
-  baseUrl?: string;
-
-  /** Path/channel */
-  path?: string;
-
-  /** HTTP method */
-  method?: string;
-
-  /** Request body (will be JSON.stringified) */
-  body?: unknown;
-
-  /** Query parameters */
-  query?: Record<string, unknown>;
-
-  /** Hook-level headers */
-  headers?: HeadersInit | (() => HeadersInit | Promise<HeadersInit>);
-
-  /** Global headers from client config */
-  globalHeaders?: HeadersInit | (() => HeadersInit | Promise<HeadersInit>);
-
-  /** Credentials mode */
-  credentials?: RequestCredentials;
-
-  /** Max retry attempts on connection failure */
-  maxRetries?: number;
-
-  /** Delay between retries in ms */
-  retryDelay?: number;
-
-  /** Parse strategy for SSE event data. Defaults to 'auto'. */
-  parse?: ParseConfig;
-
-  /** Accumulate strategy for combining events. Defaults to 'replace'. */
-  accumulate?: AccumulateConfig;
-}
-
-export interface SSETransportConfig {
-  /** Default parse strategy for all connections. Defaults to 'auto'. */
-  parse?: ParseConfig;
-
-  /** Default accumulate strategy for all connections. Defaults to 'replace'. */
-  accumulate?: AccumulateConfig;
-
-  /** Delay before disconnecting when no subscribers left. Helps with React Strict Mode. Defaults to 100ms. */
-  disconnectDelay?: number;
-
-  /** Throttle notifications to prevent UI flooding from high-frequency events. Uses requestAnimationFrame batching when set to true, or custom interval in ms. Defaults to false (no throttling). */
-  throttle?: boolean | number;
-}
-
-export interface SSEMessage {
-  /** Event type (e.g., "message", "notification", "alert") */
-  event: string;
-
-  /** Raw event data (unparsed string) */
-  data: string;
-
-  /** Timestamp when event was received (client-side) */
-  timestamp: number;
-}
+import type { SSETransportOptions, SSETransportConfig } from "./types";
+import { mergeConfig } from "./utils";
 
 interface ConnectionState {
   abortController: AbortController;
@@ -78,22 +15,6 @@ interface ConnectionState {
   isAborted: boolean;
   error: Error | null;
   disconnectCallbacks: Set<() => void>;
-}
-
-function mergeConfig<T>(transport: T | undefined, hook: T | undefined): T | undefined {
-  if (!transport) return hook;
-  if (!hook) return transport;
-
-  if (
-    typeof transport === "object" &&
-    typeof hook === "object" &&
-    !Array.isArray(transport) &&
-    !Array.isArray(hook)
-  ) {
-    return { ...transport, ...hook };
-  }
-
-  return hook;
 }
 
 export function sse(config: SSETransportConfig = {}): SpooshTransport<SSETransportOptions, unknown> {
@@ -205,11 +126,11 @@ export function sse(config: SSETransportConfig = {}): SpooshTransport<SSETranspo
 
         const runConnection = async () => {
           const globalHeaders = await resolveHeaders(options?.globalHeaders);
-          const hookHeaders = await resolveHeaders(options?.headers);
+          const requestHeaders = await resolveHeaders(options?.headers);
 
           const headers: Record<string, string> = {
             ...globalHeaders,
-            ...hookHeaders,
+            ...requestHeaders,
           };
 
           const method = options?.method || "GET";

@@ -111,7 +111,7 @@ describe("SSE Transport", () => {
       );
     });
 
-    it("should merge global and hook-level headers", async () => {
+    it("should merge global and request-level headers", async () => {
       const transport = sse();
 
       mockSuccessfulConnection();
@@ -274,7 +274,7 @@ describe("SSE Transport", () => {
       expect(transport).toBeDefined();
     });
 
-    it("should use hook-level parse config override", async () => {
+    it("should use request-level parse config override", async () => {
       const transport = sse({ parse: "auto" });
 
       mockSuccessfulConnection();
@@ -301,7 +301,7 @@ describe("SSE Transport", () => {
       expect(transport).toBeDefined();
     });
 
-    it("should use hook-level accumulate config override", async () => {
+    it("should use request-level accumulate config override", async () => {
       const transport = sse({ accumulate: "replace" });
 
       mockSuccessfulConnection();
