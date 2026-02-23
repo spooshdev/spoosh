@@ -23,6 +23,8 @@ export interface SubscriptionContext<
   message?: unknown;
   onData?: (data: TData) => void;
   onError?: (error: TError) => void;
+  onDisconnect?: () => void;
+  registerUnsubscribers?: (unsubscribers: Array<() => void>) => void;
 }
 
 export interface SubscriptionAdapter<TData = unknown, TError = unknown> {

@@ -146,7 +146,7 @@ describe("createSubscriptionController", () => {
       expect(state).toEqual({
         data: undefined,
         error: undefined,
-        isSubscribed: false,
+        isConnected: false,
       });
     });
 
@@ -161,7 +161,7 @@ describe("createSubscriptionController", () => {
       expect(handle).toBeDefined();
 
       const state = controller.getState();
-      expect(state.isSubscribed).toBe(true);
+      expect(state.isConnected).toBe(true);
       expect(state.data).toBe("test message");
     });
 
@@ -174,7 +174,7 @@ describe("createSubscriptionController", () => {
 
       const state = controller.getState();
       expect(state.data).toBe("new message");
-      expect(state.isSubscribed).toBe(true);
+      expect(state.isConnected).toBe(true);
     });
 
     it("should notify subscribers on data change", async () => {
@@ -200,7 +200,7 @@ describe("createSubscriptionController", () => {
       expect(handle.unsubscribe).toHaveBeenCalled();
 
       const state = controller.getState();
-      expect(state.isSubscribed).toBe(false);
+      expect(state.isConnected).toBe(false);
     });
 
     it("should allow multiple subscribers", async () => {
@@ -284,7 +284,7 @@ describe("createSubscriptionController", () => {
       expect(handle.unsubscribe).toHaveBeenCalled();
 
       const state = controller.getState();
-      expect(state.isSubscribed).toBe(false);
+      expect(state.isConnected).toBe(false);
     });
 
     it("should notify subscribers on unmount", async () => {

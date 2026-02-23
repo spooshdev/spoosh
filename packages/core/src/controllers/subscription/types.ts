@@ -8,8 +8,9 @@ export interface SubscriptionController<TData = unknown, TError = unknown> {
   getState(): {
     data: TData | undefined;
     error: TError | undefined;
-    isSubscribed: boolean;
+    isConnected: boolean;
   };
   mount(): void;
   unmount(): void;
+  setDisconnected(): void;
 }

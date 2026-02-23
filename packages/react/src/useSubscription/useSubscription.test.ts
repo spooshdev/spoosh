@@ -47,6 +47,8 @@ function createMockTransport(): SpooshTransport & {
     mockContext: MockSubscriptionContext;
     triggerMessage: typeof triggerMessage;
     triggerError: typeof triggerError;
+    getConnectionUrl: (channel: string, options?: unknown) => string;
+    releaseConnection: (url: string) => void;
   } = {
     name: "sse",
     operationType: "sse",
@@ -72,6 +74,8 @@ function createMockTransport(): SpooshTransport & {
     }),
     send: vi.fn(async () => {}),
     isConnected: () => mockContext.isConnected,
+    getConnectionUrl: vi.fn((channel: string) => `/api/${channel}`),
+    releaseConnection: vi.fn(),
     mockContext,
     triggerMessage,
     triggerError,
@@ -128,7 +132,7 @@ describe("useSubscription", () => {
       expect(result.current).toHaveProperty("data");
       expect(result.current).toHaveProperty("error");
       expect(result.current).toHaveProperty("loading");
-      expect(result.current).toHaveProperty("isSubscribed");
+      expect(result.current).toHaveProperty("isConnected");
       expect(result.current).toHaveProperty("trigger");
       expect(result.current).toHaveProperty("unsubscribe");
       expect(result.current).toHaveProperty("meta");
@@ -149,7 +153,7 @@ describe("useSubscription", () => {
 
       expect(result.current.data).toBeUndefined();
       expect(typeof result.current.loading).toBe("boolean");
-      expect(typeof result.current.isSubscribed).toBe("boolean");
+      expect(typeof result.current.isConnected).toBe("boolean");
     });
 
     it("should not subscribe when enabled is false", () => {
@@ -200,7 +204,7 @@ describe("useSubscription", () => {
 
       await waitFor(() => {
         expect(result.current.data).toEqual({ message: { text: "Hello" } });
-        expect(result.current.isSubscribed).toBe(true);
+        expect(result.current.isConnected).toBe(true);
         expect(result.current.loading).toBe(false);
       });
     });
@@ -220,11 +224,13 @@ describe("useSubscription", () => {
       await waitFor(() => {
         expect(transport.subscribe).toHaveBeenCalledWith(
           "chunk",
-          expect.any(Function)
+          expect.any(Function),
+          expect.any(String)
         );
         expect(transport.subscribe).toHaveBeenCalledWith(
           "done",
-          expect.any(Function)
+          expect.any(Function),
+          expect.any(String)
         );
       });
     });
@@ -268,7 +274,48 @@ describe("useSubscription", () => {
       });
 
       await waitFor(() => {
-        expect(result.current.isSubscribed).toBe(false);
+        expect(result.current.isConnected).toBe(false);
+      });
+    });
+
+    it("should not reconnect after unsubscribe when data arrives", async () => {
+      const { useSubscription, transport } = createTestHooks();
+
+      const { result } = renderHook(() =>
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        useSubscription((api: any) => api("@sse/sse/messages").GET())
+      );
+
+      await waitFor(() => {
+        expect(transport.subscribe).toHaveBeenCalled();
+      });
+
+      act(() => {
+        transport.triggerMessage("message", { text: "First message" });
+      });
+
+      await waitFor(() => {
+        expect(result.current.isConnected).toBe(true);
+        expect(result.current.data).toBeDefined();
+      });
+
+      act(() => {
+        result.current.unsubscribe();
+      });
+
+      await waitFor(() => {
+        expect(result.current.isConnected).toBe(false);
+      });
+
+      act(() => {
+        transport.triggerMessage("message", { text: "After unsubscribe" });
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      expect(result.current.isConnected).toBe(false);
+      expect(result.current.data).toEqual({
+        message: { text: "First message" },
       });
     });
   });

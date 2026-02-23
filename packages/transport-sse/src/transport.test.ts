@@ -7,6 +7,14 @@ vi.mock("@microsoft/fetch-event-source", () => ({
 
 import { fetchEventSource } from "@microsoft/fetch-event-source";
 
+const mockSuccessfulConnection = () => {
+  vi.mocked(fetchEventSource).mockImplementation(async (_url, options) => {
+    if (options?.onopen) {
+      await options.onopen({ ok: true, status: 200 } as Response);
+    }
+  });
+};
+
 describe("SSE Transport", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -42,7 +50,7 @@ describe("SSE Transport", () => {
     it("should connect to SSE endpoint", async () => {
       const transport = sse();
 
-      vi.mocked(fetchEventSource).mockImplementation(async () => {});
+      mockSuccessfulConnection();
 
       await transport.connect("messages", {
         baseUrl: "/api",
@@ -61,7 +69,7 @@ describe("SSE Transport", () => {
     it("should handle query parameters", async () => {
       const transport = sse();
 
-      vi.mocked(fetchEventSource).mockImplementation(async () => {});
+      mockSuccessfulConnection();
 
       await transport.connect("messages", {
         baseUrl: "/api",
@@ -82,7 +90,7 @@ describe("SSE Transport", () => {
     it("should handle POST method with body", async () => {
       const transport = sse();
 
-      vi.mocked(fetchEventSource).mockImplementation(async () => {});
+      mockSuccessfulConnection();
 
       await transport.connect("messages", {
         baseUrl: "/api",
@@ -106,7 +114,7 @@ describe("SSE Transport", () => {
     it("should merge global and hook-level headers", async () => {
       const transport = sse();
 
-      vi.mocked(fetchEventSource).mockImplementation(async () => {});
+      mockSuccessfulConnection();
 
       await transport.connect("messages", {
         baseUrl: "/api",
@@ -129,7 +137,7 @@ describe("SSE Transport", () => {
     it("should not create duplicate connections", async () => {
       const transport = sse();
 
-      vi.mocked(fetchEventSource).mockImplementation(async () => {});
+      mockSuccessfulConnection();
 
       await transport.connect("messages", {
         baseUrl: "/api",
@@ -147,7 +155,7 @@ describe("SSE Transport", () => {
     it("should disconnect and cleanup", async () => {
       const transport = sse();
 
-      vi.mocked(fetchEventSource).mockImplementation(async () => {});
+      mockSuccessfulConnection();
 
       await transport.connect("messages", {
         baseUrl: "/api",
@@ -207,7 +215,7 @@ describe("SSE Transport", () => {
     it("should handle Last-Event-ID header", async () => {
       const transport = sse();
 
-      vi.mocked(fetchEventSource).mockImplementation(async () => {});
+      mockSuccessfulConnection();
 
       await transport.connect("messages", {
         baseUrl: "/api",
@@ -228,7 +236,7 @@ describe("SSE Transport", () => {
     it("should handle credentials option", async () => {
       const transport = sse();
 
-      vi.mocked(fetchEventSource).mockImplementation(async () => {});
+      mockSuccessfulConnection();
 
       await transport.connect("messages", {
         baseUrl: "/api",
@@ -277,7 +285,7 @@ describe("SSE Transport", () => {
     it("should use transport-level parse config", async () => {
       const transport = sse({ parse: "json" });
 
-      vi.mocked(fetchEventSource).mockImplementation(async () => {});
+      mockSuccessfulConnection();
 
       await transport.connect("messages", {
         baseUrl: "/api",
@@ -290,7 +298,7 @@ describe("SSE Transport", () => {
     it("should use hook-level parse config override", async () => {
       const transport = sse({ parse: "auto" });
 
-      vi.mocked(fetchEventSource).mockImplementation(async () => {});
+      mockSuccessfulConnection();
 
       await transport.connect("messages", {
         baseUrl: "/api",
@@ -304,7 +312,7 @@ describe("SSE Transport", () => {
     it("should use transport-level accumulate config", async () => {
       const transport = sse({ accumulate: "concat" });
 
-      vi.mocked(fetchEventSource).mockImplementation(async () => {});
+      mockSuccessfulConnection();
 
       await transport.connect("messages", {
         baseUrl: "/api",
@@ -317,7 +325,7 @@ describe("SSE Transport", () => {
     it("should use hook-level accumulate config override", async () => {
       const transport = sse({ accumulate: "replace" });
 
-      vi.mocked(fetchEventSource).mockImplementation(async () => {});
+      mockSuccessfulConnection();
 
       await transport.connect("messages", {
         baseUrl: "/api",
@@ -333,7 +341,7 @@ describe("SSE Transport", () => {
         parse: { chunk: "text", done: "json" },
       });
 
-      vi.mocked(fetchEventSource).mockImplementation(async () => {});
+      mockSuccessfulConnection();
 
       await transport.connect("messages", {
         baseUrl: "/api",
@@ -349,7 +357,7 @@ describe("SSE Transport", () => {
     it("should resolve function headers", async () => {
       const transport = sse();
 
-      vi.mocked(fetchEventSource).mockImplementation(async () => {});
+      mockSuccessfulConnection();
 
       await transport.connect("messages", {
         baseUrl: "/api",
@@ -370,7 +378,7 @@ describe("SSE Transport", () => {
     it("should resolve async function headers", async () => {
       const transport = sse();
 
-      vi.mocked(fetchEventSource).mockImplementation(async () => {});
+      mockSuccessfulConnection();
 
       await transport.connect("messages", {
         baseUrl: "/api",
@@ -391,7 +399,7 @@ describe("SSE Transport", () => {
     it("should resolve Headers instance", async () => {
       const transport = sse();
 
-      vi.mocked(fetchEventSource).mockImplementation(async () => {});
+      mockSuccessfulConnection();
 
       const headers = new Headers();
       headers.set("X-Headers", "value");
@@ -415,7 +423,7 @@ describe("SSE Transport", () => {
     it("should resolve headers array", async () => {
       const transport = sse();
 
-      vi.mocked(fetchEventSource).mockImplementation(async () => {});
+      mockSuccessfulConnection();
 
       await transport.connect("messages", {
         baseUrl: "/api",

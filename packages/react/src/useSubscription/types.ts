@@ -44,7 +44,7 @@ export interface BaseSubscriptionResult<
 > {
   data: TData | undefined;
   error: TError | undefined;
-  isSubscribed: boolean;
+  isConnected: boolean;
   loading: boolean;
   meta: TPluginResult;
   trigger: (options?: TTriggerOptions) => Promise<void>;

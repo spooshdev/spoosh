@@ -28,6 +28,20 @@ import type {
 } from "../types/extraction";
 import type { SpooshInstanceShape } from "../create/types";
 
+interface SSETransportExtended extends SpooshTransport {
+  releaseConnection?: (fullUrl: string) => void;
+  getConnectionUrl?: (
+    channel: string,
+    options?: Record<string, unknown>
+  ) => string;
+  subscribe: (
+    eventType: string,
+    callback: (message: unknown) => void,
+    url?: string
+  ) => () => void;
+  onDisconnect?: (fullUrl: string, callback: () => void) => () => void;
+}
+
 export function createUseSubscription<
   TSchema,
   TDefaultError,
@@ -55,9 +69,11 @@ export function createUseSubscription<
     >
   > {
     const { enabled = true } = subOptions ?? {};
+
     const currentOptionsRef = useRef<Record<string, unknown> | undefined>(
       undefined
     );
+
     const selectorResultRef = useRef<SelectorResult>({
       call: null,
       selector: null,
@@ -83,9 +99,10 @@ export function createUseSubscription<
     const transportName = isTransport
       ? parseTransportPath(capturedCall.path)?.transport
       : null;
+
     const transportInstance = (
       transportName ? transports.get(transportName) : null
-    ) as SpooshTransport | null;
+    ) as SSETransportExtended | null;
 
     const queryKey = stateManager.createQueryKey({
       path: capturedCall.path,
@@ -96,32 +113,30 @@ export function createUseSubscription<
     type TData = unknown;
     type TError = unknown;
 
-    const controllerRef = useRef<{
-      controller: ReturnType<
-        typeof createSubscriptionController<TData, TError>
-      >;
-      queryKey: string;
-    } | null>(null);
+    const controllerRef = useRef<ReturnType<
+      typeof createSubscriptionController<TData, TError>
+    > | null>(null);
 
-    const lifecycleRef = useRef<{
-      initialized: boolean;
-    }>({
-      initialized: false,
-    });
+    const connectionUrlRef = useRef<string | null>(null);
+    const subscriptionVersionRef = useRef(0);
 
     const getOrCreateController = useCallback(() => {
-      if (controllerRef.current?.queryKey === queryKey) {
-        return controllerRef.current.controller;
+      if (controllerRef.current) {
+        return controllerRef.current;
       }
 
       const baseAdapter = {
         subscribe: async (context: SubscriptionContext<TData, TError>) => {
+          const thisVersion = subscriptionVersionRef.current;
+          console.log("[useSubscription] adapter.subscribe called", { thisVersion });
+          const unsubscribers: Array<() => void> = [];
           let currentData: TData | undefined = undefined;
           const currentError: TError | undefined = undefined;
-          const unsubscribers: Array<() => void> = [];
+          let disconnectedByServer = false;
 
           if (transportInstance) {
             const parsed = parseTransportPath(capturedCall.path);
+
             if (parsed) {
               const requestOptions = currentOptionsRef.current;
               const capturedEvents = requestOptions?.events;
@@ -138,7 +153,19 @@ export function createUseSubscription<
                 accumulate: requestOptions?.accumulate,
               };
 
+              if (transportInstance.getConnectionUrl) {
+                connectionUrlRef.current = transportInstance.getConnectionUrl(
+                  parsed.channel,
+                  transportOptions
+                );
+                console.log("[useSubscription] connectionUrl set", { url: connectionUrlRef.current });
+              }
+
               const sharedCallback = (message: unknown) => {
+                if (subscriptionVersionRef.current !== thisVersion) {
+                  return;
+                }
+
                 currentData = message as TData;
 
                 if (context.onData) {
@@ -150,39 +177,95 @@ export function createUseSubscription<
                 for (const eventType of capturedEvents) {
                   const unsub = transportInstance.subscribe(
                     eventType,
-                    sharedCallback
+                    sharedCallback,
+                    connectionUrlRef.current || undefined
                   );
                   unsubscribers.push(unsub);
                 }
               } else {
-                const unsub = transportInstance.subscribe("*", sharedCallback);
+                const unsub = transportInstance.subscribe(
+                  "*",
+                  sharedCallback,
+                  connectionUrlRef.current || undefined
+                );
                 unsubscribers.push(unsub);
               }
 
+              console.log("[useSubscription] calling connect", { thisVersion });
               await transportInstance.connect(parsed.channel, transportOptions);
+              console.log("[useSubscription] connect returned", { thisVersion, currentVersion: subscriptionVersionRef.current });
+
+              if (subscriptionVersionRef.current !== thisVersion) {
+                console.log("[useSubscription] version mismatch after connect, cleaning up", { thisVersion, currentVersion: subscriptionVersionRef.current });
+                unsubscribers.forEach((unsub) => unsub());
+
+                if (
+                  connectionUrlRef.current &&
+                  transportInstance.releaseConnection
+                ) {
+                  console.log("[useSubscription] calling releaseConnection (early)", { url: connectionUrlRef.current });
+                  transportInstance.releaseConnection(connectionUrlRef.current);
+                }
+
+                return {
+                  unsubscribe: () => {
+                    console.log("[useSubscription] empty unsubscribe called");
+                  },
+                  getData: () => undefined,
+                  getError: () => undefined,
+                  onData: () => () => {},
+                  onError: () => () => {},
+                };
+              }
+
+              if (
+                connectionUrlRef.current &&
+                transportInstance.onDisconnect
+              ) {
+                const unsubDisconnect = transportInstance.onDisconnect(
+                  connectionUrlRef.current,
+                  () => {
+                    console.log("[useSubscription] onDisconnect callback fired");
+                    disconnectedByServer = true;
+
+                    if (context.onDisconnect) {
+                      context.onDisconnect();
+                    }
+                  }
+                );
+                unsubscribers.push(unsubDisconnect);
+              }
             }
           }
 
           return {
             unsubscribe: () => {
+              console.log("[useSubscription] handle.unsubscribe called", { url: connectionUrlRef.current, disconnectedByServer });
               unsubscribers.forEach((unsub) => unsub());
+              unsubscribers.length = 0;
+
+              if (
+                !disconnectedByServer &&
+                connectionUrlRef.current &&
+                transportInstance?.releaseConnection
+              ) {
+                console.log("[useSubscription] calling releaseConnection", { url: connectionUrlRef.current });
+                transportInstance.releaseConnection(connectionUrlRef.current);
+              } else if (disconnectedByServer) {
+                console.log("[useSubscription] skipping releaseConnection - disconnected by server");
+              }
             },
-            getData: () => {
-              return currentData;
-            },
+            getData: () => currentData,
             getError: () => currentError,
-            onData: () => {
-              return () => {};
-            },
-            onError: () => {
-              return () => {};
-            },
+            onData: () => () => {},
+            onError: () => () => {},
           };
         },
         emit: async () => ({ success: true }),
       };
 
       const parsed = parseTransportPath(capturedCall.path);
+
       const controller = createSubscriptionController<TData, TError>({
         channel: parsed?.channel || capturedCall.path,
         baseAdapter,
@@ -195,7 +278,7 @@ export function createUseSubscription<
         method: capturedCall.method,
       });
 
-      controllerRef.current = { controller, queryKey };
+      controllerRef.current = controller;
       return controller;
     }, [queryKey, transportInstance, capturedCall.path, capturedCall.method]);
 
@@ -210,14 +293,15 @@ export function createUseSubscription<
     const emptyStateRef = useRef({
       data: undefined,
       error: undefined,
-      isSubscribed: false,
+      isConnected: false,
     });
 
     const getSnapshot = useCallback(() => {
       if (!controllerRef.current) {
         return emptyStateRef.current;
       }
-      return controllerRef.current.controller.getState();
+
+      return controllerRef.current.getState();
     }, []);
 
     const state = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
@@ -225,34 +309,32 @@ export function createUseSubscription<
     const [requestState] = useState<{
       isPending: boolean;
       error: TError | undefined;
-    }>(() => {
-      return { isPending: enabled, error: undefined };
-    });
+    }>(() => ({ isPending: enabled, error: undefined }));
 
     useEffect(() => {
-      return () => {
-        controllerRef.current?.controller.unmount();
-      };
-    }, []);
+      console.log("[useSubscription] useEffect running", { enabled });
 
-    useEffect(() => {
       if (!enabled) {
         return;
       }
 
-      const { initialized } = lifecycleRef.current;
+      const controller = getOrCreateController();
+      controller.mount();
+      console.log("[useSubscription] calling controller.subscribe()");
+      controller.subscribe();
 
-      if (!initialized) {
-        const controller = getOrCreateController();
-        controller.mount();
-        lifecycleRef.current.initialized = true;
-        controller.subscribe();
-      }
+      return () => {
+        console.log("[useSubscription] cleanup running, incrementing version and unsubscribing");
+        subscriptionVersionRef.current++;
+        controller.unsubscribe();
+      };
     }, [queryKey, enabled, getOrCreateController]);
 
     const unsubscribe = useCallback(() => {
+      subscriptionVersionRef.current++;
+
       if (controllerRef.current) {
-        controllerRef.current.controller.unsubscribe();
+        controllerRef.current.unsubscribe();
       }
     }, []);
 
@@ -269,12 +351,10 @@ export function createUseSubscription<
           ...(newOptions as Record<string, unknown> | undefined),
         };
 
+        subscriptionVersionRef.current++;
         const controller = getOrCreateController();
         controller.unsubscribe();
-        lifecycleRef.current.initialized = false;
-
         controller.mount();
-        lifecycleRef.current.initialized = true;
         await controller.subscribe();
       },
       [getOrCreateController]
@@ -288,7 +368,7 @@ export function createUseSubscription<
       data: state.data as ExtractSubscriptionEvents<TSubFn> | undefined,
       error: state.error as TDefaultError | undefined,
       loading,
-      isSubscribed: state.isSubscribed,
+      isConnected: state.isConnected,
       trigger,
       unsubscribe,
     };

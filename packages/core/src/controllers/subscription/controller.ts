@@ -20,6 +20,7 @@ export interface CreateSubscriptionControllerOptions<TData, TError> {
   operationType: OperationType;
   path: string;
   method: string;
+  instanceId?: string;
 }
 
 export function createSubscriptionController<TData, TError>(
@@ -35,6 +36,7 @@ export function createSubscriptionController<TData, TError>(
     queryKey,
     path,
     method,
+    instanceId,
   } = options;
 
   const plugins = pluginExecutor.getPluginsForOperation(operationType);
@@ -45,33 +47,30 @@ export function createSubscriptionController<TData, TError>(
 
   let handle: SubscriptionHandle<TData, TError> | null = null;
   const subscribers = new Set<() => void>();
+  let subscriptionVersion = 0;
 
   let cachedState = {
     data: undefined as TData | undefined,
     error: undefined as TError | undefined,
-    isSubscribed: false,
+    isConnected: false,
   };
 
-  const updateState = () => {
-    const newData = handle?.getData();
-    const newError = handle?.getError();
-    const newIsSubscribed = handle !== null;
+  const updateStateFromHandle = () => {
+    if (!handle) return;
 
-    if (
-      newData !== cachedState.data ||
-      newError !== cachedState.error ||
-      newIsSubscribed !== cachedState.isSubscribed
-    ) {
+    const newData = handle.getData();
+    const newError = handle.getError();
+
+    if (newData !== cachedState.data || newError !== cachedState.error) {
       cachedState = {
         data: newData,
         error: newError,
-        isSubscribed: newIsSubscribed,
+        isConnected: true,
       };
     }
   };
 
   const notify = () => {
-    updateState();
     subscribers.forEach((callback) => callback());
   };
 
@@ -83,6 +82,7 @@ export function createSubscriptionController<TData, TError>(
       queryKey,
       tags: [],
       requestTimestamp: Date.now(),
+      instanceId,
       request: { headers: {} } as never,
       temp: new Map(),
       stateManager,
@@ -98,23 +98,86 @@ export function createSubscriptionController<TData, TError>(
   return {
     subscribe: ((callbackOrVoid?: () => void) => {
       if (callbackOrVoid === undefined) {
+        subscriptionVersion++;
+        const thisVersion = subscriptionVersion;
+        console.log("[Controller] subscribe() called", { thisVersion });
+
+        if (handle) {
+          console.log("[Controller] closing existing handle before new subscribe");
+          handle.unsubscribe();
+          handle = null;
+        }
+
         const ctx = createContext();
+
         ctx.onData = (data: TData) => {
+          if (thisVersion !== subscriptionVersion) {
+            return;
+          }
+
           cachedState = {
             data,
             error: cachedState.error,
-            isSubscribed: true,
+            isConnected: true,
           };
-          subscribers.forEach((callback) => callback());
+
+          notify();
         };
+
+        ctx.onError = (error: TError) => {
+          if (thisVersion !== subscriptionVersion) {
+            return;
+          }
+
+          cachedState = {
+            data: cachedState.data,
+            error,
+            isConnected: cachedState.isConnected,
+          };
+
+          notify();
+        };
+
+        ctx.onDisconnect = () => {
+          if (thisVersion !== subscriptionVersion) {
+            return;
+          }
+
+          console.log("[Controller] onDisconnect called", { thisVersion });
+
+          cachedState = {
+            ...cachedState,
+            isConnected: false,
+          };
+
+          notify();
+        };
+
         return adapter.subscribe(ctx).then((newHandle) => {
+          console.log("[Controller] adapter.subscribe resolved", { thisVersion, currentVersion: subscriptionVersion });
+
+          if (thisVersion !== subscriptionVersion) {
+            console.log("[Controller] version mismatch, calling newHandle.unsubscribe");
+            newHandle.unsubscribe();
+            return newHandle;
+          }
+
+          console.log("[Controller] setting handle");
           handle = newHandle;
+          updateStateFromHandle();
+
+          cachedState = {
+            ...cachedState,
+            isConnected: true,
+          };
+
           notify();
           return handle;
         });
       }
 
       subscribers.add(callbackOrVoid);
+
       return () => {
         subscribers.delete(callbackOrVoid);
       };
@@ -127,8 +190,22 @@ export function createSubscriptionController<TData, TError>(
     },
 
     unsubscribe: () => {
-      handle?.unsubscribe();
-      handle = null;
+      subscriptionVersion++;
+      console.log("[Controller] unsubscribe called", { subscriptionVersion, hasHandle: !!handle });
+
+      if (handle) {
+        console.log("[Controller] calling handle.unsubscribe");
+        handle.unsubscribe();
+        handle = null;
+      } else {
+        console.log("[Controller] no handle to unsubscribe");
+      }
+
+      cachedState = {
+        ...cachedState,
+        isConnected: false,
+      };
+
       notify();
     },
 
@@ -137,8 +214,27 @@ export function createSubscriptionController<TData, TError>(
     mount: () => {},
 
     unmount: () => {
-      handle?.unsubscribe();
-      handle = null;
+      subscriptionVersion++;
+
+      if (handle) {
+        handle.unsubscribe();
+        handle = null;
+      }
+
+      cachedState = {
+        ...cachedState,
+        isConnected: false,
+      };
+
+      notify();
+    },
+
+    setDisconnected: () => {
+      cachedState = {
+        ...cachedState,
+        isConnected: false,
+      };
+
       notify();
     },
   };
