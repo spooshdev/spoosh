@@ -67,11 +67,19 @@ export interface SSEMessage {
 declare module "@spoosh/core" {
   interface SpooshSubscriptionMethodRegistry {
     GET: {
-      events?: Record<string, { data?: unknown }>;
+      events?: {
+        /** Default SSE event type when server doesn't specify event: field */
+        message?: { data?: unknown };
+        [key: string]: { data?: unknown } | undefined;
+      };
       query?: unknown;
     };
     POST: {
-      events?: Record<string, { data?: unknown }>;
+      events?: {
+        /** Default SSE event type when server doesn't specify event: field */
+        message?: { data?: unknown };
+        [key: string]: { data?: unknown } | undefined;
+      };
       body?: unknown;
       query?: unknown;
     };

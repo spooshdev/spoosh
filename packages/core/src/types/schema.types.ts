@@ -39,24 +39,47 @@ export type AnyMethod = HttpMethod | SubscriptionMethod;
  * };
  * ```
  */
-export type ApiSchema = {
-  [path: string]: {
-    [method in HttpMethod]?: {
-      data?: unknown;
-      body?: unknown;
-      query?: unknown;
-      error?: unknown;
-      events?: {
-        [eventName: string]: {
-          data?: unknown;
-          error?: unknown;
-        };
-      };
-    };
-  } & {
-    [method in SubscriptionMethod]?: SpooshSubscriptionMethodRegistry[method];
-  };
+/**
+ * HTTP endpoint method config.
+ */
+type HttpMethodConfig = {
+  data?: unknown;
+  body?: unknown;
+  query?: unknown;
+  error?: unknown;
 };
+
+/**
+ * Endpoint config based on path pattern.
+ * - Paths starting with @ use subscription methods (events, no data)
+ * - Regular paths use HTTP methods (data, no events)
+ */
+type EndpointConfig<TPath extends string> = TPath extends `@${string}`
+  ? { [M in SubscriptionMethod]?: SpooshSubscriptionMethodRegistry[M] }
+  : { [M in HttpMethod]?: HttpMethodConfig };
+
+/**
+ * Base API schema type.
+ */
+export type ApiSchema = {
+  [path: string]: { [method: string]: unknown };
+};
+
+/**
+ * Helper type for defining API schemas with proper autocomplete.
+ * Paths starting with @ get subscription methods, others get HTTP methods.
+ *
+ * @example
+ * ```ts
+ * type MyApi = SpooshSchema<{
+ *   "posts": { GET: { data: Post[] } };
+ *   "@sse/chat": { GET: { events: { message: { data: string } } } };
+ * }>;
+ * ```
+ */
+export type SpooshSchema<
+  T extends { [K in keyof T]: EndpointConfig<K & string> },
+> = T;
 
 /**
  * Extract data type from an endpoint.
@@ -81,29 +104,6 @@ export type ExtractError<T, TDefault = unknown> = T extends {
 }
   ? E
   : TDefault;
-
-/**
- * Helper type to define a type-safe API schema.
- * Use this to get type checking on your schema definition.
- *
- * @example
- * ```ts
- * type ApiSchema = SpooshSchema<{
- *   "posts": {
- *     GET: { data: Post[] };
- *     POST: { data: Post; body: CreatePostBody };
- *   };
- *   "posts/:id": {
- *     GET: { data: Post };
- *     PUT: { data: Post; body: UpdatePostBody };
- *     DELETE: { data: void };
- *   };
- * }>;
- *
- * const api = createClient<ApiSchema>({ baseUrl: "/api" });
- * ```
- */
-export type SpooshSchema<T extends ApiSchema> = T;
 
 /**
  * Convert a route pattern like "posts/:id" to a path matcher pattern like `posts/${string}`.
