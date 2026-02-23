@@ -18,6 +18,11 @@ describe("accumulators", () => {
     it("should handle undefined previous value", () => {
       expect(replaceAccumulate(undefined, "new")).toBe("new");
     });
+
+    it("should skip when current is undefined", () => {
+      expect(replaceAccumulate("old", undefined)).toBe("old");
+      expect(replaceAccumulate({ data: true }, undefined)).toEqual({ data: true });
+    });
   });
 
   describe("concatAccumulate", () => {
@@ -39,6 +44,11 @@ describe("accumulators", () => {
       result = concatAccumulate(result, " ");
       result = concatAccumulate(result, "World");
       expect(result).toBe("Hello World");
+    });
+
+    it("should skip when current is undefined", () => {
+      expect(concatAccumulate("existing", undefined)).toBe("existing");
+      expect(concatAccumulate(undefined, undefined)).toBe("");
     });
   });
 
@@ -72,6 +82,11 @@ describe("accumulators", () => {
       result = mergeAccumulate(result, { progress: 50 });
       result = mergeAccumulate(result, { status: "done", progress: 100 });
       expect(result).toEqual({ status: "done", progress: 100 });
+    });
+
+    it("should skip when current is undefined", () => {
+      expect(mergeAccumulate({ data: true }, undefined)).toEqual({ data: true });
+      expect(mergeAccumulate(undefined, undefined)).toBeUndefined();
     });
   });
 

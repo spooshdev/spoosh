@@ -337,6 +337,7 @@ export type TypedParseConfig<TEvents> =
         | {
             [K in keyof TEvents]?:
               | "auto"
+              | "json-done"
               | "json"
               | "text"
               | "number"
@@ -344,6 +345,7 @@ export type TypedParseConfig<TEvents> =
               | ((data: string) => ExtractEventData<TEvents[K]>);
           }
         | "auto"
+        | "json-done"
         | "json"
         | "text"
         | "number"

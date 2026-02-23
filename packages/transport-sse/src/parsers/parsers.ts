@@ -1,24 +1,34 @@
 import type { ParseStrategy, ParseFunction, ParseConfig } from "./types";
 
 /**
+ * JSON-Done parser: parses JSON, returns undefined for [DONE] signal.
+ * Ideal for AI streaming APIs (OpenAI, etc.).
+ */
+export function jsonDoneParse(data: string): unknown {
+  if (data.trim().toLowerCase() === "[done]") {
+    return undefined;
+  }
+
+  return JSON.parse(data);
+}
+
+/**
  * Auto parser: intelligently detects and parses data type.
  * Order: JSON → number → boolean → string
  */
 export function autoParse(data: string): unknown {
-  if (data.startsWith("{") || data.startsWith("[") || data === "null") {
-    try {
-      return JSON.parse(data);
-    } catch {
-      // Not valid JSON, continue
-    }
+  const trimmed = data.trim();
+
+  if (trimmed === "") return data;
+
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    /* Ignore */
   }
 
-  const trimmed = data.trim();
-  if (trimmed !== "" && !isNaN(Number(trimmed))) {
-    const num = parseFloat(trimmed);
-    if (!isNaN(num)) {
-      return num;
-    }
+  if (/^-?\d+(\.\d+)?$/.test(trimmed)) {
+    return Number(trimmed);
   }
 
   if (trimmed === "true") return true;
@@ -62,7 +72,9 @@ export function booleanParse(data: string): boolean {
   if (trimmed === "true") return true;
   if (trimmed === "false") return false;
 
-  throw new Error(`Failed to parse boolean: "${data}" is not 'true' or 'false'`);
+  throw new Error(
+    `Failed to parse boolean: "${data}" is not 'true' or 'false'`
+  );
 }
 
 /**
@@ -79,6 +91,8 @@ export function getParser(strategy: ParseStrategy): ParseFunction {
   switch (strategy) {
     case "auto":
       return autoParse;
+    case "json-done":
+      return jsonDoneParse;
     case "json":
       return jsonParse;
     case "number":

@@ -199,6 +199,10 @@ export function sse(config: SSETransportConfig = {}): SpooshTransport<SSETranspo
                   parsedData = event.data;
                 }
 
+                if (parsedData === undefined) {
+                  return;
+                }
+
                 const previousData = accumulatedData[eventType];
                 try {
                   accumulatedData[eventType] = accumulator(previousData, parsedData);

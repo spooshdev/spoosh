@@ -6,31 +6,40 @@ import type {
 
 /**
  * Replace strategy: use current value (default behavior).
+ * Skips if current is undefined.
  */
-export function replaceAccumulate(_prev: unknown, current: unknown): unknown {
+export function replaceAccumulate(prev: unknown, current: unknown): unknown {
+  if (current === undefined) return prev;
+
   return current;
 }
 
 /**
  * Concat strategy: concatenate as strings.
+ * Skips if current is undefined.
  */
 export function concatAccumulate(prev: unknown, current: unknown): string {
+  if (current === undefined) return prev === undefined ? "" : String(prev);
+
   const prevStr = prev === undefined ? "" : String(prev);
   const currentStr = String(current);
+
   return prevStr + currentStr;
 }
 
 /**
  * Merge strategy: shallow merge objects.
+ * Skips if current is undefined.
  */
 export function mergeAccumulate(prev: unknown, current: unknown): unknown {
+  if (current === undefined) return prev;
+
   if (
     prev !== null &&
     prev !== undefined &&
     typeof prev === "object" &&
     !Array.isArray(prev) &&
     current !== null &&
-    current !== undefined &&
     typeof current === "object" &&
     !Array.isArray(current)
   ) {
@@ -39,7 +48,6 @@ export function mergeAccumulate(prev: unknown, current: unknown): unknown {
 
   if (
     current !== null &&
-    current !== undefined &&
     typeof current === "object" &&
     !Array.isArray(current)
   ) {

@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   autoParse,
+  jsonDoneParse,
   jsonParse,
   numberParse,
   booleanParse,
@@ -41,6 +42,28 @@ describe("parsers", () => {
 
     it("should handle whitespace in numbers", () => {
       expect(autoParse("  42  ")).toBe(42);
+    });
+  });
+
+  describe("jsonDoneParse", () => {
+    it("should parse valid JSON", () => {
+      expect(jsonDoneParse('{"key":"value"}')).toEqual({ key: "value" });
+      expect(jsonDoneParse("[1,2,3]")).toEqual([1, 2, 3]);
+    });
+
+    it("should return undefined for [DONE] signal", () => {
+      expect(jsonDoneParse("[DONE]")).toBeUndefined();
+      expect(jsonDoneParse("[done]")).toBeUndefined();
+      expect(jsonDoneParse("[Done]")).toBeUndefined();
+    });
+
+    it("should handle whitespace around [DONE]", () => {
+      expect(jsonDoneParse("  [DONE]  ")).toBeUndefined();
+      expect(jsonDoneParse("\n[DONE]\n")).toBeUndefined();
+    });
+
+    it("should throw on invalid JSON", () => {
+      expect(() => jsonDoneParse("invalid")).toThrow();
     });
   });
 
@@ -100,6 +123,7 @@ describe("parsers", () => {
   describe("getParser", () => {
     it("should return correct parser for each strategy", () => {
       expect(getParser("auto")).toBe(autoParse);
+      expect(getParser("json-done")).toBe(jsonDoneParse);
       expect(getParser("json")).toBe(jsonParse);
       expect(getParser("number")).toBe(numberParse);
       expect(getParser("boolean")).toBe(booleanParse);
