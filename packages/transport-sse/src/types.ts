@@ -29,9 +29,6 @@ declare module "@spoosh/core" {
         /** Delay between retries in ms */
         retryDelay?: number;
 
-        /** Last event ID for resuming stream */
-        lastEventId?: string;
-
         /**
          * Parse SSE data field.
          * Defined here for documentation - actual typed version provided by core.
@@ -50,9 +47,6 @@ declare module "@spoosh/core" {
 
         /** Raw event data (unparsed string) */
         data: string;
-
-        /** Event ID from server */
-        id?: string;
 
         /** Timestamp when event was received (client-side) */
         timestamp: number;

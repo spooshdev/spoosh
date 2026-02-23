@@ -37,9 +37,6 @@ export interface SSETransportOptions {
   /** Delay between retries in ms */
   retryDelay?: number;
 
-  /** Last event ID for resuming stream */
-  lastEventId?: string;
-
   /** Parse strategy for SSE event data. Defaults to 'auto'. */
   parse?: ParseConfig;
 
@@ -67,9 +64,6 @@ export interface SSEMessage {
 
   /** Raw event data (unparsed string) */
   data: string;
-
-  /** Event ID from server */
-  id?: string;
 
   /** Timestamp when event was received (client-side) */
   timestamp: number;
@@ -217,10 +211,6 @@ export function sse(config: SSETransportConfig = {}): SpooshTransport<SSETranspo
             ...globalHeaders,
             ...hookHeaders,
           };
-
-          if (options?.lastEventId) {
-            headers["Last-Event-ID"] = options.lastEventId;
-          }
 
           const method = options?.method || "GET";
           let body: string | undefined;

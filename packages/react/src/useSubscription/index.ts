@@ -210,10 +210,7 @@ export function createUseSubscription<
                 };
               }
 
-              if (
-                connectionUrlRef.current &&
-                transportInstance.onDisconnect
-              ) {
+              if (connectionUrlRef.current && transportInstance.onDisconnect) {
                 const unsubDisconnect = transportInstance.onDisconnect(
                   connectionUrlRef.current,
                   () => {

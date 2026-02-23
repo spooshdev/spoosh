@@ -212,27 +212,6 @@ describe("SSE Transport", () => {
   });
 
   describe("message handling", () => {
-    it("should handle Last-Event-ID header", async () => {
-      const transport = sse();
-
-      mockSuccessfulConnection();
-
-      await transport.connect("messages", {
-        baseUrl: "/api",
-        path: "sse/messages",
-        lastEventId: "12345",
-      });
-
-      expect(fetchEventSource).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.objectContaining({
-          headers: expect.objectContaining({
-            "Last-Event-ID": "12345",
-          }),
-        })
-      );
-    });
-
     it("should handle credentials option", async () => {
       const transport = sse();
 
