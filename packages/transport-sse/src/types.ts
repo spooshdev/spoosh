@@ -92,18 +92,13 @@ declare module "@spoosh/core" {
         /** Delay between retries in ms */
         retryDelay?: number;
 
-        /**
-         * Parse SSE data field.
-         * Defined here for documentation - actual typed version provided by core.
-         */
+        /** Parse SSE data field. Strategies inferred by core for typed callbacks. */
         parse?: ParseConfig;
 
-        /**
-         * Accumulate data across events.
-         * Defined here for documentation - actual typed version provided by core.
-         */
+        /** Accumulate data across events. Strategies inferred by core for typed callbacks. */
         accumulate?: AccumulateConfig;
       };
+
       message: {
         /** Event type (e.g., "message", "notification", "alert") */
         event: string;
