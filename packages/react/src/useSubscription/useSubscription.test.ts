@@ -508,6 +508,30 @@ describe("useSubscription", () => {
   });
 
   describe("loading state", () => {
+    it("should start with loading true when enabled", async () => {
+      const { useSubscription } = createTestHooks();
+
+      const { result } = renderHook(() =>
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        useSubscription((api: any) => api("@sse/sse/messages").GET())
+      );
+
+      expect(result.current.loading).toBe(true);
+    });
+
+    it("should start with loading false when enabled is false", () => {
+      const { useSubscription } = createTestHooks();
+
+      const { result } = renderHook(() =>
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        useSubscription((api: any) => api("@sse/sse/messages").GET(), {
+          enabled: false,
+        })
+      );
+
+      expect(result.current.loading).toBe(false);
+    });
+
     it("should set loading to false after receiving data", async () => {
       const { useSubscription, transport } = createTestHooks();
 
@@ -529,6 +553,83 @@ describe("useSubscription", () => {
       await waitFor(() => {
         expect(result.current.loading).toBe(false);
         expect(result.current.data).toBeDefined();
+      });
+    });
+
+    it("should set loading to false when connected", async () => {
+      const { useSubscription, transport } = createTestHooks();
+
+      const { result } = renderHook(() =>
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        useSubscription((api: any) => api("@sse/sse/messages").GET())
+      );
+
+      expect(result.current.loading).toBe(true);
+
+      await waitFor(() => {
+        expect(transport.connect).toHaveBeenCalled();
+      });
+
+      await waitFor(() => {
+        expect(result.current.isConnected).toBe(true);
+        expect(result.current.loading).toBe(false);
+      });
+    });
+
+    it("should set loading to true when trigger is called", async () => {
+      const { useSubscription, transport } = createTestHooks();
+
+      const { result } = renderHook(() =>
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        useSubscription((api: any) => api("@sse/sse/messages").POST(), {
+          enabled: false,
+        })
+      );
+
+      expect(result.current.loading).toBe(false);
+
+      await act(async () => {
+        result.current.trigger({ body: { message: "test" } });
+      });
+
+      await waitFor(() => {
+        expect(transport.connect).toHaveBeenCalled();
+      });
+
+      await waitFor(() => {
+        expect(result.current.isConnected).toBe(true);
+      });
+    });
+
+    it("should transition loading state correctly through full lifecycle", async () => {
+      const { useSubscription, transport } = createTestHooks();
+
+      const { result } = renderHook(() =>
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        useSubscription((api: any) => api("@sse/sse/messages").GET())
+      );
+
+      expect(result.current.loading).toBe(true);
+      expect(result.current.isConnected).toBe(false);
+      expect(result.current.data).toBeUndefined();
+
+      await waitFor(() => {
+        expect(transport.connect).toHaveBeenCalled();
+      });
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+        expect(result.current.isConnected).toBe(true);
+      });
+
+      act(() => {
+        transport.triggerMessage("message", { text: "Hello" });
+      });
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+        expect(result.current.isConnected).toBe(true);
+        expect(result.current.data).toEqual({ message: { text: "Hello" } });
       });
     });
   });

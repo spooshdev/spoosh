@@ -190,16 +190,14 @@ export function createUseSubscription<
 
     const state = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 
-    const [requestState] = useState<{
-      isPending: boolean;
-      error: TError | undefined;
-    }>(() => ({ isPending: enabled, error: undefined }));
+    const [isPending, setIsPending] = useState(enabled);
 
     useEffect(() => {
       if (!enabled) {
         return;
       }
 
+      setIsPending(true);
       const controller = getOrCreateController();
       controller.mount();
       controller.subscribe();
@@ -209,6 +207,16 @@ export function createUseSubscription<
         controller.unsubscribe();
       };
     }, [queryKey, enabled, getOrCreateController]);
+
+    useEffect(() => {
+      if (
+        state.isConnected ||
+        state.data !== undefined ||
+        state.error !== undefined
+      ) {
+        setIsPending(false);
+      }
+    }, [state.isConnected, state.data, state.error]);
 
     const disconnect = useCallback(() => {
       subscriptionVersionRef.current++;
@@ -231,6 +239,7 @@ export function createUseSubscription<
           ...(newOptions as Record<string, unknown> | undefined),
         };
 
+        setIsPending(true);
         subscriptionVersionRef.current++;
         const controller = getOrCreateController();
         controller.unsubscribe();
@@ -240,8 +249,7 @@ export function createUseSubscription<
       [getOrCreateController]
     );
 
-    const hasData = state.data !== undefined;
-    const loading = requestState.isPending && !hasData;
+    const loading = isPending;
 
     return {
       meta: {} as Record<string, never>,
