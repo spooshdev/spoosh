@@ -51,10 +51,6 @@ export function createUseSubscription<
   > {
     const { enabled = true, adapter, operationType } = subOptions;
 
-    const currentOptionsRef = useRef<Record<string, unknown> | undefined>(
-      undefined
-    );
-
     const selectorResultRef = useRef<SelectorResult>({
       call: null,
       selector: null,
@@ -71,10 +67,6 @@ export function createUseSubscription<
     if (!capturedCall) {
       throw new Error("useSubscription requires calling a method");
     }
-
-    currentOptionsRef.current = capturedCall.options as
-      | Record<string, unknown>
-      | undefined;
 
     const queryKey = stateManager.createQueryKey({
       path: capturedCall.path,
@@ -180,28 +172,14 @@ export function createUseSubscription<
       }
     }, []);
 
-    const trigger = useCallback(
-      async (
-        newOptions?: SubscriptionTriggerInput<
-          ExtractSubscriptionQuery<TSubFn>,
-          ExtractSubscriptionBody<TSubFn>,
-          never
-        >
-      ) => {
-        currentOptionsRef.current = {
-          ...currentOptionsRef.current,
-          ...(newOptions as Record<string, unknown> | undefined),
-        };
-
-        setIsPending(true);
-        subscriptionVersionRef.current++;
-        const controller = getOrCreateController();
-        controller.unsubscribe();
-        controller.mount();
-        await controller.subscribe();
-      },
-      [getOrCreateController]
-    );
+    const trigger = useCallback(async () => {
+      setIsPending(true);
+      subscriptionVersionRef.current++;
+      const controller = getOrCreateController();
+      controller.unsubscribe();
+      controller.mount();
+      await controller.subscribe();
+    }, [getOrCreateController]);
 
     const loading = isPending;
 
