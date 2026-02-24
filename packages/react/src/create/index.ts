@@ -32,9 +32,16 @@ export function create<
   TDefaultError,
   TPlugins extends PluginArray,
   TApi,
+  TTransports extends string = never,
 >(
-  instance: SpooshInstanceShape<TApi, TSchema, TDefaultError, TPlugins>
-): SpooshReactHooks<TDefaultError, TSchema, TPlugins> {
+  instance: SpooshInstanceShape<
+    TApi,
+    TSchema,
+    TDefaultError,
+    TPlugins,
+    TTransports
+  >
+): SpooshReactHooks<TDefaultError, TSchema, TPlugins, TTransports> {
   const { api, stateManager, eventEmitter, pluginExecutor, transports } =
     instance;
 
@@ -133,7 +140,12 @@ export function create<
     useSubscription,
     useSSE,
     ...instanceApis,
-  } as SpooshReactHooks<TDefaultError, TSchema, TPlugins>;
+  } as unknown as SpooshReactHooks<
+    TDefaultError,
+    TSchema,
+    TPlugins,
+    TTransports
+  >;
 }
 
 export * from "./types";

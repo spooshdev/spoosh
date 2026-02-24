@@ -18,6 +18,7 @@ export type SpooshInstance<
   TSchema = unknown,
   TDefaultError = unknown,
   TPlugins extends PluginArray = PluginArray,
+  TTransports extends string = never,
 > = {
   api: SpooshClient<TSchema, TDefaultError>;
 
@@ -35,5 +36,6 @@ export type SpooshInstance<
     schema: TSchema;
     defaultError: TDefaultError;
     plugins: TPlugins;
+    transports: TTransports;
   };
 };

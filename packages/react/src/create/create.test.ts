@@ -30,6 +30,7 @@ function createTestInstance(plugins: SpooshPlugin[] = []) {
       schema: {} as unknown,
       defaultError: {} as unknown,
       plugins: [] as const,
+      transports: undefined as never,
     },
   };
 }

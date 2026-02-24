@@ -49,6 +49,7 @@ export class Spoosh<
   TSchema = unknown,
   TError = unknown,
   TPlugins extends PluginArray = [],
+  TTransports extends string = never,
 > {
   private baseUrl: string;
   private defaultOptions: SpooshOptions;
@@ -82,11 +83,15 @@ export class Spoosh<
   constructor(
     baseUrl: string,
     defaultOptions?: SpooshOptionsInput,
-    plugins?: TPlugins
+    plugins?: TPlugins,
+    transports?: Map<string, SpooshTransport>
   ) {
     this.baseUrl = baseUrl;
     this.defaultOptions = (defaultOptions || {}) as SpooshOptions;
     this._plugins = (plugins || []) as TPlugins;
+    if (transports) {
+      this._transports = transports;
+    }
   }
 
   /**
@@ -109,14 +114,13 @@ export class Spoosh<
    */
   use<const TNewPlugins extends PluginArray>(
     plugins: TNewPlugins
-  ): Omit<Spoosh<TSchema, TError, TNewPlugins>, "use"> {
-    const instance = new Spoosh<TSchema, TError, TNewPlugins>(
+  ): Omit<Spoosh<TSchema, TError, TNewPlugins, TTransports>, "use"> {
+    return new Spoosh<TSchema, TError, TNewPlugins, TTransports>(
       this.baseUrl,
       this.defaultOptions as SpooshOptionsInput,
-      plugins
+      plugins,
+      this._transports
     );
-    instance._transports = this._transports;
-    return instance;
   }
 
   /**
@@ -134,11 +138,28 @@ export class Spoosh<
    *   .use([...]);
    * ```
    */
-  withTransports(transports: SpooshTransport[]): this {
+  withTransports<const T extends SpooshTransport[]>(
+    transports: T
+  ): Spoosh<TSchema, TError, TPlugins, TTransports | T[number]["name"]> {
+    const newTransports = new Map(this._transports);
+
     for (const transport of transports) {
-      this._transports.set(transport.name, transport);
+      newTransports.set(transport.name, transport);
     }
-    return this;
+
+    const instance = new Spoosh<
+      TSchema,
+      TError,
+      TPlugins,
+      TTransports | T[number]["name"]
+    >(
+      this.baseUrl,
+      this.defaultOptions as SpooshOptionsInput,
+      this._plugins,
+      newTransports
+    );
+
+    return instance;
   }
 
   /**
@@ -146,14 +167,19 @@ export class Spoosh<
    * Created lazily on first property access.
    * @private
    */
-  private _instance?: SpooshInstance<TSchema, TError, TPlugins>;
+  private _instance?: SpooshInstance<TSchema, TError, TPlugins, TTransports>;
 
   /**
    * Gets or creates the underlying SpooshInstance.
    * Uses lazy initialization for optimal performance.
    * @private
    */
-  private getInstance(): SpooshInstance<TSchema, TError, TPlugins> {
+  private getInstance(): SpooshInstance<
+    TSchema,
+    TError,
+    TPlugins,
+    TTransports
+  > {
     if (!this._instance) {
       const api = createProxyHandler({
         baseUrl: this.baseUrl,
@@ -178,8 +204,9 @@ export class Spoosh<
           schema: undefined as unknown as TSchema,
           defaultError: undefined as unknown as TError,
           plugins: this._plugins as TPlugins,
+          transports: undefined as unknown as TTransports,
         },
-      } as SpooshInstance<TSchema, TError, TPlugins>;
+      } as SpooshInstance<TSchema, TError, TPlugins, TTransports>;
     }
     return this._instance;
   }

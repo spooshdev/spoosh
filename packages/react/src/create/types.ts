@@ -340,13 +340,9 @@ type UseSSEFn<TDefaultError, TSchema, TPlugins extends PluginArray> = {
 };
 
 /**
- * Spoosh React hooks interface containing useRead, useWrite, and usePages.
- *
- * @template TDefaultError - The default error type
- * @template TSchema - The API schema type
- * @template TPlugins - The plugins array type
+ * Base hooks that are always available.
  */
-export type SpooshReactHooks<
+type BaseSpooshReactHooks<
   TDefaultError,
   TSchema,
   TPlugins extends PluginArray,
@@ -445,7 +441,12 @@ export type SpooshReactHooks<
    * ```
    */
   useSubscription: UseSubscriptionFn<TDefaultError, TSchema, TPlugins>;
+} & MergePluginInstanceApi<TPlugins, TSchema>;
 
+/**
+ * SSE hooks available when SSE transport is registered.
+ */
+type SSEHooks<TDefaultError, TSchema, TPlugins extends PluginArray> = {
   /**
    * React hook for SSE streams with per-hook parsing and accumulation.
    *
@@ -467,12 +468,39 @@ export type SpooshReactHooks<
    * ```
    */
   useSSE: UseSSEFn<TDefaultError, TSchema, TPlugins>;
-} & MergePluginInstanceApi<TPlugins, TSchema>;
+};
+
+/**
+ * Spoosh React hooks interface containing useRead, useWrite, and usePages.
+ * useSSE is only available when SSE transport is registered via withTransports([sse()]).
+ *
+ * @template TDefaultError - The default error type
+ * @template TSchema - The API schema type
+ * @template TPlugins - The plugins array type
+ * @template TTransports - The registered transport names
+ */
+export type SpooshReactHooks<
+  TDefaultError,
+  TSchema,
+  TPlugins extends PluginArray,
+  TTransports extends string = never,
+> = BaseSpooshReactHooks<TDefaultError, TSchema, TPlugins> &
+  ([TTransports] extends [never]
+    ? object
+    : "sse" extends TTransports
+      ? SSEHooks<TDefaultError, TSchema, TPlugins>
+      : object);
 
 /**
  * Shape of a Spoosh instance required for creating React hooks.
  */
-export type SpooshInstanceShape<TApi, TSchema, TDefaultError, TPlugins> = {
+export type SpooshInstanceShape<
+  TApi,
+  TSchema,
+  TDefaultError,
+  TPlugins,
+  TTransports extends string = never,
+> = {
   /** The API instance */
   api: TApi;
 
@@ -502,5 +530,6 @@ export type SpooshInstanceShape<TApi, TSchema, TDefaultError, TPlugins> = {
     schema: TSchema;
     defaultError: TDefaultError;
     plugins: TPlugins;
+    transports: TTransports;
   };
 };
