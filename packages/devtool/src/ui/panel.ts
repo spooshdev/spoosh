@@ -188,13 +188,18 @@ export class DevToolPanel {
           const isAtTop = !traceList || traceList.scrollTop <= 50;
 
           if (isAtTop) {
-            const traces = this.store.getFilteredTraces(
+            const traces = this.store.getAllTraces(
               this.viewModel.getState().searchQuery
             );
             const lastTrace = traces[traces.length - 1];
 
             if (lastTrace) {
-              this.viewModel.selectTrace(lastTrace.id);
+              if (lastTrace.type === "subscription") {
+                this.viewModel.selectSubscription(lastTrace.id);
+              } else {
+                this.viewModel.selectTrace(lastTrace.id);
+              }
+
               this.renderScheduler.schedule(() => this.render());
               return;
             }

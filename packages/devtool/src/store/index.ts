@@ -62,6 +62,10 @@ export class DevToolStore implements DevToolStoreInterface {
   private stepNotifyTimeout: ReturnType<typeof setTimeout> | null = null;
   private stepNotifyPending = false;
   private lastUpdateWasStepOnly = false;
+  private pendingSubscriptions = new Map<
+    string,
+    { trace: SubscriptionTrace; timeout: ReturnType<typeof setTimeout> }
+  >();
 
   constructor(config: DevToolStoreConfig = {}) {
     this.stateManager = config.stateManager;
@@ -482,6 +486,12 @@ export class DevToolStore implements DevToolStoreInterface {
     this.subscriptions.clear();
     this.activeTraces.clear();
     this.activeSubscriptions.clear();
+
+    for (const pending of this.pendingSubscriptions.values()) {
+      clearTimeout(pending.timeout);
+    }
+    this.pendingSubscriptions.clear();
+
     this.invalidations = [];
     this.resolvedPaths.clear();
     this.totalTraceCount = 0;
@@ -545,9 +555,15 @@ export class DevToolStore implements DevToolStoreInterface {
       listenedEvents: event.listenedEvents,
     };
 
-    this.activeSubscriptions.set(trace.id, trace);
-    this.totalTraceCount++;
-    this.notify();
+    // Delay adding to UI to avoid layout shift from ghost entries
+    const timeout = setTimeout(() => {
+      this.pendingSubscriptions.delete(trace.id);
+      this.activeSubscriptions.set(trace.id, trace);
+      this.totalTraceCount++;
+      this.notify();
+    }, 50);
+
+    this.pendingSubscriptions.set(trace.id, { trace, timeout });
 
     return trace;
   }
@@ -557,7 +573,13 @@ export class DevToolStore implements DevToolStoreInterface {
     status: SubscriptionTrace["status"],
     error?: Error
   ): void {
-    const trace = this.activeSubscriptions.get(subscriptionId);
+    // Check both active and pending subscriptions
+    let trace = this.activeSubscriptions.get(subscriptionId);
+    const pending = this.pendingSubscriptions.get(subscriptionId);
+
+    if (pending) {
+      trace = pending.trace;
+    }
 
     if (!trace) return;
 
@@ -571,11 +593,20 @@ export class DevToolStore implements DevToolStoreInterface {
       trace.error = error;
     }
 
-    this.notify();
+    // Only notify if subscription is already in activeSubscriptions
+    if (this.activeSubscriptions.has(subscriptionId)) {
+      this.notify();
+    }
   }
 
   recordSubscriptionMessage(event: SubscriptionMessageEvent): void {
-    const trace = this.activeSubscriptions.get(event.subscriptionId);
+    // Check both active and pending subscriptions
+    let trace = this.activeSubscriptions.get(event.subscriptionId);
+    const pending = this.pendingSubscriptions.get(event.subscriptionId);
+
+    if (pending) {
+      trace = pending.trace;
+    }
 
     if (!trace) return;
 
@@ -593,7 +624,10 @@ export class DevToolStore implements DevToolStoreInterface {
     trace.messageCount++;
     trace.lastMessageAt = event.timestamp;
 
-    this.notify();
+    // Only notify if subscription is already in activeSubscriptions
+    if (this.activeSubscriptions.has(event.subscriptionId)) {
+      this.notify();
+    }
   }
 
   updateSubscriptionAccumulatedData(
@@ -633,9 +667,46 @@ export class DevToolStore implements DevToolStoreInterface {
   }
 
   endSubscription(subscriptionId: string): void {
+    // Check if subscription is still pending (not yet shown in UI)
+    const pending = this.pendingSubscriptions.get(subscriptionId);
+
+    if (pending) {
+      const isGhostEntry =
+        pending.trace.messageCount === 0 &&
+        (pending.trace.status === "connecting" ||
+          pending.trace.status === "connected");
+
+      clearTimeout(pending.timeout);
+      this.pendingSubscriptions.delete(subscriptionId);
+
+      // If it has messages, add it to completed subscriptions
+      if (!isGhostEntry) {
+        pending.trace.status = "disconnected";
+        pending.trace.disconnectedAt = Date.now();
+        this.subscriptions.push(pending.trace);
+        this.totalTraceCount++;
+        this.notify();
+      }
+
+      return;
+    }
+
     const trace = this.activeSubscriptions.get(subscriptionId);
 
+    const isGhostEntry =
+      trace?.messageCount === 0 &&
+      (trace?.status === "connecting" || trace?.status === "connected");
+
     if (!trace) return;
+
+    // Discard ghost entries from React StrictMode double-mounting
+    // These are subscriptions that were disconnected before receiving any messages
+    if (isGhostEntry) {
+      this.activeSubscriptions.delete(subscriptionId);
+      this.totalTraceCount--;
+      this.notify();
+      return;
+    }
 
     trace.status = "disconnected";
     trace.disconnectedAt = Date.now();
@@ -652,7 +723,13 @@ export class DevToolStore implements DevToolStoreInterface {
 
     if (completed) return completed;
 
-    return this.activeSubscriptions.get(subscriptionId);
+    const active = this.activeSubscriptions.get(subscriptionId);
+
+    if (active) return active;
+
+    const pending = this.pendingSubscriptions.get(subscriptionId);
+
+    return pending?.trace;
   }
 
   getSubscriptions(): SubscriptionTrace[] {
