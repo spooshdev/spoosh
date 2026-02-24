@@ -57,7 +57,7 @@ export function createUseSubscription<
       never
     >
   > {
-    const { enabled = true } = subOptions ?? {};
+    const { enabled = true, _devtoolMeta } = subOptions ?? {};
 
     const currentOptionsRef = useRef<Record<string, unknown> | undefined>(
       undefined
@@ -137,6 +137,7 @@ export function createUseSubscription<
           globalHeaders: config.defaultOptions.headers,
           getRequestOptions: () => currentOptionsRef.current,
           eventEmitter,
+          devtoolMeta: _devtoolMeta,
         }) as SubscriptionAdapter<TData, TError>;
       } else {
         baseAdapter = {

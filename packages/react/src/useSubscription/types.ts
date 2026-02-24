@@ -3,6 +3,9 @@ import type { SpooshBody } from "@spoosh/core";
 
 export interface BaseSubscriptionOptions {
   enabled?: boolean;
+
+  /** @internal Transport-specific metadata for devtool integration */
+  _devtoolMeta?: Record<string, unknown>;
 }
 
 type ExtractTriggerQuery<TQuery> = [TQuery] extends [never]

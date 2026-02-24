@@ -53,6 +53,9 @@ export interface SubscriptionAdapterOptions {
   globalHeaders?: HeadersInit | (() => HeadersInit | Promise<HeadersInit>);
   getRequestOptions: () => Record<string, unknown> | undefined;
   eventEmitter?: EventEmitter;
+
+  /** Transport-specific metadata for devtool integration */
+  devtoolMeta?: Record<string, unknown>;
 }
 
 export interface SubscriptionAdapterFactory<TData = unknown, TError = unknown> {

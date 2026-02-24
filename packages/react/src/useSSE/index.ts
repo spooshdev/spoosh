@@ -72,7 +72,10 @@ export function createUseSSE<
     optionsRef.current = { maxRetries, retryDelay };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const subscription = useSubscription(subFn as any, { enabled });
+    const subscription = useSubscription(subFn as any, {
+      enabled,
+      _devtoolMeta: events ? { listenedEvents: events } : undefined,
+    });
 
     useEffect(() => {
       const data = subscription.data as SSEMessage | undefined;

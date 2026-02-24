@@ -553,7 +553,10 @@ export function sse(
         const subscriptionId = crypto.randomUUID();
 
         const requestOptions = adapterOptions.getRequestOptions();
-        const capturedEvents = requestOptions?.events as string[] | undefined;
+        // Use listenedEvents from devtoolMeta (set by useSSE) or fall back to request options
+        const capturedEvents =
+          (adapterOptions.devtoolMeta?.listenedEvents as string[] | undefined) ??
+          (requestOptions?.events as string[] | undefined);
 
         const transportOptions: SSETransportOptions = {
           baseUrl: adapterOptions.baseUrl,
