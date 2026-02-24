@@ -7,6 +7,6 @@
     "use-write",
     "use-pages",
     "use-queue",
-    "use-subscription"
+    "use-sse"
   ]
 }

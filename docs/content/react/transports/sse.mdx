@@ -18,16 +18,16 @@ import { sse } from "@spoosh/transport-sse";
 
 const spoosh = new Spoosh<ApiSchema, Error>("/api").withTransports([sse()]);
 
-export const { useSubscription } = create(spoosh);
+export const { useSSE } = create(spoosh);
 ```
 
 ## Define SSE Endpoints
 
-SSE endpoints use the `@sse/` prefix and require an `events` field:
+SSE endpoints have an `events` field defining the event types:
 
 ```typescript
 type ApiSchema = {
-  "@sse/notifications": {
+  notifications: {
     GET: {
       query: { userId: string };
       events: {
@@ -48,8 +48,8 @@ type ApiSchema = {
 
 ```typescript
 function Notifications() {
-  const { data, isConnected } = useSubscription(
-    (api) => api("@sse/notifications").GET({ query: { userId: "123" } })
+  const { data, isConnected } = useSSE(
+    (api) => api("notifications").GET({ query: { userId: "123" } })
   );
 
   return (
@@ -77,10 +77,10 @@ function Notifications() {
 
 ```typescript
 // One strategy for all events
-api("@sse/stream").GET({ parse: "json" });
+useSSE((api) => api("stream").GET(), { parse: "json" });
 
 // Different strategy per event
-api("@sse/stream").GET({
+useSSE((api) => api("stream").GET(), {
   parse: {
     chunk: "text", // Keep chunks as strings
     metadata: "json", // Parse metadata as JSON
@@ -88,7 +88,7 @@ api("@sse/stream").GET({
 });
 
 // Custom function
-api("@sse/stream").GET({
+useSSE((api) => api("stream").GET(), {
   parse: (data) => data.toUpperCase(),
 });
 ```
@@ -119,10 +119,10 @@ The `"merge"` strategy automatically handles different types:
 
 ```typescript
 // One strategy for all events
-api("@sse/stream").GET({ accumulate: "merge" });
+useSSE((api) => api("stream").GET(), { accumulate: "merge" });
 
 // Different strategy per event
-api("@sse/stream").GET({
+useSSE((api) => api("stream").GET(), {
   accumulate: {
     chunk: "merge", // Build up text/objects
     status: "replace", // Only keep latest status
@@ -130,7 +130,7 @@ api("@sse/stream").GET({
 });
 
 // Field-specific config (merge only specific fields)
-api("@sse/chat").POST({
+useSSE((api) => api("chat").POST(), {
   accumulate: {
     chunk: { text: "merge" }, // Concat text field, replace others
   },
@@ -146,17 +146,7 @@ api("@sse/chat").POST({
 // With { chunk: { text: "merge" } }: { id: "2", text: "Hello World", tokens: 6 }  (concat text only)
 
 // Same result using custom function:
-api("@sse/chat").POST({
-  accumulate: {
-    chunk: (prev, curr) => ({
-      ...(curr ?? {}),
-      text: (prev?.text || "") + curr.text,
-    }),
-  },
-});
-
-// Custom function
-api("@sse/chat").POST({
+useSSE((api) => api("chat").POST(), {
   accumulate: {
     chunk: (prev, curr) => ({
       ...curr,
@@ -170,29 +160,32 @@ api("@sse/chat").POST({
 
 ```typescript
 sse({
-  parse: "auto",
-  accumulate: "replace",
   disconnectDelay: 100,
   throttle: true,
+  openWhenHidden: true,
 });
 ```
 
-| Option            | Type                | Default     | Description                           |
-| ----------------- | ------------------- | ----------- | ------------------------------------- |
-| `parse`           | `ParseConfig`       | `"auto"`    | Default parse strategy                |
-| `accumulate`      | `AccumulateConfig`  | `"replace"` | Default accumulate strategy           |
-| `disconnectDelay` | `number`            | `100`       | Delay before closing idle connections |
-| `throttle`        | `boolean \| number` | `false`     | Batch updates                         |
+| Option            | Type                | Default | Description                           |
+| ----------------- | ------------------- | ------- | ------------------------------------- |
+| `disconnectDelay` | `number`            | `100`   | Delay before closing idle connections |
+| `throttle`        | `boolean \| number` | `false` | Batch updates                         |
+| `openWhenHidden`  | `boolean`           | `true`  | Keep connection in background tabs    |
 
 ## Connection Options
 
 ```typescript
-api("@sse/notifications").GET({
-  headers: { Authorization: "Bearer token" },
-  credentials: "include",
-  maxRetries: 5,
-  retryDelay: 2000,
-});
+useSSE(
+  (api) =>
+    api("notifications").GET({
+      headers: { Authorization: "Bearer token" },
+      credentials: "include",
+    }),
+  {
+    maxRetries: 5,
+    retryDelay: 2000,
+  }
+);
 ```
 
 | Option        | Type                 | Default | Description                                    |
@@ -207,3 +200,4 @@ api("@sse/notifications").GET({
 - **Connection Pooling** - Multiple components share one connection to the same URL
 - **Automatic Reconnection** - Retries on failure with configurable `maxRetries` and `retryDelay`
 - **React Strict Mode** - Handles double-mount gracefully with `disconnectDelay`
+- **Background Tab Support** - Keeps connection alive when tab is hidden (configurable)
