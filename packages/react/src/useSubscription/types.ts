@@ -46,6 +46,10 @@ export interface BaseSubscriptionResult<
   isConnected: boolean;
   loading: boolean;
   meta: TPluginResult;
+
+  /** @internal Query key for devtool integration */
+  _queryKey: string;
+
   trigger: (options?: TTriggerOptions) => Promise<void>;
   disconnect: () => void;
 }

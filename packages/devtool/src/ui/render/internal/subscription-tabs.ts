@@ -6,6 +6,11 @@ import {
   formatDuration,
 } from "../../utils";
 
+const copyIcon = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+  <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+</svg>`;
+
 export type SubscriptionTab = "messages" | "accumulated" | "connection";
 
 export interface SubscriptionTabsContext {
@@ -26,6 +31,18 @@ function isEventListened(
   return listenedEvents.includes(eventType);
 }
 
+function parseRawData(rawData: unknown): unknown {
+  if (typeof rawData === "string") {
+    try {
+      return JSON.parse(rawData);
+    } catch {
+      return rawData;
+    }
+  }
+
+  return rawData;
+}
+
 function renderMessageRow(
   message: SubscriptionMessage,
   isExpanded: boolean,
@@ -35,20 +52,22 @@ function renderMessageRow(
   const eventClass = `spoosh-message-event-${message.eventType}`;
   const rowClass = `spoosh-message-row${isExpanded ? " expanded" : ""}${!isListened ? " muted" : ""}`;
 
+  const parsedData = parseRawData(message.rawData);
   let preview = "...";
 
   try {
-    const dataStr = JSON.stringify(message.rawData);
+    const dataStr = JSON.stringify(parsedData);
     preview = dataStr.length > 60 ? dataStr.slice(0, 60) + "..." : dataStr;
   } catch {
-    preview = String(message.rawData);
+    preview = String(parsedData);
   }
 
   const expandIcon = isExpanded ? "▼" : "▶";
+  const jsonStr = JSON.stringify(parsedData, null, 2);
 
   return `
-    <div class="${rowClass}" data-message-id="${message.id}">
-      <div class="spoosh-message-header">
+    <div class="${rowClass}">
+      <div class="spoosh-message-header" data-message-id="${message.id}">
         <span class="spoosh-message-expand">${expandIcon}</span>
         <span class="spoosh-message-time">${time}</span>
         <span class="spoosh-message-event ${eventClass}">${escapeHtml(message.eventType)}</span>
@@ -58,7 +77,12 @@ function renderMessageRow(
         isExpanded
           ? `
         <div class="spoosh-message-content">
-          <pre class="spoosh-json">${formatJson(message.rawData)}</pre>
+          <div class="spoosh-code-block">
+            <button class="spoosh-code-copy-btn" data-action="copy" data-copy-content="${escapeHtml(jsonStr)}" title="Copy">
+              ${copyIcon}
+            </button>
+            <pre class="spoosh-json">${formatJson(parsedData)}</pre>
+          </div>
         </div>
       `
           : ""
@@ -189,10 +213,11 @@ function renderEventTypeSection(
   const timeStr = stats.lastUpdatedAt ? formatTime(stats.lastUpdatedAt) : "—";
   const updateLabel = stats.updateCount === 1 ? "update" : "updates";
   const mutedClass = !isListened ? " muted" : "";
+  const jsonStr = JSON.stringify(stats.data, null, 2);
 
   return `
-    <div class="spoosh-event-section ${isExpanded ? "expanded" : ""}${mutedClass}" data-event-type="${escapeHtml(stats.eventType)}">
-      <div class="spoosh-event-header">
+    <div class="spoosh-event-section ${isExpanded ? "expanded" : ""}${mutedClass}">
+      <div class="spoosh-event-header" data-event-type="${escapeHtml(stats.eventType)}">
         <span class="spoosh-event-expand">${expandIcon}</span>
         <span class="spoosh-event-name">${escapeHtml(stats.eventType)}</span>
         <span class="spoosh-event-stats">
@@ -204,7 +229,12 @@ function renderEventTypeSection(
         isExpanded
           ? `
         <div class="spoosh-event-content">
-          <pre class="spoosh-json">${formatJson(stats.data)}</pre>
+          <div class="spoosh-code-block">
+            <button class="spoosh-code-copy-btn" data-action="copy" data-copy-content="${escapeHtml(jsonStr)}" title="Copy">
+              ${copyIcon}
+            </button>
+            <pre class="spoosh-json">${formatJson(stats.data)}</pre>
+          </div>
         </div>
       `
           : ""

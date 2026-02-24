@@ -222,6 +222,11 @@ export interface DevToolStoreInterface {
     error?: Error
   ): void;
   recordSubscriptionMessage(event: SubscriptionMessageEvent): void;
+  updateSubscriptionAccumulatedData(
+    queryKey: string,
+    eventType: string,
+    accumulatedData: Record<string, unknown>
+  ): void;
   endSubscription(subscriptionId: string, reason?: string): void;
   getSubscription(subscriptionId: string): SubscriptionTrace | undefined;
   getSubscriptions(): SubscriptionTrace[];

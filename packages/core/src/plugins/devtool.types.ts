@@ -214,6 +214,14 @@ export interface SubscriptionDisconnectEvent {
   timestamp: number;
 }
 
+/** Event emitted when hook-level accumulation updates data */
+export interface SubscriptionAccumulateEvent {
+  queryKey: string;
+  eventType: string;
+  accumulatedData: Record<string, unknown>;
+  timestamp: number;
+}
+
 /**
  * Internal events used by core and devtools. Not for public use.
  * @internal
@@ -226,6 +234,7 @@ export interface DevtoolEvents {
   "spoosh:subscription:message": SubscriptionMessageEvent;
   "spoosh:subscription:error": SubscriptionErrorEvent;
   "spoosh:subscription:disconnect": SubscriptionDisconnectEvent;
+  "spoosh:subscription:accumulate": SubscriptionAccumulateEvent;
 }
 
 /**

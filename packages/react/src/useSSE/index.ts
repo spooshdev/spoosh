@@ -1,5 +1,9 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import type { SpooshPlugin, PluginTypeConfig } from "@spoosh/core";
+import type {
+  SpooshPlugin,
+  PluginTypeConfig,
+  DevtoolEvents,
+} from "@spoosh/core";
 import type { SSEMessage } from "@spoosh/transport-sse";
 import { resolveParser, resolveAccumulator } from "@spoosh/transport-sse";
 import { createUseSubscription } from "../useSubscription";
@@ -18,6 +22,8 @@ export function createUseSSE<
     "_types"
   >
 ) {
+  const { eventEmitter } = options;
+
   const useSubscription = createUseSubscription<
     TSchema,
     TDefaultError,
@@ -106,12 +112,24 @@ export function createUseSSE<
           newEventData = parsed;
         }
 
-        return {
+        const newAccumulated = {
           ...prev,
           [data.event]: newEventData,
         };
+
+        eventEmitter?.emit<DevtoolEvents["spoosh:subscription:accumulate"]>(
+          "spoosh:subscription:accumulate",
+          {
+            queryKey: subscription._queryKey,
+            eventType: data.event,
+            accumulatedData: newAccumulated,
+            timestamp: Date.now(),
+          }
+        );
+
+        return newAccumulated;
       });
-    }, [subscription.data, eventSet]);
+    }, [subscription.data, subscription._queryKey, eventSet]);
 
     const reset = useCallback(() => {
       setAccumulatedData({});

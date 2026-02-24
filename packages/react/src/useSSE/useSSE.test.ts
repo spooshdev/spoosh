@@ -57,9 +57,9 @@ function createMockTransport(): SpooshTransport &
 
   const releaseConnectionFn = vi.fn();
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const createSubscriptionAdapter = (
-    _adapterOptions: SubscriptionAdapterOptions
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _options: SubscriptionAdapterOptions
   ) => {
     return {
       subscribe: async (context: SubscriptionContext) => {

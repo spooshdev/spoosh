@@ -258,6 +258,7 @@ export function createUseSubscription<
       error: state.error as TDefaultError | undefined,
       loading,
       isConnected: state.isConnected,
+      _queryKey: queryKey,
       trigger,
       disconnect,
     };

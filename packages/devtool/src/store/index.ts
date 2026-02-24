@@ -584,7 +584,7 @@ export class DevToolStore implements DevToolStoreInterface {
       eventType: event.eventType,
       timestamp: event.timestamp,
       rawData: event.rawData,
-      accumulatedSnapshot: { ...event.accumulatedData },
+      accumulatedSnapshot: { ...trace.accumulatedData },
       previousSnapshot:
         trace.messageCount > 0 ? { ...trace.accumulatedData } : undefined,
     };
@@ -592,9 +592,44 @@ export class DevToolStore implements DevToolStoreInterface {
     trace.messages.push(message);
     trace.messageCount++;
     trace.lastMessageAt = event.timestamp;
-    trace.accumulatedData = { ...event.accumulatedData };
 
     this.notify();
+  }
+
+  updateSubscriptionAccumulatedData(
+    queryKey: string,
+    eventType: string,
+    accumulatedData: Record<string, unknown>
+  ): void {
+    for (const trace of this.activeSubscriptions.values()) {
+      if (trace.queryKey === queryKey) {
+        trace.accumulatedData = { ...accumulatedData };
+
+        const lastMessage = trace.messages[trace.messages.length - 1];
+
+        if (lastMessage && lastMessage.eventType === eventType) {
+          lastMessage.accumulatedSnapshot = { ...accumulatedData };
+        }
+
+        this.notify();
+        return;
+      }
+    }
+
+    for (const trace of this.subscriptions.toArray()) {
+      if (trace.queryKey === queryKey) {
+        trace.accumulatedData = { ...accumulatedData };
+
+        const lastMessage = trace.messages[trace.messages.length - 1];
+
+        if (lastMessage && lastMessage.eventType === eventType) {
+          lastMessage.accumulatedSnapshot = { ...accumulatedData };
+        }
+
+        this.notify();
+        return;
+      }
+    }
   }
 
   endSubscription(subscriptionId: string): void {

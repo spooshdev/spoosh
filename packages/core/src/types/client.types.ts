@@ -17,7 +17,6 @@ import type { HttpMethod, WriteMethod } from "./common.types";
 import type { Simplify } from "./common.types";
 import type { HeadersInitOrGetter } from "./request.types";
 import type { SpooshBody } from "../utils/body";
-import type { SpooshTransportRegistry } from "../transport/subscription";
 
 /**
  * Base request options available on all methods.
@@ -314,131 +313,6 @@ export type QueueSelectorClient<TSchema, TDefaultError = unknown> = <
  * Extract events type from a method config.
  */
 type ExtractEvents<T> = T extends { events: infer E } ? E : never;
-
-/**
- * Extract event data type from an event config.
- */
-type ExtractEventData<T> = T extends { data: infer D } ? D : unknown;
-
-/**
- * Extract transport name from path (e.g., "@sse/channel" → "sse")
- */
-type ExtractTransportName<TPath extends string> =
-  TPath extends `@${infer Transport}/${string}` ? Transport : never;
-
-/**
- * Extract string literal types from a union (excludes functions, objects).
- */
-type ExtractStringLiterals<T> = T extends string ? T : never;
-
-/**
- * Extract strategy strings from a config type.
- * Handles: Strategy | Function | Record<string, Strategy | Function>
- */
-type ExtractStrategiesFromConfig<T> =
-  | ExtractStringLiterals<T>
-  | (T extends Record<string, infer V> ? ExtractStringLiterals<V> : never);
-
-/**
- * Infer parse strategies from transport's options.parse type.
- */
-type InferParseStrategies<TTransport extends string> =
-  TTransport extends keyof SpooshTransportRegistry
-    ? SpooshTransportRegistry[TTransport] extends {
-        options: { parse?: infer P };
-      }
-      ? ExtractStrategiesFromConfig<NonNullable<P>>
-      : never
-    : never;
-
-/**
- * Infer accumulate strategies from transport's options.accumulate type.
- */
-type InferAccumulateStrategies<TTransport extends string> =
-  TTransport extends keyof SpooshTransportRegistry
-    ? SpooshTransportRegistry[TTransport] extends {
-        options: { accumulate?: infer A };
-      }
-      ? ExtractStrategiesFromConfig<NonNullable<A>>
-      : never
-    : never;
-
-/**
- * Typed parse config with event-specific inference.
- * Strategies are inferred from transport's options.parse type.
- */
-export type TypedParseConfig<TEvents, TStrategies> =
-  TEvents extends Record<string, unknown>
-    ?
-        | {
-            [K in keyof TEvents]?:
-              | TStrategies
-              | ((data: string) => ExtractEventData<TEvents[K]>);
-          }
-        | TStrategies
-        | ((data: string) => unknown)
-    : TStrategies | ((data: string) => unknown);
-
-/**
- * Field-specific accumulate config.
- * Keys are field names from event data, values are strategies.
- */
-type TypedAccumulateFieldConfig<TEventData, TStrategies> =
-  TEventData extends Record<string, unknown>
-    ? { [K in keyof TEventData]?: TStrategies }
-    : never;
-
-/**
- * Typed accumulate config with event-specific inference.
- * Supports: strategy, field config, function, or per-event mapping.
- */
-type TypedAccumulateConfig<TEvents, TStrategies> =
-  TEvents extends Record<string, unknown>
-    ?
-        | {
-            [K in keyof TEvents]?:
-              | TStrategies
-              | TypedAccumulateFieldConfig<
-                  ExtractEventData<TEvents[K]>,
-                  TStrategies
-                >
-              | ((
-                  prev: ExtractEventData<TEvents[K]> | undefined,
-                  current: ExtractEventData<TEvents[K]>
-                ) => ExtractEventData<TEvents[K]>);
-          }
-        | TStrategies
-        | ((prev: unknown, current: unknown) => unknown)
-    : TStrategies | ((prev: unknown, current: unknown) => unknown);
-
-/**
- * Apply event-typing to fields that have strategies.
- * Only fields with inferred strategies get typed; others pass through as-is.
- */
-type ApplyEventTyping<O, TEvents, TTransport extends string> = {
-  [K in keyof O]: K extends "parse"
-    ? InferParseStrategies<TTransport> extends never
-      ? O[K]
-      : TypedParseConfig<TEvents, InferParseStrategies<TTransport>>
-    : K extends "accumulate"
-      ? InferAccumulateStrategies<TTransport> extends never
-        ? O[K]
-        : TypedAccumulateConfig<TEvents, InferAccumulateStrategies<TTransport>>
-      : O[K];
-};
-
-/**
- * Get transport options from registry with event-specific types.
- * Event-typing is automatically applied to fields that have strategies.
- */
-type TransportOptions<
-  TTransport extends string,
-  TEvents = never,
-> = TTransport extends keyof SpooshTransportRegistry
-  ? SpooshTransportRegistry[TTransport] extends { options: infer O }
-    ? ApplyEventTyping<O, TEvents, TTransport>
-    : {}
-  : {};
 
 /**
  * Strict subscription request options (for GET method).

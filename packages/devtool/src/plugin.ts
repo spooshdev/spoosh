@@ -11,6 +11,7 @@ import type {
   SubscriptionMessageEvent,
   SubscriptionErrorEvent,
   SubscriptionDisconnectEvent,
+  SubscriptionAccumulateEvent,
 } from "@spoosh/core";
 import { resolvePathString } from "@spoosh/core";
 
@@ -273,6 +274,17 @@ export function devtool(
         "spoosh:subscription:disconnect",
         (event) => {
           store.endSubscription(event.subscriptionId);
+        }
+      );
+
+      ctx.eventEmitter.on<SubscriptionAccumulateEvent>(
+        "spoosh:subscription:accumulate",
+        (event) => {
+          store.updateSubscriptionAccumulatedData(
+            event.queryKey,
+            event.eventType,
+            event.accumulatedData
+          );
         }
       );
     },

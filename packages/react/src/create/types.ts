@@ -11,7 +11,6 @@ import type {
   ResolveTypes,
   ResolveResultTypes,
   InfiniteRequestOptions,
-  BaseSubscriptionResponse,
 } from "@spoosh/core";
 import type {
   ExtractMethodData,
