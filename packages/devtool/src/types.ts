@@ -9,7 +9,16 @@ import type {
   TraceColor,
   PluginContext,
   StandaloneEvent,
+  DevtoolEvents,
+  SubscriptionConnectEvent,
+  SubscriptionMessageEvent,
 } from "@spoosh/core";
+
+export type {
+  DevtoolEvents,
+  SubscriptionConnectEvent,
+  SubscriptionMessageEvent,
+};
 
 export interface DevToolConfig {
   /** Enable or disable the devtool. Defaults to true. */
@@ -71,6 +80,7 @@ export interface PluginStepEvent {
 }
 
 export interface OperationTrace extends PluginContext {
+  type: "request";
   id: string;
   path: string;
   startTime: number;
@@ -85,6 +95,46 @@ export interface OperationTrace extends PluginContext {
   addStep(event: TraceEvent, timestamp: number): void;
 }
 
+/** Individual message received in a subscription */
+export interface SubscriptionMessage {
+  id: string;
+  eventType: string;
+  timestamp: number;
+  rawData: unknown;
+  accumulatedSnapshot: unknown;
+  previousSnapshot?: unknown;
+}
+
+/** Subscription lifecycle trace */
+export interface SubscriptionTrace {
+  type: "subscription";
+  id: string;
+  channel: string;
+  transport: string;
+  queryKey: string;
+  connectionUrl: string;
+  status: "connecting" | "connected" | "disconnected" | "error";
+  connectedAt?: number;
+  disconnectedAt?: number;
+  error?: Error;
+  retryCount: number;
+  messageCount: number;
+  lastMessageAt?: number;
+  accumulatedData: Record<string, unknown>;
+  messages: SubscriptionMessage[];
+  steps: PluginStepEvent[];
+  timestamp: number;
+
+  /** Event types being listened to. Empty or ["*"] means all events. */
+  listenedEvents?: string[];
+}
+
+/** Unified trace type - either a request or subscription */
+export type Trace = OperationTrace | SubscriptionTrace;
+
+/** Type filter for traces */
+export type TraceTypeFilter = "all" | "http" | "sse" | "ws";
+
 export interface InvalidationEvent {
   tags: string[];
   affectedKeys: Array<{ key: string; count: number }>;
@@ -94,6 +144,7 @@ export interface InvalidationEvent {
 
 export interface DevToolFilters {
   operationTypes: Set<OperationType>;
+  traceTypeFilter: TraceTypeFilter;
   showSkipped: boolean;
   showOnlyWithChanges: boolean;
 }
@@ -162,6 +213,19 @@ export interface DevToolStoreInterface {
   getFilteredImportedTraces(searchQuery?: string): ExportedTrace[];
   clearImportedTraces(): void;
   isStepUpdateOnly(): boolean;
+
+  startSubscription(event: SubscriptionConnectEvent): SubscriptionTrace;
+  updateSubscriptionStatus(
+    subscriptionId: string,
+    status: SubscriptionTrace["status"],
+    error?: Error
+  ): void;
+  recordSubscriptionMessage(event: SubscriptionMessageEvent): void;
+  endSubscription(subscriptionId: string, reason?: string): void;
+  getSubscription(subscriptionId: string): SubscriptionTrace | undefined;
+  getSubscriptions(): SubscriptionTrace[];
+  getFilteredSubscriptions(searchQuery?: string): SubscriptionTrace[];
+  getAllTraces(searchQuery?: string): Trace[];
 }
 
 export type DetailTab = "data" | "request" | "meta" | "plugins";

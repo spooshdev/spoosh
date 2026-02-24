@@ -10,9 +10,14 @@ import type {
 import type {
   CacheEntryDisplay,
   OperationTrace,
+  SubscriptionTrace,
+  SubscriptionMessage,
+  Trace,
   InvalidationEvent,
   DevToolFilters,
   DevToolStoreInterface,
+  SubscriptionConnectEvent,
+  SubscriptionMessageEvent,
   ExportedTrace,
   ImportedSession,
 } from "../types";
@@ -34,12 +39,16 @@ const STEP_NOTIFY_DEBOUNCE = 500;
 export class DevToolStore implements DevToolStoreInterface {
   private traces = createRingBuffer<OperationTrace>(DEFAULT_MAX_HISTORY);
   private events = createRingBuffer<StandaloneEvent>(DEFAULT_MAX_HISTORY * 2);
+  private subscriptions =
+    createRingBuffer<SubscriptionTrace>(DEFAULT_MAX_HISTORY);
   private activeTraces = new Map<string, OperationTrace>();
+  private activeSubscriptions = new Map<string, SubscriptionTrace>();
   private invalidations: InvalidationEvent[] = [];
   private subscribers = new Set<() => void>();
   private registeredPlugins: RegisteredPlugin[] = [];
   private filters: DevToolFilters = {
     operationTypes: new Set(),
+    traceTypeFilter: "all",
     showSkipped: true,
     showOnlyWithChanges: false,
   };
@@ -140,6 +149,7 @@ export class DevToolStore implements DevToolStoreInterface {
   setMaxHistory(value: number): void {
     this.traces.resize(value);
     this.events.resize(value * 2);
+    this.subscriptions.resize(value);
     this.notify();
   }
 
@@ -183,6 +193,7 @@ export class DevToolStore implements DevToolStoreInterface {
 
     const trace: OperationTrace = {
       ...context,
+      type: "request",
       id: crypto.randomUUID(),
       path: resolvedPath,
       startTime: now,
@@ -468,7 +479,9 @@ export class DevToolStore implements DevToolStoreInterface {
   clear(): void {
     this.traces.clear();
     this.events.clear();
+    this.subscriptions.clear();
     this.activeTraces.clear();
+    this.activeSubscriptions.clear();
     this.invalidations = [];
     this.resolvedPaths.clear();
     this.totalTraceCount = 0;
@@ -512,5 +525,149 @@ export class DevToolStore implements DevToolStoreInterface {
   clearImportedTraces(): void {
     this.importedSession = null;
     this.notify();
+  }
+
+  startSubscription(event: SubscriptionConnectEvent): SubscriptionTrace {
+    const trace: SubscriptionTrace = {
+      type: "subscription",
+      id: event.subscriptionId,
+      channel: event.channel,
+      transport: event.transport,
+      queryKey: event.queryKey,
+      connectionUrl: event.connectionUrl,
+      status: "connecting",
+      retryCount: 0,
+      messageCount: 0,
+      accumulatedData: {},
+      messages: [],
+      steps: [],
+      timestamp: event.timestamp,
+      listenedEvents: event.listenedEvents,
+    };
+
+    this.activeSubscriptions.set(trace.id, trace);
+    this.totalTraceCount++;
+    this.notify();
+
+    return trace;
+  }
+
+  updateSubscriptionStatus(
+    subscriptionId: string,
+    status: SubscriptionTrace["status"],
+    error?: Error
+  ): void {
+    const trace = this.activeSubscriptions.get(subscriptionId);
+
+    if (!trace) return;
+
+    trace.status = status;
+
+    if (status === "connected") {
+      trace.connectedAt = Date.now();
+    }
+
+    if (error) {
+      trace.error = error;
+    }
+
+    this.notify();
+  }
+
+  recordSubscriptionMessage(event: SubscriptionMessageEvent): void {
+    const trace = this.activeSubscriptions.get(event.subscriptionId);
+
+    if (!trace) return;
+
+    const message: SubscriptionMessage = {
+      id: event.messageId,
+      eventType: event.eventType,
+      timestamp: event.timestamp,
+      rawData: event.rawData,
+      accumulatedSnapshot: { ...event.accumulatedData },
+      previousSnapshot:
+        trace.messageCount > 0 ? { ...trace.accumulatedData } : undefined,
+    };
+
+    trace.messages.push(message);
+    trace.messageCount++;
+    trace.lastMessageAt = event.timestamp;
+    trace.accumulatedData = { ...event.accumulatedData };
+
+    this.notify();
+  }
+
+  endSubscription(subscriptionId: string): void {
+    const trace = this.activeSubscriptions.get(subscriptionId);
+
+    if (!trace) return;
+
+    trace.status = "disconnected";
+    trace.disconnectedAt = Date.now();
+
+    this.subscriptions.push(trace);
+    this.activeSubscriptions.delete(subscriptionId);
+    this.notify();
+  }
+
+  getSubscription(subscriptionId: string): SubscriptionTrace | undefined {
+    const completed = this.subscriptions
+      .toArray()
+      .find((s) => s.id === subscriptionId);
+
+    if (completed) return completed;
+
+    return this.activeSubscriptions.get(subscriptionId);
+  }
+
+  getSubscriptions(): SubscriptionTrace[] {
+    const completed = this.subscriptions.toArray();
+    const active = Array.from(this.activeSubscriptions.values());
+
+    return [...completed, ...active];
+  }
+
+  getFilteredSubscriptions(searchQuery?: string): SubscriptionTrace[] {
+    let subs = this.getSubscriptions();
+
+    if (searchQuery?.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      subs = subs.filter(
+        (sub) =>
+          sub.channel.toLowerCase().includes(query) ||
+          sub.queryKey.toLowerCase().includes(query) ||
+          sub.connectionUrl.toLowerCase().includes(query)
+      );
+    }
+
+    return subs;
+  }
+
+  getAllTraces(searchQuery?: string): Trace[] {
+    const traces = this.getFilteredTraces(searchQuery);
+    const traceTypeFilter = this.filters.traceTypeFilter;
+    const hasOpFilters = this.filters.operationTypes.size > 0;
+
+    let allTraces: Trace[] = [];
+
+    if (traceTypeFilter === "all" || traceTypeFilter === "http") {
+      allTraces = [...allTraces, ...traces];
+    }
+
+    if (!hasOpFilters) {
+      const subs = this.getFilteredSubscriptions(searchQuery);
+
+      if (traceTypeFilter === "all" || traceTypeFilter === "sse") {
+        const sseSubs = subs.filter((s) => s.transport === "sse");
+        allTraces = [...allTraces, ...sseSubs];
+      }
+
+      if (traceTypeFilter === "all" || traceTypeFilter === "ws") {
+        const wsSubs = subs.filter((s) => s.transport === "ws");
+        allTraces = [...allTraces, ...wsSubs];
+      }
+    }
+
+    return allTraces.sort((a, b) => a.timestamp - b.timestamp);
   }
 }

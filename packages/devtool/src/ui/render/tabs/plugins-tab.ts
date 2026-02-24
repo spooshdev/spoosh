@@ -1,4 +1,4 @@
-import type { OperationTrace, PluginStepEvent } from "../../../types";
+import type { PluginStepEvent } from "../../../types";
 import {
   renderTimelineStep,
   renderPassedPlugin,
@@ -6,8 +6,14 @@ import {
 } from "../timeline";
 import { renderGroupedSteps } from "../timeline/group";
 
+interface TraceWithSteps {
+  id: string;
+  steps: PluginStepEvent[];
+  operationType: string;
+}
+
 export interface PluginsTabContext {
-  trace: OperationTrace;
+  trace: TraceWithSteps;
   knownPlugins: string[];
   showPassedPlugins: boolean;
   expandedSteps: ReadonlySet<string>;

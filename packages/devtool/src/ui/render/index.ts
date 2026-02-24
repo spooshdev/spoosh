@@ -3,6 +3,7 @@ export * from "./trace-list";
 export * from "./event-list";
 export * from "./settings";
 export * from "./detail-panel";
+export * from "./subscription-detail";
 export * from "./tabs";
 export * from "./timeline";
 export * from "./bottom-bar";

@@ -1,11 +1,6 @@
 import type { CacheEntryDisplay } from "../../../types";
 import type { InternalTab } from "../../view-model";
-import {
-  escapeHtml,
-  formatJson,
-  formatTime,
-  formatQueryParams,
-} from "../../utils";
+import { escapeHtml, formatJson, formatTime, parseQueryKey } from "../../utils";
 import { renderStateTabs } from "./state-tabs";
 
 const copyIcon = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -36,37 +31,6 @@ function renderDataSection(
 export interface StateDetailContext {
   entry: CacheEntryDisplay | null;
   activeTab: InternalTab;
-}
-
-interface ParsedQueryKey {
-  path: string;
-  method: string;
-  queryParams: string | null;
-}
-
-function parseQueryKey(
-  queryKey: string,
-  resolvedPath?: string
-): ParsedQueryKey {
-  try {
-    const parsed = JSON.parse(queryKey) as {
-      path?: string;
-      method?: string;
-      options?: { query?: Record<string, unknown> };
-      pageRequest?: { query?: Record<string, unknown> };
-    };
-
-    const query = parsed.pageRequest?.query ?? parsed.options?.query;
-    const queryParams = query ? formatQueryParams(query) : null;
-
-    return {
-      path: resolvedPath ?? parsed.path ?? queryKey,
-      method: parsed.method ?? "GET",
-      queryParams,
-    };
-  } catch {
-    return { path: resolvedPath ?? queryKey, method: "GET", queryParams: null };
-  }
 }
 
 function renderDataTab(entry: CacheEntryDisplay): string {

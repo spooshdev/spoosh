@@ -1,21 +1,5 @@
 import type { ExportedTrace } from "../../../types";
-import { escapeHtml, formatTime, formatQueryParams } from "../../utils";
-
-function parseQueryKey(queryKey: string): { queryParams: string | null } {
-  try {
-    const parsed = JSON.parse(queryKey) as {
-      options?: { query?: Record<string, unknown> };
-      pageRequest?: { query?: Record<string, unknown> };
-    };
-
-    const query = parsed.pageRequest?.query ?? parsed.options?.query;
-    const queryParams = query ? formatQueryParams(query) : null;
-
-    return { queryParams };
-  } catch {
-    return { queryParams: null };
-  }
-}
+import { escapeHtml, formatTime, parseQueryKey } from "../../utils";
 
 export interface ImportListContext {
   traces: ExportedTrace[];

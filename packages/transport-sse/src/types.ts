@@ -1,3 +1,4 @@
+import type { EventEmitter } from "@spoosh/core";
 import type { ParseConfig } from "./parsers";
 import type { AccumulateConfig } from "./accumulators";
 
@@ -51,6 +52,9 @@ export interface SSETransportConfig {
 
   /** Throttle notifications to prevent UI flooding from high-frequency events. Uses requestAnimationFrame batching when set to true, or custom interval in ms. Defaults to false (no throttling). */
   throttle?: boolean | number;
+
+  /** Event emitter for devtool integration. When provided, emits subscription lifecycle events. */
+  eventEmitter?: EventEmitter;
 }
 
 export interface SSEMessage {

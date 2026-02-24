@@ -5,6 +5,7 @@ import type {
   SubscriptionAdapterFactory,
   SubscriptionAdapterOptions,
   SubscriptionHandle,
+  DevtoolEvents,
 } from "@spoosh/core";
 import { sortObjectKeys } from "@spoosh/core";
 import { resolveParser } from "./parsers";
@@ -21,6 +22,8 @@ interface ConnectionState {
   isAborted: boolean;
   error: Error | null;
   disconnectCallbacks: Set<() => void>;
+  subscriptionIds: Set<string>;
+  retryCount: number;
 }
 
 export function sse(
@@ -30,10 +33,12 @@ export function sse(
   const defaultAccumulate = config.accumulate ?? "replace";
   const disconnectDelay = config.disconnectDelay ?? 100;
   const throttleConfig = config.throttle ?? false;
+  let eventEmitter = config.eventEmitter;
 
   const connections = new Map<string, ConnectionState>();
   const disconnectTimers = new Map<string, ReturnType<typeof setTimeout>>();
   const pendingNotifications = new Map<string, boolean>();
+  const subscriptionToUrl = new Map<string, string>();
 
   interface UrlSubscriptions {
     subscriptions: Map<string, Set<(message: unknown) => void>>;
@@ -67,7 +72,10 @@ export function sse(
     let fullUrl = `${baseUrl}/${path}`;
 
     if (options?.query) {
-      const sortedQuery = sortObjectKeys(options.query) as Record<string, string>;
+      const sortedQuery = sortObjectKeys(options.query) as Record<
+        string,
+        string
+      >;
       const queryString = new URLSearchParams(sortedQuery).toString();
 
       if (queryString) {
@@ -79,7 +87,10 @@ export function sse(
   };
 
   const resolveHeaders = async (
-    headers: HeadersInit | (() => HeadersInit | Promise<HeadersInit>) | undefined
+    headers:
+      | HeadersInit
+      | (() => HeadersInit | Promise<HeadersInit>)
+      | undefined
   ): Promise<Record<string, string>> => {
     if (!headers) return {};
 
@@ -104,7 +115,10 @@ export function sse(
     return resolved as Record<string, string>;
   };
 
-  const createConnection = (fullUrl: string, options?: SSETransportOptions): ConnectionState => {
+  const createConnection = (
+    fullUrl: string,
+    options?: SSETransportOptions
+  ): ConnectionState => {
     const abortController = new AbortController();
     const accumulatedData: Record<string, unknown> = {};
 
@@ -117,6 +131,8 @@ export function sse(
       isAborted: false,
       error: null,
       disconnectCallbacks: new Set(),
+      subscriptionIds: new Set(),
+      retryCount: 0,
     };
 
     const startConnection = (): Promise<void> => {
@@ -164,6 +180,7 @@ export function sse(
 
                 if (response.ok) {
                   retries = 0;
+                  state.retryCount = 0;
                   state.isConnecting = false;
 
                   if (!resolved) {
@@ -171,10 +188,21 @@ export function sse(
                     resolve();
                   }
 
+                  for (const subscriptionId of state.subscriptionIds) {
+                    eventEmitter?.emit<
+                      DevtoolEvents["spoosh:subscription:connected"]
+                    >("spoosh:subscription:connected", {
+                      subscriptionId,
+                      timestamp: Date.now(),
+                    });
+                  }
+
                   return;
                 }
 
-                const err = new Error(`SSE connection failed: ${response.status} ${response.statusText}`);
+                const err = new Error(
+                  `SSE connection failed: ${response.status} ${response.statusText}`
+                );
 
                 if (!resolved) {
                   resolved = true;
@@ -195,10 +223,16 @@ export function sse(
 
                 const eventType = event.event || "message";
                 const parseConfig = mergeConfig(defaultParse, options?.parse);
-                const accumulateConfig = mergeConfig(defaultAccumulate, options?.accumulate);
+                const accumulateConfig = mergeConfig(
+                  defaultAccumulate,
+                  options?.accumulate
+                );
 
                 const parser = resolveParser(parseConfig, eventType);
-                const accumulator = resolveAccumulator(accumulateConfig, eventType);
+                const accumulator = resolveAccumulator(
+                  accumulateConfig,
+                  eventType
+                );
 
                 let parsedData: unknown;
                 try {
@@ -213,9 +247,25 @@ export function sse(
 
                 const previousData = accumulatedData[eventType];
                 try {
-                  accumulatedData[eventType] = accumulator(previousData, parsedData);
+                  accumulatedData[eventType] = accumulator(
+                    previousData,
+                    parsedData
+                  );
                 } catch {
                   accumulatedData[eventType] = parsedData;
+                }
+
+                for (const subscriptionId of state.subscriptionIds) {
+                  eventEmitter?.emit<
+                    DevtoolEvents["spoosh:subscription:message"]
+                  >("spoosh:subscription:message", {
+                    subscriptionId,
+                    messageId: crypto.randomUUID(),
+                    eventType,
+                    rawData: parsedData,
+                    accumulatedData: { ...accumulatedData },
+                    timestamp: Date.now(),
+                  });
                 }
 
                 const notifySubscribers = () => {
@@ -226,11 +276,17 @@ export function sse(
                   }
 
                   const currentSubscriptions = currentUrlSubs.subscriptions;
-                  const currentCallbackEventMap = currentUrlSubs.callbackEventMap;
+                  const currentCallbackEventMap =
+                    currentUrlSubs.callbackEventMap;
 
-                  const specificCallbacks = currentSubscriptions.get(eventType) || new Set();
-                  const wildcardCallbacks = currentSubscriptions.get("*") || new Set();
-                  const allCallbacks = new Set([...specificCallbacks, ...wildcardCallbacks]);
+                  const specificCallbacks =
+                    currentSubscriptions.get(eventType) || new Set();
+                  const wildcardCallbacks =
+                    currentSubscriptions.get("*") || new Set();
+                  const allCallbacks = new Set([
+                    ...specificCallbacks,
+                    ...wildcardCallbacks,
+                  ]);
 
                   if (allCallbacks.size === 0) return;
 
@@ -288,10 +344,25 @@ export function sse(
                   throw error;
                 }
 
+                state.retryCount++;
+
                 if (retries >= maxRetries) {
                   if (!resolved) {
                     resolved = true;
-                    state.error = error instanceof Error ? error : new Error(String(error));
+                    state.error =
+                      error instanceof Error ? error : new Error(String(error));
+
+                    for (const subscriptionId of state.subscriptionIds) {
+                      eventEmitter?.emit<
+                        DevtoolEvents["spoosh:subscription:error"]
+                      >("spoosh:subscription:error", {
+                        subscriptionId,
+                        error: state.error,
+                        retryCount: state.retryCount,
+                        timestamp: Date.now(),
+                      });
+                    }
+
                     reject(state.error);
                   }
 
@@ -306,6 +377,16 @@ export function sse(
                 state.isConnecting = false;
 
                 if (!state.isAborted) {
+                  for (const subscriptionId of state.subscriptionIds) {
+                    eventEmitter?.emit<
+                      DevtoolEvents["spoosh:subscription:disconnect"]
+                    >("spoosh:subscription:disconnect", {
+                      subscriptionId,
+                      reason: "server_closed",
+                      timestamp: Date.now(),
+                    });
+                  }
+
                   state.disconnectCallbacks.forEach((cb) => cb());
                   state.disconnectCallbacks.clear();
                   connections.delete(fullUrl);
@@ -336,7 +417,10 @@ export function sse(
     return state;
   };
 
-  const connect = async (channel: string, options?: SSETransportOptions): Promise<void> => {
+  const connect = async (
+    channel: string,
+    options?: SSETransportOptions
+  ): Promise<void> => {
     const fullUrl = buildUrl(channel, options);
 
     const existingTimer = disconnectTimers.get(fullUrl);
@@ -426,7 +510,11 @@ export function sse(
     }
   };
 
-  const subscribe = (eventType: string, callback: (message: unknown) => void, url?: string): (() => void) => {
+  const subscribe = (
+    eventType: string,
+    callback: (message: unknown) => void,
+    url?: string
+  ): (() => void) => {
     const targetUrl = url || "_global_";
     const urlSubs = getOrCreateUrlSubscriptions(targetUrl);
     const { subscriptions, callbackEventMap } = urlSubs;
@@ -480,11 +568,17 @@ export function sse(
     return connections.size > 0;
   };
 
-  const getConnectionUrl = (channel: string, options?: SSETransportOptions): string => {
+  const getConnectionUrl = (
+    channel: string,
+    options?: SSETransportOptions
+  ): string => {
     return buildUrl(channel, options);
   };
 
-  const onDisconnect = (fullUrl: string, callback: () => void): (() => void) => {
+  const onDisconnect = (
+    fullUrl: string,
+    callback: () => void
+  ): (() => void) => {
     const connectionState = connections.get(fullUrl);
 
     if (!connectionState) {
@@ -501,11 +595,18 @@ export function sse(
   const createSubscriptionAdapter = (
     adapterOptions: SubscriptionAdapterOptions
   ): SubscriptionAdapter => {
+    if (!eventEmitter && adapterOptions.eventEmitter) {
+      eventEmitter = adapterOptions.eventEmitter;
+    }
+
+    const emitter = adapterOptions.eventEmitter ?? eventEmitter;
+
     return {
       subscribe: async (context): Promise<SubscriptionHandle> => {
         const unsubscribers: Array<() => void> = [];
         let currentData: unknown = undefined;
         let disconnectedByServer = false;
+        const subscriptionId = crypto.randomUUID();
 
         const requestOptions = adapterOptions.getRequestOptions();
         const capturedEvents = requestOptions?.events as string[] | undefined;
@@ -519,10 +620,29 @@ export function sse(
           headers: requestOptions?.headers as HeadersInit | undefined,
           globalHeaders: adapterOptions.globalHeaders,
           parse: requestOptions?.parse as SSETransportOptions["parse"],
-          accumulate: requestOptions?.accumulate as SSETransportOptions["accumulate"],
+          accumulate:
+            requestOptions?.accumulate as SSETransportOptions["accumulate"],
         };
 
-        const connectionUrl = getConnectionUrl(adapterOptions.channel, transportOptions);
+        const connectionUrl = getConnectionUrl(
+          adapterOptions.channel,
+          transportOptions
+        );
+
+        emitter?.emit<DevtoolEvents["spoosh:subscription:connect"]>(
+          "spoosh:subscription:connect",
+          {
+            subscriptionId,
+            channel: adapterOptions.channel,
+            transport: "sse",
+            connectionUrl,
+            queryKey: context.queryKey ?? "",
+            timestamp: Date.now(),
+            listenedEvents: capturedEvents,
+          }
+        );
+
+        subscriptionToUrl.set(subscriptionId, connectionUrl);
 
         const sharedCallback = (message: unknown) => {
           currentData = message;
@@ -539,7 +659,24 @@ export function sse(
           unsubscribers.push(unsub);
         }
 
+        const existingConnection = connections.get(connectionUrl);
+        const wasAlreadyConnected =
+          existingConnection && !existingConnection.isConnecting;
+
         await connect(adapterOptions.channel, transportOptions);
+
+        const connectionState = connections.get(connectionUrl);
+        connectionState?.subscriptionIds.add(subscriptionId);
+
+        if (wasAlreadyConnected || connectionState) {
+          emitter?.emit<DevtoolEvents["spoosh:subscription:connected"]>(
+            "spoosh:subscription:connected",
+            {
+              subscriptionId,
+              timestamp: Date.now(),
+            }
+          );
+        }
 
         const unsubDisconnect = onDisconnect(connectionUrl, () => {
           disconnectedByServer = true;
@@ -549,6 +686,21 @@ export function sse(
 
         return {
           unsubscribe: () => {
+            const connState = connections.get(connectionUrl);
+            connState?.subscriptionIds.delete(subscriptionId);
+            subscriptionToUrl.delete(subscriptionId);
+
+            if (!disconnectedByServer) {
+              emitter?.emit<DevtoolEvents["spoosh:subscription:disconnect"]>(
+                "spoosh:subscription:disconnect",
+                {
+                  subscriptionId,
+                  reason: "user_unsubscribed",
+                  timestamp: Date.now(),
+                }
+              );
+            }
+
             unsubscribers.forEach((unsub) => unsub());
             unsubscribers.length = 0;
 

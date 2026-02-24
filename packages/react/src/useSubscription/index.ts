@@ -136,6 +136,7 @@ export function createUseSubscription<
           baseUrl: config.baseUrl,
           globalHeaders: config.defaultOptions.headers,
           getRequestOptions: () => currentOptionsRef.current,
+          eventEmitter,
         }) as SubscriptionAdapter<TData, TError>;
       } else {
         baseAdapter = {
