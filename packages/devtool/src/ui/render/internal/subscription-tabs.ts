@@ -57,7 +57,7 @@ function renderMessageRow(
 
   try {
     const dataStr = JSON.stringify(parsedData);
-    preview = dataStr.length > 60 ? dataStr.slice(0, 60) + "..." : dataStr;
+    preview = String(dataStr);
   } catch {
     preview = String(parsedData);
   }
