@@ -101,7 +101,7 @@ function createTestController<TData = unknown, TError = unknown>(options?: {
   } = createMockAdapter<TData, TError>();
 
   const queryKey = stateManager.createQueryKey({
-    path: options?.path ?? "@sse/sse/messages",
+    path: options?.path ?? "messages",
     method: options?.method ?? "GET",
   });
 
@@ -113,7 +113,7 @@ function createTestController<TData = unknown, TError = unknown>(options?: {
     pluginExecutor,
     queryKey,
     operationType: options?.operationType ?? "sse",
-    path: options?.path ?? "@sse/sse/messages",
+    path: options?.path ?? "messages",
     method: options?.method ?? "GET",
   });
 
@@ -318,7 +318,7 @@ describe("createSubscriptionController", () => {
     it("should include operation metadata", async () => {
       const { controller, subscribeCalls } = createTestController({
         operationType: "websocket",
-        path: "@ws/chat",
+        path: "chat",
         method: "ON",
       });
 
@@ -326,7 +326,7 @@ describe("createSubscriptionController", () => {
 
       expect(subscribeCalls).toHaveLength(1);
       expect(subscribeCalls[0]?.operationType).toBe("websocket");
-      expect(subscribeCalls[0]?.path).toBe("@ws/chat");
+      expect(subscribeCalls[0]?.path).toBe("chat");
       expect(subscribeCalls[0]?.method).toBe("ON");
     });
   });

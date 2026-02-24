@@ -4,6 +4,7 @@ import type {
   EventEmitter,
   PluginExecutor,
   SpooshResponse,
+  SpooshTransport,
   MergePluginOptions,
   MergePluginResults,
   MergePluginInstanceApi,
@@ -439,7 +440,7 @@ export type SpooshReactHooks<
    * @example
    * ```tsx
    * const { data } = useSubscription((api) =>
-   *   api("@sse/notifications").GET({ events: ["alert", "message"] })
+   *   api("notifications").GET({ events: ["alert", "message"] })
    * );
    * ```
    */
@@ -455,7 +456,7 @@ export type SpooshReactHooks<
    * @example
    * ```tsx
    * const { data, rawMessage, reset } = useSSE(
-   *   (api) => api("@sse/chat").POST(),
+   *   (api) => api("chat").POST(),
    *   {
    *     events: ["chunk", "done"],
    *     parse: "json-done",
@@ -485,7 +486,7 @@ export type SpooshInstanceShape<TApi, TSchema, TDefaultError, TPlugins> = {
   pluginExecutor: PluginExecutor;
 
   /** Registered transports for subscriptions */
-  transports: Map<string, unknown>;
+  transports: Map<string, SpooshTransport>;
 
   /** Config with baseUrl and default options */
   config: {

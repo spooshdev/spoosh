@@ -9,14 +9,9 @@ import {
   type SpooshPlugin,
   type PluginTypeConfig,
   type SelectorResult,
-  type SpooshTransport,
-  type SubscriptionAdapterFactory,
-  type SubscriptionAdapter,
   createSelectorProxy,
-  parseTransportPath,
-  isTransportPath,
+  createSubscriptionController,
 } from "@spoosh/core";
-import { createSubscriptionController } from "@spoosh/core";
 import type {
   BaseSubscriptionOptions,
   BaseSubscriptionResult,
@@ -29,8 +24,6 @@ import type {
 } from "../types/extraction";
 import type { SpooshInstanceShape } from "../create/types";
 
-type TransportWithAdapterFactory = SpooshTransport & SubscriptionAdapterFactory;
-
 export function createUseSubscription<
   TSchema,
   TDefaultError,
@@ -41,12 +34,11 @@ export function createUseSubscription<
     "_types"
   >
 ) {
-  const { config, transports, stateManager, eventEmitter, pluginExecutor } =
-    options;
+  const { stateManager, eventEmitter, pluginExecutor } = options;
 
   function useSubscription<TSubFn extends (api: unknown) => unknown>(
     subFn: TSubFn,
-    subOptions?: BaseSubscriptionOptions
+    subOptions: BaseSubscriptionOptions
   ): BaseSubscriptionResult<
     ExtractSubscriptionEvents<TSubFn>,
     TDefaultError,
@@ -57,7 +49,7 @@ export function createUseSubscription<
       never
     >
   > {
-    const { enabled = true, _devtoolMeta } = subOptions ?? {};
+    const { enabled = true, adapter, operationType } = subOptions;
 
     const currentOptionsRef = useRef<Record<string, unknown> | undefined>(
       undefined
@@ -84,27 +76,6 @@ export function createUseSubscription<
       | Record<string, unknown>
       | undefined;
 
-    const isTransport = isTransportPath(capturedCall.path);
-    const transportName = isTransport
-      ? parseTransportPath(capturedCall.path)?.transport
-      : null;
-
-    const transportInstance = transportName
-      ? transports.get(transportName)
-      : null;
-
-    const hasAdapterFactory = (
-      transport: unknown
-    ): transport is TransportWithAdapterFactory => {
-      return (
-        transport !== null &&
-        typeof transport === "object" &&
-        "createSubscriptionAdapter" in transport &&
-        typeof (transport as TransportWithAdapterFactory)
-          .createSubscriptionAdapter === "function"
-      );
-    };
-
     const queryKey = stateManager.createQueryKey({
       path: capturedCall.path,
       method: capturedCall.method,
@@ -125,48 +96,29 @@ export function createUseSubscription<
         return controllerRef.current;
       }
 
-      const parsed = parseTransportPath(capturedCall.path);
-
-      let baseAdapter: SubscriptionAdapter<TData, TError>;
-
-      if (hasAdapterFactory(transportInstance) && parsed) {
-        baseAdapter = transportInstance.createSubscriptionAdapter({
-          channel: parsed.channel,
-          method: capturedCall.method,
-          baseUrl: config.baseUrl,
-          globalHeaders: config.defaultOptions.headers,
-          getRequestOptions: () => currentOptionsRef.current,
-          eventEmitter,
-          devtoolMeta: _devtoolMeta,
-        }) as SubscriptionAdapter<TData, TError>;
-      } else {
-        baseAdapter = {
-          subscribe: async () => ({
-            unsubscribe: () => {},
-            getData: () => undefined,
-            getError: () => undefined,
-            onData: () => () => {},
-            onError: () => () => {},
-          }),
-          emit: async () => ({ success: true }),
-        };
-      }
-
       const controller = createSubscriptionController<TData, TError>({
-        channel: parsed?.channel || capturedCall.path,
-        baseAdapter,
+        channel: capturedCall.path,
+        baseAdapter: adapter as unknown as Parameters<
+          typeof createSubscriptionController<TData, TError>
+        >[0]["baseAdapter"],
         stateManager,
         eventEmitter,
         pluginExecutor,
         queryKey,
-        operationType: transportName || "subscription",
+        operationType,
         path: capturedCall.path,
         method: capturedCall.method,
       });
 
       controllerRef.current = controller;
       return controller;
-    }, [queryKey, transportInstance, capturedCall.path, capturedCall.method]);
+    }, [
+      queryKey,
+      adapter,
+      operationType,
+      capturedCall.path,
+      capturedCall.method,
+    ]);
 
     const subscribe = useCallback(
       (callback: () => void) => {

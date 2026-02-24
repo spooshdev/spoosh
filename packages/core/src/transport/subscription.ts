@@ -1,4 +1,3 @@
-import type { EventEmitter } from "../events/emitter";
 import type { OperationType, PluginContext } from "../plugins/types";
 
 export interface SpooshTransport<TOptions = unknown, TMessage = unknown> {
@@ -44,22 +43,4 @@ export interface SubscriptionHandle<TData = unknown, TError = unknown> {
   getError(): TError | undefined;
   onData(callback: (data: TData) => void): () => void;
   onError(callback: (error: TError) => void): () => void;
-}
-
-export interface SubscriptionAdapterOptions {
-  channel: string;
-  method: string;
-  baseUrl: string;
-  globalHeaders?: HeadersInit | (() => HeadersInit | Promise<HeadersInit>);
-  getRequestOptions: () => Record<string, unknown> | undefined;
-  eventEmitter?: EventEmitter;
-
-  /** Transport-specific metadata for devtool integration */
-  devtoolMeta?: Record<string, unknown>;
-}
-
-export interface SubscriptionAdapterFactory<TData = unknown, TError = unknown> {
-  createSubscriptionAdapter(
-    options: SubscriptionAdapterOptions
-  ): SubscriptionAdapter<TData, TError>;
 }

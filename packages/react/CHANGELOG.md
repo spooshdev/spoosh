@@ -2,7 +2,8 @@
 
 ## 0.13.0
 
-- Add `useSubscription` hook to support real time transports like WebSocket and SSE.
+- Add base `useSubscription` hook to support real time transports.
+- Add `useSSE` hook as a wrapper around `useSubscription` for Server-Sent Events support.
 
 ## 0.12.0
 

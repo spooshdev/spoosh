@@ -15,6 +15,9 @@ export type AnyMethod = HttpMethod | SubscriptionMethod;
  * An API schema where routes are defined as string keys with path patterns.
  * Define data, body, query, and error directly on each method.
  *
+ * For subscription endpoints (SSE, WebSocket), define the `events` field instead of `data`.
+ * The transport to use is determined by the hook (useSSE, useWebSocket), not the path.
+ *
  * @example
  * ```ts
  * type ApiSchema = {
@@ -27,7 +30,7 @@ export type AnyMethod = HttpMethod | SubscriptionMethod;
  *     PUT: { data: Post; body: UpdatePostBody };
  *     DELETE: { data: void };
  *   };
- *   "@sse/notifications": {
+ *   "notifications": {
  *     GET: {
  *       events: {
  *         alert: { data: Alert };
@@ -50,13 +53,25 @@ type HttpMethodConfig = {
 };
 
 /**
- * Endpoint config based on path pattern.
- * - Paths starting with @ use subscription methods (events, no data)
- * - Regular paths use HTTP methods (data, no events)
+ * Subscription endpoint method config (SSE, WebSocket, etc.).
+ * Has events field instead of data.
  */
-type EndpointConfig<TPath extends string> = TPath extends `@${string}`
-  ? { [M in SubscriptionMethod]?: SpooshSubscriptionMethodRegistry[M] }
-  : { [M in HttpMethod]?: HttpMethodConfig };
+type SubscriptionMethodConfig = {
+  events?: Record<string, { data: unknown }>;
+  body?: unknown;
+  query?: unknown;
+  error?: unknown;
+};
+
+/**
+ * Endpoint config - supports both HTTP and subscription methods.
+ * Subscription endpoints are those with an `events` field, HTTP endpoints have `data`.
+ */
+type EndpointConfig = {
+  [M in HttpMethod | SubscriptionMethod]?:
+    | HttpMethodConfig
+    | SubscriptionMethodConfig;
+};
 
 /**
  * Base API schema type.
@@ -67,19 +82,17 @@ export type ApiSchema = {
 
 /**
  * Helper type for defining API schemas with proper autocomplete.
- * Paths starting with @ get subscription methods, others get HTTP methods.
+ * Use `events` field for subscription endpoints, `data` field for HTTP endpoints.
  *
  * @example
  * ```ts
  * type MyApi = SpooshSchema<{
  *   "posts": { GET: { data: Post[] } };
- *   "@sse/chat": { GET: { events: { message: { data: string } } } };
+ *   "chat": { GET: { events: { message: { data: string } } } };
  * }>;
  * ```
  */
-export type SpooshSchema<
-  T extends { [K in keyof T]: EndpointConfig<K & string> },
-> = T;
+export type SpooshSchema<T extends { [K in keyof T]: EndpointConfig }> = T;
 
 /**
  * Extract data type from an endpoint.

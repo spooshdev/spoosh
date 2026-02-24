@@ -1,11 +1,18 @@
-import type { SubscriptionClient } from "@spoosh/core";
-import type { SpooshBody } from "@spoosh/core";
+import type {
+  SubscriptionClient,
+  SpooshBody,
+  SubscriptionAdapter,
+  OperationType,
+} from "@spoosh/core";
 
 export interface BaseSubscriptionOptions {
   enabled?: boolean;
 
-  /** @internal Transport-specific metadata for devtool integration */
-  _devtoolMeta?: Record<string, unknown>;
+  /** Subscription adapter instance created by the transport-specific hook */
+  adapter: SubscriptionAdapter;
+
+  /** Operation type for the subscription (e.g., "sse", "websocket") */
+  operationType: OperationType;
 }
 
 type ExtractTriggerQuery<TQuery> = [TQuery] extends [never]

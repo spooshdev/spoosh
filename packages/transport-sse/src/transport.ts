@@ -2,13 +2,17 @@ import { fetchEventSource } from "@microsoft/fetch-event-source";
 import type {
   SpooshTransport,
   SubscriptionAdapter,
-  SubscriptionAdapterFactory,
-  SubscriptionAdapterOptions,
   SubscriptionHandle,
   DevtoolEvents,
 } from "@spoosh/core";
 import { sortObjectKeys } from "@spoosh/core";
-import type { SSETransportOptions, SSETransportConfig, SSEMessage } from "./types";
+import type {
+  SSETransportOptions,
+  SSETransportConfig,
+  SSEMessage,
+  SSEAdapterFactory,
+  SSEAdapterOptions,
+} from "./types";
 
 interface ConnectionState {
   abortController: AbortController;
@@ -24,7 +28,7 @@ interface ConnectionState {
 
 export function sse(
   config: SSETransportConfig = {}
-): SpooshTransport<SSETransportOptions, SSEMessage> & SubscriptionAdapterFactory {
+): SpooshTransport<SSETransportOptions, SSEMessage> & SSEAdapterFactory {
   const disconnectDelay = config.disconnectDelay ?? 100;
   const throttleConfig = config.throttle ?? false;
   const defaultMaxRetries = config.maxRetries ?? 3;
@@ -537,7 +541,7 @@ export function sse(
   };
 
   const createSubscriptionAdapter = (
-    adapterOptions: SubscriptionAdapterOptions
+    adapterOptions: SSEAdapterOptions
   ): SubscriptionAdapter => {
     if (!eventEmitter && adapterOptions.eventEmitter) {
       eventEmitter = adapterOptions.eventEmitter;

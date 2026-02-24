@@ -5,13 +5,12 @@ import { renderHook, act, waitFor } from "@testing-library/react";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 import { createStateManager, createEventEmitter } from "@spoosh/test-utils";
 import { createPluginExecutor } from "@spoosh/core";
+import type { SpooshTransport, SubscriptionContext } from "@spoosh/core";
 import type {
-  SpooshTransport,
-  SubscriptionAdapterFactory,
-  SubscriptionAdapterOptions,
-  SubscriptionContext,
-} from "@spoosh/core";
-import type { SSEMessage } from "@spoosh/transport-sse";
+  SSEMessage,
+  SSEAdapterFactory,
+  SSEAdapterOptions,
+} from "@spoosh/transport-sse";
 import { createUseSSE } from "./index";
 
 type TestData = Record<string, unknown>;
@@ -22,7 +21,7 @@ interface MockSubscriptionContext {
 }
 
 function createMockTransport(): SpooshTransport &
-  SubscriptionAdapterFactory & {
+  SSEAdapterFactory & {
     mockContext: MockSubscriptionContext;
     triggerMessage: (event: string, data: string) => void;
   } {
@@ -59,7 +58,7 @@ function createMockTransport(): SpooshTransport &
 
   const createSubscriptionAdapter = (
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    _options: SubscriptionAdapterOptions
+    _options: SSEAdapterOptions
   ) => {
     return {
       subscribe: async (context: SubscriptionContext) => {
@@ -93,7 +92,7 @@ function createMockTransport(): SpooshTransport &
   };
 
   const transport: SpooshTransport &
-    SubscriptionAdapterFactory & {
+    SSEAdapterFactory & {
       mockContext: MockSubscriptionContext;
       triggerMessage: typeof triggerMessage;
     } = {
@@ -154,7 +153,7 @@ describe("useSSE", () => {
       await act(async () => {
         hookResult = renderHook(() =>
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          useSSE((api: any) => api("@sse/sse/messages").GET())
+          useSSE((api: any) => api("messages").GET())
         );
       });
 
@@ -178,7 +177,7 @@ describe("useSSE", () => {
       await act(async () => {
         hookResult = renderHook(() =>
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          useSSE((api: any) => api("@sse/sse/messages").GET())
+          useSSE((api: any) => api("messages").GET())
         );
       });
 
@@ -195,7 +194,7 @@ describe("useSSE", () => {
 
       const { result } = renderHook(() =>
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        useSSE((api: any) => api("@sse/sse/messages").GET())
+        useSSE((api: any) => api("messages").GET())
       );
 
       await waitFor(() => {
@@ -219,7 +218,7 @@ describe("useSSE", () => {
 
       const { result } = renderHook(() =>
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        useSSE((api: any) => api("@sse/sse/chat").POST(), {
+        useSSE((api: any) => api("chat").POST(), {
           parse: "json-done",
         })
       );
@@ -252,7 +251,7 @@ describe("useSSE", () => {
 
       const { result } = renderHook(() =>
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        useSSE((api: any) => api("@sse/sse/logs").GET(), {
+        useSSE((api: any) => api("logs").GET(), {
           parse: "text",
         })
       );
@@ -277,7 +276,7 @@ describe("useSSE", () => {
 
       const { result } = renderHook(() =>
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        useSSE((api: any) => api("@sse/sse/mixed").GET(), {
+        useSSE((api: any) => api("mixed").GET(), {
           parse: {
             json_event: "json",
             text_event: "text",
@@ -315,7 +314,7 @@ describe("useSSE", () => {
 
       const { result } = renderHook(() =>
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        useSSE((api: any) => api("@sse/sse/messages").GET())
+        useSSE((api: any) => api("messages").GET())
       );
 
       await waitFor(() => {
@@ -344,7 +343,7 @@ describe("useSSE", () => {
 
       const { result } = renderHook(() =>
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        useSSE((api: any) => api("@sse/sse/stream").GET(), {
+        useSSE((api: any) => api("stream").GET(), {
           parse: "text",
           accumulate: "merge",
         })
@@ -376,7 +375,7 @@ describe("useSSE", () => {
 
       const { result } = renderHook(() =>
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        useSSE((api: any) => api("@sse/sse/items").GET(), {
+        useSSE((api: any) => api("items").GET(), {
           accumulate: "merge",
         })
       );
@@ -407,7 +406,7 @@ describe("useSSE", () => {
 
       const { result } = renderHook(() =>
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        useSSE((api: any) => api("@sse/sse/chat").POST(), {
+        useSSE((api: any) => api("chat").POST(), {
           parse: "text",
           accumulate: {
             chunk: "merge",
@@ -452,7 +451,7 @@ describe("useSSE", () => {
 
       const { result } = renderHook(() =>
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        useSSE((api: any) => api("@sse/sse/messages").GET(), {
+        useSSE((api: any) => api("messages").GET(), {
           events: ["chunk", "done"],
         })
       );
@@ -493,7 +492,7 @@ describe("useSSE", () => {
 
       const { result } = renderHook(() =>
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        useSSE((api: any) => api("@sse/sse/messages").GET())
+        useSSE((api: any) => api("messages").GET())
       );
 
       await waitFor(() => {
@@ -524,7 +523,7 @@ describe("useSSE", () => {
 
       const { result } = renderHook(() =>
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        useSSE((api: any) => api("@sse/sse/messages").GET())
+        useSSE((api: any) => api("messages").GET())
       );
 
       await waitFor(() => {
@@ -553,7 +552,7 @@ describe("useSSE", () => {
 
       const { result } = renderHook(() =>
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        useSSE((api: any) => api("@sse/sse/messages").POST())
+        useSSE((api: any) => api("messages").POST())
       );
 
       await waitFor(() => {
@@ -583,7 +582,7 @@ describe("useSSE", () => {
 
       const { result: result1 } = renderHook(() =>
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        useSSE((api: any) => api("@sse/sse/chat").POST(), {
+        useSSE((api: any) => api("chat").POST(), {
           parse: "text",
           accumulate: "merge",
         })
@@ -591,7 +590,7 @@ describe("useSSE", () => {
 
       const { result: result2 } = renderHook(() =>
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        useSSE((api: any) => api("@sse/sse/chat").POST(), {
+        useSSE((api: any) => api("chat").POST(), {
           parse: "text",
           accumulate: "replace",
         })
@@ -627,7 +626,7 @@ describe("useSSE", () => {
 
       renderHook(() =>
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        useSSE((api: any) => api("@sse/sse/messages").GET(), {
+        useSSE((api: any) => api("messages").GET(), {
           enabled: false,
         })
       );
@@ -641,7 +640,7 @@ describe("useSSE", () => {
       const { rerender } = renderHook(
         ({ enabled }) =>
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          useSSE((api: any) => api("@sse/sse/messages").GET(), { enabled }),
+          useSSE((api: any) => api("messages").GET(), { enabled }),
         { initialProps: { enabled: false } }
       );
 
@@ -661,7 +660,7 @@ describe("useSSE", () => {
 
       const { result } = renderHook(() =>
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        useSSE((api: any) => api("@sse/sse/messages").GET())
+        useSSE((api: any) => api("messages").GET())
       );
 
       await waitFor(() => {

@@ -5,12 +5,11 @@ import { renderHook, act, waitFor } from "@testing-library/react";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 import { createStateManager, createEventEmitter } from "@spoosh/test-utils";
 import { createPluginExecutor } from "@spoosh/core";
+import type { SpooshTransport, SubscriptionContext } from "@spoosh/core";
 import type {
-  SpooshTransport,
-  SubscriptionAdapterFactory,
-  SubscriptionAdapterOptions,
-  SubscriptionContext,
-} from "@spoosh/core";
+  SSEAdapterFactory,
+  SSEAdapterOptions,
+} from "@spoosh/transport-sse";
 import { createUseSubscription } from "./index";
 
 interface MockSubscriptionContext {
@@ -20,7 +19,7 @@ interface MockSubscriptionContext {
 }
 
 function createMockTransport(): SpooshTransport &
-  SubscriptionAdapterFactory & {
+  SSEAdapterFactory & {
     mockContext: MockSubscriptionContext;
     triggerMessage: (event: string, data: unknown) => void;
     triggerError: (error: Error) => void;
@@ -70,9 +69,7 @@ function createMockTransport(): SpooshTransport &
 
   const releaseConnectionFn = vi.fn();
 
-  const createSubscriptionAdapter = (
-    adapterOptions: SubscriptionAdapterOptions
-  ) => {
+  const createSubscriptionAdapter = (adapterOptions: SSEAdapterOptions) => {
     return {
       subscribe: async (context: SubscriptionContext) => {
         const unsubscribers: Array<() => void> = [];
@@ -115,7 +112,7 @@ function createMockTransport(): SpooshTransport &
   };
 
   const transport: SpooshTransport &
-    SubscriptionAdapterFactory & {
+    SSEAdapterFactory & {
       mockContext: MockSubscriptionContext;
       triggerMessage: typeof triggerMessage;
       triggerError: typeof triggerError;
@@ -147,8 +144,16 @@ function createTestHooks() {
   const transport = createMockTransport();
   const transports = new Map([["sse", transport]]);
 
+  const adapter = transport.createSubscriptionAdapter({
+    channel: "test",
+    method: "GET",
+    baseUrl: "/api",
+    getRequestOptions: () => undefined,
+    eventEmitter,
+  });
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const useSubscription = createUseSubscription<any, unknown, []>({
+  const baseUseSubscription = createUseSubscription<any, unknown, []>({
     api: {} as never,
     stateManager,
     eventEmitter,
@@ -156,6 +161,18 @@ function createTestHooks() {
     transports,
     config: { baseUrl: "/api", defaultOptions: {} },
   });
+
+  const useSubscription = (
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    subFn: (api: any) => unknown,
+    options?: { enabled?: boolean }
+  ) => {
+    return baseUseSubscription(subFn, {
+      adapter,
+      operationType: "sse",
+      ...options,
+    });
+  };
 
   return {
     useSubscription,
@@ -179,7 +196,7 @@ describe("useSubscription", () => {
       await act(async () => {
         hookResult = renderHook(() =>
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          useSubscription((api: any) => api("@sse/sse/messages").GET())
+          useSubscription((api: any) => api("messages").GET())
         );
       });
 
@@ -201,7 +218,7 @@ describe("useSubscription", () => {
       await act(async () => {
         hookResult = renderHook(() =>
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          useSubscription((api: any) => api("@sse/sse/messages").GET())
+          useSubscription((api: any) => api("messages").GET())
         );
       });
 
@@ -217,7 +234,7 @@ describe("useSubscription", () => {
 
       renderHook(() =>
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        useSubscription((api: any) => api("@sse/sse/messages").GET(), {
+        useSubscription((api: any) => api("messages").GET(), {
           enabled: false,
         })
       );
@@ -233,7 +250,7 @@ describe("useSubscription", () => {
 
       renderHook(() =>
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        useSubscription((api: any) => api("@sse/sse/messages").GET())
+        useSubscription((api: any) => api("messages").GET())
       );
 
       await waitFor(() => {
@@ -247,7 +264,7 @@ describe("useSubscription", () => {
 
       const { result } = renderHook(() =>
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        useSubscription((api: any) => api("@sse/sse/messages").GET())
+        useSubscription((api: any) => api("messages").GET())
       );
 
       await waitFor(() => {
@@ -265,36 +282,12 @@ describe("useSubscription", () => {
       });
     });
 
-    it("should subscribe to specific events when provided", async () => {
-      const { useSubscription, transport } = createTestHooks();
-
-      renderHook(() =>
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        useSubscription((api: any) =>
-          api("@sse/sse/messages").GET({
-            events: ["chunk", "done"],
-          })
-        )
-      );
-
-      await waitFor(() => {
-        expect(transport.subscribe).toHaveBeenCalledWith(
-          "chunk",
-          expect.any(Function)
-        );
-        expect(transport.subscribe).toHaveBeenCalledWith(
-          "done",
-          expect.any(Function)
-        );
-      });
-    });
-
     it("should unsubscribe on unmount", async () => {
       const { useSubscription, transport } = createTestHooks();
 
       const { unmount } = renderHook(() =>
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        useSubscription((api: any) => api("@sse/sse/messages").GET())
+        useSubscription((api: any) => api("messages").GET())
       );
 
       await waitFor(() => {
@@ -316,7 +309,7 @@ describe("useSubscription", () => {
 
       const { result } = renderHook(() =>
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        useSubscription((api: any) => api("@sse/sse/messages").GET())
+        useSubscription((api: any) => api("messages").GET())
       );
 
       await waitFor(() => {
@@ -337,7 +330,7 @@ describe("useSubscription", () => {
 
       const { result } = renderHook(() =>
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        useSubscription((api: any) => api("@sse/sse/messages").GET())
+        useSubscription((api: any) => api("messages").GET())
       );
 
       await waitFor(() => {
@@ -380,7 +373,7 @@ describe("useSubscription", () => {
 
       const { result } = renderHook(() =>
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        useSubscription((api: any) => api("@sse/sse/messages").POST())
+        useSubscription((api: any) => api("messages").POST())
       );
 
       await waitFor(() => {
@@ -402,7 +395,7 @@ describe("useSubscription", () => {
       const { result } = renderHook(() =>
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         useSubscription((api: any) =>
-          api("@sse/sse/messages").POST({
+          api("messages").POST({
             query: { page: "1" },
           })
         )
@@ -429,7 +422,7 @@ describe("useSubscription", () => {
       expect(() => {
         renderHook(() =>
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          useSubscription((api: any) => api("@sse/sse/messages"))
+          useSubscription((api: any) => api("messages"))
         );
       }).toThrow("useSubscription requires calling a method");
     });
@@ -442,7 +435,7 @@ describe("useSubscription", () => {
       const { result } = renderHook(() =>
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         useSubscription((api: any) =>
-          api("@sse/sse/chat").POST({
+          api("chat").POST({
             events: ["chunk", "done"],
           })
         )
@@ -491,7 +484,7 @@ describe("useSubscription", () => {
         ({ enabled }) =>
           useSubscription(
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (api: any) => api("@sse/sse/messages").GET(),
+            (api: any) => api("messages").GET(),
             { enabled }
           ),
         { initialProps: { enabled: false } }
@@ -513,7 +506,7 @@ describe("useSubscription", () => {
 
       const { result } = renderHook(() =>
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        useSubscription((api: any) => api("@sse/sse/messages").GET())
+        useSubscription((api: any) => api("messages").GET())
       );
 
       expect(result.current.loading).toBe(true);
@@ -524,7 +517,7 @@ describe("useSubscription", () => {
 
       const { result } = renderHook(() =>
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        useSubscription((api: any) => api("@sse/sse/messages").GET(), {
+        useSubscription((api: any) => api("messages").GET(), {
           enabled: false,
         })
       );
@@ -537,7 +530,7 @@ describe("useSubscription", () => {
 
       const { result } = renderHook(() =>
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        useSubscription((api: any) => api("@sse/sse/messages").GET())
+        useSubscription((api: any) => api("messages").GET())
       );
 
       expect(result.current.loading).toBe(true);
@@ -561,7 +554,7 @@ describe("useSubscription", () => {
 
       const { result } = renderHook(() =>
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        useSubscription((api: any) => api("@sse/sse/messages").GET())
+        useSubscription((api: any) => api("messages").GET())
       );
 
       expect(result.current.loading).toBe(true);
@@ -581,7 +574,7 @@ describe("useSubscription", () => {
 
       const { result } = renderHook(() =>
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        useSubscription((api: any) => api("@sse/sse/messages").POST(), {
+        useSubscription((api: any) => api("messages").POST(), {
           enabled: false,
         })
       );
@@ -606,7 +599,7 @@ describe("useSubscription", () => {
 
       const { result } = renderHook(() =>
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        useSubscription((api: any) => api("@sse/sse/messages").GET())
+        useSubscription((api: any) => api("messages").GET())
       );
 
       expect(result.current.loading).toBe(true);
@@ -642,7 +635,7 @@ describe("useSubscription", () => {
       await act(async () => {
         hookResult = renderHook(() =>
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          useSubscription((api: any) => api("@sse/sse/messages").GET())
+          useSubscription((api: any) => api("messages").GET())
         );
       });
 

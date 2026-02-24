@@ -1,4 +1,29 @@
-import type { EventEmitter } from "@spoosh/core";
+import type { EventEmitter, SubscriptionAdapter } from "@spoosh/core";
+
+/**
+ * Options for creating an SSE subscription adapter.
+ * These are HTTP-centric options specific to SSE transport.
+ */
+export interface SSEAdapterOptions {
+  channel: string;
+  method: string;
+  baseUrl: string;
+  globalHeaders?: HeadersInit | (() => HeadersInit | Promise<HeadersInit>);
+  getRequestOptions: () => Record<string, unknown> | undefined;
+  eventEmitter?: EventEmitter;
+
+  /** Transport-specific metadata for devtool integration */
+  devtoolMeta?: Record<string, unknown>;
+}
+
+/**
+ * Factory interface for creating SSE subscription adapters.
+ */
+export interface SSEAdapterFactory<TData = unknown, TError = unknown> {
+  createSubscriptionAdapter(
+    options: SSEAdapterOptions
+  ): SubscriptionAdapter<TData, TError>;
+}
 
 export interface SSETransportOptions {
   /** Base URL from client config */
