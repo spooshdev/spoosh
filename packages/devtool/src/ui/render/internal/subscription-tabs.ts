@@ -314,7 +314,7 @@ export function renderAccumulatedTab(
             .map((stats) =>
               renderEventTypeSection(
                 stats,
-                expandedEventTypes.has(stats.eventType),
+                !expandedEventTypes.has(stats.eventType),
                 isEventListened(stats.eventType, listenedEvents)
               )
             )
