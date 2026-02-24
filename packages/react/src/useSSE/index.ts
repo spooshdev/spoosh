@@ -139,6 +139,19 @@ export function createUseSSE<
       operationType: transport.operationType,
     });
 
+    const prevVersionRef = useRef(subscription._subscriptionVersion);
+    const lastMessageIndexRef = useRef<Record<string, number>>({});
+
+    useEffect(() => {
+      if (subscription._subscriptionVersion !== prevVersionRef.current) {
+        setAccumulatedData({});
+        setRawMessage(undefined);
+        lastMessageIndexRef.current = {};
+      }
+
+      prevVersionRef.current = subscription._subscriptionVersion;
+    }, [subscription._subscriptionVersion]);
+
     useEffect(() => {
       const data = subscription.data as SSEMessage | undefined;
 
@@ -166,6 +179,22 @@ export function createUseSSE<
       }
 
       const accumulator = resolveAccumulator(accumulateRef.current, data.event);
+
+      const parsedObj = parsed as Record<string, unknown> | undefined;
+      const messageIndex =
+        typeof parsedObj?.index === "number" ? parsedObj.index : undefined;
+
+      if (messageIndex !== undefined) {
+        const lastIndex = lastMessageIndexRef.current[data.event];
+
+        if (lastIndex !== undefined && messageIndex < lastIndex) {
+          setAccumulatedData({});
+          setRawMessage(undefined);
+          lastMessageIndexRef.current = {};
+        }
+
+        lastMessageIndexRef.current[data.event] = messageIndex;
+      }
 
       setAccumulatedData((prev) => {
         const previousEventData = prev[data.event];

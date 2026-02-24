@@ -4,6 +4,7 @@ import type {
   SubscriptionAdapter,
   SubscriptionHandle,
   DevtoolEvents,
+  EventEmitter,
 } from "@spoosh/core";
 import { sortObjectKeys } from "@spoosh/core";
 import type {
@@ -33,7 +34,9 @@ export function sse(
   const throttleConfig = config.throttle ?? false;
   const defaultMaxRetries = config.maxRetries ?? 3;
   const defaultRetryDelay = config.retryDelay ?? 1000;
-  let eventEmitter = config.eventEmitter;
+  const openWhenHidden = config.openWhenHidden ?? true;
+  const customFetch = config.fetch;
+  let eventEmitter: EventEmitter | undefined;
 
   const connections = new Map<string, ConnectionState>();
   const disconnectTimers = new Map<string, ReturnType<typeof setTimeout>>();
@@ -170,6 +173,8 @@ export function sse(
               body,
               credentials: options?.credentials,
               signal: abortController.signal,
+              openWhenHidden: options?.openWhenHidden ?? openWhenHidden,
+              fetch: customFetch,
 
               onopen: async (response) => {
                 if (state.isAborted) {
@@ -530,7 +535,7 @@ export function sse(
     const connectionState = connections.get(fullUrl);
 
     if (!connectionState) {
-      return () => {};
+      return () => { };
     }
 
     connectionState.disconnectCallbacks.add(callback);
@@ -557,10 +562,14 @@ export function sse(
         const subscriptionId = crypto.randomUUID();
 
         const requestOptions = adapterOptions.getRequestOptions();
+
         // Use listenedEvents from devtoolMeta (set by useSSE) or fall back to request options
         const capturedEvents =
-          (adapterOptions.devtoolMeta?.listenedEvents as string[] | undefined) ??
-          (requestOptions?.events as string[] | undefined);
+          (adapterOptions.devtoolMeta?.listenedEvents as
+            | string[]
+            | undefined) ?? (requestOptions?.events as string[] | undefined);
+
+        const isWrite = adapterOptions.method !== "GET";
 
         const transportOptions: SSETransportOptions = {
           baseUrl: adapterOptions.baseUrl,
@@ -570,8 +579,11 @@ export function sse(
           query: requestOptions?.query as Record<string, unknown> | undefined,
           headers: requestOptions?.headers as HeadersInit | undefined,
           globalHeaders: adapterOptions.globalHeaders,
-          maxRetries: requestOptions?.maxRetries as number | undefined,
+          maxRetries: isWrite
+            ? 0
+            : (requestOptions?.maxRetries as number | undefined),
           retryDelay: requestOptions?.retryDelay as number | undefined,
+          openWhenHidden: requestOptions?.openWhenHidden as boolean | undefined,
         };
 
         const connectionUrl = getConnectionUrl(
@@ -660,8 +672,8 @@ export function sse(
           },
           getData: () => currentData,
           getError: () => undefined,
-          onData: () => () => {},
-          onError: () => () => {},
+          onData: () => () => { },
+          onError: () => () => { },
         };
       },
       emit: async () => ({ success: true }),

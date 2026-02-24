@@ -60,6 +60,9 @@ export interface BaseSubscriptionResult<
   /** @internal Query key for devtool integration */
   _queryKey: string;
 
+  /** @internal Subscription version for tracking resubscriptions */
+  _subscriptionVersion: number;
+
   trigger: (options?: TTriggerOptions) => Promise<void>;
   disconnect: () => void;
 }

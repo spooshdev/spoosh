@@ -190,6 +190,7 @@ export function createUseSubscription<
       loading,
       isConnected: state.isConnected,
       _queryKey: queryKey,
+      _subscriptionVersion: subscriptionVersionRef.current,
       trigger,
       disconnect,
     };

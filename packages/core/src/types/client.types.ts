@@ -315,6 +315,14 @@ export type QueueSelectorClient<TSchema, TDefaultError = unknown> = <
 type ExtractEvents<T> = T extends { events: infer E } ? E : never;
 
 /**
+ * Transport-specific options for subscriptions.
+ */
+type SubscriptionTransportOptions = {
+  /** Keep connection alive when browser tab is hidden. Defaults to true. */
+  openWhenHidden?: boolean;
+};
+
+/**
  * Strict subscription request options (for GET method).
  * Body/query are required if schema requires them.
  * Note: Transport options (maxRetries, retryDelay, events, parse, accumulate)
@@ -330,7 +338,8 @@ type StrictSubscriptionRequestOptions<
   BaseRequestOptions &
     QueryOption<TMethodConfig> &
     BodyOption<TMethodConfig> &
-    ParamsOption<TUserPath>
+    ParamsOption<TUserPath> &
+    SubscriptionTransportOptions
 >;
 
 /**
@@ -348,7 +357,8 @@ type LooseSubscriptionRequestOptions<
 > = Simplify<
   BaseRequestOptions & { query?: ExtractQuery<TMethodConfig> } & {
     body?: ExtractBody<TMethodConfig> | SpooshBody<ExtractBody<TMethodConfig>>;
-  } & ParamsOption<TUserPath>
+  } & ParamsOption<TUserPath> &
+    SubscriptionTransportOptions
 >;
 
 /**

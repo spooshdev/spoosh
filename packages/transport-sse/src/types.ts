@@ -55,6 +55,9 @@ export interface SSETransportOptions {
 
   /** Delay between retries in ms */
   retryDelay?: number;
+
+  /** Keep connection alive when browser tab is hidden. Defaults to true. */
+  openWhenHidden?: boolean;
 }
 
 export interface SSETransportConfig {
@@ -70,9 +73,13 @@ export interface SSETransportConfig {
   /** Throttle notifications to prevent UI flooding from high-frequency events. Uses requestAnimationFrame batching when set to true, or custom interval in ms. Defaults to false (no throttling). */
   throttle?: boolean | number;
 
-  /** Event emitter for devtool integration. When provided, emits subscription lifecycle events. */
-  eventEmitter?: EventEmitter;
+  /** Keep connection alive when browser tab is hidden. Defaults to true. */
+  openWhenHidden?: boolean;
+
+  /** Custom fetch implementation. Useful for testing or custom request handling. */
+  fetch?: typeof fetch;
 }
+
 
 export interface SSEMessage {
   /** Event type (e.g., "message", "notification", "alert") */
