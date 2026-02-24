@@ -1,5 +1,3 @@
-import type { SSEMessage } from "@spoosh/transport-sse";
-
 type ParseStrategy = "auto" | "json" | "text" | "json-done";
 
 type AccumulateStrategy = "replace" | "merge";
@@ -70,9 +68,6 @@ export interface UseSSEResult<TEvents, TError> {
   /** Accumulated data keyed by event type */
   data: Partial<TEvents> | undefined;
 
-  /** Most recent raw SSE message */
-  rawMessage: SSEMessage | undefined;
-
   /** Connection or parse error */
   error: TError | undefined;
 
@@ -94,6 +89,6 @@ export interface UseSSEResult<TEvents, TError> {
   /** Disconnect from the SSE endpoint */
   disconnect: () => void;
 
-  /** Reset accumulated data and raw message state */
+  /** Reset accumulated data */
   reset: () => void;
 }

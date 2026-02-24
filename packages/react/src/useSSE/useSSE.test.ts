@@ -160,7 +160,6 @@ describe("useSSE", () => {
       const { result } = hookResult!;
 
       expect(result.current).toHaveProperty("data");
-      expect(result.current).toHaveProperty("rawMessage");
       expect(result.current).toHaveProperty("error");
       expect(result.current).toHaveProperty("loading");
       expect(result.current).toHaveProperty("isConnected");
@@ -170,7 +169,7 @@ describe("useSSE", () => {
       expect(result.current).toHaveProperty("meta");
     });
 
-    it("should start with undefined data and rawMessage", async () => {
+    it("should start with undefined data", async () => {
       const { useSSE } = createTestHooks();
 
       let hookResult;
@@ -184,7 +183,6 @@ describe("useSSE", () => {
       const { result } = hookResult!;
 
       expect(result.current.data).toBeUndefined();
-      expect(result.current.rawMessage).toBeUndefined();
     });
   });
 
@@ -209,7 +207,6 @@ describe("useSSE", () => {
         expect(result.current.data).toEqual({
           message: { text: "Hello" },
         });
-        expect(result.current.rawMessage?.data).toBe('{"text":"Hello"}');
       });
     });
 
@@ -518,7 +515,7 @@ describe("useSSE", () => {
   });
 
   describe("reset functionality", () => {
-    it("should reset accumulated data and rawMessage", async () => {
+    it("should reset accumulated data", async () => {
       const { useSSE, transport } = createTestHooks();
 
       const { result } = renderHook(() =>
@@ -536,7 +533,6 @@ describe("useSSE", () => {
 
       await waitFor(() => {
         expect(result.current.data).toBeDefined();
-        expect(result.current.rawMessage).toBeDefined();
       });
 
       act(() => {
@@ -544,7 +540,6 @@ describe("useSSE", () => {
       });
 
       expect(result.current.data).toBeUndefined();
-      expect(result.current.rawMessage).toBeUndefined();
     });
 
     it("should reset data when trigger is called", async () => {
@@ -572,7 +567,6 @@ describe("useSSE", () => {
       });
 
       expect(result.current.data).toBeUndefined();
-      expect(result.current.rawMessage).toBeUndefined();
     });
   });
 

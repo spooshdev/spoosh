@@ -501,15 +501,17 @@ describe("useSubscription", () => {
   });
 
   describe("loading state", () => {
-    it("should start with loading true when enabled", async () => {
+    it("should start with loading true when enabled", () => {
       const { useSubscription } = createTestHooks();
 
-      const { result } = renderHook(() =>
+      const { result, unmount } = renderHook(() =>
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         useSubscription((api: any) => api("messages").GET())
       );
 
       expect(result.current.loading).toBe(true);
+
+      unmount();
     });
 
     it("should start with loading false when enabled is false", () => {

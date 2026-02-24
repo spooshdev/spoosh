@@ -1,6 +1,6 @@
 # @spoosh/react
 
-React hooks for Spoosh - `useRead`, `useWrite`, `usePages`, and `useSubscription`.
+React hooks for Spoosh - `useRead`, `useWrite`, `usePages`, and `useSSE`.
 
 **[Documentation](https://spoosh.dev/docs/react)** · **Requirements:** TypeScript >= 5.0, React >= 18.0
 
@@ -158,7 +158,7 @@ function PostList() {
 }
 ```
 
-### useSubscription
+### useSSE
 
 Subscribe to real-time data streams using Server-Sent Events (SSE).
 
@@ -167,12 +167,12 @@ import { sse } from "@spoosh/transport-sse";
 
 // Setup with SSE transport
 const spoosh = new Spoosh<ApiSchema, Error>("/api").withTransports([sse()]);
-export const { useSubscription } = create(spoosh);
+export const { useSSE } = create(spoosh);
 
 // Basic subscription
 function Notifications() {
-  const { data, isConnected, loading } = useSubscription(
-    (api) => api("@sse/notifications").GET({ query: { userId: "user-123" } })
+  const { data, isConnected, loading } = useSSE(
+    (api) => api("notifications").GET({ query: { userId: "user-123" } })
   );
 
   if (loading) return <div>Connecting...</div>;
@@ -186,16 +186,17 @@ function Notifications() {
 }
 
 // Subscribe to specific events only
-const { data } = useSubscription(
-  (api) => api("@sse/notifications").GET({
+const { data } = useSSE(
+  (api) => api("notifications").GET({
     query: { userId: "user-123" },
-    events: ["alert"],  // Only alert events
-  })
+  }),
+  { events: ["alert"] }  // Only alert events
 );
 
 // AI streaming with accumulation
-const { data, trigger } = useSubscription(
-  (api) => api("@sse/chat").POST({
+const { data, trigger } = useSSE(
+  (api) => api("chat").POST(),
+  {
     events: ["chunk", "done"],
     parse: "json-done",
     accumulate: {
@@ -204,8 +205,8 @@ const { data, trigger } = useSubscription(
         chunk: (prev?.chunk || "") + curr.chunk,
       }),
     },
-  }),
-  { enabled: false }
+    enabled: false,
+  }
 );
 
 // Start streaming on demand
@@ -302,11 +303,14 @@ type InfinitePage<TData> = {
 | `abort`        | `() => void`                  | Abort current request                           |
 | `error`        | `TError \| undefined`         | Error if request failed                         |
 
-### useSubscription(subFn, options?)
+### useSSE(subFn, options?)
 
-| Option    | Type      | Default | Description                      |
-| --------- | --------- | ------- | -------------------------------- |
-| `enabled` | `boolean` | `true`  | Whether to connect automatically |
+| Option       | Type               | Default     | Description                       |
+| ------------ | ------------------ | ----------- | --------------------------------- |
+| `enabled`    | `boolean`          | `true`      | Whether to connect automatically  |
+| `events`     | `string[]`         | all events  | Subscribe to specific events only |
+| `parse`      | `ParseConfig`      | `"auto"`    | How to parse raw event data       |
+| `accumulate` | `AccumulateConfig` | `"replace"` | How to combine events over time   |
 
 **Returns:**
 
@@ -318,14 +322,12 @@ type InfinitePage<TData> = {
 | `isConnected` | `boolean`               | True when connected to stream  |
 | `trigger`     | `(options?) => Promise` | Reconnect with new options     |
 | `disconnect`  | `() => void`            | Disconnect from stream         |
+| `reset`       | `() => void`            | Reset accumulated data         |
 
-**Transport Options (SSE):**
+**Connection Options:**
 
 | Option        | Type                 | Description                                 |
 | ------------- | -------------------- | ------------------------------------------- |
-| `events`      | `string[]`           | Subscribe to specific events only           |
-| `parse`       | `ParseConfig`        | How to parse raw event data                 |
-| `accumulate`  | `AccumulateConfig`   | How to combine events over time             |
 | `headers`     | `HeadersInit`        | Request headers                             |
 | `credentials` | `RequestCredentials` | Credentials mode                            |
 | `maxRetries`  | `number`             | Max retry attempts (default: 3)             |

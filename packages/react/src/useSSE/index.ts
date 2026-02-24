@@ -7,7 +7,7 @@ import type {
   SelectorResult,
 } from "@spoosh/core";
 import { createSelectorProxy } from "@spoosh/core";
-import type { SSEMessage, SSEAdapterFactory } from "@spoosh/transport-sse";
+import type { SSEAdapterFactory, SSEMessage } from "@spoosh/transport-sse";
 import { resolveParser, resolveAccumulator } from "@spoosh/transport-sse";
 import { createUseSubscription } from "../useSubscription";
 import type { SpooshInstanceShape } from "../create/types";
@@ -112,9 +112,6 @@ export function createUseSSE<
     const [accumulatedData, setAccumulatedData] = useState<
       Record<string, unknown>
     >({});
-    const [rawMessage, setRawMessage] = useState<SSEMessage | undefined>(
-      undefined
-    );
 
     const eventSet = useMemo(
       () => (events ? new Set(events) : null),
@@ -145,7 +142,6 @@ export function createUseSSE<
     useEffect(() => {
       if (subscription._subscriptionVersion !== prevVersionRef.current) {
         setAccumulatedData({});
-        setRawMessage(undefined);
         lastMessageIndexRef.current = {};
       }
 
@@ -162,8 +158,6 @@ export function createUseSSE<
       if (eventSet && !eventSet.has(data.event)) {
         return;
       }
-
-      setRawMessage(data);
 
       const parser = resolveParser(parseRef.current, data.event);
       let parsed: unknown;
@@ -189,7 +183,6 @@ export function createUseSSE<
 
         if (lastIndex !== undefined && messageIndex < lastIndex) {
           setAccumulatedData({});
-          setRawMessage(undefined);
           lastMessageIndexRef.current = {};
         }
 
@@ -227,7 +220,6 @@ export function createUseSSE<
 
     const reset = useCallback(() => {
       setAccumulatedData({});
-      setRawMessage(undefined);
     }, []);
 
     const trigger = useCallback(
@@ -255,7 +247,6 @@ export function createUseSSE<
       data: Object.keys(accumulatedData).length
         ? (accumulatedData as Partial<ExtractAllSubscriptionEvents<TSubFn>>)
         : undefined,
-      rawMessage,
       error: subscription.error,
       isConnected: subscription.isConnected,
       loading: subscription.loading,

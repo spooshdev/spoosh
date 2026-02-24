@@ -452,11 +452,11 @@ type SSEHooks<TDefaultError, TSchema, TPlugins extends PluginArray> = {
    *
    * @param subFn - Function that selects the SSE endpoint
    * @param sseOptions - Configuration including `events`, `parse`, `accumulate`, `maxRetries`, `retryDelay`
-   * @returns Object containing `data`, `rawMessage`, `error`, `loading`, `isConnected`, `trigger`, `disconnect`, `reset`
+   * @returns Object containing `data`, `error`, `loading`, `isConnected`, `trigger`, `disconnect`, `reset`
    *
    * @example
    * ```tsx
-   * const { data, rawMessage, reset } = useSSE(
+   * const { data, reset } = useSSE(
    *   (api) => api("chat").POST(),
    *   {
    *     events: ["chunk", "done"],

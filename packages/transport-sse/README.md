@@ -21,7 +21,7 @@ import { sse } from "@spoosh/transport-sse";
 
 const spoosh = new Spoosh<ApiSchema, Error>("/api").withTransports([sse()]);
 
-export const { useSubscription } = create(spoosh);
+export const { useSSE } = create(spoosh);
 ```
 
 ### Schema Definition
@@ -30,7 +30,7 @@ Define your SSE endpoints with the `events` field:
 
 ```typescript
 type ApiSchema = {
-  "@sse/notifications": {
+  "notifications": {
     GET: {
       query: { userId: string };
       events: {
@@ -39,7 +39,7 @@ type ApiSchema = {
       };
     };
   };
-  "@sse/chat": {
+  "chat": {
     POST: {
       body: { conversationId: string; message: string };
       events: {
@@ -53,12 +53,12 @@ type ApiSchema = {
 
 > **Note:** `message` is the default SSE event type. If your server sends data without an `event:` field, it will be received as `message`.
 
-### Basic Subscription
+### Basic Usage
 
 ```typescript
 function Notifications() {
-  const { data, isConnected, loading } = useSubscription(
-    (api) => api("@sse/notifications").GET({ query: { userId: "user-123" } })
+  const { data, isConnected, loading } = useSSE(
+    (api) => api("notifications").GET({ query: { userId: "user-123" } })
   );
 
   if (loading) return <div>Connecting...</div>;
@@ -76,11 +76,9 @@ function Notifications() {
 ### Subscribing to Specific Events
 
 ```typescript
-const { data } = useSubscription(
-  (api) => api("@sse/notifications").GET({
-    query: { userId: "user-123" },
-    events: ["alert"],  // Only subscribe to alert events
-  })
+const { data } = useSSE(
+  (api) => api("notifications").GET({ query: { userId: "user-123" } }),
+  { events: ["alert"] }  // Only subscribe to alert events
 );
 
 // data.alert is typed, data.message is not included
@@ -89,8 +87,9 @@ const { data } = useSubscription(
 ### AI Streaming (ChatGPT-style)
 
 ```typescript
-const { data, trigger, isConnected } = useSubscription(
-  (api) => api("@sse/chat").POST({
+const { data, trigger, isConnected, reset } = useSSE(
+  (api) => api("chat").POST(),
+  {
     events: ["chunk", "done"],
     parse: "json-done",  // Handles [DONE] signal
     accumulate: {
@@ -99,12 +98,13 @@ const { data, trigger, isConnected } = useSubscription(
         chunk: (prev?.chunk || "") + curr.chunk,
       }),
     },
-  }),
-  { enabled: false }
+    enabled: false,
+  }
 );
 
 // Start streaming
-const handleSend = () => {
+const handleSend = (userInput: string) => {
+  reset(); // Clear previous response
   trigger({ body: { conversationId: "conv-1", message: userInput } });
 };
 
@@ -127,10 +127,10 @@ Control how raw SSE data is parsed:
 
 ```typescript
 // Global parse strategy
-api("@sse/stream").GET({ parse: "json" })
+useSSE((api) => api("stream").GET(), { parse: "json" })
 
 // Per-event parse strategy
-api("@sse/stream").GET({
+useSSE((api) => api("stream").GET(), {
   parse: {
     chunk: "text",
     metadata: "json",
@@ -138,7 +138,7 @@ api("@sse/stream").GET({
 })
 
 // Custom parse function
-api("@sse/stream").GET({
+useSSE((api) => api("stream").GET(), {
   parse: (data) => customParser(data)
 })
 ```
@@ -169,10 +169,10 @@ The `"merge"` strategy automatically handles different types:
 
 ```typescript
 // Global accumulate strategy
-api("@sse/stream").GET({ accumulate: "merge" })
+useSSE((api) => api("stream").GET(), { accumulate: "merge" })
 
 // Per-event accumulate strategy
-api("@sse/stream").GET({
+useSSE((api) => api("stream").GET(), {
   accumulate: {
     chunk: "merge",
     status: "replace",
@@ -180,8 +180,7 @@ api("@sse/stream").GET({
 })
 
 // Field-specific config (merge only specific fields)
-api("@sse/chat").POST({
-  events: ["chunk"],
+useSSE((api) => api("chat").POST(), {
   accumulate: {
     chunk: { text: "merge" },  // Concat text field, replace others
   },
@@ -196,19 +195,8 @@ api("@sse/chat").POST({
 // With { chunk: "merge" }:           { id: "2", text: " World", tokens: 6 }  (shallow merge)
 // With { chunk: { text: "merge" } }: { id: "2", text: "Hello World", tokens: 6 }  (concat text only)
 
-// Same result using custom function:
-api("@sse/chat").POST({
-  accumulate: {
-    chunk: (prev, curr) => ({
-      ...(curr ?? {}),
-      text: (prev?.text || "") + curr.text,
-    }),
-  },
-})
-
-// Custom accumulate function with typed parameters
-api("@sse/chat").POST({
-  events: ["chunk"],
+// Custom function
+useSSE((api) => api("chat").POST(), {
   accumulate: {
     chunk: (prev, curr) => ({
       ...curr,
@@ -222,41 +210,57 @@ api("@sse/chat").POST({
 
 ```typescript
 const spoosh = new Spoosh<ApiSchema, Error>("/api").withTransports([sse({
-  // Default parse strategy for all connections
-  parse: "auto",
-
-  // Default accumulate strategy
-  accumulate: "replace",
-
   // Delay before disconnecting when no subscribers (helps with React Strict Mode)
   disconnectDelay: 100,
 
   // Throttle notifications to prevent UI flooding
   throttle: true,  // Uses requestAnimationFrame
   // throttle: 16,  // Or custom interval in ms
+
+  // Keep connection alive when tab is hidden
+  openWhenHidden: true,
 })]);
 ```
 
-## Connection Options
-
-Per-request connection options:
+## Hook Options
 
 ```typescript
-api("@sse/notifications").GET({
-  query: { userId: "user-123" },
-  headers: { Authorization: "Bearer token" },
-  credentials: "include",
-  maxRetries: 3,
-  retryDelay: 1000,
-})
+useSSE(
+  (api) => api("notifications").GET({
+    query: { userId: "user-123" },
+    headers: { Authorization: "Bearer token" },
+    credentials: "include",
+    openWhenHidden: true,
+  }),
+  {
+    enabled: true,
+    events: ["alert", "message"],
+    parse: "auto",
+    accumulate: "replace",
+    maxRetries: 3,
+    retryDelay: 1000,
+  }
+)
 ```
 
-| Option       | Type                | Default | Description                           |
-| ------------ | ------------------- | ------- | ------------------------------------- |
-| `headers`    | `HeadersInit`       | -       | Request headers                       |
-| `credentials`| `RequestCredentials`| -       | Credentials mode (include, same-origin) |
-| `maxRetries` | `number`            | `3`     | Max retry attempts on connection failure |
-| `retryDelay` | `number`            | `1000`  | Delay between retries in ms           |
+**Selector Options** (passed to api call):
+
+| Option           | Type                 | Default | Description                                    |
+| ---------------- | -------------------- | ------- | ---------------------------------------------- |
+| `headers`        | `HeadersInit`        | -       | Request headers                                |
+| `credentials`    | `RequestCredentials` | -       | Credentials mode (include, same-origin)        |
+| `openWhenHidden` | `boolean`            | `true`  | Keep connection alive in background tabs       |
+
+**Hook Options** (second argument):
+
+| Option       | Type               | Default     | Description                        |
+| ------------ | ------------------ | ----------- | ---------------------------------- |
+| `enabled`    | `boolean`          | `true`      | Connect automatically on mount     |
+| `events`     | `string[]`         | all events  | Events to listen for               |
+| `parse`      | `ParseConfig`      | `"auto"`    | Parse strategy for raw data        |
+| `accumulate` | `AccumulateConfig` | `"replace"` | How to combine events over time    |
+| `maxRetries` | `number`           | `3`         | Max retry attempts on failure      |
+| `retryDelay` | `number`           | `1000`      | Delay between retries in ms        |
 
 ## Features
 
@@ -265,3 +269,4 @@ api("@sse/notifications").GET({
 - **React Strict Mode Compatible**: Handles double-mount gracefully with disconnect delay
 - **Type-Safe Events**: Full TypeScript inference for event data and callbacks
 - **Throttling**: Prevent UI flooding from high-frequency events
+- **Background Tab Support**: Keeps connection alive when tab is hidden
