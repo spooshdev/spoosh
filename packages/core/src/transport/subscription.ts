@@ -1,3 +1,4 @@
+import type { EventEmitter } from "../events/emitter";
 import type { OperationType, PluginContext } from "../plugins/types";
 
 export interface SpooshTransport<TOptions = unknown, TMessage = unknown> {
@@ -51,6 +52,7 @@ export interface SubscriptionAdapterOptions {
   baseUrl: string;
   globalHeaders?: HeadersInit | (() => HeadersInit | Promise<HeadersInit>);
   getRequestOptions: () => Record<string, unknown> | undefined;
+  eventEmitter?: EventEmitter;
 }
 
 export interface SubscriptionAdapterFactory<TData = unknown, TError = unknown> {
