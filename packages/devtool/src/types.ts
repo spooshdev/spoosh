@@ -133,7 +133,8 @@ export interface SubscriptionTrace {
 export type Trace = OperationTrace | SubscriptionTrace;
 
 /** Type filter for traces */
-export type TraceTypeFilter = "all" | "http" | "sse" | "ws";
+// TODO: Add "ws" back when WebSocket transport is implemented
+export type TraceTypeFilter = "all" | "http" | "sse";
 
 export interface InvalidationEvent {
   tags: string[];

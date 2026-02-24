@@ -662,10 +662,11 @@ export class DevToolStore implements DevToolStoreInterface {
         allTraces = [...allTraces, ...sseSubs];
       }
 
-      if (traceTypeFilter === "all" || traceTypeFilter === "ws") {
-        const wsSubs = subs.filter((s) => s.transport === "ws");
-        allTraces = [...allTraces, ...wsSubs];
-      }
+      // TODO: Add WS filtering back when WebSocket transport is implemented
+      // if (traceTypeFilter === "all" || traceTypeFilter === "ws") {
+      //   const wsSubs = subs.filter((s) => s.transport === "ws");
+      //   allTraces = [...allTraces, ...wsSubs];
+      // }
     }
 
     return allTraces.sort((a, b) => a.timestamp - b.timestamp);

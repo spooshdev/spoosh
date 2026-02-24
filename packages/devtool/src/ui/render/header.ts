@@ -19,7 +19,8 @@ const TYPE_FILTER_ICONS: Record<string, string> = {
   all: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>`,
   http: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.66 0 3-4 3-9s-1.34-9-3-9m0 18c-1.66 0-3-4-3-9s1.34-9 3-9"/></svg>`,
   sse: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>`,
-  ws: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M19 12l-7 7M19 12l-7-7M5 12l7-7M5 12l7 7"/></svg>`,
+  // TODO: Add WS icon back when WebSocket transport is implemented
+  // ws: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M19 12l-7 7M19 12l-7-7M5 12l7-7M5 12l7 7"/></svg>`,
 };
 
 const OP_FILTER_ICONS: Record<string, string> = {
@@ -39,7 +40,8 @@ export function renderHeader(ctx: HeaderRenderContext): string {
     hideTypeFilter,
   } = ctx;
 
-  const typeFilters = (["all", "http", "sse", "ws"] as const)
+  // TODO: Add "ws" back when WebSocket transport is implemented
+  const typeFilters = (["all", "http", "sse"] as const)
     .map((type) => {
       const active = filters.traceTypeFilter === type;
       const label = type === "all" ? "All" : type.toUpperCase();

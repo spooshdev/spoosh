@@ -304,10 +304,12 @@ export const subscriptionCSS = `
     color: var(--spoosh-primary);
   }
 
+  /* TODO: Add WS styles back when WebSocket transport is implemented
   .spoosh-trace-method-badge.method-ws {
     background: rgba(136, 87, 255, 0.15);
     color: #8857ff;
   }
+  */
 
   .spoosh-subscription-status {
     display: flex;
