@@ -33,14 +33,8 @@ describe("SSE Transport", () => {
       expect(transport.isConnected()).toBe(false);
     });
 
-    it("should accept custom parse config", () => {
-      const transport = sse({ parse: "json" });
-
-      expect(transport).toBeDefined();
-    });
-
-    it("should accept custom accumulate config", () => {
-      const transport = sse({ accumulate: "merge" });
+    it("should accept custom retry config", () => {
+      const transport = sse({ maxRetries: 5, retryDelay: 2000 });
 
       expect(transport).toBeDefined();
     });
@@ -237,7 +231,11 @@ describe("SSE Transport", () => {
       const transport = sse();
 
       await expect(
-        transport.send("messages", { text: "hello" })
+        transport.send("messages", {
+          event: "message",
+          data: "hello",
+          timestamp: Date.now(),
+        })
       ).rejects.toThrow("SSE is unidirectional");
     });
   });
@@ -260,9 +258,9 @@ describe("SSE Transport", () => {
     });
   });
 
-  describe("parse and accumulate configuration", () => {
-    it("should use transport-level parse config", async () => {
-      const transport = sse({ parse: "json" });
+  describe("retry configuration", () => {
+    it("should use transport-level retry config", async () => {
+      const transport = sse({ maxRetries: 5, retryDelay: 2000 });
 
       mockSuccessfulConnection();
 
@@ -274,58 +272,16 @@ describe("SSE Transport", () => {
       expect(transport).toBeDefined();
     });
 
-    it("should use request-level parse config override", async () => {
-      const transport = sse({ parse: "auto" });
+    it("should use request-level retry config override", async () => {
+      const transport = sse({ maxRetries: 3, retryDelay: 1000 });
 
       mockSuccessfulConnection();
 
       await transport.connect("messages", {
         baseUrl: "/api",
         path: "sse/messages",
-        parse: "json",
-      });
-
-      expect(transport).toBeDefined();
-    });
-
-    it("should use transport-level accumulate config", async () => {
-      const transport = sse({ accumulate: "merge" });
-
-      mockSuccessfulConnection();
-
-      await transport.connect("messages", {
-        baseUrl: "/api",
-        path: "sse/messages",
-      });
-
-      expect(transport).toBeDefined();
-    });
-
-    it("should use request-level accumulate config override", async () => {
-      const transport = sse({ accumulate: "replace" });
-
-      mockSuccessfulConnection();
-
-      await transport.connect("messages", {
-        baseUrl: "/api",
-        path: "sse/messages",
-        accumulate: "merge",
-      });
-
-      expect(transport).toBeDefined();
-    });
-
-    it("should merge per-event configs", async () => {
-      const transport = sse({
-        parse: { chunk: "text", done: "json" },
-      });
-
-      mockSuccessfulConnection();
-
-      await transport.connect("messages", {
-        baseUrl: "/api",
-        path: "sse/messages",
-        parse: { alert: "auto" },
+        maxRetries: 5,
+        retryDelay: 2000,
       });
 
       expect(transport).toBeDefined();

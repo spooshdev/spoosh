@@ -4,6 +4,7 @@ import { createUseWrite } from "../useWrite";
 import { createUsePages } from "../usePages";
 import { createUseQueue } from "../useQueue";
 import { createUseSubscription } from "../useSubscription";
+import { createUseSSE } from "../useSSE";
 import type { SpooshReactHooks, SpooshInstanceShape } from "./types";
 
 /**
@@ -86,6 +87,15 @@ export function create<
     config: instance.config,
   });
 
+  const useSSE = createUseSSE<TSchema, TDefaultError, TPlugins>({
+    api,
+    stateManager,
+    eventEmitter,
+    pluginExecutor,
+    transports,
+    config: instance.config,
+  });
+
   const plugins = pluginExecutor.getPlugins();
 
   const setupContext = {
@@ -121,6 +131,7 @@ export function create<
     usePages,
     useQueue,
     useSubscription,
+    useSSE,
     ...instanceApis,
   } as SpooshReactHooks<TDefaultError, TSchema, TPlugins>;
 }

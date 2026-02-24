@@ -1,6 +1,4 @@
 import type { EventEmitter } from "@spoosh/core";
-import type { ParseConfig } from "./parsers";
-import type { AccumulateConfig } from "./accumulators";
 
 export interface SSETransportOptions {
   /** Base URL from client config */
@@ -32,20 +30,14 @@ export interface SSETransportOptions {
 
   /** Delay between retries in ms */
   retryDelay?: number;
-
-  /** Parse strategy for SSE event data. Defaults to 'auto'. */
-  parse?: ParseConfig;
-
-  /** Accumulate strategy for combining events. Defaults to 'replace'. */
-  accumulate?: AccumulateConfig;
 }
 
 export interface SSETransportConfig {
-  /** Default parse strategy for all connections. Defaults to 'auto'. */
-  parse?: ParseConfig;
+  /** Default max retry attempts on connection failure */
+  maxRetries?: number;
 
-  /** Default accumulate strategy for all connections. Defaults to 'replace'. */
-  accumulate?: AccumulateConfig;
+  /** Default delay between retries in ms */
+  retryDelay?: number;
 
   /** Delay before disconnecting when no subscribers left. Helps with React Strict Mode. Defaults to 100ms. */
   disconnectDelay?: number;
@@ -103,24 +95,9 @@ declare module "@spoosh/core" {
 
         /** Delay between retries in ms */
         retryDelay?: number;
-
-        /** Parse SSE data field. Strategies inferred by core for typed callbacks. */
-        parse?: ParseConfig;
-
-        /** Accumulate data across events. Strategies inferred by core for typed callbacks. */
-        accumulate?: AccumulateConfig;
       };
 
-      message: {
-        /** Event type (e.g., "message", "notification", "alert") */
-        event: string;
-
-        /** Raw event data (unparsed string) */
-        data: string;
-
-        /** Timestamp when event was received (client-side) */
-        timestamp: number;
-      };
+      message: SSEMessage;
     };
   }
 }

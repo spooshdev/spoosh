@@ -443,44 +443,38 @@ type TransportOptions<
 /**
  * Strict subscription request options (for GET method).
  * Body/query are required if schema requires them.
+ * Note: Transport options (maxRetries, retryDelay, events, parse, accumulate)
+ * are now configured at the hook level (useSSE).
  */
 type StrictSubscriptionRequestOptions<
   TMethodConfig,
   TUserPath extends string,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   TRequestedEvents extends readonly (keyof ExtractEvents<TMethodConfig>)[] =
     readonly (keyof ExtractEvents<TMethodConfig>)[],
 > = Simplify<
   BaseRequestOptions &
     QueryOption<TMethodConfig> &
     BodyOption<TMethodConfig> &
-    ParamsOption<TUserPath> &
-    TransportOptions<
-      ExtractTransportName<TUserPath>,
-      ExtractEvents<TMethodConfig>
-    > & {
-      events?: TRequestedEvents;
-    }
+    ParamsOption<TUserPath>
 >;
 
 /**
  * Loose subscription request options (for POST/PUT/etc methods).
  * Body/query are always optional since they're provided via trigger().
+ * Note: Transport options (maxRetries, retryDelay, events, parse, accumulate)
+ * are now configured at the hook level (useSSE).
  */
 type LooseSubscriptionRequestOptions<
   TMethodConfig,
   TUserPath extends string,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   TRequestedEvents extends readonly (keyof ExtractEvents<TMethodConfig>)[] =
     readonly (keyof ExtractEvents<TMethodConfig>)[],
 > = Simplify<
   BaseRequestOptions & { query?: ExtractQuery<TMethodConfig> } & {
     body?: ExtractBody<TMethodConfig> | SpooshBody<ExtractBody<TMethodConfig>>;
-  } & ParamsOption<TUserPath> &
-    TransportOptions<
-      ExtractTransportName<TUserPath>,
-      ExtractEvents<TMethodConfig>
-    > & {
-      events?: TRequestedEvents;
-    }
+  } & ParamsOption<TUserPath>
 >;
 
 /**
@@ -511,6 +505,16 @@ type SubscriptionResponse<
   requestedEvents: TRequestedEvents;
   query: ExtractQuery<TMethodConfig>;
   body: ExtractBody<TMethodConfig>;
+};
+
+export type BaseSubscriptionResponse<
+  TEvents extends Record<string, unknown> = Record<string, unknown>,
+> = {
+  _subscription: true;
+  events: TEvents;
+  requestedEvents: readonly string[];
+  query: unknown;
+  body: unknown;
 };
 
 /**

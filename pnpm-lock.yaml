@@ -485,6 +485,9 @@ importers:
       '@spoosh/test-utils':
         specifier: workspace:*
         version: link:../test-utils
+      '@spoosh/transport-sse':
+        specifier: workspace:*
+        version: link:../transport-sse
       '@testing-library/react':
         specifier: ^16.0.0
         version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@19.2.7))(@types/react@19.2.7)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)

@@ -11,6 +11,7 @@ import type {
   ResolveTypes,
   ResolveResultTypes,
   InfiniteRequestOptions,
+  BaseSubscriptionResponse,
 } from "@spoosh/core";
 import type {
   ExtractMethodData,
@@ -23,6 +24,8 @@ import type {
   ExtractSubscriptionEvents,
   ExtractSubscriptionQuery,
   ExtractSubscriptionBody,
+  ExtractAllSubscriptionEventKeys,
+  ExtractAllSubscriptionEvents,
 } from "../types/extraction";
 import type {
   BaseReadOptions,
@@ -55,6 +58,7 @@ import type {
   SubscriptionApiClient,
   SubscriptionTriggerInput,
 } from "../useSubscription/types";
+import type { TypedUseSSEOptions, UseSSEResult } from "../useSSE/types";
 
 type InferError<T, TDefaultError> = [T] extends [unknown] ? TDefaultError : T;
 
@@ -278,6 +282,63 @@ type UseSubscriptionFn<TDefaultError, TSchema, TPlugins extends PluginArray> = <
   >
 >;
 
+type InferSSEEvents<T> =
+  ExtractAllSubscriptionEvents<T> extends Record<string, unknown>
+    ? ExtractAllSubscriptionEvents<T>
+    : Record<string, unknown>;
+
+type FilteredEvents<
+  TAllEvents extends Record<string, unknown>,
+  TSelectedEvents extends readonly string[],
+> = TSelectedEvents[number] extends keyof TAllEvents
+  ? Pick<TAllEvents, TSelectedEvents[number]>
+  : TAllEvents;
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+type UseSSEFn<TDefaultError, TSchema, TPlugins extends PluginArray> = {
+  // Overload 1: With events option - filtered return type
+  <
+    TSubFn extends (api: SubscriptionApiClient<TSchema, TDefaultError>) => {
+      _subscription: true;
+      events: Record<string, { data: unknown }>;
+    },
+    const TSelectedEvents extends readonly Extract<
+      ExtractAllSubscriptionEventKeys<TSubFn>,
+      string
+    >[],
+  >(
+    subFn: TSubFn,
+    sseOptions: TypedUseSSEOptions<
+      Extract<ExtractAllSubscriptionEventKeys<TSubFn>, string>,
+      InferSSEEvents<TSubFn>,
+      TSelectedEvents
+    > & { events: TSelectedEvents }
+  ): UseSSEResult<
+    FilteredEvents<InferSSEEvents<TSubFn>, TSelectedEvents>,
+    InferError<ExtractMethodError<TSubFn>, TDefaultError>
+  >;
+
+  // Overload 2: Without events option - all events
+  <
+    TSubFn extends (api: SubscriptionApiClient<TSchema, TDefaultError>) => {
+      _subscription: true;
+      events: Record<string, { data: unknown }>;
+    },
+  >(
+    subFn: TSubFn,
+    sseOptions?: Omit<
+      TypedUseSSEOptions<
+        Extract<ExtractAllSubscriptionEventKeys<TSubFn>, string>,
+        InferSSEEvents<TSubFn>
+      >,
+      "events"
+    >
+  ): UseSSEResult<
+    InferSSEEvents<TSubFn>,
+    InferError<ExtractMethodError<TSubFn>, TDefaultError>
+  >;
+};
+
 /**
  * Spoosh React hooks interface containing useRead, useWrite, and usePages.
  *
@@ -384,6 +445,28 @@ export type SpooshReactHooks<
    * ```
    */
   useSubscription: UseSubscriptionFn<TDefaultError, TSchema, TPlugins>;
+
+  /**
+   * React hook for SSE streams with per-hook parsing and accumulation.
+   *
+   * @param subFn - Function that selects the SSE endpoint
+   * @param sseOptions - Configuration including `events`, `parse`, `accumulate`, `maxRetries`, `retryDelay`
+   * @returns Object containing `data`, `rawMessage`, `error`, `loading`, `isConnected`, `trigger`, `disconnect`, `reset`
+   *
+   * @example
+   * ```tsx
+   * const { data, rawMessage, reset } = useSSE(
+   *   (api) => api("@sse/chat").POST(),
+   *   {
+   *     events: ["chunk", "done"],
+   *     parse: "json-done",
+   *     accumulate: { chunk: "merge" },
+   *     maxRetries: 5,
+   *   }
+   * );
+   * ```
+   */
+  useSSE: UseSSEFn<TDefaultError, TSchema, TPlugins>;
 } & MergePluginInstanceApi<TPlugins, TSchema>;
 
 /**

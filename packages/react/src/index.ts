@@ -29,6 +29,13 @@ export type {
   QueueTriggerInput,
 } from "./useQueue/types";
 export type {
+  UseSSEOptions,
+  UseSSEResult,
+  TypedUseSSEOptions,
+  TypedParseConfig,
+  TypedAccumulateConfig,
+} from "./useSSE/types";
+export type {
   ExtractMethodData,
   ExtractMethodError,
   ExtractMethodOptions,

@@ -111,3 +111,25 @@ export type ExtractSubscriptionBody<T> =
   }
     ? B
     : never;
+
+export type ExtractAllSubscriptionEventKeys<T> =
+  SubscriptionReturnType<T> extends {
+    events: infer E;
+  }
+    ? E extends Record<string, unknown>
+      ? keyof E
+      : never
+    : never;
+
+export type ExtractAllSubscriptionEvents<T> =
+  SubscriptionReturnType<T> extends {
+    events: infer E;
+  }
+    ? E extends Record<string, unknown>
+      ? {
+          [K in keyof E]: E[K] extends { data: infer EventData }
+            ? EventData
+            : unknown;
+        }
+      : unknown
+    : unknown;

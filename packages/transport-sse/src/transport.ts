@@ -8,14 +8,10 @@ import type {
   DevtoolEvents,
 } from "@spoosh/core";
 import { sortObjectKeys } from "@spoosh/core";
-import { resolveParser } from "./parsers";
-import { resolveAccumulator } from "./accumulators";
-import type { SSETransportOptions, SSETransportConfig } from "./types";
-import { mergeConfig } from "./utils";
+import type { SSETransportOptions, SSETransportConfig, SSEMessage } from "./types";
 
 interface ConnectionState {
   abortController: AbortController;
-  accumulatedData: Record<string, unknown>;
   refCount: number;
   connectPromise: Promise<void> | null;
   isConnecting: boolean;
@@ -28,11 +24,11 @@ interface ConnectionState {
 
 export function sse(
   config: SSETransportConfig = {}
-): SpooshTransport<SSETransportOptions, unknown> & SubscriptionAdapterFactory {
-  const defaultParse = config.parse ?? "auto";
-  const defaultAccumulate = config.accumulate ?? "replace";
+): SpooshTransport<SSETransportOptions, SSEMessage> & SubscriptionAdapterFactory {
   const disconnectDelay = config.disconnectDelay ?? 100;
   const throttleConfig = config.throttle ?? false;
+  const defaultMaxRetries = config.maxRetries ?? 3;
+  const defaultRetryDelay = config.retryDelay ?? 1000;
   let eventEmitter = config.eventEmitter;
 
   const connections = new Map<string, ConnectionState>();
@@ -41,8 +37,8 @@ export function sse(
   const subscriptionToUrl = new Map<string, string>();
 
   interface UrlSubscriptions {
-    subscriptions: Map<string, Set<(message: unknown) => void>>;
-    callbackEventMap: Map<(message: unknown) => void, Set<string>>;
+    subscriptions: Map<string, Set<(message: SSEMessage) => void>>;
+    callbackEventMap: Map<(message: SSEMessage) => void, Set<string>>;
   }
 
   const urlSubscriptionsMap = new Map<string, UrlSubscriptions>();
@@ -120,11 +116,9 @@ export function sse(
     options?: SSETransportOptions
   ): ConnectionState => {
     const abortController = new AbortController();
-    const accumulatedData: Record<string, unknown> = {};
 
     const state: ConnectionState = {
       abortController,
-      accumulatedData,
       refCount: 0,
       connectPromise: null,
       isConnecting: false,
@@ -144,8 +138,8 @@ export function sse(
 
         state.isConnecting = true;
         let retries = 0;
-        const maxRetries = options?.maxRetries ?? 3;
-        const retryDelay = options?.retryDelay ?? 1000;
+        const maxRetries = options?.maxRetries ?? defaultMaxRetries;
+        const retryDelay = options?.retryDelay ?? defaultRetryDelay;
         let resolved = false;
 
         const runConnection = async () => {
@@ -222,38 +216,12 @@ export function sse(
                 }
 
                 const eventType = event.event || "message";
-                const parseConfig = mergeConfig(defaultParse, options?.parse);
-                const accumulateConfig = mergeConfig(
-                  defaultAccumulate,
-                  options?.accumulate
-                );
 
-                const parser = resolveParser(parseConfig, eventType);
-                const accumulator = resolveAccumulator(
-                  accumulateConfig,
-                  eventType
-                );
-
-                let parsedData: unknown;
-                try {
-                  parsedData = parser(event.data);
-                } catch {
-                  parsedData = event.data;
-                }
-
-                if (parsedData === undefined) {
-                  return;
-                }
-
-                const previousData = accumulatedData[eventType];
-                try {
-                  accumulatedData[eventType] = accumulator(
-                    previousData,
-                    parsedData
-                  );
-                } catch {
-                  accumulatedData[eventType] = parsedData;
-                }
+                const sseMessage: SSEMessage = {
+                  event: eventType,
+                  data: event.data,
+                  timestamp: Date.now(),
+                };
 
                 for (const subscriptionId of state.subscriptionIds) {
                   eventEmitter?.emit<
@@ -262,9 +230,9 @@ export function sse(
                     subscriptionId,
                     messageId: crypto.randomUUID(),
                     eventType,
-                    rawData: parsedData,
-                    accumulatedData: { ...accumulatedData },
-                    timestamp: Date.now(),
+                    rawData: event.data,
+                    accumulatedData: {},
+                    timestamp: sseMessage.timestamp,
                   });
                 }
 
@@ -276,9 +244,6 @@ export function sse(
                   }
 
                   const currentSubscriptions = currentUrlSubs.subscriptions;
-                  const currentCallbackEventMap =
-                    currentUrlSubs.callbackEventMap;
-
                   const specificCallbacks =
                     currentSubscriptions.get(eventType) || new Set();
                   const wildcardCallbacks =
@@ -291,28 +256,7 @@ export function sse(
                   if (allCallbacks.size === 0) return;
 
                   allCallbacks.forEach((cb) => {
-                    const subscribedEvents = currentCallbackEventMap.get(cb);
-
-                    if (!subscribedEvents) {
-                      cb(accumulatedData);
-                      return;
-                    }
-
-                    const isWildcard = subscribedEvents.has("*");
-
-                    if (isWildcard) {
-                      cb(accumulatedData);
-                    } else {
-                      const filteredData: Record<string, unknown> = {};
-
-                      for (const evt of subscribedEvents) {
-                        if (accumulatedData[evt] !== undefined) {
-                          filteredData[evt] = accumulatedData[evt];
-                        }
-                      }
-
-                      cb(filteredData);
-                    }
+                    cb(sseMessage);
                   });
                 };
 
@@ -512,7 +456,7 @@ export function sse(
 
   const subscribe = (
     eventType: string,
-    callback: (message: unknown) => void,
+    callback: (message: SSEMessage) => void,
     url?: string
   ): (() => void) => {
     const targetUrl = url || "_global_";
@@ -619,9 +563,8 @@ export function sse(
           query: requestOptions?.query as Record<string, unknown> | undefined,
           headers: requestOptions?.headers as HeadersInit | undefined,
           globalHeaders: adapterOptions.globalHeaders,
-          parse: requestOptions?.parse as SSETransportOptions["parse"],
-          accumulate:
-            requestOptions?.accumulate as SSETransportOptions["accumulate"],
+          maxRetries: requestOptions?.maxRetries as number | undefined,
+          retryDelay: requestOptions?.retryDelay as number | undefined,
         };
 
         const connectionUrl = getConnectionUrl(
