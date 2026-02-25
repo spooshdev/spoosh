@@ -212,10 +212,16 @@ export function sse(config: SSETransportConfig = {}): SSETransport {
                     errorResponse = await response.json();
                   } else {
                     const text = await response.text();
-                    errorResponse = text || { status: response.status, statusText: response.statusText };
+                    errorResponse = text || {
+                      status: response.status,
+                      statusText: response.statusText,
+                    };
                   }
                 } catch {
-                  errorResponse = { status: response.status, statusText: response.statusText };
+                  errorResponse = {
+                    status: response.status,
+                    statusText: response.statusText,
+                  };
                 }
 
                 if (!resolved) {
@@ -666,7 +672,8 @@ export function sse(config: SSETransportConfig = {}): SSETransport {
             "spoosh:subscription:error",
             {
               subscriptionId,
-              error: err instanceof Error ? err : new Error(JSON.stringify(err)),
+              error:
+                err instanceof Error ? err : new Error(JSON.stringify(err)),
               retryCount: 0,
               timestamp: Date.now(),
             }

@@ -49,8 +49,10 @@ import { Spoosh } from "@spoosh/core";
 import { cachePlugin } from "@spoosh/plugin-cache";
 import { retryPlugin } from "@spoosh/plugin-retry";
 
-const spoosh = new Spoosh<ApiSchema, Error>('/api')
-  .use([cachePlugin({ staleTime: 5000 }), retryPlugin({ retries: 3 })]);
+const spoosh = new Spoosh<ApiSchema, Error>("/api").use([
+  cachePlugin({ staleTime: 5000 }),
+  retryPlugin({ retries: 3 }),
+]);
 ```
 
 **Zero Boilerplate** — Define your schema once, get a fully typed client. No code generation required.
@@ -68,8 +70,9 @@ type ApiSchema = {
   };
 };
 
-const spoosh = new Spoosh<ApiSchema, Error>("/api")
-  .use([/* plugins */]);
+const spoosh = new Spoosh<ApiSchema, Error>("/api").use([
+  /* plugins */
+]);
 ```
 
 **Server Type Inference** — Use the Hono or Elysia adapter for automatic client types from your server.
@@ -109,12 +112,15 @@ type ApiSchema = {
   };
 };
 
-const spoosh = new Spoosh<ApiSchema, Error>("/api")
-  .use([cachePlugin({ staleTime: 5000 })]);
+const spoosh = new Spoosh<ApiSchema, Error>("/api").use([
+  cachePlugin({ staleTime: 5000 }),
+]);
 
 // Fully typed API calls
 const { data, error } = await spoosh.api("users").GET();
-const { data: user } = await spoosh.api("users/:id").GET({ params: { id: 123 } });
+const { data: user } = await spoosh
+  .api("users/:id")
+  .GET({ params: { id: 123 } });
 ```
 
 ### With React
@@ -140,7 +146,7 @@ import { create } from "@spoosh/angular";
 const { injectRead, injectWrite, injectQueue } = create(spoosh);
 
 @Component({
-  selector: 'app-user-list',
+  selector: "app-user-list",
   template: `
     @if (loading()) {
       <div>Loading...</div>
@@ -151,7 +157,7 @@ const { injectRead, injectWrite, injectQueue } = create(spoosh);
         }
       </ul>
     }
-  `
+  `,
 })
 export class UserListComponent {
   private users = injectRead((api) => api("users").GET());
@@ -166,36 +172,36 @@ export class UserListComponent {
 
 ### Core
 
-| Package                               | Description                                            |
-| ------------------------------------- | ------------------------------------------------------ |
-| [@spoosh/core](./packages/core)       | Core client and plugin system                            |
-| [@spoosh/react](./packages/react)     | React hooks (`useRead`, `useWrite`, `usePages`, `useQueue`)   |
+| Package                               | Description                                                                 |
+| ------------------------------------- | --------------------------------------------------------------------------- |
+| [@spoosh/core](./packages/core)       | Core client and plugin system                                               |
+| [@spoosh/react](./packages/react)     | React hooks (`useRead`, `useWrite`, `usePages`, `useQueue`)                 |
 | [@spoosh/angular](./packages/angular) | Angular signals (`injectRead`, `injectWrite`, `injectPages`, `injectQueue`) |
-| [@spoosh/hono](./packages/hono)       | Hono type adapter for server-to-client type inference    |
-| [@spoosh/elysia](./packages/elysia)   | Elysia type adapter for server-to-client type inference  |
-| [@spoosh/openapi](./packages/openapi) | Generate OpenAPI specs from TypeScript types             |
+| [@spoosh/hono](./packages/hono)       | Hono type adapter for server-to-client type inference                       |
+| [@spoosh/elysia](./packages/elysia)   | Elysia type adapter for server-to-client type inference                     |
+| [@spoosh/openapi](./packages/openapi) | Generate OpenAPI specs from TypeScript types                                |
 
 ### Plugins
 
-| Plugin                                                          | Description                                          |
-| --------------------------------------------------------------- | ---------------------------------------------------- |
-| [@spoosh/plugin-cache](./packages/plugin-cache)                 | Response caching with configurable stale time        |
-| [@spoosh/plugin-retry](./packages/plugin-retry)                 | Automatic retry with configurable attempts and delay |
-| [@spoosh/plugin-polling](./packages/plugin-polling)             | Auto-refresh data at intervals                       |
-| [@spoosh/plugin-debounce](./packages/plugin-debounce)           | Debounce requests for search inputs                  |
-| [@spoosh/plugin-throttle](./packages/plugin-throttle)           | Rate-limit request frequency                         |
-| [@spoosh/plugin-deduplication](./packages/plugin-deduplication) | Prevent duplicate in-flight requests                 |
-| [@spoosh/plugin-invalidation](./packages/plugin-invalidation)   | Auto-invalidate cache after mutations                |
-| [@spoosh/plugin-optimistic](./packages/plugin-optimistic)       | Instant UI updates with automatic rollback           |
-| [@spoosh/plugin-initial-data](./packages/plugin-initial-data)   | Show data immediately before fetch completes         |
-| [@spoosh/plugin-refetch](./packages/plugin-refetch)             | Refetch on window focus or network reconnect         |
-| [@spoosh/plugin-prefetch](./packages/plugin-prefetch)           | Preload data before it's needed                      |
-| [@spoosh/plugin-transform](./packages/plugin-transform)         | Transform response data with sync/async functions    |
-| [@spoosh/plugin-gc](./packages/plugin-gc)                       | Garbage collection for cache cleanup                 |
-| [@spoosh/plugin-qs](./packages/plugin-qs)                       | Query string serialization with nested object support|
-| [@spoosh/plugin-nextjs](./packages/plugin-nextjs)               | Next.js server-side cache revalidation               |
-| [@spoosh/plugin-progress](./packages/plugin-progress)           | Upload/download progress tracking via XHR            |
-| [@spoosh/devtool](./packages/devtool)                           | Visual debugging panel with request inspection       |
+| Plugin                                                          | Description                                           |
+| --------------------------------------------------------------- | ----------------------------------------------------- |
+| [@spoosh/plugin-cache](./packages/plugin-cache)                 | Response caching with configurable stale time         |
+| [@spoosh/plugin-retry](./packages/plugin-retry)                 | Automatic retry with configurable attempts and delay  |
+| [@spoosh/plugin-polling](./packages/plugin-polling)             | Auto-refresh data at intervals                        |
+| [@spoosh/plugin-debounce](./packages/plugin-debounce)           | Debounce requests for search inputs                   |
+| [@spoosh/plugin-throttle](./packages/plugin-throttle)           | Rate-limit request frequency                          |
+| [@spoosh/plugin-deduplication](./packages/plugin-deduplication) | Prevent duplicate in-flight requests                  |
+| [@spoosh/plugin-invalidation](./packages/plugin-invalidation)   | Auto-invalidate cache after mutations                 |
+| [@spoosh/plugin-optimistic](./packages/plugin-optimistic)       | Instant UI updates with automatic rollback            |
+| [@spoosh/plugin-initial-data](./packages/plugin-initial-data)   | Show data immediately before fetch completes          |
+| [@spoosh/plugin-refetch](./packages/plugin-refetch)             | Refetch on window focus or network reconnect          |
+| [@spoosh/plugin-prefetch](./packages/plugin-prefetch)           | Preload data before it's needed                       |
+| [@spoosh/plugin-transform](./packages/plugin-transform)         | Transform response data with sync/async functions     |
+| [@spoosh/plugin-gc](./packages/plugin-gc)                       | Garbage collection for cache cleanup                  |
+| [@spoosh/plugin-qs](./packages/plugin-qs)                       | Query string serialization with nested object support |
+| [@spoosh/plugin-nextjs](./packages/plugin-nextjs)               | Next.js server-side cache revalidation                |
+| [@spoosh/plugin-progress](./packages/plugin-progress)           | Upload/download progress tracking via XHR             |
+| [@spoosh/devtool](./packages/devtool)                           | Visual debugging panel with request inspection        |
 
 ## Plugin Usage
 

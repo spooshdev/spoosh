@@ -1,7 +1,14 @@
-import type { EventEmitter, SubscriptionAdapter, SpooshTransport } from "@spoosh/core";
+import type {
+  EventEmitter,
+  SubscriptionAdapter,
+  SpooshTransport,
+} from "@spoosh/core";
 
 import type { ParseConfig, ParseFunction } from "./parsers/types";
-import type { AccumulateConfig, AccumulateFunction } from "./accumulators/types";
+import type {
+  AccumulateConfig,
+  AccumulateFunction,
+} from "./accumulators/types";
 
 /**
  * Options for creating an SSE subscription adapter.
@@ -32,18 +39,23 @@ export interface SSEAdapterFactory<TData = unknown, TError = unknown> {
  * Utilities attached to SSE transport for parsing and accumulating events.
  */
 export interface SSETransportUtils {
-  resolveParser: (config: ParseConfig | undefined, eventType: string) => ParseFunction;
+  resolveParser: (
+    config: ParseConfig | undefined,
+    eventType: string
+  ) => ParseFunction;
 
-  resolveAccumulator: (config: AccumulateConfig | undefined, eventType: string) => AccumulateFunction;
+  resolveAccumulator: (
+    config: AccumulateConfig | undefined,
+    eventType: string
+  ) => AccumulateFunction;
 }
 
 /**
  * Full SSE transport type including utilities.
  * This is the return type of `sse()` function.
  */
-export type SSETransport = SpooshTransport<SSETransportOptions, SSEMessage>
-  & SSEAdapterFactory
-  & { utils: SSETransportUtils };
+export type SSETransport = SpooshTransport<SSETransportOptions, SSEMessage> &
+  SSEAdapterFactory & { utils: SSETransportUtils };
 
 export interface SSETransportOptions {
   /** Base URL from client config */
@@ -99,7 +111,6 @@ export interface SSETransportConfig {
   /** Custom fetch implementation. Useful for testing or custom request handling. */
   fetch?: typeof fetch;
 }
-
 
 export interface SSEMessage {
   /** Event type (e.g., "message", "notification", "alert") */

@@ -1,4 +1,7 @@
-export function mergeConfig<T>(defaultConfig: T | undefined, requestConfig: T | undefined): T | undefined {
+export function mergeConfig<T>(
+  defaultConfig: T | undefined,
+  requestConfig: T | undefined
+): T | undefined {
   if (!defaultConfig) return requestConfig;
   if (!requestConfig) return defaultConfig;
 

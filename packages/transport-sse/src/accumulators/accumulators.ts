@@ -83,9 +83,10 @@ function applyFieldConfig(
     return current;
   }
 
-  const prevObj = (typeof prev === "object" && prev !== null && !Array.isArray(prev))
-    ? prev as Record<string, unknown>
-    : {};
+  const prevObj =
+    typeof prev === "object" && prev !== null && !Array.isArray(prev)
+      ? (prev as Record<string, unknown>)
+      : {};
 
   const currObj = current as Record<string, unknown>;
   const result: Record<string, unknown> = { ...prevObj, ...currObj };
@@ -102,7 +103,9 @@ function applyFieldConfig(
 /**
  * Get accumulator function for a given strategy.
  */
-export function getAccumulator(strategy: AccumulateStrategy): AccumulateFunction {
+export function getAccumulator(
+  strategy: AccumulateStrategy
+): AccumulateFunction {
   switch (strategy) {
     case "replace":
       return replaceAccumulate;

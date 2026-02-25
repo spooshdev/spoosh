@@ -23,4 +23,7 @@ export type AccumulateConfig =
   | AccumulateStrategy
   | AccumulateFieldConfig
   | AccumulateFunction
-  | Record<string, AccumulateStrategy | AccumulateFieldConfig | AccumulateFunction>;
+  | Record<
+      string,
+      AccumulateStrategy | AccumulateFieldConfig | AccumulateFunction
+    >;

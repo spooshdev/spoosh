@@ -39,7 +39,7 @@
     "test": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --max-warnings 0",
-    "format": "prettier --write 'src/**/*.ts'"
+    "format": "prettier --write 'src/**/*.ts' '*.md'"
   },
   "peerDependencies": {
     "@spoosh/core": ">=0.11.1",

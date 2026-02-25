@@ -89,7 +89,9 @@ describe("parsers", () => {
     });
 
     it("should throw on invalid numbers", () => {
-      expect(() => numberParse("not-a-number")).toThrow("Failed to parse number");
+      expect(() => numberParse("not-a-number")).toThrow(
+        "Failed to parse number"
+      );
     });
   });
 

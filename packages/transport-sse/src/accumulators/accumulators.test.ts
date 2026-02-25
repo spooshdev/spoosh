@@ -11,7 +11,9 @@ describe("accumulators", () => {
     it("should replace previous value with current", () => {
       expect(replaceAccumulate("old", "new")).toBe("new");
       expect(replaceAccumulate(42, 100)).toBe(100);
-      expect(replaceAccumulate({ old: true }, { new: true })).toEqual({ new: true });
+      expect(replaceAccumulate({ old: true }, { new: true })).toEqual({
+        new: true,
+      });
     });
 
     it("should handle undefined previous value", () => {
@@ -20,7 +22,9 @@ describe("accumulators", () => {
 
     it("should skip when current is undefined", () => {
       expect(replaceAccumulate("old", undefined)).toBe("old");
-      expect(replaceAccumulate({ data: true }, undefined)).toEqual({ data: true });
+      expect(replaceAccumulate({ data: true }, undefined)).toEqual({
+        data: true,
+      });
     });
   });
 
@@ -81,7 +85,9 @@ describe("accumulators", () => {
     });
 
     it("should skip when current is undefined", () => {
-      expect(mergeAccumulate({ data: true }, undefined)).toEqual({ data: true });
+      expect(mergeAccumulate({ data: true }, undefined)).toEqual({
+        data: true,
+      });
       expect(mergeAccumulate(undefined, undefined)).toBeUndefined();
     });
   });
@@ -163,7 +169,10 @@ describe("accumulators", () => {
         const prev = { id: "1", text: "hello" };
         const curr = { text: " world" };
 
-        expect(chunkAccumulator(prev, curr)).toEqual({ id: "1", text: "hello world" });
+        expect(chunkAccumulator(prev, curr)).toEqual({
+          id: "1",
+          text: "hello world",
+        });
         expect(doneAccumulator).toBe(replaceAccumulate);
       });
 
