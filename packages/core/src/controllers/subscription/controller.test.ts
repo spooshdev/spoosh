@@ -360,6 +360,72 @@ describe("createSubscriptionController", () => {
 
       expect(callback).toHaveBeenCalled();
     });
+
+    it("should set isConnected to false when handle returns error", async () => {
+      const { controller, setMockError } = createTestController<
+        string,
+        Error
+      >();
+
+      setMockError(new Error("401 Unauthorized"));
+      await controller.subscribe();
+
+      const state = controller.getState();
+      expect(state.error).toBeDefined();
+      expect(state.error?.message).toBe("401 Unauthorized");
+      expect(state.isConnected).toBe(false);
+    });
+
+    it("should set isConnected to true when handle has no error", async () => {
+      const { controller, setMockData } = createTestController<string, Error>();
+
+      setMockData("success");
+      await controller.subscribe();
+
+      const state = controller.getState();
+      expect(state.data).toBe("success");
+      expect(state.error).toBeUndefined();
+      expect(state.isConnected).toBe(true);
+    });
+
+    it("should handle adapter rejection gracefully", async () => {
+      const stateManager = createStateManager();
+      const eventEmitter = createEventEmitter();
+      const pluginExecutor = createPluginExecutor([]);
+      const serverError = { message: "Unauthorized", code: 401 };
+
+      const rejectingAdapter = {
+        subscribe: vi.fn().mockRejectedValue(serverError),
+        emit: vi.fn(),
+      };
+
+      const queryKey = stateManager.createQueryKey({
+        path: "messages",
+        method: "GET",
+      });
+
+      const controller = createSubscriptionController({
+        channel: "messages",
+        baseAdapter: rejectingAdapter,
+        stateManager,
+        eventEmitter,
+        pluginExecutor,
+        queryKey,
+        operationType: "sse",
+        path: "messages",
+        method: "GET",
+      });
+
+      const callback = vi.fn();
+      controller.subscribe(callback);
+
+      await controller.subscribe();
+
+      const state = controller.getState();
+      expect(state.error).toEqual(serverError);
+      expect(state.isConnected).toBe(false);
+      expect(callback).toHaveBeenCalled();
+    });
   });
 
   describe("state caching", () => {

@@ -256,6 +256,130 @@ describe("SSE Transport", () => {
         })
       ).rejects.toThrow();
     });
+
+    it("should call onError with server response for HTTP error responses", async () => {
+      const transport = sse();
+      const serverError = { error: "Unauthorized", code: "AUTH_REQUIRED" };
+
+      vi.mocked(fetchEventSource).mockImplementation(async (_url, options) => {
+        if (options?.onopen) {
+          const mockResponse = {
+            ok: false,
+            status: 401,
+            statusText: "Unauthorized",
+            headers: new Headers({ "content-type": "application/json" }),
+            json: async () => serverError,
+          } as Response;
+          await options.onopen(mockResponse);
+        }
+      });
+
+      const adapter = transport.createSubscriptionAdapter({
+        channel: "messages",
+        method: "GET",
+        baseUrl: "/api",
+        getRequestOptions: () => ({}),
+      });
+
+      const onError = vi.fn();
+      const onData = vi.fn();
+
+      const handle = await adapter.subscribe({
+        channel: "messages",
+        queryKey: "test-key",
+        onData,
+        onError,
+        onDisconnect: vi.fn(),
+      } as never);
+
+      expect(onError).toHaveBeenCalledWith(serverError);
+      expect(handle.getError()).toEqual(serverError);
+    });
+
+    it("should not throw when subscription adapter encounters HTTP error", async () => {
+      const transport = sse();
+
+      vi.mocked(fetchEventSource).mockImplementation(async (_url, options) => {
+        if (options?.onopen) {
+          const mockResponse = {
+            ok: false,
+            status: 500,
+            statusText: "Internal Server Error",
+            headers: new Headers({ "content-type": "text/plain" }),
+            text: async () => "Server Error",
+          } as Response;
+          await options.onopen(mockResponse);
+        }
+      });
+
+      const adapter = transport.createSubscriptionAdapter({
+        channel: "messages",
+        method: "GET",
+        baseUrl: "/api",
+        getRequestOptions: () => ({}),
+      });
+
+      await expect(
+        adapter.subscribe({
+          channel: "messages",
+          queryKey: "test-key",
+          onData: vi.fn(),
+          onError: vi.fn(),
+          onDisconnect: vi.fn(),
+        } as never)
+      ).resolves.toBeDefined();
+    });
+
+    it("should emit error devtool event on connection failure", async () => {
+      const transport = sse();
+      const eventEmitter = {
+        emit: vi.fn(),
+      };
+      const serverError = { message: "Forbidden", code: 403 };
+
+      vi.mocked(fetchEventSource).mockImplementation(async (_url, options) => {
+        if (options?.onopen) {
+          const mockResponse = {
+            ok: false,
+            status: 403,
+            statusText: "Forbidden",
+            headers: new Headers({ "content-type": "application/json" }),
+            json: async () => serverError,
+          } as Response;
+          await options.onopen(mockResponse);
+        }
+      });
+
+      const adapter = transport.createSubscriptionAdapter({
+        channel: "messages",
+        method: "GET",
+        baseUrl: "/api",
+        getRequestOptions: () => ({}),
+        eventEmitter: eventEmitter as never,
+      });
+
+      await adapter.subscribe({
+        channel: "messages",
+        queryKey: "test-key",
+        onData: vi.fn(),
+        onError: vi.fn(),
+        onDisconnect: vi.fn(),
+      } as never);
+
+      expect(eventEmitter.emit).toHaveBeenCalledWith(
+        "spoosh:subscription:error",
+        expect.objectContaining({
+          error: expect.any(Error),
+        })
+      );
+
+      expect(eventEmitter.emit).toHaveBeenCalledWith(
+        "spoosh:subscription:disconnect",
+        expect.objectContaining({
+          reason: "connection_error",
+        })
+      );
+    });
   });
 
   describe("retry configuration", () => {

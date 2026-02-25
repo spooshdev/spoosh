@@ -203,16 +203,28 @@ export function sse(
                   return;
                 }
 
-                const err = new Error(
-                  `SSE connection failed: ${response.status} ${response.statusText}`
-                );
+                let errorResponse: unknown;
+
+                try {
+                  const contentType = response.headers.get("content-type");
+                  const isJson = contentType?.includes("application/json");
+
+                  if (isJson) {
+                    errorResponse = await response.json();
+                  } else {
+                    const text = await response.text();
+                    errorResponse = text || { status: response.status, statusText: response.statusText };
+                  }
+                } catch {
+                  errorResponse = { status: response.status, statusText: response.statusText };
+                }
 
                 if (!resolved) {
                   resolved = true;
-                  reject(err);
+                  reject(errorResponse);
                 }
 
-                throw err;
+                throw errorResponse;
               },
 
               onmessage: (event) => {
@@ -535,7 +547,7 @@ export function sse(
     const connectionState = connections.get(fullUrl);
 
     if (!connectionState) {
-      return () => { };
+      return () => {};
     }
 
     connectionState.disconnectCallbacks.add(callback);
@@ -558,6 +570,7 @@ export function sse(
       subscribe: async (context): Promise<SubscriptionHandle> => {
         const unsubscribers: Array<() => void> = [];
         let currentData: unknown = undefined;
+        let currentError: unknown = null;
         let disconnectedByServer = false;
         const subscriptionId = crypto.randomUUID();
 
@@ -625,26 +638,50 @@ export function sse(
         const wasAlreadyConnected =
           existingConnection && !existingConnection.isConnecting;
 
-        await connect(adapterOptions.channel, transportOptions);
+        try {
+          await connect(adapterOptions.channel, transportOptions);
 
-        const connectionState = connections.get(connectionUrl);
-        connectionState?.subscriptionIds.add(subscriptionId);
+          const connectionState = connections.get(connectionUrl);
+          connectionState?.subscriptionIds.add(subscriptionId);
 
-        if (wasAlreadyConnected || connectionState) {
-          emitter?.emit<DevtoolEvents["spoosh:subscription:connected"]>(
-            "spoosh:subscription:connected",
+          if (wasAlreadyConnected || connectionState) {
+            emitter?.emit<DevtoolEvents["spoosh:subscription:connected"]>(
+              "spoosh:subscription:connected",
+              {
+                subscriptionId,
+                timestamp: Date.now(),
+              }
+            );
+          }
+
+          const unsubDisconnect = onDisconnect(connectionUrl, () => {
+            disconnectedByServer = true;
+            context.onDisconnect?.();
+          });
+          unsubscribers.push(unsubDisconnect);
+        } catch (err) {
+          currentError = err;
+          context.onError?.(currentError);
+
+          emitter?.emit<DevtoolEvents["spoosh:subscription:error"]>(
+            "spoosh:subscription:error",
             {
               subscriptionId,
+              error: err instanceof Error ? err : new Error(JSON.stringify(err)),
+              retryCount: 0,
+              timestamp: Date.now(),
+            }
+          );
+
+          emitter?.emit<DevtoolEvents["spoosh:subscription:disconnect"]>(
+            "spoosh:subscription:disconnect",
+            {
+              subscriptionId,
+              reason: "connection_error",
               timestamp: Date.now(),
             }
           );
         }
-
-        const unsubDisconnect = onDisconnect(connectionUrl, () => {
-          disconnectedByServer = true;
-          context.onDisconnect?.();
-        });
-        unsubscribers.push(unsubDisconnect);
 
         return {
           unsubscribe: () => {
@@ -652,7 +689,7 @@ export function sse(
             connState?.subscriptionIds.delete(subscriptionId);
             subscriptionToUrl.delete(subscriptionId);
 
-            if (!disconnectedByServer) {
+            if (!disconnectedByServer && !currentError) {
               emitter?.emit<DevtoolEvents["spoosh:subscription:disconnect"]>(
                 "spoosh:subscription:disconnect",
                 {
@@ -666,14 +703,14 @@ export function sse(
             unsubscribers.forEach((unsub) => unsub());
             unsubscribers.length = 0;
 
-            if (!disconnectedByServer) {
+            if (!disconnectedByServer && !currentError) {
               releaseConnection(connectionUrl);
             }
           },
           getData: () => currentData,
-          getError: () => undefined,
-          onData: () => () => { },
-          onError: () => () => { },
+          getError: () => currentError,
+          onData: () => () => {},
+          onError: () => () => {},
         };
       },
       emit: async () => ({ success: true }),

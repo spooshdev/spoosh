@@ -149,23 +149,50 @@ export function createSubscriptionController<TData, TError>(
           notify();
         };
 
-        return adapter.subscribe(ctx).then((newHandle) => {
-          if (thisVersion !== subscriptionVersion) {
-            newHandle.unsubscribe();
-            return newHandle;
-          }
+        return adapter
+          .subscribe(ctx)
+          .then((newHandle) => {
+            if (thisVersion !== subscriptionVersion) {
+              newHandle.unsubscribe();
+              return newHandle;
+            }
 
-          handle = newHandle;
-          updateStateFromHandle();
+            handle = newHandle;
 
-          cachedState = {
-            ...cachedState,
-            isConnected: true,
-          };
+            const handleError = newHandle.getError();
 
-          notify();
-          return handle;
-        });
+            if (handleError) {
+              cachedState = {
+                ...cachedState,
+                error: handleError as TError,
+                isConnected: false,
+              };
+            } else {
+              updateStateFromHandle();
+
+              cachedState = {
+                ...cachedState,
+                isConnected: true,
+              };
+            }
+
+            notify();
+            return handle;
+          })
+          .catch((err) => {
+            if (thisVersion !== subscriptionVersion) {
+              return null;
+            }
+
+            cachedState = {
+              ...cachedState,
+              error: err as TError,
+              isConnected: false,
+            };
+
+            notify();
+            return null;
+          });
       }
 
       subscribers.add(callbackOrVoid);
