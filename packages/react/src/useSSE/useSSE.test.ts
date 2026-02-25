@@ -7,9 +7,13 @@ import { createStateManager, createEventEmitter } from "@spoosh/test-utils";
 import { createPluginExecutor } from "@spoosh/core";
 import type { SpooshTransport, SubscriptionContext } from "@spoosh/core";
 import type {
-  SSEMessage,
   SSEAdapterFactory,
   SSEAdapterOptions,
+} from "@spoosh/transport-sse";
+import {
+  resolveParser,
+  resolveAccumulator,
+  type SSEMessage,
 } from "@spoosh/transport-sse";
 import { createUseSSE } from "./index";
 
@@ -24,6 +28,10 @@ function createMockTransport(): SpooshTransport &
   SSEAdapterFactory & {
     mockContext: MockSubscriptionContext;
     triggerMessage: (event: string, data: string) => void;
+    utils: {
+      resolveParser: typeof resolveParser;
+      resolveAccumulator: typeof resolveAccumulator;
+    };
   } {
   const mockContext: MockSubscriptionContext = {
     callbacks: new Set(),
@@ -95,6 +103,10 @@ function createMockTransport(): SpooshTransport &
     SSEAdapterFactory & {
       mockContext: MockSubscriptionContext;
       triggerMessage: typeof triggerMessage;
+      utils: {
+        resolveParser: typeof resolveParser;
+        resolveAccumulator: typeof resolveAccumulator;
+      };
     } = {
     name: "sse",
     operationType: "sse",
@@ -109,6 +121,10 @@ function createMockTransport(): SpooshTransport &
     createSubscriptionAdapter,
     mockContext,
     triggerMessage,
+    utils: {
+      resolveParser,
+      resolveAccumulator,
+    },
   };
 
   return transport;
