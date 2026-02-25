@@ -1,5 +1,9 @@
 # @spoosh/angular
 
+## 0.10.2
+
+- Improve excess property checking for `injectRead` hook for stricter type safety when passing options.
+
 ## 0.10.1
 
 - Fix per request error not infer correctly
