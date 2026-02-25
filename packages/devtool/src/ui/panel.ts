@@ -1,7 +1,7 @@
 import type {
   DevToolStoreInterface,
   DevToolTheme,
-  ExportedTrace,
+  ExportedItem,
   SubscriptionTrace,
 } from "../types";
 import { createActionRouter } from "./action-router";
@@ -787,11 +787,11 @@ export class DevToolPanel {
   private renderImportView(): string {
     const state = this.viewModel.getState();
     const session = this.store.getImportedSession();
-    const traces = this.store.getFilteredImportedTraces(
+    const items = this.store.getFilteredImportedTraces(
       state.importedSearchQuery
     );
-    const selectedTrace = state.selectedImportedTraceId
-      ? traces.find((t) => t.id === state.selectedImportedTraceId)
+    const selectedItem = state.selectedImportedTraceId
+      ? items.find((t) => t.id === state.selectedImportedTraceId)
       : null;
 
     const detailPanel = state.showSettings
@@ -805,11 +805,14 @@ export class DevToolPanel {
           isContainerMode: this.isContainerMode,
         })
       : renderImportDetail({
-          trace: selectedTrace ?? null,
+          item: selectedItem ?? null,
           activeTab: state.activeTab,
+          subscriptionTab: state.subscriptionTab,
           expandedSteps: state.expandedSteps,
           expandedGroups: state.expandedGroups,
           fullDiffViews: state.fullDiffViews,
+          selectedMessageId: state.selectedMessageId,
+          expandedEventTypes: state.expandedEventTypes,
         });
 
     const hasSession = session !== null;
@@ -823,12 +826,12 @@ export class DevToolPanel {
               hasSession
                 ? `<div class="spoosh-section-header">
                     <span class="spoosh-section-title">${escapeHtml(session.filename)}</span>
-                    <span class="spoosh-section-count">${traces.length}</span>
+                    <span class="spoosh-section-count">${items.length}</span>
                   </div>`
                 : ""
             }
             ${renderImportList({
-              traces,
+              items,
               selectedTraceId: state.selectedImportedTraceId,
               filename: session?.filename ?? null,
             })}
@@ -856,7 +859,7 @@ export class DevToolPanel {
     if (!this.sidebar) return;
 
     const state = this.viewModel.getState();
-    const traces = this.store.getFilteredImportedTraces(
+    const items = this.store.getFilteredImportedTraces(
       state.importedSearchQuery
     );
 
@@ -866,7 +869,7 @@ export class DevToolPanel {
       const countEl = importSection.querySelector(".spoosh-section-count");
 
       if (countEl) {
-        countEl.textContent = String(traces.length);
+        countEl.textContent = String(items.length);
       }
 
       const existingList = importSection.querySelector(
@@ -875,27 +878,30 @@ export class DevToolPanel {
 
       if (existingList) {
         existingList.outerHTML = renderImportList({
-          traces,
+          items,
           selectedTraceId: state.selectedImportedTraceId,
           filename: this.store.getImportedSession()?.filename ?? null,
         });
       }
     }
 
-    const selectedTrace = state.selectedImportedTraceId
-      ? traces.find((t) => t.id === state.selectedImportedTraceId)
+    const selectedItem = state.selectedImportedTraceId
+      ? items.find((t) => t.id === state.selectedImportedTraceId)
       : null;
 
-    if (selectedTrace) {
+    if (selectedItem) {
       const detailPanel = this.sidebar.querySelector(".spoosh-detail-panel");
 
       if (detailPanel) {
         detailPanel.outerHTML = renderImportDetail({
-          trace: selectedTrace,
+          item: selectedItem,
           activeTab: state.activeTab,
+          subscriptionTab: state.subscriptionTab,
           expandedSteps: state.expandedSteps,
           expandedGroups: state.expandedGroups,
           fullDiffViews: state.fullDiffViews,
+          selectedMessageId: state.selectedMessageId,
+          expandedEventTypes: state.expandedEventTypes,
         });
       }
     }
@@ -935,18 +941,28 @@ export class DevToolPanel {
     input.click();
   }
 
-  private validateImportData(data: unknown): ExportedTrace[] | null {
+  private validateImportData(data: unknown): ExportedItem[] | null {
     if (!Array.isArray(data)) return null;
 
-    return data.filter(
-      (item): item is ExportedTrace =>
-        typeof item === "object" &&
-        item !== null &&
-        typeof item.id === "string" &&
-        typeof item.path === "string" &&
-        typeof item.operationType === "string" &&
-        typeof item.method === "string"
-    );
+    return data.filter((item): item is ExportedItem => {
+      if (typeof item !== "object" || item === null) return false;
+
+      const obj = item as Record<string, unknown>;
+
+      if (typeof obj.id !== "string") return false;
+
+      if (obj.type === "sse") {
+        return (
+          typeof obj.channel === "string" && typeof obj.queryKey === "string"
+        );
+      }
+
+      return (
+        typeof obj.path === "string" &&
+        typeof obj.operationType === "string" &&
+        typeof obj.method === "string"
+      );
+    });
   }
 
   private autoSelectFirst(): boolean {

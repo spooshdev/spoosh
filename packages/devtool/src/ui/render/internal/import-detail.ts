@@ -1,15 +1,28 @@
-import type { ExportedTrace, PluginStepEvent } from "../../../types";
-import type { DetailTab } from "../../view-model";
-import { escapeHtml, formatJson, formatTime } from "../../utils";
+import type {
+  ExportedTrace,
+  ExportedSSE,
+  ExportedItem,
+  PluginStepEvent,
+} from "../../../types";
+import type { DetailTab, SubscriptionDetailTab } from "../../view-model";
+import {
+  escapeHtml,
+  formatJson,
+  formatTime,
+  formatDuration,
+} from "../../utils";
 import { renderTimelineStep, groupConsecutiveSteps } from "../timeline";
 import { renderGroupedSteps } from "../timeline/group";
 
 export interface ImportDetailContext {
-  trace: ExportedTrace | null;
+  item: ExportedItem | null;
   activeTab: DetailTab;
+  subscriptionTab?: SubscriptionDetailTab;
   expandedSteps?: ReadonlySet<string>;
   expandedGroups?: ReadonlySet<string>;
   fullDiffViews?: ReadonlySet<string>;
+  selectedMessageId?: string | null;
+  expandedEventTypes?: ReadonlySet<string>;
 }
 
 const copyIcon = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -282,9 +295,9 @@ function renderImportPluginsTab(
   `;
 }
 
-function getImportPluginCount(trace: ExportedTrace): number {
+function getImportPluginCount(item: ExportedItem): number {
   const activePlugins = new Set(
-    trace.steps
+    item.steps
       .filter((step) => step.stage !== "skip" && step.plugin !== "spoosh:fetch")
       .map((step) => step.plugin)
   );
@@ -295,27 +308,27 @@ function getImportMetaCount(trace: ExportedTrace): number {
   return trace.meta ? Object.keys(trace.meta).length : 0;
 }
 
-function renderImportTabContent(ctx: ImportDetailContext): string {
+function renderImportTraceTabContent(ctx: ImportDetailContext): string {
   const {
-    trace,
+    item,
     activeTab,
     expandedSteps = new Set<string>(),
     expandedGroups = new Set<string>(),
     fullDiffViews = new Set<string>(),
   } = ctx;
 
-  if (!trace) return "";
+  if (!item || item.type !== "request") return "";
 
   switch (activeTab) {
     case "data":
-      return renderImportDataTab(trace);
+      return renderImportDataTab(item);
     case "request":
-      return renderImportRequestTab(trace);
+      return renderImportRequestTab(item);
     case "meta":
-      return renderImportMetaTab(trace);
+      return renderImportMetaTab(item);
     case "plugins":
       return renderImportPluginsTab(
-        trace,
+        item,
         expandedSteps,
         expandedGroups,
         fullDiffViews
@@ -325,39 +338,30 @@ function renderImportTabContent(ctx: ImportDetailContext): string {
   }
 }
 
-export function renderImportDetail(ctx: ImportDetailContext): string {
-  const { trace, activeTab } = ctx;
+function renderImportTraceDetail(ctx: ImportDetailContext): string {
+  const { item, activeTab } = ctx;
 
-  if (!trace) {
-    return `
-      <div class="spoosh-detail-panel">
-        <div class="spoosh-detail-empty">
-          <div class="spoosh-detail-empty-icon">📋</div>
-          <div class="spoosh-detail-empty-text">Select an imported trace to inspect</div>
-        </div>
-      </div>
-    `;
-  }
+  if (!item || item.type !== "request") return "";
 
-  const response = trace.response as Record<string, unknown> | undefined;
+  const response = item.response as Record<string, unknown> | undefined;
   const isAborted = !!response?.aborted;
   const hasError = !!response?.error && !isAborted;
   const statusClass = isAborted ? "aborted" : hasError ? "error" : "success";
   const statusLabel = isAborted ? "Aborted" : hasError ? "Error" : "Success";
-  const pluginCount = getImportPluginCount(trace);
-  const metaCount = getImportMetaCount(trace);
+  const pluginCount = getImportPluginCount(item);
+  const metaCount = getImportMetaCount(item);
 
   return `
     <div class="spoosh-detail-panel">
       <div class="spoosh-detail-header">
         <div class="spoosh-detail-title">
-          <span class="spoosh-trace-method method-${trace.method}">${trace.method}</span>
-          <span class="spoosh-detail-path">${escapeHtml(trace.path)}</span>
+          <span class="spoosh-trace-method method-${item.method}">${item.method}</span>
+          <span class="spoosh-detail-path">${escapeHtml(item.path)}</span>
         </div>
         <div class="spoosh-detail-meta">
           <span class="spoosh-badge ${statusClass}">${statusLabel}</span>
-          <span class="spoosh-badge neutral">${trace.duration?.toFixed(0) ?? "..."}ms</span>
-          <span class="spoosh-badge neutral">${formatTime(trace.timestamp)}</span>
+          <span class="spoosh-badge neutral">${item.duration?.toFixed(0) ?? "..."}ms</span>
+          <span class="spoosh-badge neutral">${formatTime(item.timestamp)}</span>
           <span class="spoosh-badge neutral">imported</span>
         </div>
       </div>
@@ -378,8 +382,371 @@ export function renderImportDetail(ctx: ImportDetailContext): string {
       </div>
 
       <div class="spoosh-tab-content">
-        ${renderImportTabContent(ctx)}
+        ${renderImportTraceTabContent(ctx)}
       </div>
     </div>
   `;
+}
+
+function getSSEStatusClass(status: ExportedSSE["status"]): string {
+  switch (status) {
+    case "connected":
+      return "success";
+    case "error":
+      return "error";
+    case "connecting":
+      return "pending";
+    case "disconnected":
+    default:
+      return "neutral";
+  }
+}
+
+function getSSEStatusIndicator(status: ExportedSSE["status"]): string {
+  switch (status) {
+    case "connecting":
+      return `<span class="spoosh-status-indicator connecting">◌</span>`;
+    case "connected":
+      return `<span class="spoosh-status-indicator connected">●</span>`;
+    case "disconnected":
+      return `<span class="spoosh-status-indicator disconnected">○</span>`;
+    case "error":
+      return `<span class="spoosh-status-indicator error">●</span>`;
+    default:
+      return "";
+  }
+}
+
+function getSSEDuration(sub: ExportedSSE): string {
+  if (sub.status === "connecting") return "connecting...";
+
+  const startTime = sub.connectedAt ?? sub.timestamp;
+  const endTime = sub.disconnectedAt ?? sub.timestamp;
+
+  return formatDuration(endTime - startTime);
+}
+
+function renderSSEMessagesTab(
+  sub: ExportedSSE,
+  selectedMessageId: string | null
+): string {
+  if (sub.messages.length === 0) {
+    return `<div class="spoosh-empty">No messages received</div>`;
+  }
+
+  return `
+    <div class="spoosh-messages-list">
+      ${[...sub.messages]
+        .reverse()
+        .map((msg) => {
+          const isExpanded = msg.id === selectedMessageId;
+          const time = formatTime(msg.timestamp);
+          const expandIcon = isExpanded ? "▼" : "▶";
+          const jsonStr = JSON.stringify(msg.rawData, null, 2);
+
+          return `
+            <div class="spoosh-message-row${isExpanded ? " expanded" : ""}">
+              <div class="spoosh-message-header" data-message-id="${msg.id}">
+                <span class="spoosh-message-expand">${expandIcon}</span>
+                <span class="spoosh-message-time">${time}</span>
+                <span class="spoosh-message-event">${escapeHtml(msg.eventType)}</span>
+                <span class="spoosh-message-preview">${escapeHtml(JSON.stringify(msg.rawData))}</span>
+              </div>
+              ${
+                isExpanded
+                  ? `
+                <div class="spoosh-message-content">
+                  <div class="spoosh-code-block">
+                    <button class="spoosh-code-copy-btn" data-action="copy" data-copy-content="${escapeHtml(jsonStr)}" title="Copy">
+                      ${copyIcon}
+                    </button>
+                    <pre class="spoosh-json">${formatJson(msg.rawData)}</pre>
+                  </div>
+                </div>
+              `
+                  : ""
+              }
+            </div>
+          `;
+        })
+        .join("")}
+    </div>
+  `;
+}
+
+function renderSSEAccumulatedTab(
+  sub: ExportedSSE,
+  expandedEventTypes: ReadonlySet<string>
+): string {
+  const eventTypes = Object.keys(sub.accumulatedData);
+
+  if (eventTypes.length === 0) {
+    return `<div class="spoosh-empty">No accumulated data</div>`;
+  }
+
+  return `
+    <div class="spoosh-accumulated-container">
+      <div class="spoosh-accumulated-summary">
+        <span class="spoosh-badge neutral">${eventTypes.length} event types</span>
+        <span class="spoosh-badge neutral">${sub.messageCount} total messages</span>
+      </div>
+      <div class="spoosh-event-list">
+        ${eventTypes
+          .map((eventType) => {
+            const isExpanded = !expandedEventTypes.has(eventType);
+            const data = sub.accumulatedData[eventType];
+            const jsonStr = JSON.stringify(data, null, 2);
+            const expandIcon = isExpanded ? "▼" : "▶";
+
+            return `
+              <div class="spoosh-event-section ${isExpanded ? "expanded" : ""}">
+                <div class="spoosh-event-header" data-event-type="${escapeHtml(eventType)}">
+                  <span class="spoosh-event-expand">${expandIcon}</span>
+                  <span class="spoosh-event-name">${escapeHtml(eventType)}</span>
+                </div>
+                ${
+                  isExpanded
+                    ? `
+                  <div class="spoosh-event-content">
+                    <div class="spoosh-code-block">
+                      <button class="spoosh-code-copy-btn" data-action="copy" data-copy-content="${escapeHtml(jsonStr)}" title="Copy">
+                        ${copyIcon}
+                      </button>
+                      <pre class="spoosh-json">${formatJson(data)}</pre>
+                    </div>
+                  </div>
+                `
+                    : ""
+                }
+              </div>
+            `;
+          })
+          .join("")}
+      </div>
+    </div>
+  `;
+}
+
+function renderSSEConnectionTab(sub: ExportedSSE): string {
+  const statusClass = getSSEStatusClass(sub.status);
+  const connectedDuration = getSSEDuration(sub);
+
+  return `
+    <div class="spoosh-connection-container">
+      <div class="spoosh-connection-info">
+        <div class="spoosh-connection-row">
+          <span class="spoosh-connection-label">Status</span>
+          <span class="spoosh-badge ${statusClass}">${sub.status}</span>
+        </div>
+
+        <div class="spoosh-connection-row">
+          <span class="spoosh-connection-label">Channel</span>
+          <span class="spoosh-connection-value">${escapeHtml(sub.channel)}</span>
+        </div>
+
+        <div class="spoosh-connection-row">
+          <span class="spoosh-connection-label">URL</span>
+          <span class="spoosh-connection-value spoosh-connection-url">${escapeHtml(sub.connectionUrl)}</span>
+        </div>
+
+        <div class="spoosh-connection-row">
+          <span class="spoosh-connection-label">Connected Duration</span>
+          <span class="spoosh-connection-value">${connectedDuration}</span>
+        </div>
+
+        <div class="spoosh-connection-row">
+          <span class="spoosh-connection-label">Messages</span>
+          <span class="spoosh-connection-value">${sub.messageCount}</span>
+        </div>
+
+        <div class="spoosh-connection-row">
+          <span class="spoosh-connection-label">Retry Count</span>
+          <span class="spoosh-connection-value">${sub.retryCount}</span>
+        </div>
+
+        ${
+          sub.error
+            ? `
+          <div class="spoosh-connection-row">
+            <span class="spoosh-connection-label">Error</span>
+            <span class="spoosh-connection-value error">${escapeHtml(sub.error.message)}</span>
+          </div>
+        `
+            : ""
+        }
+
+        ${
+          sub.connectedAt
+            ? `
+          <div class="spoosh-connection-row">
+            <span class="spoosh-connection-label">Connected At</span>
+            <span class="spoosh-connection-value">${formatTime(sub.connectedAt)}</span>
+          </div>
+        `
+            : ""
+        }
+
+        ${
+          sub.disconnectedAt
+            ? `
+          <div class="spoosh-connection-row">
+            <span class="spoosh-connection-label">Disconnected At</span>
+            <span class="spoosh-connection-value">${formatTime(sub.disconnectedAt)}</span>
+          </div>
+        `
+            : ""
+        }
+      </div>
+    </div>
+  `;
+}
+
+function renderSSEPluginsTab(
+  sub: ExportedSSE,
+  expandedSteps: ReadonlySet<string>,
+  expandedGroups: ReadonlySet<string>,
+  fullDiffViews: ReadonlySet<string>
+): string {
+  const steps = toPluginStepEvents(sub.id, sub.steps);
+
+  if (steps.length === 0) {
+    return `<div class="spoosh-empty-tab">No plugin steps recorded</div>`;
+  }
+
+  const timelineItems: string[] = [];
+  const groupedSteps = groupConsecutiveSteps(steps);
+
+  for (const group of groupedSteps) {
+    if (group.length === 1) {
+      timelineItems.push(
+        renderTimelineStep({
+          traceId: sub.id,
+          step: group[0]!,
+          isExpanded: expandedSteps.has(
+            `${sub.id}:${group[0]!.plugin}:${group[0]!.timestamp}`
+          ),
+          fullDiffViews,
+        })
+      );
+    } else {
+      timelineItems.push(
+        renderGroupedSteps({
+          traceId: sub.id,
+          steps: group,
+          isExpanded: expandedGroups.has(
+            `${sub.id}:group:${group[0]!.plugin}:${group[0]!.timestamp}`
+          ),
+          expandedSteps,
+          fullDiffViews,
+        })
+      );
+    }
+  }
+
+  return `
+    <div class="spoosh-timeline">
+      ${timelineItems.join("")}
+    </div>
+  `;
+}
+
+function renderImportSSETabContent(ctx: ImportDetailContext): string {
+  const {
+    item,
+    subscriptionTab = "messages",
+    selectedMessageId = null,
+    expandedEventTypes = new Set<string>(),
+    expandedSteps = new Set<string>(),
+    expandedGroups = new Set<string>(),
+    fullDiffViews = new Set<string>(),
+  } = ctx;
+
+  if (!item || item.type !== "sse") return "";
+
+  switch (subscriptionTab) {
+    case "messages":
+      return renderSSEMessagesTab(item, selectedMessageId);
+    case "accumulated":
+      return renderSSEAccumulatedTab(item, expandedEventTypes);
+    case "connection":
+      return renderSSEConnectionTab(item);
+    case "plugins":
+      return renderSSEPluginsTab(
+        item,
+        expandedSteps,
+        expandedGroups,
+        fullDiffViews
+      );
+    default:
+      return "";
+  }
+}
+
+function renderImportSSEDetail(ctx: ImportDetailContext): string {
+  const { item, subscriptionTab = "messages" } = ctx;
+
+  if (!item || item.type !== "sse") return "";
+
+  const statusClass = getSSEStatusClass(item.status);
+  const statusIndicator = getSSEStatusIndicator(item.status);
+  const duration = getSSEDuration(item);
+  const pluginCount = getImportPluginCount(item);
+
+  return `
+    <div class="spoosh-detail-panel subscription">
+      <div class="spoosh-detail-header">
+        <div class="spoosh-detail-title">
+          <span class="spoosh-trace-method method-sse">SSE</span>
+          <span class="spoosh-detail-path">${escapeHtml(item.channel)}</span>
+        </div>
+        <div class="spoosh-detail-meta">
+          ${statusIndicator}
+          <span class="spoosh-badge ${statusClass}">${item.status}</span>
+          <span class="spoosh-badge neutral">${duration}</span>
+          <span class="spoosh-badge neutral">${item.messageCount} msgs</span>
+          <span class="spoosh-badge neutral">imported</span>
+        </div>
+      </div>
+
+      <div class="spoosh-tabs">
+        <button class="spoosh-tab ${subscriptionTab === "messages" ? "active" : ""}" data-subscription-tab="messages">
+          Messages (${item.messages.length})
+        </button>
+        <button class="spoosh-tab ${subscriptionTab === "accumulated" ? "active" : ""}" data-subscription-tab="accumulated">
+          Accumulated
+        </button>
+        <button class="spoosh-tab ${subscriptionTab === "connection" ? "active" : ""}" data-subscription-tab="connection">
+          Connection
+        </button>
+        <button class="spoosh-tab ${subscriptionTab === "plugins" ? "active" : ""}" data-subscription-tab="plugins">
+          Plugins ${pluginCount > 0 ? `(${pluginCount})` : ""}
+        </button>
+      </div>
+
+      <div class="spoosh-tab-content">
+        ${renderImportSSETabContent(ctx)}
+      </div>
+    </div>
+  `;
+}
+
+export function renderImportDetail(ctx: ImportDetailContext): string {
+  const { item } = ctx;
+
+  if (!item) {
+    return `
+      <div class="spoosh-detail-panel">
+        <div class="spoosh-detail-empty">
+          <div class="spoosh-detail-empty-icon">📋</div>
+          <div class="spoosh-detail-empty-text">Select an imported trace to inspect</div>
+        </div>
+      </div>
+    `;
+  }
+
+  if (item.type === "sse") {
+    return renderImportSSEDetail(ctx);
+  }
+
+  return renderImportTraceDetail(ctx);
 }

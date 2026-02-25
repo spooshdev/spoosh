@@ -1,8 +1,13 @@
-import type { ExportedTrace } from "../../../types";
-import { escapeHtml, formatTime, parseQueryKey } from "../../utils";
+import type { ExportedTrace, ExportedSSE, ExportedItem } from "../../../types";
+import {
+  escapeHtml,
+  formatTime,
+  parseQueryKey,
+  formatDuration,
+} from "../../utils";
 
 export interface ImportListContext {
-  traces: ExportedTrace[];
+  items: ExportedItem[];
   selectedTraceId: string | null;
   filename: string | null;
 }
@@ -39,6 +44,58 @@ function renderImportTraceRow(
   `;
 }
 
+function getSSEStatusClass(status: ExportedSSE["status"]): string {
+  switch (status) {
+    case "connected":
+      return "success";
+    case "error":
+      return "error";
+    case "connecting":
+      return "pending";
+    case "disconnected":
+    default:
+      return "neutral";
+  }
+}
+
+function getSSEDuration(sub: ExportedSSE): string {
+  if (sub.status === "connecting") return "connecting...";
+
+  const startTime = sub.connectedAt ?? sub.timestamp;
+  const endTime = sub.disconnectedAt ?? sub.timestamp;
+
+  return formatDuration(endTime - startTime);
+}
+
+function renderImportSSERow(sub: ExportedSSE, isSelected: boolean): string {
+  const statusClass = getSSEStatusClass(sub.status);
+  const duration = getSSEDuration(sub);
+  const timestamp = formatTime(sub.timestamp);
+
+  const rowClass = `spoosh-trace-card${isSelected ? " selected" : ""} status-${statusClass}`;
+
+  return `
+    <div class="${rowClass}" data-imported-trace-id="${escapeHtml(sub.id)}">
+      <div class="spoosh-trace-card-header">
+        <span class="spoosh-trace-method-badge method-sse">SSE</span>
+        <span class="spoosh-trace-path">${escapeHtml(sub.channel)}</span>
+      </div>
+      <div class="spoosh-trace-card-footer">
+        <span class="spoosh-trace-preview">${timestamp}</span>
+        <span class="spoosh-trace-duration ${statusClass}">${sub.messageCount} msgs · ${duration}</span>
+      </div>
+    </div>
+  `;
+}
+
+function renderImportItemRow(item: ExportedItem, isSelected: boolean): string {
+  if (item.type === "sse") {
+    return renderImportSSERow(item, isSelected);
+  }
+
+  return renderImportTraceRow(item, isSelected);
+}
+
 export function renderImportEmptyState(): string {
   return `
     <div class="spoosh-import-empty">
@@ -53,23 +110,21 @@ export function renderImportEmptyState(): string {
 }
 
 export function renderImportList(ctx: ImportListContext): string {
-  const { traces, selectedTraceId, filename } = ctx;
+  const { items, selectedTraceId, filename } = ctx;
 
-  if (traces.length === 0 && !filename) {
+  if (items.length === 0 && !filename) {
     return renderImportEmptyState();
   }
 
-  if (traces.length === 0 && filename) {
+  if (items.length === 0 && filename) {
     return `<div class="spoosh-empty">No matching traces</div>`;
   }
 
   return `
     <div class="spoosh-traces">
-      ${[...traces]
+      ${[...items]
         .reverse()
-        .map((trace) =>
-          renderImportTraceRow(trace, trace.id === selectedTraceId)
-        )
+        .map((item) => renderImportItemRow(item, item.id === selectedTraceId))
         .join("")}
     </div>
   `;

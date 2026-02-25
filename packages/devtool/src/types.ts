@@ -151,7 +151,7 @@ export interface DevToolFilters {
 }
 
 export interface DevToolApi {
-  exportTraces(): ExportedTrace[];
+  exportTraces(): ExportedItem[];
   clearTraces(): void;
   toggle(): void;
   toggleFloatingIcon(): void;
@@ -184,7 +184,7 @@ export interface DevToolStoreInterface {
   getCurrentTrace(queryKey: string): OperationTrace | undefined;
   getTrace(traceId: string): OperationTrace | undefined;
   getTraces(): OperationTrace[];
-  exportTraces(): ExportedTrace[];
+  exportTraces(): ExportedItem[];
   getFilteredTraces(searchQuery?: string): OperationTrace[];
   getActiveCount(): number;
   getTotalTraceCount(): number;
@@ -209,9 +209,9 @@ export interface DevToolStoreInterface {
   deleteCacheEntry(key: string): void;
   clearAllCache(): void;
   setMaxHistory(value: number): void;
-  importTraces(data: ExportedTrace[], filename: string): void;
+  importTraces(data: ExportedItem[], filename: string): void;
   getImportedSession(): ImportedSession | null;
-  getFilteredImportedTraces(searchQuery?: string): ExportedTrace[];
+  getFilteredImportedTraces(searchQuery?: string): ExportedItem[];
   clearImportedTraces(): void;
   isStepUpdateOnly(): boolean;
 
@@ -250,6 +250,7 @@ export interface CacheEntryDisplay {
 }
 
 export interface ExportedTrace {
+  type: "request";
   id: string;
   queryKey: string;
   operationType: string;
@@ -273,10 +274,46 @@ export interface ExportedTrace {
   }>;
 }
 
+export interface ExportedSSE {
+  type: "sse";
+  id: string;
+  channel: string;
+  queryKey: string;
+  connectionUrl: string;
+  status: "connecting" | "connected" | "disconnected" | "error";
+  connectedAt?: number;
+  disconnectedAt?: number;
+  error?: { message: string };
+  retryCount: number;
+  messageCount: number;
+  lastMessageAt?: number;
+  accumulatedData: Record<string, unknown>;
+  messages: Array<{
+    id: string;
+    eventType: string;
+    timestamp: number;
+    rawData: unknown;
+  }>;
+  steps: Array<{
+    plugin: string;
+    stage: string;
+    timestamp: number;
+    duration?: number;
+    reason?: string;
+    color?: string;
+    diff?: { before: unknown; after: unknown; label?: string };
+    info?: Array<{ label?: string; value: unknown }>;
+  }>;
+  timestamp: number;
+  listenedEvents?: string[];
+}
+
+export type ExportedItem = ExportedTrace | ExportedSSE;
+
 export interface ImportedSession {
   filename: string;
   importedAt: number;
-  traces: ExportedTrace[];
+  items: ExportedItem[];
 }
 
 export interface RenderContext {

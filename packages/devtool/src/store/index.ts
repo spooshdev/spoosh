@@ -19,6 +19,8 @@ import type {
   SubscriptionConnectEvent,
   SubscriptionMessageEvent,
   ExportedTrace,
+  ExportedSSE,
+  ExportedItem,
   ImportedSession,
 } from "../types";
 import { createRingBuffer } from "./history";
@@ -320,10 +322,11 @@ export class DevToolStore implements DevToolStoreInterface {
     return [...completed, ...active];
   }
 
-  exportTraces(): ExportedTrace[] {
+  exportTraces(): ExportedItem[] {
     const traces = this.getTraces();
+    const subscriptions = this.getSubscriptions();
 
-    return traces.map((trace) => {
+    const exportedTraces: ExportedTrace[] = traces.map((trace) => {
       const request = sanitizeForExport({ ...trace.request }) as Record<
         string,
         unknown
@@ -345,6 +348,7 @@ export class DevToolStore implements DevToolStoreInterface {
       }
 
       return {
+        type: "request" as const,
         id: trace.id,
         queryKey: trace.queryKey,
         operationType: trace.operationType,
@@ -377,6 +381,56 @@ export class DevToolStore implements DevToolStoreInterface {
         })),
       };
     });
+
+    const exportedSSE: ExportedSSE[] = subscriptions.map((sub) => ({
+      type: "sse" as const,
+      id: sub.id,
+      channel: sub.channel,
+      queryKey: sub.queryKey,
+      connectionUrl: sub.connectionUrl,
+      status: sub.status,
+      connectedAt: sub.connectedAt,
+      disconnectedAt: sub.disconnectedAt,
+      error: sub.error ? { message: sub.error.message } : undefined,
+      retryCount: sub.retryCount,
+      messageCount: sub.messageCount,
+      lastMessageAt: sub.lastMessageAt,
+      accumulatedData: sanitizeForExport(sub.accumulatedData) as Record<
+        string,
+        unknown
+      >,
+      messages: sub.messages.map((msg) => ({
+        id: msg.id,
+        eventType: msg.eventType,
+        timestamp: msg.timestamp,
+        rawData: sanitizeForExport(msg.rawData),
+      })),
+      steps: sub.steps.map((step) => ({
+        plugin: step.plugin,
+        stage: step.stage,
+        timestamp: step.timestamp,
+        duration: step.duration,
+        reason: step.reason,
+        color: step.color,
+        diff: step.diff
+          ? {
+              before: sanitizeForExport(step.diff.before),
+              after: sanitizeForExport(step.diff.after),
+              label: step.diff.label,
+            }
+          : undefined,
+        info: step.info?.map((i) => ({
+          label: i.label,
+          value: sanitizeForExport(i.value),
+        })),
+      })),
+      timestamp: sub.timestamp,
+      listenedEvents: sub.listenedEvents,
+    }));
+
+    return [...exportedTraces, ...exportedSSE].sort(
+      (a, b) => a.timestamp - b.timestamp
+    );
   }
 
   getFilteredTraces(searchQuery?: string): OperationTrace[] {
@@ -498,11 +552,11 @@ export class DevToolStore implements DevToolStoreInterface {
     this.notify();
   }
 
-  importTraces(data: ExportedTrace[], filename: string): void {
+  importTraces(data: ExportedItem[], filename: string): void {
     this.importedSession = {
       filename,
       importedAt: Date.now(),
-      traces: data,
+      items: data,
     };
     this.notify();
   }
@@ -511,25 +565,33 @@ export class DevToolStore implements DevToolStoreInterface {
     return this.importedSession;
   }
 
-  getFilteredImportedTraces(searchQuery?: string): ExportedTrace[] {
+  getFilteredImportedTraces(searchQuery?: string): ExportedItem[] {
     if (!this.importedSession) {
       return [];
     }
 
-    let traces = this.importedSession.traces;
+    let items = this.importedSession.items;
 
     if (searchQuery?.trim()) {
       const query = searchQuery.toLowerCase().trim();
 
-      traces = traces.filter(
-        (trace) =>
-          trace.path.toLowerCase().includes(query) ||
-          trace.method.toLowerCase().includes(query) ||
-          trace.queryKey.toLowerCase().includes(query)
-      );
+      items = items.filter((item) => {
+        if (item.type === "request") {
+          return (
+            item.path.toLowerCase().includes(query) ||
+            item.method.toLowerCase().includes(query) ||
+            item.queryKey.toLowerCase().includes(query)
+          );
+        }
+
+        return (
+          item.channel.toLowerCase().includes(query) ||
+          item.queryKey.toLowerCase().includes(query)
+        );
+      });
     }
 
-    return traces;
+    return items;
   }
 
   clearImportedTraces(): void {
