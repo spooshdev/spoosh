@@ -11,6 +11,7 @@
     "dev:docs": "pnpm --filter @spoosh/docs dev",
     "build:docs": "pnpm --filter @spoosh/docs build",
     "typecheck": "pnpm -r --filter \"./packages/**\" typecheck",
+    "test:types": "pnpm -r --filter \"./type-tests/**\" test:types",
     "lint": "pnpm -r --filter \"./packages/**\" lint",
     "format": "pnpm -r format",
     "changeset": "changeset",
