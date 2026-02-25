@@ -2,7 +2,7 @@
 
 ## 0.13.3
 
-- Use stricter type for `useWrite` hook options to prevent passing invalid properties. 
+- Use stricter type for `useWrite` hook options to prevent passing invalid properties.
 
 ## 0.13.2
 

@@ -1,20 +1,20 @@
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 import { expectType } from "tsd";
 import { Spoosh, InfinitePage, InfinitePageStatus } from "@spoosh/core";
-import { create } from "@spoosh/react";
+import { create } from "@spoosh/angular";
 import { cachePlugin } from "@spoosh/plugin-cache";
 import type { TestSchema, DefaultError } from "../schema.js";
 
 const spoosh = new Spoosh<TestSchema, DefaultError>("/api").use([
   cachePlugin(),
 ]);
-const { usePages } = create(spoosh);
+const { injectPages } = create(spoosh);
 
 // =============================================================================
 // Hook Options
 // =============================================================================
 
-usePages((api) => api("activities").GET({ query: {} }), {
+injectPages((api) => api("activities").GET({ query: {} }), {
   merger: () => [],
   // @ts-expect-error - should not allow unknown options
   invalidOption: "test",
@@ -24,7 +24,7 @@ usePages((api) => api("activities").GET({ query: {} }), {
 // Basic usage with merger
 // =============================================================================
 
-const activities = usePages((api) => api("activities").GET({ query: {} }), {
+const activities = injectPages((api) => api("activities").GET({ query: {} }), {
   canFetchNext: ({ lastPage }) => lastPage?.data?.nextCursor !== null,
   nextPageRequest: ({ lastPage }) => ({
     query: { cursor: lastPage?.data?.nextCursor ?? undefined },
@@ -32,41 +32,42 @@ const activities = usePages((api) => api("activities").GET({ query: {} }), {
   merger: (pages) => pages.flatMap((p) => p.data?.items ?? []),
 });
 
-expectType<{ id: number; message: string }[] | undefined>(activities.data);
+expectType<{ id: number; message: string }[] | undefined>(activities.data());
 
 // =============================================================================
-// Pages array
+// Pages array (signal)
 // =============================================================================
 
-activities.pages;
+activities.pages();
 
 // =============================================================================
 // Error inference
 // =============================================================================
 
-if (activities.error) {
-  expectType<{ paginationError: number }>(activities.error);
-  expectType<number>(activities.error.paginationError);
+const activitiesError = activities.error();
+if (activitiesError) {
+  expectType<{ paginationError: number }>(activitiesError);
+  expectType<number>(activitiesError.paginationError);
 
   // @ts-expect-error - message is DefaultError, not activities error
-  activities.error.message;
+  activitiesError.message;
 }
 
 // =============================================================================
-// Loading states
+// Loading states (signals)
 // =============================================================================
 
-expectType<boolean>(activities.loading);
-expectType<boolean>(activities.fetching);
-expectType<boolean>(activities.fetchingNext);
-expectType<boolean>(activities.fetchingPrev);
+expectType<boolean>(activities.loading());
+expectType<boolean>(activities.fetching());
+expectType<boolean>(activities.fetchingNext());
+expectType<boolean>(activities.fetchingPrev());
 
 // =============================================================================
-// Pagination states
+// Pagination states (signals)
 // =============================================================================
 
-expectType<boolean>(activities.canFetchNext);
-expectType<boolean>(activities.canFetchPrev);
+expectType<boolean>(activities.canFetchNext());
+expectType<boolean>(activities.canFetchPrev());
 
 // =============================================================================
 // Fetch next function
@@ -102,17 +103,28 @@ activities.abort();
 // canFetchNext callback type inference
 // =============================================================================
 
-usePages((api) => api("activities").GET({ query: {} }), {
+injectPages((api) => api("activities").GET({ query: {} }), {
   canFetchNext: ({ lastPage }) => {
     expectType<
       | {
-        items: { id: number; message: string }[];
-        nextCursor: number | null;
-      }
+          items: { id: number; message: string }[];
+          nextCursor: number | null;
+        }
       | undefined
     >(lastPage?.data);
     return lastPage?.data?.nextCursor !== null;
   },
+  merger: () => [],
+});
+
+// =============================================================================
+// nextPageRequest callback type inference
+// =============================================================================
+
+injectPages((api) => api("activities").GET({ query: {} }), {
+  nextPageRequest: ({ lastPage }) => ({
+    query: { cursor: lastPage?.data?.nextCursor ?? undefined },
+  }),
   merger: () => [],
 });
 
@@ -125,7 +137,7 @@ type ActivityData = {
   nextCursor: number | null;
 };
 
-usePages((api) => api("activities").GET({ query: {} }), {
+injectPages((api) => api("activities").GET({ query: {} }), {
   merger: (pages) => {
     // Assert pages parameter type (meta is object, not Record<string, unknown>)
     expectType<
@@ -154,21 +166,10 @@ usePages((api) => api("activities").GET({ query: {} }), {
 });
 
 // =============================================================================
-// nextPageRequest callback type inference
-// =============================================================================
-
-usePages((api) => api("activities").GET({ query: {} }), {
-  nextPageRequest: ({ lastPage }) => ({
-    query: { cursor: lastPage?.data?.nextCursor ?? undefined },
-  }),
-  merger: () => [],
-});
-
-// =============================================================================
 // Simple merger
 // =============================================================================
 
-usePages((api) => api("activities").GET({ query: {} }), {
+injectPages((api) => api("activities").GET({ query: {} }), {
   merger: () => [],
 });
 
@@ -176,15 +177,18 @@ usePages((api) => api("activities").GET({ query: {} }), {
 // Query params
 // =============================================================================
 
-usePages((api) => api("activities").GET({ query: { limit: 10 } }), {
+injectPages((api) => api("activities").GET({ query: { limit: 10 } }), {
   merger: () => [],
 });
 
-usePages((api) => api("activities").GET({ query: { cursor: 1, limit: 20 } }), {
-  merger: () => [],
-});
+injectPages(
+  (api) => api("activities").GET({ query: { cursor: 1, limit: 20 } }),
+  {
+    merger: () => [],
+  }
+);
 
-usePages((api) => api("activities").GET({ query: {} }), {
+injectPages((api) => api("activities").GET({ query: {} }), {
   // @ts-expect-error - merger must return correct item type (array of items, not string)
   merger: () => "invalid",
 });

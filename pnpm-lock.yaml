@@ -530,6 +530,66 @@ importers:
         specifier: ^5.0.0
         version: 5.9.3
 
+  type-tests/angular:
+    devDependencies:
+      '@angular/core':
+        specifier: ^19.0.0
+        version: 19.2.18(rxjs@7.8.2)(zone.js@0.15.1)
+      '@spoosh/angular':
+        specifier: workspace:*
+        version: link:../../packages/angular
+      '@spoosh/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@spoosh/plugin-cache':
+        specifier: workspace:*
+        version: link:../../packages/plugin-cache
+      '@spoosh/plugin-debounce':
+        specifier: workspace:*
+        version: link:../../packages/plugin-debounce
+      '@spoosh/plugin-deduplication':
+        specifier: workspace:*
+        version: link:../../packages/plugin-deduplication
+      '@spoosh/plugin-gc':
+        specifier: workspace:*
+        version: link:../../packages/plugin-gc
+      '@spoosh/plugin-initial-data':
+        specifier: workspace:*
+        version: link:../../packages/plugin-initial-data
+      '@spoosh/plugin-invalidation':
+        specifier: workspace:*
+        version: link:../../packages/plugin-invalidation
+      '@spoosh/plugin-optimistic':
+        specifier: workspace:*
+        version: link:../../packages/plugin-optimistic
+      '@spoosh/plugin-polling':
+        specifier: workspace:*
+        version: link:../../packages/plugin-polling
+      '@spoosh/plugin-prefetch':
+        specifier: workspace:*
+        version: link:../../packages/plugin-prefetch
+      '@spoosh/plugin-progress':
+        specifier: workspace:*
+        version: link:../../packages/plugin-progress
+      '@spoosh/plugin-qs':
+        specifier: workspace:*
+        version: link:../../packages/plugin-qs
+      '@spoosh/plugin-refetch':
+        specifier: workspace:*
+        version: link:../../packages/plugin-refetch
+      '@spoosh/plugin-retry':
+        specifier: workspace:*
+        version: link:../../packages/plugin-retry
+      '@spoosh/plugin-throttle':
+        specifier: workspace:*
+        version: link:../../packages/plugin-throttle
+      '@spoosh/plugin-transform':
+        specifier: workspace:*
+        version: link:../../packages/plugin-transform
+      tsd:
+        specifier: ^0.31.0
+        version: 0.31.2
+
   type-tests/react:
     devDependencies:
       '@spoosh/core':
@@ -661,6 +721,13 @@ packages:
   '@angular/compiler@21.1.4':
     resolution: {integrity: sha512-H0qtASeqOTaS44ioF4DYE/yNqwzUmEJpMYrcNEUFEwA20/DkLzyoaEx4y1CjIxtXxuhtge95PNymDBOLWSjIdg==}
     engines: {node: ^20.19.0 || ^22.12.0 || >=24.0.0}
+
+  '@angular/core@19.2.18':
+    resolution: {integrity: sha512-+QRrf0Igt8ccUWXHA+7doK5W6ODyhHdqVyblSlcQ8OciwkzIIGGEYNZom5OZyWMh+oI54lcSeyV2O3xaDepSrQ==}
+    engines: {node: ^18.19.1 || ^20.11.1 || >=22.0.0}
+    peerDependencies:
+      rxjs: ^6.5.3 || ^7.4.0
+      zone.js: ~0.15.0
 
   '@angular/core@21.1.4':
     resolution: {integrity: sha512-QBDO5SaVYTVQ0fIN9Qd7US9cUCgs2vM9x6K18PTUKmygIkHVHTFdzwm4MO5gpCOFzJseGbS+dNzqn+v0PaKf9g==}
@@ -6122,6 +6189,12 @@ snapshots:
     dependencies:
       tslib: 2.8.1
     optional: true
+
+  '@angular/core@19.2.18(rxjs@7.8.2)(zone.js@0.15.1)':
+    dependencies:
+      rxjs: 7.8.2
+      tslib: 2.8.1
+      zone.js: 0.15.1
 
   '@angular/core@21.1.4(@angular/compiler@21.1.4)(rxjs@7.8.2)(zone.js@0.15.1)':
     dependencies:
@@ -12260,7 +12333,6 @@ snapshots:
 
   zod@4.3.6: {}
 
-  zone.js@0.15.1:
-    optional: true
+  zone.js@0.15.1: {}
 
   zwitch@2.0.4: {}

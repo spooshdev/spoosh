@@ -6,35 +6,36 @@ import {
   QueueStats,
   QueueItemStatus,
 } from "@spoosh/core";
-import { create } from "@spoosh/react";
+import { create } from "@spoosh/angular";
 import { cachePlugin } from "@spoosh/plugin-cache";
 import type { TestSchema, DefaultError } from "../schema.js";
 
 const spoosh = new Spoosh<TestSchema, DefaultError>("/api").use([
   cachePlugin(),
 ]);
-const { useQueue } = create(spoosh);
+const { injectQueue } = create(spoosh);
 
 // =============================================================================
 // Hook Options
 // =============================================================================
 
-// @ts-expect-error - should not allow unknown options
-useQueue((api) => api("uploads").POST(), { invalidOption: "test" });
+injectQueue((api) => api("uploads").POST(), {
+  // @ts-expect-error - should not allow unknown options
+  invalidOption: "test",
+});
 
 // =============================================================================
 // Basic usage
 // =============================================================================
 
-const uploadQueue = useQueue((api) => api("uploads").POST());
+const uploadQueue = injectQueue((api) => api("uploads").POST());
 
 // =============================================================================
-// Tasks array
+// Tasks array (signal)
 // =============================================================================
 
-uploadQueue.tasks;
-
-const task = uploadQueue.tasks[0];
+const tasks = uploadQueue.tasks();
+const task = tasks[0];
 
 // =============================================================================
 // Task status type
@@ -67,17 +68,18 @@ if (task?.error) {
 }
 
 // =============================================================================
-// Queue stats
+// Queue stats (signal)
 // =============================================================================
 
-expectType<QueueStats>(uploadQueue.stats);
-expectType<number>(uploadQueue.stats.pending);
-expectType<number>(uploadQueue.stats.running);
-expectType<number>(uploadQueue.stats.settled);
-expectType<number>(uploadQueue.stats.success);
-expectType<number>(uploadQueue.stats.failed);
-expectType<number>(uploadQueue.stats.total);
-expectType<number>(uploadQueue.stats.percentage);
+const stats = uploadQueue.stats();
+expectType<QueueStats>(stats);
+expectType<number>(stats.pending);
+expectType<number>(stats.running);
+expectType<number>(stats.settled);
+expectType<number>(stats.success);
+expectType<number>(stats.failed);
+expectType<number>(stats.total);
+expectType<number>(stats.percentage);
 
 // =============================================================================
 // Trigger function - body required

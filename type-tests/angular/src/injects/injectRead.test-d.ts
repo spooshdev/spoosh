@@ -1,81 +1,86 @@
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 import { expectType } from "tsd";
 import { Spoosh, SpooshResponse } from "@spoosh/core";
-import { create } from "@spoosh/react";
+import { create } from "@spoosh/angular";
 import { cachePlugin } from "@spoosh/plugin-cache";
 import type { TestSchema, DefaultError } from "../schema.js";
 
 const spoosh = new Spoosh<TestSchema, DefaultError>("/api").use([
   cachePlugin(),
 ]);
-const { useRead } = create(spoosh);
+const { injectRead } = create(spoosh);
 
 // =============================================================================
 // Hook Options
 // =============================================================================
 
-// @ts-expect-error - should not allow unknown options
-useRead((api) => api("posts").GET(), { invalidOption: "test" });
+injectRead((api) => api("posts").GET(), {
+  // @ts-expect-error - should not allow unknown options
+  invalidOption: "test",
+});
 
 // =============================================================================
 // Data inference
 // =============================================================================
 
-const postsRead = useRead((api) => api("posts").GET());
-expectType<{ id: number; title: string }[] | undefined>(postsRead.data);
+const postsRead = injectRead((api) => api("posts").GET());
+expectType<{ id: number; title: string }[] | undefined>(postsRead.data());
 
-const postByIdRead = useRead((api) =>
+const postByIdRead = injectRead((api) =>
   api("posts/:id").GET({ params: { id: "1" } })
 );
-expectType<{ id: number; title: string } | undefined>(postByIdRead.data);
+expectType<{ id: number; title: string } | undefined>(postByIdRead.data());
 
-const usersRead = useRead((api) => api("users").GET());
-expectType<{ name: string }[] | undefined>(usersRead.data);
+const usersRead = injectRead((api) => api("users").GET());
+expectType<{ name: string }[] | undefined>(usersRead.data());
 
 // =============================================================================
 // Error inference - per-endpoint error
 // =============================================================================
 
-if (postsRead.error) {
-  expectType<{ customError: string }>(postsRead.error);
-  expectType<string>(postsRead.error.customError);
+const postsError = postsRead.error();
+if (postsError) {
+  expectType<{ customError: string }>(postsError);
+  expectType<string>(postsError.customError);
 
   // @ts-expect-error - message is DefaultError, not posts error
-  postsRead.error.message;
+  postsError.message;
 }
 
-if (postByIdRead.error) {
-  expectType<{ notFound: boolean }>(postByIdRead.error);
-  expectType<boolean>(postByIdRead.error.notFound);
+const postByIdError = postByIdRead.error();
+if (postByIdError) {
+  expectType<{ notFound: boolean }>(postByIdError);
+  expectType<boolean>(postByIdError.notFound);
 
   // @ts-expect-error - customError is posts error, not posts/:id error
-  postByIdRead.error.customError;
+  postByIdError.customError;
 }
 
 // =============================================================================
 // Error inference - default error fallback
 // =============================================================================
 
-if (usersRead.error) {
-  expectType<{ message: string }>(usersRead.error);
-  expectType<string>(usersRead.error.message);
+const usersError = usersRead.error();
+if (usersError) {
+  expectType<{ message: string }>(usersError);
+  expectType<string>(usersError.message);
 
   // @ts-expect-error - customError doesn't exist on default error
-  usersRead.error.customError;
+  usersError.customError;
 }
 
 // =============================================================================
-// Loading states
+// Loading states (signals)
 // =============================================================================
 
-expectType<boolean>(postsRead.loading);
-expectType<boolean>(postsRead.fetching);
+expectType<boolean>(postsRead.loading());
+expectType<boolean>(postsRead.fetching());
 
 // =============================================================================
-// Meta field
+// Meta field (signal)
 // =============================================================================
 
-postsRead.meta;
+postsRead.meta();
 
 // =============================================================================
 // Trigger function
@@ -109,4 +114,4 @@ postByIdRead.abort();
 // =============================================================================
 
 // @ts-expect-error - posts/:id requires params
-useRead((api) => api("posts/:id").GET());
+injectRead((api) => api("posts/:id").GET());

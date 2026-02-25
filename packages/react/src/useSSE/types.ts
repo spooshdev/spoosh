@@ -20,8 +20,9 @@ export interface UseSSEOptionsBase {
   retryDelay?: number;
 }
 
-type ParseFn<TEvents extends Record<string, unknown> = Record<string, unknown>> =
-  (data: string) => Partial<TEvents>;
+type ParseFn<
+  TEvents extends Record<string, unknown> = Record<string, unknown>,
+> = (data: string) => Partial<TEvents>;
 
 export type TypedParseConfig<
   TEventKeys extends string,
