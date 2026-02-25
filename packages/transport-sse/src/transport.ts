@@ -1,6 +1,5 @@
 import { fetchEventSource } from "@microsoft/fetch-event-source";
 import type {
-  SpooshTransport,
   SubscriptionAdapter,
   SubscriptionHandle,
   DevtoolEvents,
@@ -11,9 +10,11 @@ import type {
   SSETransportOptions,
   SSETransportConfig,
   SSEMessage,
-  SSEAdapterFactory,
   SSEAdapterOptions,
+  SSETransport,
 } from "./types";
+import { resolveParser } from "./parsers";
+import { resolveAccumulator } from "./accumulators";
 
 interface ConnectionState {
   abortController: AbortController;
@@ -27,9 +28,7 @@ interface ConnectionState {
   retryCount: number;
 }
 
-export function sse(
-  config: SSETransportConfig = {}
-): SpooshTransport<SSETransportOptions, SSEMessage> & SSEAdapterFactory {
+export function sse(config: SSETransportConfig = {}): SSETransport {
   const disconnectDelay = config.disconnectDelay ?? 100;
   const throttleConfig = config.throttle ?? false;
   const defaultMaxRetries = config.maxRetries ?? 3;
@@ -726,5 +725,9 @@ export function sse(
     send,
     isConnected,
     createSubscriptionAdapter,
+    utils: {
+      resolveParser,
+      resolveAccumulator,
+    },
   };
 }

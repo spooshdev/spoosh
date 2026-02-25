@@ -2,7 +2,7 @@
 
 Server-Sent Events (SSE) transport for Spoosh with connection pooling, automatic reconnection, and typed event streaming.
 
-**[Documentation](https://spoosh.dev/docs/transports/sse)** · **Requirements:** TypeScript >= 5.0 · **Peer Dependencies:** `@spoosh/core`
+**[Documentation](https://spoosh.dev/docs/react/hooks/use-sse)** · **Requirements:** TypeScript >= 5.0 · **Peer Dependencies:** `@spoosh/core`
 
 ## Installation
 
@@ -30,16 +30,18 @@ Define your SSE endpoints with the `events` field:
 
 ```typescript
 type ApiSchema = {
-  "notifications": {
+  notifications: {
     GET: {
       query: { userId: string };
       events: {
         message: { data: { id: string; text: string } };
-        alert: { data: { id: string; priority: "low" | "high"; message: string } };
+        alert: {
+          data: { id: string; priority: "low" | "high"; message: string };
+        };
       };
     };
   };
-  "chat": {
+  chat: {
     POST: {
       body: { conversationId: string; message: string };
       events: {
@@ -78,7 +80,7 @@ function Notifications() {
 ```typescript
 const { data } = useSSE(
   (api) => api("notifications").GET({ query: { userId: "user-123" } }),
-  { events: ["alert"] }  // Only subscribe to alert events
+  { events: ["alert"] } // Only subscribe to alert events
 );
 
 // data.alert is typed, data.message is not included
@@ -116,31 +118,31 @@ return <div>{data?.chunk?.chunk}</div>;
 
 Control how raw SSE data is parsed:
 
-| Strategy    | Description                                                |
-| ----------- | ---------------------------------------------------------- |
-| `"auto"`    | Auto-detect: JSON → number → boolean → string (default)    |
+| Strategy      | Description                                                           |
+| ------------- | --------------------------------------------------------------------- |
+| `"auto"`      | Auto-detect: JSON → number → boolean → string (default)               |
 | `"json-done"` | Parse JSON, return `undefined` for `[DONE]` signal. Ideal for AI APIs |
-| `"json"`    | Strict JSON parsing                                        |
-| `"text"`    | Return raw string                                          |
-| `"number"`  | Parse as number                                            |
-| `"boolean"` | Parse as boolean                                           |
+| `"json"`      | Strict JSON parsing                                                   |
+| `"text"`      | Return raw string                                                     |
+| `"number"`    | Parse as number                                                       |
+| `"boolean"`   | Parse as boolean                                                      |
 
 ```typescript
 // Global parse strategy
-useSSE((api) => api("stream").GET(), { parse: "json" })
+useSSE((api) => api("stream").GET(), { parse: "json" });
 
 // Per-event parse strategy
 useSSE((api) => api("stream").GET(), {
   parse: {
     chunk: "text",
     metadata: "json",
-  }
-})
+  },
+});
 
 // Custom parse function
 useSSE((api) => api("stream").GET(), {
-  parse: (data) => customParser(data)
-})
+  parse: (data) => customParser(data),
+});
 ```
 
 ## Accumulate Strategies
@@ -169,22 +171,22 @@ The `"merge"` strategy automatically handles different types:
 
 ```typescript
 // Global accumulate strategy
-useSSE((api) => api("stream").GET(), { accumulate: "merge" })
+useSSE((api) => api("stream").GET(), { accumulate: "merge" });
 
 // Per-event accumulate strategy
 useSSE((api) => api("stream").GET(), {
   accumulate: {
     chunk: "merge",
     status: "replace",
-  }
-})
+  },
+});
 
 // Field-specific config (merge only specific fields)
 useSSE((api) => api("chat").POST(), {
   accumulate: {
-    chunk: { text: "merge" },  // Concat text field, replace others
+    chunk: { text: "merge" }, // Concat text field, replace others
   },
-})
+});
 
 // Example: Field-specific accumulation in action
 // Schema: events: { chunk: { data: { id: string; text: string; tokens: number } } }
@@ -203,35 +205,38 @@ useSSE((api) => api("chat").POST(), {
       text: (prev?.text || "") + curr.text,
     }),
   },
-})
+});
 ```
 
 ## Transport Configuration
 
 ```typescript
-const spoosh = new Spoosh<ApiSchema, Error>("/api").withTransports([sse({
-  // Delay before disconnecting when no subscribers (helps with React Strict Mode)
-  disconnectDelay: 100,
+const spoosh = new Spoosh<ApiSchema, Error>("/api").withTransports([
+  sse({
+    // Delay before disconnecting when no subscribers (helps with React Strict Mode)
+    disconnectDelay: 100,
 
-  // Throttle notifications to prevent UI flooding
-  throttle: true,  // Uses requestAnimationFrame
-  // throttle: 16,  // Or custom interval in ms
+    // Throttle notifications to prevent UI flooding
+    throttle: true, // Uses requestAnimationFrame
+    // throttle: 16,  // Or custom interval in ms
 
-  // Keep connection alive when tab is hidden
-  openWhenHidden: true,
-})]);
+    // Keep connection alive when tab is hidden
+    openWhenHidden: true,
+  }),
+]);
 ```
 
 ## Hook Options
 
 ```typescript
 useSSE(
-  (api) => api("notifications").GET({
-    query: { userId: "user-123" },
-    headers: { Authorization: "Bearer token" },
-    credentials: "include",
-    openWhenHidden: true,
-  }),
+  (api) =>
+    api("notifications").GET({
+      query: { userId: "user-123" },
+      headers: { Authorization: "Bearer token" },
+      credentials: "include",
+      openWhenHidden: true,
+    }),
   {
     enabled: true,
     events: ["alert", "message"],
@@ -240,27 +245,27 @@ useSSE(
     maxRetries: 3,
     retryDelay: 1000,
   }
-)
+);
 ```
 
 **Selector Options** (passed to api call):
 
-| Option           | Type                 | Default | Description                                    |
-| ---------------- | -------------------- | ------- | ---------------------------------------------- |
-| `headers`        | `HeadersInit`        | -       | Request headers                                |
-| `credentials`    | `RequestCredentials` | -       | Credentials mode (include, same-origin)        |
-| `openWhenHidden` | `boolean`            | `true`  | Keep connection alive in background tabs       |
+| Option           | Type                 | Default | Description                              |
+| ---------------- | -------------------- | ------- | ---------------------------------------- |
+| `headers`        | `HeadersInit`        | -       | Request headers                          |
+| `credentials`    | `RequestCredentials` | -       | Credentials mode (include, same-origin)  |
+| `openWhenHidden` | `boolean`            | `true`  | Keep connection alive in background tabs |
 
 **Hook Options** (second argument):
 
-| Option       | Type               | Default     | Description                        |
-| ------------ | ------------------ | ----------- | ---------------------------------- |
-| `enabled`    | `boolean`          | `true`      | Connect automatically on mount     |
-| `events`     | `string[]`         | all events  | Events to listen for               |
-| `parse`      | `ParseConfig`      | `"auto"`    | Parse strategy for raw data        |
-| `accumulate` | `AccumulateConfig` | `"replace"` | How to combine events over time    |
-| `maxRetries` | `number`           | `3`         | Max retry attempts on failure      |
-| `retryDelay` | `number`           | `1000`      | Delay between retries in ms        |
+| Option       | Type               | Default     | Description                     |
+| ------------ | ------------------ | ----------- | ------------------------------- |
+| `enabled`    | `boolean`          | `true`      | Connect automatically on mount  |
+| `events`     | `string[]`         | all events  | Events to listen for            |
+| `parse`      | `ParseConfig`      | `"auto"`    | Parse strategy for raw data     |
+| `accumulate` | `AccumulateConfig` | `"replace"` | How to combine events over time |
+| `maxRetries` | `number`           | `3`         | Max retry attempts on failure   |
+| `retryDelay` | `number`           | `1000`      | Delay between retries in ms     |
 
 ## Features
 

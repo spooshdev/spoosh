@@ -7,5 +7,7 @@ export type {
   SSETransportOptions,
   SSETransportConfig,
   SSEMessage,
+  SSETransportUtils,
+  SSETransport,
 } from "./types";
 export * from "./utils";

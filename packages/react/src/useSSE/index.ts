@@ -7,8 +7,11 @@ import type {
   SelectorResult,
 } from "@spoosh/core";
 import { createSelectorProxy } from "@spoosh/core";
-import type { SSEAdapterFactory, SSEMessage } from "@spoosh/transport-sse";
-import { resolveParser, resolveAccumulator } from "@spoosh/transport-sse";
+import type {
+  SSEAdapterFactory,
+  SSEMessage,
+  SSETransportUtils,
+} from "@spoosh/transport-sse";
 import { createUseSubscription } from "../useSubscription";
 import type { SpooshInstanceShape } from "../create/types";
 import type { SubscriptionApiClient } from "../useSubscription/types";
@@ -18,12 +21,18 @@ import type {
   ExtractSubscriptionError,
 } from "../types/extraction";
 
-type SSETransport = SpooshTransport & SSEAdapterFactory;
+type SSETransportWithUtils = SpooshTransport &
+  SSEAdapterFactory & { utils: SSETransportUtils };
 
-function isSSETransport(transport: SpooshTransport): transport is SSETransport {
+function isSSETransport(
+  transport: SpooshTransport
+): transport is SSETransportWithUtils {
+  const t = transport as SSETransportWithUtils;
+
   return (
-    "createSubscriptionAdapter" in transport &&
-    typeof transport.createSubscriptionAdapter === "function"
+    typeof t.createSubscriptionAdapter === "function" &&
+    typeof t.utils?.resolveParser === "function" &&
+    typeof t.utils?.resolveAccumulator === "function"
   );
 }
 
@@ -167,7 +176,10 @@ export function createUseSSE<
         return;
       }
 
-      const parser = resolveParser(parseRef.current, data.event);
+      const parser = transport.utils.resolveParser(
+        parseRef.current,
+        data.event
+      );
       let parsed: unknown;
 
       try {
@@ -180,7 +192,10 @@ export function createUseSSE<
         return;
       }
 
-      const accumulator = resolveAccumulator(accumulateRef.current, data.event);
+      const accumulator = transport.utils.resolveAccumulator(
+        accumulateRef.current,
+        data.event
+      );
 
       const parsedObj = parsed as Record<string, unknown> | undefined;
       const messageIndex =

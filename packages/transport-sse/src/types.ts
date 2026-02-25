@@ -1,4 +1,7 @@
-import type { EventEmitter, SubscriptionAdapter } from "@spoosh/core";
+import type { EventEmitter, SubscriptionAdapter, SpooshTransport } from "@spoosh/core";
+
+import type { ParseConfig, ParseFunction } from "./parsers/types";
+import type { AccumulateConfig, AccumulateFunction } from "./accumulators/types";
 
 /**
  * Options for creating an SSE subscription adapter.
@@ -24,6 +27,23 @@ export interface SSEAdapterFactory<TData = unknown, TError = unknown> {
     options: SSEAdapterOptions
   ): SubscriptionAdapter<TData, TError>;
 }
+
+/**
+ * Utilities attached to SSE transport for parsing and accumulating events.
+ */
+export interface SSETransportUtils {
+  resolveParser: (config: ParseConfig | undefined, eventType: string) => ParseFunction;
+
+  resolveAccumulator: (config: AccumulateConfig | undefined, eventType: string) => AccumulateFunction;
+}
+
+/**
+ * Full SSE transport type including utilities.
+ * This is the return type of `sse()` function.
+ */
+export type SSETransport = SpooshTransport<SSETransportOptions, SSEMessage>
+  & SSEAdapterFactory
+  & { utils: SSETransportUtils };
 
 export interface SSETransportOptions {
   /** Base URL from client config */

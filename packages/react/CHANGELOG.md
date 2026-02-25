@@ -1,5 +1,9 @@
 # @spoosh/react
 
+## 0.13.1
+
+- Fix not install `@spoosh/transport-sse` dependency using in runtime causing build error.
+
 ## 0.13.0
 
 - Add base `useSubscription` hook to support real time transports.
