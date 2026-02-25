@@ -1,5 +1,9 @@
 # @spoosh/devtool
 
+## 0.4.0
+
+- Support SSE event tracing in devtool.
+
 ## 0.3.0
 
 - Update for `pages` operation type rename

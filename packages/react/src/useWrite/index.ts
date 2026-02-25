@@ -49,7 +49,7 @@ export function createUseWrite<
 
   type PluginOptions = MergePluginOptions<TPlugins>;
 
-  type InferError<T> = [T] extends [unknown] ? TDefaultError : T;
+  type InferError<T> = unknown extends T ? TDefaultError : T;
 
   type ExtractParamsRecord<TWriteFn> =
     ExtractResponseParamNames<TWriteFn> extends never

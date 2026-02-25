@@ -1,41 +1,10 @@
 import type { CacheEntryDisplay } from "../../../types";
-import { escapeHtml, formatQueryParams } from "../../utils";
+import { escapeHtml, parseQueryKey } from "../../utils";
 
 export interface StateListContext {
   entries: CacheEntryDisplay[];
   selectedKey: string | null;
   searchQuery: string;
-}
-
-interface ParsedQueryKey {
-  path: string;
-  method: string;
-  queryParams: string | null;
-}
-
-function parseQueryKey(
-  queryKey: string,
-  resolvedPath?: string
-): ParsedQueryKey {
-  try {
-    const parsed = JSON.parse(queryKey) as {
-      path?: string;
-      method?: string;
-      options?: { query?: Record<string, unknown> };
-      pageRequest?: { query?: Record<string, unknown> };
-    };
-
-    const query = parsed.pageRequest?.query ?? parsed.options?.query;
-    const queryParams = query ? formatQueryParams(query) : null;
-
-    return {
-      path: resolvedPath ?? parsed.path ?? queryKey,
-      method: parsed.method ?? "GET",
-      queryParams,
-    };
-  } catch {
-    return { path: resolvedPath ?? queryKey, method: "GET", queryParams: null };
-  }
 }
 
 function getDataPreview(data: unknown): string {

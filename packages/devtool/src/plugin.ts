@@ -6,6 +6,12 @@ import type {
   TraceOptions,
   TraceStage,
   DevtoolEvents,
+  SubscriptionConnectEvent,
+  SubscriptionConnectedEvent,
+  SubscriptionMessageEvent,
+  SubscriptionErrorEvent,
+  SubscriptionDisconnectEvent,
+  SubscriptionAccumulateEvent,
 } from "@spoosh/core";
 import { resolvePathString } from "@spoosh/core";
 
@@ -33,7 +39,7 @@ export function devtool(
   if (!enabled || typeof window === "undefined") {
     return {
       name: "spoosh:devtool",
-      operations: ["read", "write", "pages", "queue"],
+      operations: ["read", "write", "pages", "queue", "subscription"],
     };
   }
 
@@ -63,7 +69,7 @@ export function devtool(
 
   return {
     name: "spoosh:devtool",
-    operations: ["read", "write", "pages", "queue"],
+    operations: ["read", "write", "pages", "queue", "subscription"],
     priority: -100,
 
     middleware: async (context, next) => {
@@ -229,6 +235,56 @@ export function devtool(
           if (cacheEntry?.meta && cacheEntry.meta.size > 0) {
             store.setTraceMeta(traceId, Object.fromEntries(cacheEntry.meta));
           }
+        }
+      );
+
+      ctx.eventEmitter.on<SubscriptionConnectEvent>(
+        "spoosh:subscription:connect",
+        (event) => {
+          store.startSubscription(event);
+        }
+      );
+
+      ctx.eventEmitter.on<SubscriptionConnectedEvent>(
+        "spoosh:subscription:connected",
+        (event) => {
+          store.updateSubscriptionStatus(event.subscriptionId, "connected");
+        }
+      );
+
+      ctx.eventEmitter.on<SubscriptionMessageEvent>(
+        "spoosh:subscription:message",
+        (event) => {
+          store.recordSubscriptionMessage(event);
+        }
+      );
+
+      ctx.eventEmitter.on<SubscriptionErrorEvent>(
+        "spoosh:subscription:error",
+        (event) => {
+          store.updateSubscriptionStatus(
+            event.subscriptionId,
+            "error",
+            event.error
+          );
+        }
+      );
+
+      ctx.eventEmitter.on<SubscriptionDisconnectEvent>(
+        "spoosh:subscription:disconnect",
+        (event) => {
+          store.endSubscription(event.subscriptionId);
+        }
+      );
+
+      ctx.eventEmitter.on<SubscriptionAccumulateEvent>(
+        "spoosh:subscription:accumulate",
+        (event) => {
+          store.updateSubscriptionAccumulatedData(
+            event.queryKey,
+            event.eventType,
+            event.accumulatedData
+          );
         }
       );
     },

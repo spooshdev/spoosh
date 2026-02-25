@@ -3,8 +3,20 @@ import type { HttpMethod, WriteMethod } from "./common.types";
 export type { HttpMethod, WriteMethod };
 
 /**
+ * Registry for subscription methods. Transports extend via module augmentation.
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface SpooshSubscriptionMethodRegistry {}
+
+export type SubscriptionMethod = keyof SpooshSubscriptionMethodRegistry;
+export type AnyMethod = HttpMethod | SubscriptionMethod;
+
+/**
  * An API schema where routes are defined as string keys with path patterns.
  * Define data, body, query, and error directly on each method.
+ *
+ * For subscription endpoints (SSE, WebSocket), define the `events` field instead of `data`.
+ * The transport to use is determined by the hook (useSSE, useWebSocket), not the path.
  *
  * @example
  * ```ts
@@ -18,22 +30,69 @@ export type { HttpMethod, WriteMethod };
  *     PUT: { data: Post; body: UpdatePostBody };
  *     DELETE: { data: void };
  *   };
- *   "posts/:id/comments": {
- *     GET: { data: Comment[]; query: { page?: number } };
+ *   "notifications": {
+ *     GET: {
+ *       events: {
+ *         alert: { data: Alert };
+ *         message: { data: Message };
+ *       };
+ *       query?: { userId: string };
+ *     };
  *   };
  * };
  * ```
  */
-export type ApiSchema = {
-  [path: string]: {
-    [method in HttpMethod]?: {
-      data?: unknown;
-      body?: unknown;
-      query?: unknown;
-      error?: unknown;
-    };
-  };
+/**
+ * HTTP endpoint method config.
+ */
+type HttpMethodConfig = {
+  data?: unknown;
+  body?: unknown;
+  query?: unknown;
+  error?: unknown;
 };
+
+/**
+ * Subscription endpoint method config (SSE, WebSocket, etc.).
+ * Has events field instead of data.
+ */
+type SubscriptionMethodConfig = {
+  events?: Record<string, { data: unknown }>;
+  body?: unknown;
+  query?: unknown;
+  error?: unknown;
+};
+
+/**
+ * Endpoint config - supports both HTTP and subscription methods.
+ * Subscription endpoints are those with an `events` field, HTTP endpoints have `data`.
+ */
+type EndpointConfig = {
+  [M in HttpMethod | SubscriptionMethod]?:
+    | HttpMethodConfig
+    | SubscriptionMethodConfig;
+};
+
+/**
+ * Base API schema type.
+ */
+export type ApiSchema = {
+  [path: string]: { [method: string]: unknown };
+};
+
+/**
+ * Helper type for defining API schemas with proper autocomplete.
+ * Use `events` field for subscription endpoints, `data` field for HTTP endpoints.
+ *
+ * @example
+ * ```ts
+ * type MyApi = SpooshSchema<{
+ *   "posts": { GET: { data: Post[] } };
+ *   "chat": { GET: { events: { message: { data: string } } } };
+ * }>;
+ * ```
+ */
+export type SpooshSchema<T extends { [K in keyof T]: EndpointConfig }> = T;
 
 /**
  * Extract data type from an endpoint.
@@ -58,29 +117,6 @@ export type ExtractError<T, TDefault = unknown> = T extends {
 }
   ? E
   : TDefault;
-
-/**
- * Helper type to define a type-safe API schema.
- * Use this to get type checking on your schema definition.
- *
- * @example
- * ```ts
- * type ApiSchema = SpooshSchema<{
- *   "posts": {
- *     GET: { data: Post[] };
- *     POST: { data: Post; body: CreatePostBody };
- *   };
- *   "posts/:id": {
- *     GET: { data: Post };
- *     PUT: { data: Post; body: UpdatePostBody };
- *     DELETE: { data: void };
- *   };
- * }>;
- *
- * const api = createClient<ApiSchema>({ baseUrl: "/api" });
- * ```
- */
-export type SpooshSchema<T extends ApiSchema> = T;
 
 /**
  * Convert a route pattern like "posts/:id" to a path matcher pattern like `posts/${string}`.
@@ -195,6 +231,37 @@ export type HasWriteMethod<TSchema, TPath extends string> =
         : Extract<keyof TSchema[TKey], WriteMethod> extends never
           ? false
           : true
+      : false
+    : false;
+
+/**
+ * Extract paths that have methods with events (subscription endpoints).
+ */
+export type SubscriptionPaths<TSchema> = {
+  [K in keyof TSchema & string]: {
+    [M in keyof TSchema[K]]: TSchema[K][M] extends { events: unknown }
+      ? K
+      : never;
+  }[keyof TSchema[K]] extends never
+    ? never
+    : K;
+}[keyof TSchema & string];
+
+/**
+ * Check if a schema path has any method with events field.
+ */
+export type HasSubscriptionMethod<TSchema, TPath extends string> =
+  FindMatchingKey<TSchema, TPath> extends infer TKey
+    ? TKey extends keyof TSchema
+      ? {
+          [M in keyof TSchema[TKey]]: TSchema[TKey][M] extends {
+            events: unknown;
+          }
+            ? true
+            : never;
+        }[keyof TSchema[TKey]] extends never
+        ? false
+        : true
       : false
     : false;
 

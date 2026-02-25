@@ -1,0 +1,272 @@
+---
+title: useSSE
+description: Subscribe to real-time SSE streams with parsing and accumulation
+---
+
+## Installation
+
+```package-install
+@spoosh/transport-sse
+```
+
+## Setup
+
+Add the SSE transport to your Spoosh instance:
+
+```typescript
+import { Spoosh } from "@spoosh/core";
+import { create } from "@spoosh/react";
+import { sse } from "@spoosh/transport-sse";
+
+const spoosh = new Spoosh<ApiSchema, Error>("/api").withTransports([sse()]);
+
+export const { useSSE } = create(spoosh);
+```
+
+## Define Your Schema
+
+SSE endpoints have an `events` field defining the event types:
+
+```typescript
+type ApiSchema = {
+  // Regular REST endpoint
+  users: {
+    GET: { data: User[] };
+  };
+
+  // SSE endpoint - has events field
+  notifications: {
+    GET: {
+      query: { userId: string };
+      events: {
+        message: { data: { text: string } };
+        alert: { data: { priority: string; text: string } };
+      };
+    };
+  };
+};
+```
+
+<Callout type="info">
+  `message` is the default SSE event type. If your server sends data without an
+  `event:` field, it will be received as `message`.
+</Callout>
+
+## Basic Example
+
+```typescript
+function Notifications() {
+  const { data, isConnected, loading } = useSSE(
+    (api) => api("notifications").GET({ query: { userId: "123" } })
+  );
+
+  if (loading) return <p>Connecting...</p>;
+
+  return (
+    <div>
+      <p>Status: {isConnected ? "Connected" : "Disconnected"}</p>
+      {data?.message && <p>New message: {data.message.text}</p>}
+      {data?.alert && <p>Alert: {data.alert.text}</p>}
+    </div>
+  );
+}
+```
+
+## Listen to Specific Events
+
+```typescript
+const { data } = useSSE(
+  (api) => api("notifications").GET({ query: { userId: "123" } }),
+  { events: ["alert"] } // Only listen for alerts
+);
+
+// data.alert exists
+// data.message does NOT exist
+```
+
+## On-Demand Connection
+
+```typescript
+function ChatBox() {
+  const { data, trigger, isConnected } = useSSE(
+    (api) => api("chat").POST(),
+    { enabled: false }  // Don't connect automatically
+  );
+
+  const startChat = () => {
+    trigger({ body: { message: "Hello!" } });
+  };
+
+  return (
+    <div>
+      <button onClick={startChat} disabled={isConnected}>
+        Start Chat
+      </button>
+      <p>{data?.chunk?.text}</p>
+    </div>
+  );
+}
+```
+
+## Disconnect
+
+```typescript
+const { disconnect, isConnected } = useSSE(...);
+
+// Manually disconnect
+<button onClick={disconnect}>
+  Disconnect
+</button>
+```
+
+## AI Streaming
+
+```typescript
+const { data, trigger, reset } = useSSE((api) => api("chat").POST(), {
+  events: ["chunk", "done"],
+  parse: "json-done",
+  accumulate: {
+    chunk: (prev, curr) => ({
+      ...curr,
+      text: (prev?.text || "") + curr.text,
+    }),
+  },
+  enabled: false,
+});
+
+// Start new conversation
+const handleSend = async (message: string) => {
+  reset(); // Clear previous response
+  await trigger({ body: { message } });
+};
+```
+
+## Parse Strategies
+
+| Strategy      | What it does                | Example                                                   |
+| ------------- | --------------------------- | --------------------------------------------------------- |
+| `"auto"`      | Smart detection (default)   | `"123"` → `123`, `"true"` → `true`, `'{"a":1}'` → `{a:1}` |
+| `"json-done"` | Parse JSON, ignore `[DONE]` | `'{"text":"hi"}'` → `{text:"hi"}`, `"[DONE]"` → ignored   |
+| `"json"`      | Always JSON                 | `'{"a":1}'` → `{a:1}`                                     |
+| `"text"`      | Keep as string              | `"hello"` → `"hello"`                                     |
+
+```typescript
+// One strategy for all events
+useSSE((api) => api("stream").GET(), { parse: "json" });
+
+// Different strategy per event
+useSSE((api) => api("stream").GET(), {
+  parse: {
+    chunk: "text",
+    metadata: "json",
+  },
+});
+```
+
+## Accumulate Strategies
+
+| Strategy    | What it does               | Example                   |
+| ----------- | -------------------------- | ------------------------- |
+| `"replace"` | New replaces old (default) | `"a"` then `"b"` → `"b"`  |
+| `"merge"`   | Smart merge based on type  | `"a"` then `"b"` → `"ab"` |
+
+### Merge Behavior
+
+The `"merge"` strategy automatically handles different types:
+
+| prev     | next     | result        |
+| -------- | -------- | ------------- |
+| `string` | `string` | concat        |
+| `number` | `number` | replace       |
+| `string` | `number` | replace       |
+| `number` | `string` | replace       |
+| `object` | `object` | shallow merge |
+| `array`  | `array`  | concat        |
+| `object` | `array`  | replace       |
+| `array`  | `object` | replace       |
+
+### Usage
+
+```typescript
+// One strategy for all events
+useSSE((api) => api("stream").GET(), { accumulate: "merge" });
+
+// Different strategy per event
+useSSE((api) => api("stream").GET(), {
+  accumulate: {
+    chunk: "merge", // Build up text/objects
+    status: "replace", // Only keep latest status
+  },
+});
+
+// Field-specific config (merge only specific fields)
+useSSE((api) => api("chat").POST(), {
+  accumulate: {
+    chunk: { text: "merge" }, // Concat text field, replace others
+  },
+});
+
+// Example: Field-specific accumulation in action
+// Schema: events: { chunk: { data: { id: string; text: string; tokens: number } } }
+//
+// Event 1: { id: "1", text: "Hello", tokens: 5 }
+// Event 2: { id: "2", text: " World", tokens: 6 }
+//
+// With { chunk: "merge" }:           { id: "2", text: " World", tokens: 6 }  (shallow merge)
+// With { chunk: { text: "merge" } }: { id: "2", text: "Hello World", tokens: 6 }  (concat text only)
+
+// Same result using custom function:
+useSSE((api) => api("chat").POST(), {
+  accumulate: {
+    chunk: (prev, curr) => ({
+      ...curr,
+      text: (prev?.text || "") + curr.text,
+    }),
+  },
+});
+```
+
+## Options
+
+**Selector Options** (passed to api call):
+
+| Option           | Type                 | Default | Description                              |
+| ---------------- | -------------------- | ------- | ---------------------------------------- |
+| `headers`        | `HeadersInit`        | -       | Request headers                          |
+| `credentials`    | `RequestCredentials` | -       | Include cookies                          |
+| `openWhenHidden` | `boolean`            | `true`  | Keep connection alive in background tabs |
+
+**Hook Options** (second argument):
+
+| Option       | Type               | Default     | Description                     |
+| ------------ | ------------------ | ----------- | ------------------------------- |
+| `enabled`    | `boolean`          | `true`      | Connect automatically on mount  |
+| `events`     | `string[]`         | all events  | Events to listen for            |
+| `parse`      | `ParseConfig`      | `"auto"`    | Parse strategy for raw data     |
+| `accumulate` | `AccumulateConfig` | `"replace"` | How to combine events over time |
+| `maxRetries` | `number`           | `3`         | Retry attempts on failure       |
+| `retryDelay` | `number`           | `1000`      | Retry delay in ms               |
+
+## Returns
+
+| Property      | Type                    | Description                |
+| ------------- | ----------------------- | -------------------------- |
+| `data`        | `TEvents \| undefined`  | All received event data    |
+| `error`       | `TError \| undefined`   | Error if connection failed |
+| `loading`     | `boolean`               | True while connecting      |
+| `isConnected` | `boolean`               | True when connected        |
+| `trigger`     | `(options?) => Promise` | Connect with new options   |
+| `disconnect`  | `() => void`            | Disconnect from stream     |
+| `reset`       | `() => void`            | Reset accumulated data     |
+
+## Transport Configuration
+
+```typescript
+const spoosh = new Spoosh<ApiSchema, Error>("/api").withTransports([
+  sse({
+    disconnectDelay: 100, // Delay before closing idle connections
+    throttle: true, // Batch updates with requestAnimationFrame
+    openWhenHidden: true, // Keep connection in background tabs
+  }),
+]);
+```

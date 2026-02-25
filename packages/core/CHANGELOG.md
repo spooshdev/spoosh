@@ -1,5 +1,9 @@
 # @spoosh/core
 
+## 0.16.0
+
+- Add `subscription` controller for managing real-time transports.
+
 ## 0.15.1
 
 - Add `createSpooshPlugin` helper for automatic plugin options type inference

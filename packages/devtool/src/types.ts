@@ -9,7 +9,16 @@ import type {
   TraceColor,
   PluginContext,
   StandaloneEvent,
+  DevtoolEvents,
+  SubscriptionConnectEvent,
+  SubscriptionMessageEvent,
 } from "@spoosh/core";
+
+export type {
+  DevtoolEvents,
+  SubscriptionConnectEvent,
+  SubscriptionMessageEvent,
+};
 
 export interface DevToolConfig {
   /** Enable or disable the devtool. Defaults to true. */
@@ -71,6 +80,7 @@ export interface PluginStepEvent {
 }
 
 export interface OperationTrace extends PluginContext {
+  type: "request";
   id: string;
   path: string;
   startTime: number;
@@ -85,6 +95,47 @@ export interface OperationTrace extends PluginContext {
   addStep(event: TraceEvent, timestamp: number): void;
 }
 
+/** Individual message received in a subscription */
+export interface SubscriptionMessage {
+  id: string;
+  eventType: string;
+  timestamp: number;
+  rawData: unknown;
+  accumulatedSnapshot: unknown;
+  previousSnapshot?: unknown;
+}
+
+/** Subscription lifecycle trace */
+export interface SubscriptionTrace {
+  type: "subscription";
+  id: string;
+  channel: string;
+  transport: string;
+  queryKey: string;
+  connectionUrl: string;
+  status: "connecting" | "connected" | "disconnected" | "error";
+  connectedAt?: number;
+  disconnectedAt?: number;
+  error?: Error;
+  retryCount: number;
+  messageCount: number;
+  lastMessageAt?: number;
+  accumulatedData: Record<string, unknown>;
+  messages: SubscriptionMessage[];
+  steps: PluginStepEvent[];
+  timestamp: number;
+
+  /** Event types being listened to. Empty or ["*"] means all events. */
+  listenedEvents?: string[];
+}
+
+/** Unified trace type - either a request or subscription */
+export type Trace = OperationTrace | SubscriptionTrace;
+
+/** Type filter for traces */
+// TODO: Add "ws" back when WebSocket transport is implemented
+export type TraceTypeFilter = "all" | "http" | "sse";
+
 export interface InvalidationEvent {
   tags: string[];
   affectedKeys: Array<{ key: string; count: number }>;
@@ -94,12 +145,13 @@ export interface InvalidationEvent {
 
 export interface DevToolFilters {
   operationTypes: Set<OperationType>;
+  traceTypeFilter: TraceTypeFilter;
   showSkipped: boolean;
   showOnlyWithChanges: boolean;
 }
 
 export interface DevToolApi {
-  exportTraces(): ExportedTrace[];
+  exportTraces(): ExportedItem[];
   clearTraces(): void;
   toggle(): void;
   toggleFloatingIcon(): void;
@@ -132,7 +184,7 @@ export interface DevToolStoreInterface {
   getCurrentTrace(queryKey: string): OperationTrace | undefined;
   getTrace(traceId: string): OperationTrace | undefined;
   getTraces(): OperationTrace[];
-  exportTraces(): ExportedTrace[];
+  exportTraces(): ExportedItem[];
   getFilteredTraces(searchQuery?: string): OperationTrace[];
   getActiveCount(): number;
   getTotalTraceCount(): number;
@@ -157,11 +209,29 @@ export interface DevToolStoreInterface {
   deleteCacheEntry(key: string): void;
   clearAllCache(): void;
   setMaxHistory(value: number): void;
-  importTraces(data: ExportedTrace[], filename: string): void;
+  importTraces(data: ExportedItem[], filename: string): void;
   getImportedSession(): ImportedSession | null;
-  getFilteredImportedTraces(searchQuery?: string): ExportedTrace[];
+  getFilteredImportedTraces(searchQuery?: string): ExportedItem[];
   clearImportedTraces(): void;
   isStepUpdateOnly(): boolean;
+
+  startSubscription(event: SubscriptionConnectEvent): SubscriptionTrace;
+  updateSubscriptionStatus(
+    subscriptionId: string,
+    status: SubscriptionTrace["status"],
+    error?: Error
+  ): void;
+  recordSubscriptionMessage(event: SubscriptionMessageEvent): void;
+  updateSubscriptionAccumulatedData(
+    queryKey: string,
+    eventType: string,
+    accumulatedData: Record<string, unknown>
+  ): void;
+  endSubscription(subscriptionId: string, reason?: string): void;
+  getSubscription(subscriptionId: string): SubscriptionTrace | undefined;
+  getSubscriptions(): SubscriptionTrace[];
+  getFilteredSubscriptions(searchQuery?: string): SubscriptionTrace[];
+  getAllTraces(searchQuery?: string): Trace[];
 }
 
 export type DetailTab = "data" | "request" | "meta" | "plugins";
@@ -180,6 +250,7 @@ export interface CacheEntryDisplay {
 }
 
 export interface ExportedTrace {
+  type: "request";
   id: string;
   queryKey: string;
   operationType: string;
@@ -203,10 +274,46 @@ export interface ExportedTrace {
   }>;
 }
 
+export interface ExportedSSE {
+  type: "sse";
+  id: string;
+  channel: string;
+  queryKey: string;
+  connectionUrl: string;
+  status: "connecting" | "connected" | "disconnected" | "error";
+  connectedAt?: number;
+  disconnectedAt?: number;
+  error?: { message: string };
+  retryCount: number;
+  messageCount: number;
+  lastMessageAt?: number;
+  accumulatedData: Record<string, unknown>;
+  messages: Array<{
+    id: string;
+    eventType: string;
+    timestamp: number;
+    rawData: unknown;
+  }>;
+  steps: Array<{
+    plugin: string;
+    stage: string;
+    timestamp: number;
+    duration?: number;
+    reason?: string;
+    color?: string;
+    diff?: { before: unknown; after: unknown; label?: string };
+    info?: Array<{ label?: string; value: unknown }>;
+  }>;
+  timestamp: number;
+  listenedEvents?: string[];
+}
+
+export type ExportedItem = ExportedTrace | ExportedSSE;
+
 export interface ImportedSession {
   filename: string;
   importedAt: number;
-  traces: ExportedTrace[];
+  items: ExportedItem[];
 }
 
 export interface RenderContext {

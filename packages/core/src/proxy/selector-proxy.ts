@@ -91,7 +91,7 @@ export function createSelectorProxy<TSchema>(
       {},
       {
         get(_, prop: string) {
-          if (HTTP_METHODS.includes(prop as HttpMethodKey)) {
+          if (typeof prop === "string" && prop === prop.toUpperCase()) {
             const selectorFn: SelectorFunction = (options?: unknown) => {
               onCapture?.({
                 call: { path, method: prop, options },

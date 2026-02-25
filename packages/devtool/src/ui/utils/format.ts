@@ -22,6 +22,23 @@ export function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+export function formatDuration(ms: number): string {
+  if (ms < 1000) return `${ms}ms`;
+  if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
+
+  const minutes = Math.floor(ms / 60000);
+  const seconds = Math.floor((ms % 60000) / 1000);
+
+  if (minutes < 60) {
+    return seconds > 0 ? `${minutes}m ${seconds}s` : `${minutes}m`;
+  }
+
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+
+  return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
+}
+
 export function formatQueryParams(
   query?: Record<string, unknown>
 ): string | null {
@@ -37,6 +54,37 @@ export function formatQueryParams(
         `${encodeURIComponent(k)}=${encodeURIComponent(String(v ?? ""))}`
     )
     .join("&");
+}
+
+export interface ParsedQueryKey {
+  path: string;
+  method: string;
+  queryParams: string | null;
+}
+
+export function parseQueryKey(
+  queryKey: string,
+  resolvedPath?: string
+): ParsedQueryKey {
+  try {
+    const parsed = JSON.parse(queryKey) as {
+      path?: string;
+      method?: string;
+      options?: { query?: Record<string, unknown> };
+      pageRequest?: { query?: Record<string, unknown> };
+    };
+
+    const query = parsed.pageRequest?.query ?? parsed.options?.query;
+    const queryParams = query ? formatQueryParams(query) : null;
+
+    return {
+      path: resolvedPath ?? parsed.path ?? queryKey,
+      method: parsed.method ?? "GET",
+      queryParams,
+    };
+  } catch {
+    return { path: resolvedPath ?? queryKey, method: "GET", queryParams: null };
+  }
 }
 
 const BASE64_THRESHOLD = 100;

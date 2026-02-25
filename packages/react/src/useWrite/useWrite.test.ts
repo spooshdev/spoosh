@@ -74,6 +74,8 @@ function createTestHooks() {
     stateManager,
     eventEmitter,
     pluginExecutor,
+    transports: new Map(),
+    config: { baseUrl: "/api", defaultOptions: {} },
   });
 
   return {
@@ -234,6 +236,8 @@ describe("useWrite", () => {
         stateManager,
         eventEmitter,
         pluginExecutor,
+        transports: new Map(),
+        config: { baseUrl: "/api", defaultOptions: {} },
       });
 
       expect(() => {
@@ -368,6 +372,8 @@ describe("useWrite", () => {
         stateManager,
         eventEmitter,
         pluginExecutor,
+        transports: new Map(),
+        config: { baseUrl: "/api", defaultOptions: {} },
       });
 
       const { result } = renderHook(() =>
@@ -400,6 +406,8 @@ describe("useWrite", () => {
         stateManager,
         eventEmitter,
         pluginExecutor,
+        transports: new Map(),
+        config: { baseUrl: "/api", defaultOptions: {} },
       });
 
       const { result } = renderHook(() =>

@@ -51,7 +51,7 @@ export function createInjectRead<
   type PluginOptions = MergePluginOptions<TPlugins>;
   type PluginResults = MergePluginResults<TPlugins>;
 
-  type InferError<T> = [T] extends [unknown] ? TDefaultError : T;
+  type InferError<T> = unknown extends T ? TDefaultError : T;
 
   type SuccessResponse<T> = Extract<T, { data: unknown; error?: undefined }>;
   type ErrorResponse<T> = Extract<T, { error: unknown; data?: undefined }>;

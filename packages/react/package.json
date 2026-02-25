@@ -1,6 +1,6 @@
 {
   "name": "@spoosh/react",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "license": "MIT",
   "description": "React hooks for Spoosh API toolkit",
   "keywords": [
@@ -42,10 +42,17 @@
   },
   "peerDependencies": {
     "@spoosh/core": ">=0.15.0",
+    "@spoosh/transport-sse": ">=0.1.0",
     "react": "^18 || ^19"
+  },
+  "peerDependenciesMeta": {
+    "@spoosh/transport-sse": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@spoosh/core": "workspace:*",
+    "@spoosh/transport-sse": "workspace:*",
     "@spoosh/test-utils": "workspace:*",
     "@testing-library/react": "^16.0.0",
     "jsdom": "^26.0.0"

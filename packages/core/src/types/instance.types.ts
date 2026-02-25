@@ -4,6 +4,7 @@ import type { PluginExecutor } from "../plugins/executor";
 import type { SpooshClient } from "./client.types";
 import type { SpooshOptions } from "./request.types";
 import type { SpooshPlugin, PluginTypeConfig } from "../plugins/types";
+import type { SpooshTransport } from "../transport/subscription";
 
 export type PluginArray = readonly SpooshPlugin<PluginTypeConfig>[];
 
@@ -17,12 +18,14 @@ export type SpooshInstance<
   TSchema = unknown,
   TDefaultError = unknown,
   TPlugins extends PluginArray = PluginArray,
+  TTransports extends string = never,
 > = {
   api: SpooshClient<TSchema, TDefaultError>;
 
   stateManager: StateManager;
   eventEmitter: EventEmitter;
   pluginExecutor: PluginExecutor;
+  transports: Map<string, SpooshTransport>;
 
   config: {
     baseUrl: string;
@@ -33,5 +36,6 @@ export type SpooshInstance<
     schema: TSchema;
     defaultError: TDefaultError;
     plugins: TPlugins;
+    transports: TTransports;
   };
 };

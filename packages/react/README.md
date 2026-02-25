@@ -1,6 +1,6 @@
 # @spoosh/react
 
-React hooks for Spoosh - `useRead`, `useWrite`, and `usePages`.
+React hooks for Spoosh - `useRead`, `useWrite`, `usePages`, and `useSSE`.
 
 **[Documentation](https://spoosh.dev/docs/react)** · **Requirements:** TypeScript >= 5.0, React >= 18.0
 
@@ -158,6 +158,61 @@ function PostList() {
 }
 ```
 
+### useSSE
+
+Subscribe to real-time data streams using Server-Sent Events (SSE).
+
+```typescript
+import { sse } from "@spoosh/transport-sse";
+
+// Setup with SSE transport
+const spoosh = new Spoosh<ApiSchema, Error>("/api").withTransports([sse()]);
+export const { useSSE } = create(spoosh);
+
+// Basic subscription
+function Notifications() {
+  const { data, isConnected, loading } = useSSE(
+    (api) => api("notifications").GET({ query: { userId: "user-123" } })
+  );
+
+  if (loading) return <div>Connecting...</div>;
+
+  return (
+    <div>
+      <span>{isConnected ? "Connected" : "Disconnected"}</span>
+      {data?.message && <p>{data.message.text}</p>}
+    </div>
+  );
+}
+
+// Subscribe to specific events only
+const { data } = useSSE(
+  (api) => api("notifications").GET({
+    query: { userId: "user-123" },
+  }),
+  { events: ["alert"] }  // Only alert events
+);
+
+// AI streaming with accumulation
+const { data, trigger } = useSSE(
+  (api) => api("chat").POST(),
+  {
+    events: ["chunk", "done"],
+    parse: "json-done",
+    accumulate: {
+      chunk: (prev, curr) => ({
+        ...curr,
+        chunk: (prev?.chunk || "") + curr.chunk,
+      }),
+    },
+    enabled: false,
+  }
+);
+
+// Start streaming on demand
+await trigger({ body: { message: "Hello" } });
+```
+
 ## API Reference
 
 ### useRead(readFn, options?)
@@ -247,3 +302,33 @@ type InfinitePage<TData> = {
 | `trigger`      | `(options?) => Promise<void>` | Trigger fetch with optional new request options |
 | `abort`        | `() => void`                  | Abort current request                           |
 | `error`        | `TError \| undefined`         | Error if request failed                         |
+
+### useSSE(subFn, options?)
+
+| Option       | Type               | Default     | Description                       |
+| ------------ | ------------------ | ----------- | --------------------------------- |
+| `enabled`    | `boolean`          | `true`      | Whether to connect automatically  |
+| `events`     | `string[]`         | all events  | Subscribe to specific events only |
+| `parse`      | `ParseConfig`      | `"auto"`    | How to parse raw event data       |
+| `accumulate` | `AccumulateConfig` | `"replace"` | How to combine events over time   |
+
+**Returns:**
+
+| Property      | Type                    | Description                    |
+| ------------- | ----------------------- | ------------------------------ |
+| `data`        | `TEvents \| undefined`  | Accumulated event data         |
+| `error`       | `TError \| undefined`   | Error if connection failed     |
+| `loading`     | `boolean`               | True during initial connection |
+| `isConnected` | `boolean`               | True when connected to stream  |
+| `trigger`     | `(options?) => Promise` | Reconnect with new options     |
+| `disconnect`  | `() => void`            | Disconnect from stream         |
+| `reset`       | `() => void`            | Reset accumulated data         |
+
+**Connection Options:**
+
+| Option        | Type                 | Description                                 |
+| ------------- | -------------------- | ------------------------------------------- |
+| `headers`     | `HeadersInit`        | Request headers                             |
+| `credentials` | `RequestCredentials` | Credentials mode                            |
+| `maxRetries`  | `number`             | Max retry attempts (default: 3)             |
+| `retryDelay`  | `number`             | Delay between retries in ms (default: 1000) |

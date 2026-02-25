@@ -33,6 +33,7 @@ import type {
   ExtractResponseQuery,
   ExtractResponseBody,
   ExtractResponseParamNames,
+  ExtractMethodError,
 } from "../types/extraction";
 import type { SpooshInstanceShape } from "../create/types";
 
@@ -50,17 +51,13 @@ export function createUseRead<
 
   type PluginOptions = MergePluginOptions<TPlugins>;
 
-  type InferError<T> = [T] extends [unknown] ? TDefaultError : T;
+  type InferError<T> = unknown extends T ? TDefaultError : T;
   type ExtractData<T> = T extends (
     ...args: unknown[]
   ) => Promise<{ data: infer D }>
     ? D
     : unknown;
-  type ExtractError<T> = T extends (
-    ...args: unknown[]
-  ) => Promise<{ error: infer E }>
-    ? E
-    : unknown;
+  type ExtractError<T> = InferError<ExtractMethodError<T>>;
 
   type ResolvedReadOptions<TReadFn> = BaseReadOptions &
     ResolveTypes<
@@ -68,7 +65,7 @@ export function createUseRead<
       ResolverContext<
         TSchema,
         ExtractData<TReadFn>,
-        InferError<ExtractError<TReadFn>>,
+        ExtractError<TReadFn>,
         ExtractResponseQuery<TReadFn>,
         ExtractResponseBody<TReadFn>,
         ExtractResponseParamNames<TReadFn> extends never
@@ -88,7 +85,7 @@ export function createUseRead<
     readOptions?: TReadOpts
   ): BaseReadResult<
     ExtractData<TReadFn>,
-    InferError<ExtractError<TReadFn>>,
+    ExtractError<TReadFn>,
     ResolveResultTypes<MergePluginResults<TPlugins>["read"], TReadOpts>,
     TriggerOptions<TReadFn>
   > &

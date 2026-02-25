@@ -64,7 +64,7 @@ export function createInjectPages<
       : unknown
     : unknown;
 
-  type InferError<T> = [T] extends [unknown] ? TDefaultError : T;
+  type InferError<T> = unknown extends T ? TDefaultError : T;
 
   return function injectPages<
     TReadFn extends (

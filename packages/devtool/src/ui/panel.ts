@@ -1,12 +1,13 @@
 import type {
   DevToolStoreInterface,
   DevToolTheme,
-  ExportedTrace,
+  ExportedItem,
+  SubscriptionTrace,
 } from "../types";
 import { createActionRouter } from "./action-router";
 import {
   renderHeader,
-  renderTraceList,
+  renderUnifiedTraceList,
   renderEventList,
   renderDetailPanel,
   renderEventRow,
@@ -20,6 +21,8 @@ import {
   renderSettings,
   renderImportList,
   renderImportDetail,
+  renderSubscriptionDetail,
+  renderSubscriptionTabs,
 } from "./render";
 import { createRenderScheduler } from "./render-scheduler";
 import { createResizeController } from "./resize-controller";
@@ -187,13 +190,18 @@ export class DevToolPanel {
           const isAtTop = !traceList || traceList.scrollTop <= 50;
 
           if (isAtTop) {
-            const traces = this.store.getFilteredTraces(
+            const traces = this.store.getAllTraces(
               this.viewModel.getState().searchQuery
             );
             const lastTrace = traces[traces.length - 1];
 
             if (lastTrace) {
-              this.viewModel.selectTrace(lastTrace.id);
+              if (lastTrace.type === "subscription") {
+                this.viewModel.selectSubscription(lastTrace.id);
+              } else {
+                this.viewModel.selectTrace(lastTrace.id);
+              }
+
               this.renderScheduler.schedule(() => this.render());
               return;
             }
@@ -282,10 +290,10 @@ export class DevToolPanel {
       return;
     }
 
-    const traces = this.store.getFilteredTraces(state.searchQuery);
+    const allTraces = this.store.getAllTraces(state.searchQuery);
     const events = this.store.getEvents();
-    const selectedTrace = state.selectedTraceId
-      ? traces.find((t) => t.id === state.selectedTraceId)
+    const selectedItem = state.selectedTraceId
+      ? allTraces.find((t) => t.id === state.selectedTraceId)
       : null;
 
     const requestsSection = this.sidebar.querySelector(
@@ -296,7 +304,7 @@ export class DevToolPanel {
       const countEl = requestsSection.querySelector(".spoosh-section-count");
 
       if (countEl) {
-        countEl.textContent = String(traces.length);
+        countEl.textContent = String(allTraces.length);
       }
 
       const existingList = requestsSection.querySelector(
@@ -305,7 +313,10 @@ export class DevToolPanel {
 
       if (existingList) {
         const savedListScrollTop = existingList.scrollTop ?? 0;
-        existingList.outerHTML = renderTraceList(traces, state.selectedTraceId);
+        existingList.outerHTML = renderUnifiedTraceList(
+          allTraces,
+          state.selectedTraceId
+        );
 
         if (savedListScrollTop > 0) {
           const newList = requestsSection.querySelector(".spoosh-traces");
@@ -356,7 +367,8 @@ export class DevToolPanel {
       }
     }
 
-    if (selectedTrace) {
+    if (selectedItem?.type === "request") {
+      const selectedTrace = selectedItem;
       const isPending = selectedTrace.duration === undefined;
       const hasError = !!selectedTrace.response?.error;
       const tabContent = this.sidebar.querySelector(".spoosh-tab-content");
@@ -445,6 +457,10 @@ export class DevToolPanel {
           tabContent.scrollTop = savedScrollTop;
         }
       }
+    } else if (selectedItem?.type === "subscription") {
+      const subscription = selectedItem;
+
+      this.partialUpdateSubscription(subscription, state);
     }
   }
 
@@ -488,6 +504,71 @@ export class DevToolPanel {
           entry: selectedEntry,
           activeTab: state.internalTab,
         });
+      }
+    }
+  }
+
+  private partialUpdateSubscription(
+    subscription: SubscriptionTrace,
+    state: ReturnType<typeof this.viewModel.getState>
+  ): void {
+    if (!this.sidebar) return;
+
+    const messagesTabBtn = this.sidebar.querySelector(
+      '[data-subscription-tab="messages"]'
+    );
+
+    if (messagesTabBtn) {
+      messagesTabBtn.textContent = `Messages (${subscription.messages.length})`;
+    }
+
+    const pluginCount = this.getActivePluginCount(subscription);
+    const pluginsTabBtn = this.sidebar.querySelector(
+      '[data-subscription-tab="plugins"]'
+    );
+
+    if (pluginsTabBtn) {
+      pluginsTabBtn.textContent = `Plugins ${pluginCount > 0 ? `(${pluginCount})` : ""}`;
+    }
+
+    const msgBadge = this.sidebar.querySelector(
+      ".spoosh-detail-meta .spoosh-badge.neutral:last-child"
+    );
+
+    if (msgBadge) {
+      msgBadge.textContent = `${subscription.messageCount} msgs`;
+    }
+
+    const tabContent = this.sidebar.querySelector(".spoosh-tab-content");
+
+    if (tabContent) {
+      const savedScrollTop = tabContent.scrollTop ?? 0;
+
+      if (state.subscriptionTab === "plugins") {
+        tabContent.innerHTML = renderPluginsTab({
+          trace: {
+            id: subscription.id,
+            steps: subscription.steps,
+            operationType: "subscription",
+          },
+          knownPlugins: this.store.getKnownPlugins("subscription"),
+          showPassedPlugins: state.showPassedPlugins,
+          expandedSteps: state.expandedSteps,
+          expandedGroups: state.expandedGroups,
+          fullDiffViews: state.fullDiffViews,
+        });
+      } else {
+        tabContent.innerHTML = renderSubscriptionTabs({
+          subscription,
+          activeTab: state.subscriptionTab,
+          selectedMessageId: state.selectedMessageId,
+          expandedEventTypes: state.expandedEventTypes,
+          showUnlistenedEvents: state.showUnlistenedEvents,
+        });
+      }
+
+      if (savedScrollTop > 0) {
+        tabContent.scrollTop = savedScrollTop;
       }
     }
   }
@@ -566,33 +647,63 @@ export class DevToolPanel {
 
   private renderRequestsView(): string {
     const state = this.viewModel.getState();
-    const traces = this.store.getFilteredTraces(state.searchQuery);
+    const allTraces = this.store.getAllTraces(state.searchQuery);
     const events = this.store.getEvents();
     const filters = this.store.getFilters();
     const activeCount = this.store.getActiveCount();
-    const selectedTrace = state.selectedTraceId
-      ? traces.find((t) => t.id === state.selectedTraceId)
+
+    const selectedItem = state.selectedTraceId
+      ? allTraces.find((t) => t.id === state.selectedTraceId)
       : null;
 
-    const detailContent = renderDetailPanel({
-      trace: selectedTrace ?? null,
-      showSettings: state.showSettings,
-      activeTab: state.activeTab,
-      showPassedPlugins: state.showPassedPlugins,
-      expandedSteps: state.expandedSteps,
-      expandedGroups: state.expandedGroups,
-      fullDiffViews: state.fullDiffViews,
-      knownPlugins: selectedTrace
-        ? this.store.getKnownPlugins(selectedTrace.operationType)
-        : [],
-      theme: state.theme,
-      position: state.position,
-      sidebarPosition: state.sidebarPosition,
-      maxHistory: state.maxHistory,
-      autoSelectIncoming: state.autoSelectIncoming,
-      sensitiveHeaders: this.sensitiveHeaders,
-      isContainerMode: this.isContainerMode,
-    });
+    let detailContent: string;
+
+    if (state.showSettings) {
+      detailContent = renderSettings({
+        showPassedPlugins: state.showPassedPlugins,
+        theme: state.theme,
+        position: state.position,
+        sidebarPosition: state.sidebarPosition,
+        maxHistory: state.maxHistory,
+        autoSelectIncoming: state.autoSelectIncoming,
+        isContainerMode: this.isContainerMode,
+      });
+    } else if (selectedItem?.type === "subscription") {
+      detailContent = renderSubscriptionDetail({
+        subscription: selectedItem,
+        activeTab: state.subscriptionTab,
+        selectedMessageId: state.selectedMessageId,
+        expandedEventTypes: state.expandedEventTypes,
+        showPassedPlugins: state.showPassedPlugins,
+        showUnlistenedEvents: state.showUnlistenedEvents,
+        expandedSteps: state.expandedSteps,
+        expandedGroups: state.expandedGroups,
+        fullDiffViews: state.fullDiffViews,
+        knownPlugins: this.store.getKnownPlugins("subscription"),
+      });
+    } else {
+      const selectedTrace =
+        selectedItem?.type === "request" ? selectedItem : null;
+      detailContent = renderDetailPanel({
+        trace: selectedTrace,
+        showSettings: state.showSettings,
+        activeTab: state.activeTab,
+        showPassedPlugins: state.showPassedPlugins,
+        expandedSteps: state.expandedSteps,
+        expandedGroups: state.expandedGroups,
+        fullDiffViews: state.fullDiffViews,
+        knownPlugins: selectedTrace
+          ? this.store.getKnownPlugins(selectedTrace.operationType)
+          : [],
+        theme: state.theme,
+        position: state.position,
+        sidebarPosition: state.sidebarPosition,
+        maxHistory: state.maxHistory,
+        autoSelectIncoming: state.autoSelectIncoming,
+        sensitiveHeaders: this.sensitiveHeaders,
+        isContainerMode: this.isContainerMode,
+      });
+    }
 
     return `
       <div class="spoosh-list-panel" style="width: ${state.listPanelWidth}px; min-width: ${state.listPanelWidth}px;">
@@ -601,9 +712,9 @@ export class DevToolPanel {
           <div class="spoosh-requests-section" style="flex: ${state.requestsPanelHeight};">
             <div class="spoosh-section-header">
               <span class="spoosh-section-title">Requests</span>
-              <span class="spoosh-section-count">${activeCount > 0 ? `<span class="spoosh-active-count">${activeCount}</span> / ` : ""}${traces.length}</span>
+              <span class="spoosh-section-count">${activeCount > 0 ? `<span class="spoosh-active-count">${activeCount}</span> / ` : ""}${allTraces.length}</span>
             </div>
-            ${renderTraceList(traces, state.selectedTraceId)}
+            ${renderUnifiedTraceList(allTraces, state.selectedTraceId)}
           </div>
           <div class="spoosh-horizontal-divider"></div>
           <div class="spoosh-events-section" style="flex: ${1 - state.requestsPanelHeight};">
@@ -644,7 +755,7 @@ export class DevToolPanel {
 
     return `
       <div class="spoosh-list-panel" style="width: ${state.listPanelWidth}px; min-width: ${state.listPanelWidth}px;">
-        ${renderHeader({ filters: this.store.getFilters(), showSettings: state.showSettings, searchQuery: state.searchQuery, hideFilters: true, hideClear: true })}
+        ${renderHeader({ filters: this.store.getFilters(), showSettings: state.showSettings, searchQuery: state.searchQuery, hideFilters: true, hideTypeFilter: true, hideClear: true })}
         <div class="spoosh-list-content">
           <div class="spoosh-state-section">
             <div class="spoosh-section-header">
@@ -673,14 +784,28 @@ export class DevToolPanel {
     `;
   }
 
+  private filterImportedItemsByType(items: ExportedItem[]): ExportedItem[] {
+    const typeFilter = this.store.getFilters().traceTypeFilter;
+
+    if (typeFilter === "all") return items;
+
+    return items.filter((item) => {
+      if (typeFilter === "http") return item.type === "request";
+      if (typeFilter === "sse") return item.type === "sse";
+
+      return true;
+    });
+  }
+
   private renderImportView(): string {
     const state = this.viewModel.getState();
     const session = this.store.getImportedSession();
-    const traces = this.store.getFilteredImportedTraces(
+    const allItems = this.store.getFilteredImportedTraces(
       state.importedSearchQuery
     );
-    const selectedTrace = state.selectedImportedTraceId
-      ? traces.find((t) => t.id === state.selectedImportedTraceId)
+    const items = this.filterImportedItemsByType(allItems);
+    const selectedItem = state.selectedImportedTraceId
+      ? items.find((t) => t.id === state.selectedImportedTraceId)
       : null;
 
     const detailPanel = state.showSettings
@@ -694,11 +819,14 @@ export class DevToolPanel {
           isContainerMode: this.isContainerMode,
         })
       : renderImportDetail({
-          trace: selectedTrace ?? null,
+          item: selectedItem ?? null,
           activeTab: state.activeTab,
+          subscriptionTab: state.subscriptionTab,
           expandedSteps: state.expandedSteps,
           expandedGroups: state.expandedGroups,
           fullDiffViews: state.fullDiffViews,
+          selectedMessageId: state.selectedMessageId,
+          expandedEventTypes: state.expandedEventTypes,
         });
 
     const hasSession = session !== null;
@@ -712,12 +840,12 @@ export class DevToolPanel {
               hasSession
                 ? `<div class="spoosh-section-header">
                     <span class="spoosh-section-title">${escapeHtml(session.filename)}</span>
-                    <span class="spoosh-section-count">${traces.length}</span>
+                    <span class="spoosh-section-count">${items.length}</span>
                   </div>`
                 : ""
             }
             ${renderImportList({
-              traces,
+              items,
               selectedTraceId: state.selectedImportedTraceId,
               filename: session?.filename ?? null,
             })}
@@ -745,9 +873,10 @@ export class DevToolPanel {
     if (!this.sidebar) return;
 
     const state = this.viewModel.getState();
-    const traces = this.store.getFilteredImportedTraces(
+    const allItems = this.store.getFilteredImportedTraces(
       state.importedSearchQuery
     );
+    const items = this.filterImportedItemsByType(allItems);
 
     const importSection = this.sidebar.querySelector(".spoosh-import-section");
 
@@ -755,7 +884,7 @@ export class DevToolPanel {
       const countEl = importSection.querySelector(".spoosh-section-count");
 
       if (countEl) {
-        countEl.textContent = String(traces.length);
+        countEl.textContent = String(items.length);
       }
 
       const existingList = importSection.querySelector(
@@ -764,27 +893,30 @@ export class DevToolPanel {
 
       if (existingList) {
         existingList.outerHTML = renderImportList({
-          traces,
+          items,
           selectedTraceId: state.selectedImportedTraceId,
           filename: this.store.getImportedSession()?.filename ?? null,
         });
       }
     }
 
-    const selectedTrace = state.selectedImportedTraceId
-      ? traces.find((t) => t.id === state.selectedImportedTraceId)
+    const selectedItem = state.selectedImportedTraceId
+      ? items.find((t) => t.id === state.selectedImportedTraceId)
       : null;
 
-    if (selectedTrace) {
+    if (selectedItem) {
       const detailPanel = this.sidebar.querySelector(".spoosh-detail-panel");
 
       if (detailPanel) {
         detailPanel.outerHTML = renderImportDetail({
-          trace: selectedTrace,
+          item: selectedItem,
           activeTab: state.activeTab,
+          subscriptionTab: state.subscriptionTab,
           expandedSteps: state.expandedSteps,
           expandedGroups: state.expandedGroups,
           fullDiffViews: state.fullDiffViews,
+          selectedMessageId: state.selectedMessageId,
+          expandedEventTypes: state.expandedEventTypes,
         });
       }
     }
@@ -824,26 +956,36 @@ export class DevToolPanel {
     input.click();
   }
 
-  private validateImportData(data: unknown): ExportedTrace[] | null {
+  private validateImportData(data: unknown): ExportedItem[] | null {
     if (!Array.isArray(data)) return null;
 
-    return data.filter(
-      (item): item is ExportedTrace =>
-        typeof item === "object" &&
-        item !== null &&
-        typeof item.id === "string" &&
-        typeof item.path === "string" &&
-        typeof item.operationType === "string" &&
-        typeof item.method === "string"
-    );
+    return data.filter((item): item is ExportedItem => {
+      if (typeof item !== "object" || item === null) return false;
+
+      const obj = item as Record<string, unknown>;
+
+      if (typeof obj.id !== "string") return false;
+
+      if (obj.type === "sse") {
+        return (
+          typeof obj.channel === "string" && typeof obj.queryKey === "string"
+        );
+      }
+
+      return (
+        typeof obj.path === "string" &&
+        typeof obj.operationType === "string" &&
+        typeof obj.method === "string"
+      );
+    });
   }
 
   private autoSelectFirst(): boolean {
     const state = this.viewModel.getState();
 
     if (state.activeView === "requests" && !state.selectedTraceId) {
-      const traces = this.store.getFilteredTraces(state.searchQuery);
-      const lastTrace = traces[traces.length - 1];
+      const allTraces = this.store.getAllTraces(state.searchQuery);
+      const lastTrace = allTraces[allTraces.length - 1];
 
       if (lastTrace) {
         this.viewModel.selectTrace(lastTrace.id);
@@ -1339,26 +1481,26 @@ export class DevToolPanel {
     const state = this.viewModel.getState();
 
     if (state.activeView === "requests") {
-      const traces = this.store.getFilteredTraces(state.searchQuery);
+      const allTraces = this.store.getAllTraces(state.searchQuery);
 
-      if (traces.length === 0) return;
+      if (allTraces.length === 0) return;
 
       const currentIndex = state.selectedTraceId
-        ? traces.findIndex((t) => t.id === state.selectedTraceId)
+        ? allTraces.findIndex((t) => t.id === state.selectedTraceId)
         : -1;
 
       // Traces are rendered in reverse order, so flip direction
       let newIndex = currentIndex - direction;
 
       if (newIndex < 0) newIndex = 0;
-      if (newIndex >= traces.length) newIndex = traces.length - 1;
+      if (newIndex >= allTraces.length) newIndex = allTraces.length - 1;
 
-      const trace = traces[newIndex];
+      const trace = allTraces[newIndex];
 
       if (trace) {
         this.viewModel.selectTrace(trace.id);
         this.renderImmediate();
-        this.scrollToSelected(".spoosh-trace.selected");
+        this.scrollToSelected(".spoosh-trace-card.selected");
       }
     } else if (state.activeView === "state") {
       const entries = this.store.getCacheEntries(state.searchQuery);

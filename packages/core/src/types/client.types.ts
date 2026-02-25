@@ -10,6 +10,8 @@ import type {
   WritePaths,
   HasReadMethod,
   HasWriteMethod,
+  SubscriptionPaths,
+  HasSubscriptionMethod,
 } from "./schema.types";
 import type { HttpMethod, WriteMethod } from "./common.types";
 import type { Simplify } from "./common.types";
@@ -306,3 +308,170 @@ export type QueueSelectorClient<TSchema, TDefaultError = unknown> = <
 >(
   path: TPath
 ) => QueueSelectorPathMethods<TSchema, TPath, TDefaultError>;
+
+/**
+ * Extract events type from a method config.
+ */
+type ExtractEvents<T> = T extends { events: infer E } ? E : never;
+
+/**
+ * Transport-specific options for subscriptions.
+ */
+type SubscriptionTransportOptions = {
+  /** Keep connection alive when browser tab is hidden. Defaults to true. */
+  openWhenHidden?: boolean;
+};
+
+/**
+ * Strict subscription request options (for GET method).
+ * Body/query are required if schema requires them.
+ * Note: Transport options (maxRetries, retryDelay, events, parse, accumulate)
+ * are now configured at the hook level (useSSE).
+ */
+type StrictSubscriptionRequestOptions<
+  TMethodConfig,
+  TUserPath extends string,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  TRequestedEvents extends readonly (keyof ExtractEvents<TMethodConfig>)[] =
+    readonly (keyof ExtractEvents<TMethodConfig>)[],
+> = Simplify<
+  BaseRequestOptions &
+    QueryOption<TMethodConfig> &
+    BodyOption<TMethodConfig> &
+    ParamsOption<TUserPath> &
+    SubscriptionTransportOptions
+>;
+
+/**
+ * Loose subscription request options (for POST/PUT/etc methods).
+ * Body/query are always optional since they're provided via trigger().
+ * Note: Transport options (maxRetries, retryDelay, events, parse, accumulate)
+ * are now configured at the hook level (useSSE).
+ */
+type LooseSubscriptionRequestOptions<
+  TMethodConfig,
+  TUserPath extends string,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  TRequestedEvents extends readonly (keyof ExtractEvents<TMethodConfig>)[] =
+    readonly (keyof ExtractEvents<TMethodConfig>)[],
+> = Simplify<
+  BaseRequestOptions & { query?: ExtractQuery<TMethodConfig> } & {
+    body?: ExtractBody<TMethodConfig> | SpooshBody<ExtractBody<TMethodConfig>>;
+  } & ParamsOption<TUserPath> &
+    SubscriptionTransportOptions
+>;
+
+/**
+ * Check if strict subscription options are required (for GET method).
+ */
+type IsStrictSubscriptionOptionsRequired<
+  TMethodConfig,
+  TUserPath extends string,
+> =
+  IsBodyRequired<TMethodConfig> extends true
+    ? true
+    : IsQueryRequired<TMethodConfig> extends true
+      ? true
+      : HasParams<TUserPath> extends true
+        ? true
+        : false;
+
+/**
+ * Subscription response type that carries event types.
+ */
+type SubscriptionResponse<
+  TMethodConfig,
+  TRequestedEvents extends readonly (keyof ExtractEvents<TMethodConfig>)[] =
+    readonly (keyof ExtractEvents<TMethodConfig>)[],
+> = {
+  _subscription: true;
+  events: ExtractEvents<TMethodConfig>;
+  requestedEvents: TRequestedEvents;
+  query: ExtractQuery<TMethodConfig>;
+  body: ExtractBody<TMethodConfig>;
+  error: ExtractError<TMethodConfig>;
+};
+
+export type BaseSubscriptionResponse<
+  TEvents extends Record<string, unknown> = Record<string, unknown>,
+  TError = unknown,
+> = {
+  _subscription: true;
+  events: TEvents;
+  requestedEvents: readonly string[];
+  query: unknown;
+  body: unknown;
+  error: TError;
+};
+
+/**
+ * Subscription method function type - methods with events field.
+ * GET: Strict typing (body/query required if schema requires)
+ * POST/PUT/etc: Loose typing (body/query always optional, passed to trigger)
+ */
+type SubscriptionMethodFn<
+  TMethodConfig,
+  TUserPath extends string,
+  TMethod extends string,
+> = TMethod extends "GET"
+  ? // GET method: Strict - require body/query if schema requires
+    IsStrictSubscriptionOptionsRequired<TMethodConfig, TUserPath> extends true
+    ? <
+        TRequestedEvents extends
+          readonly (keyof ExtractEvents<TMethodConfig>)[],
+      >(
+        options: StrictSubscriptionRequestOptions<
+          TMethodConfig,
+          TUserPath,
+          TRequestedEvents
+        >
+      ) => SubscriptionResponse<TMethodConfig, TRequestedEvents>
+    : <
+        TRequestedEvents extends
+          readonly (keyof ExtractEvents<TMethodConfig>)[],
+      >(
+        options?: StrictSubscriptionRequestOptions<
+          TMethodConfig,
+          TUserPath,
+          TRequestedEvents
+        >
+      ) => SubscriptionResponse<TMethodConfig, TRequestedEvents>
+  : // POST/PUT/etc methods: Loose - always optional
+    <TRequestedEvents extends readonly (keyof ExtractEvents<TMethodConfig>)[]>(
+      options?: LooseSubscriptionRequestOptions<
+        TMethodConfig,
+        TUserPath,
+        TRequestedEvents
+      >
+    ) => SubscriptionResponse<TMethodConfig, TRequestedEvents>;
+
+/**
+ * Subscription path methods - only methods with events field.
+ */
+type SubscriptionPathMethods<TSchema, TPath extends string> =
+  FindMatchingKey<TSchema, TPath> extends infer TKey
+    ? TKey extends keyof TSchema
+      ? Simplify<{
+          [M in HttpMethod as M extends keyof TSchema[TKey]
+            ? TSchema[TKey][M] extends { events: unknown }
+              ? M
+              : never
+            : never]: M extends keyof TSchema[TKey]
+            ? SubscriptionMethodFn<TSchema[TKey][M], TPath, M>
+            : never;
+        }>
+      : never
+    : never;
+
+/**
+ * A subscription API interface that only exposes methods with events field.
+ * Used by useSubscription hook for real-time data streams.
+ */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export type SubscriptionClient<TSchema, TDefaultError = unknown> = <
+  TPath extends SubscriptionPaths<TSchema> | (string & {}),
+>(
+  path: TPath
+) => HasSubscriptionMethod<TSchema, TPath> extends true
+  ? SubscriptionPathMethods<TSchema, TPath>
+  : never;

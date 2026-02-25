@@ -1,8 +1,17 @@
 import type { OperationType } from "@spoosh/core";
 
-import type { DevToolFilters, DevToolStoreInterface } from "../types";
+import type {
+  DevToolFilters,
+  DevToolStoreInterface,
+  TraceTypeFilter,
+} from "../types";
 
 export type DetailTab = "data" | "request" | "meta" | "plugins";
+export type SubscriptionDetailTab =
+  | "messages"
+  | "accumulated"
+  | "connection"
+  | "plugins";
 export type ThemeMode = "light" | "dark";
 export type PositionMode =
   | "bottom-right"
@@ -37,6 +46,12 @@ export interface ViewModelState {
   selectedImportedTraceId: string | null;
   importedSearchQuery: string;
   autoSelectIncoming: boolean;
+  selectedSubscriptionId: string | null;
+  subscriptionTab: SubscriptionDetailTab;
+  selectedMessageId: string | null;
+  expandedEventTypes: ReadonlySet<string>;
+  traceTypeFilter: TraceTypeFilter;
+  showUnlistenedEvents: boolean;
 }
 
 type Listener = () => void;
@@ -67,6 +82,12 @@ const DEFAULT_STATE: ViewModelState = {
   selectedImportedTraceId: null,
   importedSearchQuery: "",
   autoSelectIncoming: false,
+  selectedSubscriptionId: null,
+  subscriptionTab: "messages",
+  selectedMessageId: null,
+  expandedEventTypes: new Set(),
+  traceTypeFilter: "all",
+  showUnlistenedEvents: false,
 };
 
 export interface ViewModel {
@@ -109,6 +130,15 @@ export interface ViewModel {
   selectImportedTrace(traceId: string | null): void;
   setImportedSearchQuery(query: string): void;
   toggleAutoSelectIncoming(): void;
+  selectSubscription(subscriptionId: string | null): void;
+  setSubscriptionTab(tab: SubscriptionDetailTab): void;
+  selectMessage(messageId: string | null): void;
+  toggleEventType(eventType: string): void;
+  setTraceTypeFilter(
+    filter: TraceTypeFilter,
+    store: DevToolStoreInterface
+  ): void;
+  toggleUnlistenedEvents(): void;
 }
 
 export function createViewModel(): ViewModel {
@@ -118,12 +148,14 @@ export function createViewModel(): ViewModel {
   const mutableExpandedSteps = new Set<string>();
   const mutableExpandedGroups = new Set<string>();
   const mutableFullDiffViews = new Set<string>();
+  const mutableExpandedEventTypes = new Set<string>();
 
   state = {
     ...state,
     expandedSteps: mutableExpandedSteps,
     expandedGroups: mutableExpandedGroups,
     fullDiffViews: mutableFullDiffViews,
+    expandedEventTypes: mutableExpandedEventTypes,
   };
 
   loadSettings();
@@ -388,6 +420,56 @@ export function createViewModel(): ViewModel {
     notify();
   }
 
+  function selectSubscription(subscriptionId: string | null): void {
+    mutableExpandedSteps.clear();
+    mutableExpandedEventTypes.clear();
+    state = {
+      ...state,
+      selectedSubscriptionId: subscriptionId,
+      selectedTraceId: subscriptionId,
+      selectedMessageId: null,
+      showSettings: false,
+    };
+    notify();
+  }
+
+  function setSubscriptionTab(tab: SubscriptionDetailTab): void {
+    state = { ...state, subscriptionTab: tab };
+    notify();
+  }
+
+  function selectMessage(messageId: string | null): void {
+    const newMessageId =
+      state.selectedMessageId === messageId ? null : messageId;
+    state = { ...state, selectedMessageId: newMessageId };
+    notify();
+  }
+
+  function toggleEventType(eventType: string): void {
+    if (mutableExpandedEventTypes.has(eventType)) {
+      mutableExpandedEventTypes.delete(eventType);
+    } else {
+      mutableExpandedEventTypes.add(eventType);
+    }
+
+    notify();
+  }
+
+  function toggleUnlistenedEvents(): void {
+    state = { ...state, showUnlistenedEvents: !state.showUnlistenedEvents };
+    notify();
+  }
+
+  function setTraceTypeFilter(
+    filter: TraceTypeFilter,
+    store: DevToolStoreInterface
+  ): void {
+    const newFilter = state.traceTypeFilter === filter ? "all" : filter;
+    store.setFilter("traceTypeFilter", newFilter);
+    state = { ...state, traceTypeFilter: newFilter };
+    notify();
+  }
+
   return {
     getState,
     subscribe,
@@ -421,5 +503,11 @@ export function createViewModel(): ViewModel {
     selectImportedTrace,
     setImportedSearchQuery,
     toggleAutoSelectIncoming,
+    selectSubscription,
+    setSubscriptionTab,
+    selectMessage,
+    toggleEventType,
+    setTraceTypeFilter,
+    toggleUnlistenedEvents,
   };
 }

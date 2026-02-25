@@ -4,6 +4,7 @@ import type {
   EventEmitter,
   PluginExecutor,
   SpooshResponse,
+  SpooshTransport,
   MergePluginOptions,
   MergePluginResults,
   MergePluginInstanceApi,
@@ -20,6 +21,11 @@ import type {
   ExtractResponseQuery,
   ExtractResponseBody,
   ExtractResponseParamNames,
+  ExtractSubscriptionEvents,
+  ExtractSubscriptionQuery,
+  ExtractSubscriptionBody,
+  ExtractAllSubscriptionEventKeys,
+  ExtractAllSubscriptionEvents,
 } from "../types/extraction";
 import type {
   BaseReadOptions,
@@ -46,8 +52,15 @@ import type {
   PagesApiClient,
   PagesTriggerOptions,
 } from "../usePages/types";
+import type {
+  BaseSubscriptionOptions,
+  BaseSubscriptionResult,
+  SubscriptionApiClient,
+  SubscriptionTriggerInput,
+} from "../useSubscription/types";
+import type { TypedUseSSEOptions, UseSSEResult } from "../useSSE/types";
 
-type InferError<T, TDefaultError> = [T] extends [unknown] ? TDefaultError : T;
+type InferError<T, TDefaultError> = unknown extends T ? TDefaultError : T;
 
 type WriteResolverContext<TSchema, TMethod, TDefaultError> = ResolverContext<
   TSchema,
@@ -251,14 +264,85 @@ type UsePagesFn<TDefaultError, TSchema, TPlugins extends PluginArray> = <
   PagesTriggerOptions<TReadFn>
 >;
 
+type UseSubscriptionFn<TDefaultError, TSchema, TPlugins extends PluginArray> = <
+  TSubFn extends (
+    api: SubscriptionApiClient<TSchema, TDefaultError>
+  ) => unknown,
+>(
+  subFn: TSubFn,
+  subOptions?: BaseSubscriptionOptions
+) => BaseSubscriptionResult<
+  ExtractSubscriptionEvents<TSubFn>,
+  InferError<ExtractMethodError<TSubFn>, TDefaultError>,
+  MergePluginResults<TPlugins>["subscribe"],
+  SubscriptionTriggerInput<
+    ExtractSubscriptionQuery<TSubFn>,
+    ExtractSubscriptionBody<TSubFn>,
+    never
+  >
+>;
+
+type InferSSEEvents<T> =
+  ExtractAllSubscriptionEvents<T> extends Record<string, unknown>
+    ? ExtractAllSubscriptionEvents<T>
+    : Record<string, unknown>;
+
+type FilteredEvents<
+  TAllEvents extends Record<string, unknown>,
+  TSelectedEvents extends readonly string[],
+> = TSelectedEvents[number] extends keyof TAllEvents
+  ? Pick<TAllEvents, TSelectedEvents[number]>
+  : TAllEvents;
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+type UseSSEFn<TDefaultError, TSchema, TPlugins extends PluginArray> = {
+  // Overload 1: With events option - filtered return type
+  <
+    TSubFn extends (api: SubscriptionApiClient<TSchema, TDefaultError>) => {
+      _subscription: true;
+      events: Record<string, { data: unknown }>;
+    },
+    const TSelectedEvents extends readonly Extract<
+      ExtractAllSubscriptionEventKeys<TSubFn>,
+      string
+    >[],
+  >(
+    subFn: TSubFn,
+    sseOptions: TypedUseSSEOptions<
+      Extract<ExtractAllSubscriptionEventKeys<TSubFn>, string>,
+      InferSSEEvents<TSubFn>,
+      TSelectedEvents
+    > & { events: TSelectedEvents }
+  ): UseSSEResult<
+    FilteredEvents<InferSSEEvents<TSubFn>, TSelectedEvents>,
+    InferError<ExtractMethodError<TSubFn>, TDefaultError>
+  >;
+
+  // Overload 2: Without events option - all events
+  <
+    TSubFn extends (api: SubscriptionApiClient<TSchema, TDefaultError>) => {
+      _subscription: true;
+      events: Record<string, { data: unknown }>;
+    },
+  >(
+    subFn: TSubFn,
+    sseOptions?: Omit<
+      TypedUseSSEOptions<
+        Extract<ExtractAllSubscriptionEventKeys<TSubFn>, string>,
+        InferSSEEvents<TSubFn>
+      >,
+      "events"
+    >
+  ): UseSSEResult<
+    InferSSEEvents<TSubFn>,
+    InferError<ExtractMethodError<TSubFn>, TDefaultError>
+  >;
+};
+
 /**
- * Spoosh React hooks interface containing useRead, useWrite, and usePages.
- *
- * @template TDefaultError - The default error type
- * @template TSchema - The API schema type
- * @template TPlugins - The plugins array type
+ * Base hooks that are always available.
  */
-export type SpooshReactHooks<
+type BaseSpooshReactHooks<
   TDefaultError,
   TSchema,
   TPlugins extends PluginArray,
@@ -341,12 +425,82 @@ export type SpooshReactHooks<
    * ```
    */
   useQueue: UseQueueFn<TDefaultError, TSchema, TPlugins>;
+
+  /**
+   * React hook for subscribing to real-time data streams (SSE, WebSocket, etc.).
+   *
+   * @param subFn - Function that selects the subscription endpoint
+   * @param subOptions - Optional configuration including `enabled`, `tags`
+   * @returns Object containing `data`, `error`, `loading`, `isSubscribed`, `emit`, `unsubscribe`
+   *
+   * @example
+   * ```tsx
+   * const { data } = useSubscription((api) =>
+   *   api("notifications").GET({ events: ["alert", "message"] })
+   * );
+   * ```
+   */
+  useSubscription: UseSubscriptionFn<TDefaultError, TSchema, TPlugins>;
 } & MergePluginInstanceApi<TPlugins, TSchema>;
+
+/**
+ * SSE hooks available when SSE transport is registered.
+ */
+type SSEHooks<TDefaultError, TSchema, TPlugins extends PluginArray> = {
+  /**
+   * React hook for SSE streams with per-hook parsing and accumulation.
+   *
+   * @param subFn - Function that selects the SSE endpoint
+   * @param sseOptions - Configuration including `events`, `parse`, `accumulate`, `maxRetries`, `retryDelay`
+   * @returns Object containing `data`, `error`, `loading`, `isConnected`, `trigger`, `disconnect`, `reset`
+   *
+   * @example
+   * ```tsx
+   * const { data, reset } = useSSE(
+   *   (api) => api("chat").POST(),
+   *   {
+   *     events: ["chunk", "done"],
+   *     parse: "json-done",
+   *     accumulate: { chunk: "merge" },
+   *     maxRetries: 5,
+   *   }
+   * );
+   * ```
+   */
+  useSSE: UseSSEFn<TDefaultError, TSchema, TPlugins>;
+};
+
+/**
+ * Spoosh React hooks interface containing useRead, useWrite, and usePages.
+ * useSSE is only available when SSE transport is registered via withTransports([sse()]).
+ *
+ * @template TDefaultError - The default error type
+ * @template TSchema - The API schema type
+ * @template TPlugins - The plugins array type
+ * @template TTransports - The registered transport names
+ */
+export type SpooshReactHooks<
+  TDefaultError,
+  TSchema,
+  TPlugins extends PluginArray,
+  TTransports extends string = never,
+> = BaseSpooshReactHooks<TDefaultError, TSchema, TPlugins> &
+  ([TTransports] extends [never]
+    ? object
+    : "sse" extends TTransports
+      ? SSEHooks<TDefaultError, TSchema, TPlugins>
+      : object);
 
 /**
  * Shape of a Spoosh instance required for creating React hooks.
  */
-export type SpooshInstanceShape<TApi, TSchema, TDefaultError, TPlugins> = {
+export type SpooshInstanceShape<
+  TApi,
+  TSchema,
+  TDefaultError,
+  TPlugins,
+  TTransports extends string = never,
+> = {
   /** The API instance */
   api: TApi;
 
@@ -359,10 +513,23 @@ export type SpooshInstanceShape<TApi, TSchema, TDefaultError, TPlugins> = {
   /** Plugin executor for running plugins */
   pluginExecutor: PluginExecutor;
 
+  /** Registered transports for subscriptions */
+  transports: Map<string, SpooshTransport>;
+
+  /** Config with baseUrl and default options */
+  config: {
+    baseUrl: string;
+    defaultOptions: {
+      headers?: HeadersInit | (() => HeadersInit | Promise<HeadersInit>);
+      [key: string]: unknown;
+    };
+  };
+
   /** Type information (not used at runtime) */
   _types: {
     schema: TSchema;
     defaultError: TDefaultError;
     plugins: TPlugins;
+    transports: TTransports;
   };
 };

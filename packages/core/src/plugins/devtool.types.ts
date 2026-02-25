@@ -170,6 +170,58 @@ export interface RequestCompleteEvent {
   queryKey: string;
 }
 
+/** Event emitted when a subscription starts connecting */
+export interface SubscriptionConnectEvent {
+  subscriptionId: string;
+  channel: string;
+  transport: string;
+  connectionUrl: string;
+  queryKey: string;
+  timestamp: number;
+
+  /** Event types being listened to. Empty or ["*"] means all events. */
+  listenedEvents?: string[];
+}
+
+/** Event emitted when a subscription successfully connects */
+export interface SubscriptionConnectedEvent {
+  subscriptionId: string;
+  timestamp: number;
+}
+
+/** Event emitted when a subscription receives a message */
+export interface SubscriptionMessageEvent {
+  subscriptionId: string;
+  messageId: string;
+  eventType: string;
+  rawData: unknown;
+  accumulatedData: Record<string, unknown>;
+  timestamp: number;
+}
+
+/** Event emitted when a subscription encounters an error */
+export interface SubscriptionErrorEvent {
+  subscriptionId: string;
+  error: Error;
+  retryCount: number;
+  timestamp: number;
+}
+
+/** Event emitted when a subscription disconnects */
+export interface SubscriptionDisconnectEvent {
+  subscriptionId: string;
+  reason: string;
+  timestamp: number;
+}
+
+/** Event emitted when hook-level accumulation updates data */
+export interface SubscriptionAccumulateEvent {
+  queryKey: string;
+  eventType: string;
+  accumulatedData: Record<string, unknown>;
+  timestamp: number;
+}
+
 /**
  * Internal events used by core and devtools. Not for public use.
  * @internal
@@ -177,6 +229,12 @@ export interface RequestCompleteEvent {
 export interface DevtoolEvents {
   "spoosh:devtool-event": StandaloneEvent;
   "spoosh:request-complete": RequestCompleteEvent;
+  "spoosh:subscription:connect": SubscriptionConnectEvent;
+  "spoosh:subscription:connected": SubscriptionConnectedEvent;
+  "spoosh:subscription:message": SubscriptionMessageEvent;
+  "spoosh:subscription:error": SubscriptionErrorEvent;
+  "spoosh:subscription:disconnect": SubscriptionDisconnectEvent;
+  "spoosh:subscription:accumulate": SubscriptionAccumulateEvent;
 }
 
 /**

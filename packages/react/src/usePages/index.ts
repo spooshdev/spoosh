@@ -62,7 +62,7 @@ export function createUsePages<
       : unknown
     : unknown;
 
-  type InferError<T> = [T] extends [unknown] ? TDefaultError : T;
+  type InferError<T> = unknown extends T ? TDefaultError : T;
 
   return function usePages<
     TReadFn extends (

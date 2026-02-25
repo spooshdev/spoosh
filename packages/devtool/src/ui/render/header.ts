@@ -1,32 +1,72 @@
 import type { OperationType } from "@spoosh/core";
 
+import type { TraceTypeFilter } from "../../types";
 import { escapeHtml, getLogo } from "../utils";
 
 export interface HeaderRenderContext {
-  filters: { operationTypes: Set<OperationType> };
+  filters: {
+    operationTypes: Set<OperationType>;
+    traceTypeFilter: TraceTypeFilter;
+  };
   showSettings: boolean;
   searchQuery: string;
   hideFilters?: boolean;
   hideClear?: boolean;
+  hideTypeFilter?: boolean;
 }
 
-export function renderHeader(ctx: HeaderRenderContext): string {
-  const { filters, showSettings, searchQuery, hideFilters, hideClear } = ctx;
+const TYPE_FILTER_ICONS: Record<string, string> = {
+  all: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>`,
+  http: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.66 0 3-4 3-9s-1.34-9-3-9m0 18c-1.66 0-3-4-3-9s1.34-9 3-9"/></svg>`,
+  sse: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>`,
+  // TODO: Add WS icon back when WebSocket transport is implemented
+  // ws: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M19 12l-7 7M19 12l-7-7M5 12l7-7M5 12l7 7"/></svg>`,
+};
 
-  const filtersHtml = hideFilters
-    ? ""
-    : `
-    <div class="spoosh-filters">
-      ${(["read", "write", "pages", "queue"] as const)
-        .map((type) => {
-          const active = filters.operationTypes.has(type);
-          const label =
-            type === "pages"
-              ? "Pages"
-              : type.charAt(0).toUpperCase() + type.slice(1);
-          return `<button class="spoosh-filter ${active ? "active" : ""}" data-filter="${type}">${label}</button>`;
-        })
-        .join("")}
+const OP_FILTER_ICONS: Record<string, string> = {
+  read: `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>`,
+  write: `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`,
+  pages: `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>`,
+  queue: `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>`,
+};
+
+export function renderHeader(ctx: HeaderRenderContext): string {
+  const {
+    filters,
+    showSettings,
+    searchQuery,
+    hideFilters,
+    hideClear,
+    hideTypeFilter,
+  } = ctx;
+
+  // TODO: Add "ws" back when WebSocket transport is implemented
+  const typeFilters = (["all", "http", "sse"] as const)
+    .map((type) => {
+      const active = filters.traceTypeFilter === type;
+      const label = type === "all" ? "All" : type.toUpperCase();
+      const icon = TYPE_FILTER_ICONS[type];
+      return `<button class="spoosh-chip ${active ? "active" : ""}" data-type-filter="${type}" title="${label}">${icon}<span>${label}</span></button>`;
+    })
+    .join("");
+
+  const opFilters = (["read", "write", "pages", "queue"] as const)
+    .map((type) => {
+      const active = filters.operationTypes.has(type);
+      const label = type.charAt(0).toUpperCase() + type.slice(1);
+      const icon = OP_FILTER_ICONS[type];
+      return `<button class="spoosh-chip-icon ${active ? "active" : ""}" data-filter="${type}" title="${label}">${icon}</button>`;
+    })
+    .join("");
+
+  const filtersHtml =
+    hideFilters && hideTypeFilter
+      ? ""
+      : `
+    <div class="spoosh-filter-bar">
+      ${hideTypeFilter ? "" : typeFilters}
+      ${hideFilters || hideTypeFilter ? "" : `<div class="spoosh-filter-divider"></div>`}
+      ${hideFilters ? "" : opFilters}
     </div>
   `;
 

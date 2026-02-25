@@ -1,12 +1,13 @@
 import type { OperationType } from "@spoosh/core";
 
-import type { DevToolStoreInterface } from "../types";
+import type { DevToolStoreInterface, TraceTypeFilter } from "../types";
 import type {
   DetailTab,
   InternalTab,
   PanelView,
   PositionMode,
   SidebarPosition,
+  SubscriptionDetailTab,
   ThemeMode,
   ViewModel,
 } from "./view-model";
@@ -40,7 +41,13 @@ export type ActionIntent =
   | { type: "import-file" }
   | { type: "select-imported-trace"; traceId: string }
   | { type: "clear-imports" }
-  | { type: "import-search"; query: string };
+  | { type: "import-search"; query: string }
+  | { type: "select-subscription"; subscriptionId: string }
+  | { type: "select-subscription-tab"; tab: SubscriptionDetailTab }
+  | { type: "select-message"; messageId: string }
+  | { type: "toggle-event-type"; eventType: string }
+  | { type: "set-type-filter"; filter: TraceTypeFilter }
+  | { type: "toggle-unlistened" };
 
 export interface ActionRouterCallbacks {
   onRender: () => void;
@@ -145,6 +152,10 @@ export function createActionRouter(
       return { type: "toggle-passed" };
     }
 
+    if (action === "toggle-unlistened") {
+      return { type: "toggle-unlistened" };
+    }
+
     if (action === "toggle-group" && groupKey) {
       return { type: "toggle-group", groupKey };
     }
@@ -215,6 +226,49 @@ export function createActionRouter(
 
     if (traceId && !action) {
       return { type: "select-trace", traceId };
+    }
+
+    const subscriptionId = target
+      .closest("[data-subscription-id]")
+      ?.getAttribute("data-subscription-id");
+
+    if (subscriptionId && !action) {
+      return { type: "select-subscription", subscriptionId };
+    }
+
+    const subscriptionTab = target
+      .closest("[data-subscription-tab]")
+      ?.getAttribute("data-subscription-tab");
+
+    if (subscriptionTab) {
+      return {
+        type: "select-subscription-tab",
+        tab: subscriptionTab as SubscriptionDetailTab,
+      };
+    }
+
+    const messageId = target
+      .closest("[data-message-id]")
+      ?.getAttribute("data-message-id");
+
+    if (messageId) {
+      return { type: "select-message", messageId };
+    }
+
+    const eventType = target
+      .closest("[data-event-type]")
+      ?.getAttribute("data-event-type");
+
+    if (eventType) {
+      return { type: "toggle-event-type", eventType };
+    }
+
+    const typeFilter = target
+      .closest("[data-type-filter]")
+      ?.getAttribute("data-type-filter");
+
+    if (typeFilter) {
+      return { type: "set-type-filter", filter: typeFilter as TraceTypeFilter };
     }
 
     if (filter) {
@@ -447,6 +501,30 @@ export function createActionRouter(
         viewModel.setImportedSearchQuery(intent.query);
         onPartialRender();
         return;
+
+      case "select-subscription":
+        viewModel.selectSubscription(intent.subscriptionId);
+        break;
+
+      case "select-subscription-tab":
+        viewModel.setSubscriptionTab(intent.tab);
+        break;
+
+      case "select-message":
+        viewModel.selectMessage(intent.messageId);
+        break;
+
+      case "toggle-event-type":
+        viewModel.toggleEventType(intent.eventType);
+        break;
+
+      case "set-type-filter":
+        viewModel.setTraceTypeFilter(intent.filter, store);
+        break;
+
+      case "toggle-unlistened":
+        viewModel.toggleUnlistenedEvents();
+        break;
     }
 
     onRender();

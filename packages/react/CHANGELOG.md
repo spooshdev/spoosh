@@ -1,5 +1,10 @@
 # @spoosh/react
 
+## 0.13.0
+
+- Add base `useSubscription` hook to support real time transports.
+- Add `useSSE` hook as a wrapper around `useSubscription` for Server-Sent Events support.
+
 ## 0.12.0
 
 - **Breaking**: Rename `useInfiniteRead` to `usePages`
