@@ -1,5 +1,9 @@
 # @spoosh/angular
 
+## 0.10.1
+
+- Fix per request error not infer correctly
+
 ## 0.10.0
 
 - **Breaking**: Rename `injectInfiniteRead` to `injectPages`
