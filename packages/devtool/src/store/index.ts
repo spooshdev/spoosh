@@ -60,6 +60,7 @@ export class DevToolStore implements DevToolStoreInterface {
   private importedSession: ImportedSession | null = null;
   private sensitiveHeaders = new Set<string>();
   private totalTraceCount = 0;
+  private maxHistory = DEFAULT_MAX_HISTORY;
   private resolvedPaths = new Map<string, string>();
   private stepNotifyTimeout: ReturnType<typeof setTimeout> | null = null;
   private stepNotifyPending = false;
@@ -153,10 +154,60 @@ export class DevToolStore implements DevToolStoreInterface {
   }
 
   setMaxHistory(value: number): void {
+    this.maxHistory = value;
     this.traces.resize(value);
     this.events.resize(value * 2);
     this.subscriptions.resize(value);
+    this.trimOldestItems();
     this.notify();
+  }
+
+  private trimOldestItems(): void {
+    const totalCompleted = this.traces.length + this.subscriptions.length;
+
+    if (totalCompleted <= this.maxHistory) return;
+
+    const allTraces = this.traces.toArray();
+    const allSubs = this.subscriptions.toArray();
+
+    const combined: Array<{
+      type: "trace" | "sub";
+      timestamp: number;
+      item: OperationTrace | SubscriptionTrace;
+    }> = [
+      ...allTraces.map((t) => ({
+        type: "trace" as const,
+        timestamp: t.timestamp,
+        item: t,
+      })),
+      ...allSubs.map((s) => ({
+        type: "sub" as const,
+        timestamp: s.timestamp,
+        item: s,
+      })),
+    ];
+
+    combined.sort((a, b) => b.timestamp - a.timestamp);
+
+    const itemsToKeep = combined.slice(0, this.maxHistory);
+
+    const tracesToKeep = itemsToKeep
+      .filter((i) => i.type === "trace")
+      .map((i) => i.item as OperationTrace);
+    const subsToKeep = itemsToKeep
+      .filter((i) => i.type === "sub")
+      .map((i) => i.item as SubscriptionTrace);
+
+    this.traces.clear();
+    this.subscriptions.clear();
+
+    for (const t of tracesToKeep.reverse()) {
+      this.traces.push(t);
+    }
+
+    for (const s of subsToKeep.reverse()) {
+      this.subscriptions.push(s);
+    }
   }
 
   setRegisteredPlugins(
@@ -241,6 +292,7 @@ export class DevToolStore implements DevToolStoreInterface {
 
     this.traces.push(trace);
     this.activeTraces.delete(traceId);
+    this.trimOldestItems();
     this.notify();
   }
 
@@ -268,6 +320,7 @@ export class DevToolStore implements DevToolStoreInterface {
       }
     }
 
+    this.trimOldestItems();
     this.notify();
   }
 
@@ -539,7 +592,20 @@ export class DevToolStore implements DevToolStoreInterface {
     this.events.clear();
     this.subscriptions.clear();
     this.activeTraces.clear();
+
+    const activeSubsToKeep = new Map<string, SubscriptionTrace>();
+
+    for (const [id, sub] of this.activeSubscriptions.entries()) {
+      if (sub.status === "connecting" || sub.status === "connected") {
+        activeSubsToKeep.set(id, sub);
+      }
+    }
+
     this.activeSubscriptions.clear();
+
+    for (const [id, sub] of activeSubsToKeep.entries()) {
+      this.activeSubscriptions.set(id, sub);
+    }
 
     for (const pending of this.pendingSubscriptions.values()) {
       clearTimeout(pending.timeout);
@@ -548,7 +614,7 @@ export class DevToolStore implements DevToolStoreInterface {
 
     this.invalidations = [];
     this.resolvedPaths.clear();
-    this.totalTraceCount = 0;
+    this.totalTraceCount = activeSubsToKeep.size;
     this.notify();
   }
 
@@ -747,6 +813,7 @@ export class DevToolStore implements DevToolStoreInterface {
         pending.trace.disconnectedAt = Date.now();
         this.subscriptions.push(pending.trace);
         this.totalTraceCount++;
+        this.trimOldestItems();
         this.notify();
       }
 
@@ -775,6 +842,7 @@ export class DevToolStore implements DevToolStoreInterface {
 
     this.subscriptions.push(trace);
     this.activeSubscriptions.delete(subscriptionId);
+    this.trimOldestItems();
     this.notify();
   }
 

@@ -464,8 +464,9 @@ export function createViewModel(): ViewModel {
     filter: TraceTypeFilter,
     store: DevToolStoreInterface
   ): void {
-    store.setFilter("traceTypeFilter", filter);
-    state = { ...state, traceTypeFilter: filter };
+    const newFilter = state.traceTypeFilter === filter ? "all" : filter;
+    store.setFilter("traceTypeFilter", newFilter);
+    state = { ...state, traceTypeFilter: newFilter };
     notify();
   }
 

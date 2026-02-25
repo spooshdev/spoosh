@@ -300,8 +300,8 @@ export const subscriptionCSS = `
   }
 
   .spoosh-trace-method-badge.method-sse {
-    background: rgba(88, 166, 255, 0.15);
-    color: var(--spoosh-primary);
+    background: rgba(45, 212, 191, 0.15);
+    color: #2dd4bf;
   }
 
   /* TODO: Add WS styles back when WebSocket transport is implemented

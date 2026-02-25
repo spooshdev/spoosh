@@ -245,6 +245,7 @@ export const listCSS = `
   .method-POST { color: var(--spoosh-primary); }
   .method-PUT, .method-PATCH { color: var(--spoosh-warning); }
   .method-DELETE { color: var(--spoosh-error); }
+  .method-sse { color: #2dd4bf; }
 
   .spoosh-trace-path {
     color: var(--spoosh-text);

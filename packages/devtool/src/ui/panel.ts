@@ -755,7 +755,7 @@ export class DevToolPanel {
 
     return `
       <div class="spoosh-list-panel" style="width: ${state.listPanelWidth}px; min-width: ${state.listPanelWidth}px;">
-        ${renderHeader({ filters: this.store.getFilters(), showSettings: state.showSettings, searchQuery: state.searchQuery, hideFilters: true, hideClear: true })}
+        ${renderHeader({ filters: this.store.getFilters(), showSettings: state.showSettings, searchQuery: state.searchQuery, hideFilters: true, hideTypeFilter: true, hideClear: true })}
         <div class="spoosh-list-content">
           <div class="spoosh-state-section">
             <div class="spoosh-section-header">
@@ -784,12 +784,26 @@ export class DevToolPanel {
     `;
   }
 
+  private filterImportedItemsByType(items: ExportedItem[]): ExportedItem[] {
+    const typeFilter = this.store.getFilters().traceTypeFilter;
+
+    if (typeFilter === "all") return items;
+
+    return items.filter((item) => {
+      if (typeFilter === "http") return item.type === "request";
+      if (typeFilter === "sse") return item.type === "sse";
+
+      return true;
+    });
+  }
+
   private renderImportView(): string {
     const state = this.viewModel.getState();
     const session = this.store.getImportedSession();
-    const items = this.store.getFilteredImportedTraces(
+    const allItems = this.store.getFilteredImportedTraces(
       state.importedSearchQuery
     );
+    const items = this.filterImportedItemsByType(allItems);
     const selectedItem = state.selectedImportedTraceId
       ? items.find((t) => t.id === state.selectedImportedTraceId)
       : null;
@@ -859,9 +873,10 @@ export class DevToolPanel {
     if (!this.sidebar) return;
 
     const state = this.viewModel.getState();
-    const items = this.store.getFilteredImportedTraces(
+    const allItems = this.store.getFilteredImportedTraces(
       state.importedSearchQuery
     );
+    const items = this.filterImportedItemsByType(allItems);
 
     const importSection = this.sidebar.querySelector(".spoosh-import-section");
 
