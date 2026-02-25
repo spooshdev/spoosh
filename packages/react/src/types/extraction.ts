@@ -133,3 +133,10 @@ export type ExtractAllSubscriptionEvents<T> =
         }
       : unknown
     : unknown;
+
+export type ExtractSubscriptionError<T> =
+  SubscriptionReturnType<T> extends {
+    error: infer E;
+  }
+    ? E
+    : unknown;

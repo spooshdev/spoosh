@@ -44,7 +44,7 @@ export function createUseQueue<
 
   type PluginOptions = MergePluginOptions<TPlugins>;
 
-  type InferError<T> = [T] extends [unknown] ? TDefaultError : T;
+  type InferError<T> = unknown extends T ? TDefaultError : T;
 
   type ExtractParamsRecord<TQueueFn> =
     ExtractResponseParamNames<TQueueFn> extends never

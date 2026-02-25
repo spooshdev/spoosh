@@ -13,7 +13,10 @@ import { createUseSubscription } from "../useSubscription";
 import type { SpooshInstanceShape } from "../create/types";
 import type { SubscriptionApiClient } from "../useSubscription/types";
 import type { UseSSEOptions, UseSSEResult } from "./types";
-import type { ExtractAllSubscriptionEvents } from "../types/extraction";
+import type {
+  ExtractAllSubscriptionEvents,
+  ExtractSubscriptionError,
+} from "../types/extraction";
 
 type SSETransport = SpooshTransport & SSEAdapterFactory;
 
@@ -42,6 +45,8 @@ export function createUseSSE<
     TPlugins
   >(options);
 
+  type InferSSEError<T> = unknown extends T ? TDefaultError : T;
+
   function useSSE<
     TSubFn extends (api: SubscriptionApiClient<TSchema, TDefaultError>) => {
       _subscription: true;
@@ -50,7 +55,10 @@ export function createUseSSE<
   >(
     subFn: TSubFn,
     sseOptions?: UseSSEOptions
-  ): UseSSEResult<ExtractAllSubscriptionEvents<TSubFn>, TDefaultError> {
+  ): UseSSEResult<
+    ExtractAllSubscriptionEvents<TSubFn>,
+    InferSSEError<ExtractSubscriptionError<TSubFn>>
+  > {
     const {
       enabled = true,
       events,
@@ -247,7 +255,9 @@ export function createUseSSE<
       data: Object.keys(accumulatedData).length
         ? (accumulatedData as Partial<ExtractAllSubscriptionEvents<TSubFn>>)
         : undefined,
-      error: subscription.error,
+      error: subscription.error as
+        | InferSSEError<ExtractSubscriptionError<TSubFn>>
+        | undefined,
       isConnected: subscription.isConnected,
       loading: subscription.loading,
       meta: {} as Record<string, never>,

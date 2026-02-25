@@ -21,6 +21,7 @@ import type {
   ExtractSubscriptionEvents,
   ExtractSubscriptionQuery,
   ExtractSubscriptionBody,
+  ExtractSubscriptionError,
 } from "../types/extraction";
 import type { SpooshInstanceShape } from "../create/types";
 
@@ -36,12 +37,14 @@ export function createUseSubscription<
 ) {
   const { stateManager, eventEmitter, pluginExecutor } = options;
 
+  type InferSubError<T> = unknown extends T ? TDefaultError : T;
+
   function useSubscription<TSubFn extends (api: unknown) => unknown>(
     subFn: TSubFn,
     subOptions: BaseSubscriptionOptions
   ): BaseSubscriptionResult<
     ExtractSubscriptionEvents<TSubFn>,
-    TDefaultError,
+    InferSubError<ExtractSubscriptionError<TSubFn>>,
     Record<string, never>,
     SubscriptionTriggerInput<
       ExtractSubscriptionQuery<TSubFn>,
@@ -186,7 +189,9 @@ export function createUseSubscription<
     return {
       meta: {} as Record<string, never>,
       data: state.data as ExtractSubscriptionEvents<TSubFn> | undefined,
-      error: state.error as TDefaultError | undefined,
+      error: state.error as
+        | InferSubError<ExtractSubscriptionError<TSubFn>>
+        | undefined,
       loading,
       isConnected: state.isConnected,
       _queryKey: queryKey,

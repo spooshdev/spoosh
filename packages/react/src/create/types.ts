@@ -60,7 +60,7 @@ import type {
 } from "../useSubscription/types";
 import type { TypedUseSSEOptions, UseSSEResult } from "../useSSE/types";
 
-type InferError<T, TDefaultError> = [T] extends [unknown] ? TDefaultError : T;
+type InferError<T, TDefaultError> = unknown extends T ? TDefaultError : T;
 
 type WriteResolverContext<TSchema, TMethod, TDefaultError> = ResolverContext<
   TSchema,

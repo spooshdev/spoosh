@@ -389,16 +389,19 @@ type SubscriptionResponse<
   requestedEvents: TRequestedEvents;
   query: ExtractQuery<TMethodConfig>;
   body: ExtractBody<TMethodConfig>;
+  error: ExtractError<TMethodConfig>;
 };
 
 export type BaseSubscriptionResponse<
   TEvents extends Record<string, unknown> = Record<string, unknown>,
+  TError = unknown,
 > = {
   _subscription: true;
   events: TEvents;
   requestedEvents: readonly string[];
   query: unknown;
   body: unknown;
+  error: TError;
 };
 
 /**
