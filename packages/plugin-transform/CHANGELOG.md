@@ -1,5 +1,9 @@
 # @spoosh/plugin-transform
 
+## 0.8.2
+
+- Always expose `transformedData` in plugin result.
+
 ## 0.8.1
 
 - Use `createSpooshPlugin` for automatic type inference

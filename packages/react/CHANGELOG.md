@@ -1,5 +1,9 @@
 # @spoosh/react
 
+## 0.13.2
+
+- Improve excess property checking for `useRead` hook for stricter type safety when passing options.
+
 ## 0.13.1
 
 - Fix not install `@spoosh/transport-sse` dependency using in runtime causing build error.

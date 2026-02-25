@@ -31,7 +31,9 @@ export interface TransformQueueOptions {
   transform?: ResponseTransformer<unknown, unknown>;
 }
 
-export type TransformReadResult = object;
+export type TransformReadResult = {
+  transformedData?: unknown;
+};
 
 export type TransformWriteResult = {
   transformedData?: unknown;

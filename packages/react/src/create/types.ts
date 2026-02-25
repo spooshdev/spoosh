@@ -124,29 +124,47 @@ type ResolvedQueueTriggerOptions<
   QueueResolverContext<TSchema, TMethod, TDefaultError>
 >;
 
+type ResolvedReadOptions<
+  TSchema,
+  TPlugins extends PluginArray,
+  TReadFn,
+  TDefaultError,
+> = BaseReadOptions &
+  ResolveTypes<
+    MergePluginOptions<TPlugins>["read"],
+    ResolverContext<
+      TSchema,
+      ExtractMethodData<TReadFn>,
+      InferError<ExtractMethodError<TReadFn>, TDefaultError>,
+      ExtractResponseQuery<TReadFn>,
+      ExtractResponseBody<TReadFn>,
+      ExtractResponseParamNames<TReadFn> extends never
+        ? never
+        : Record<ExtractResponseParamNames<TReadFn>, string | number>
+    >
+  >;
+
+type StrictOptions<TOptions, TAllowed> = TOptions & {
+  [K in keyof TOptions as K extends keyof TAllowed ? never : K]: never;
+};
+
 type UseReadFn<TDefaultError, TSchema, TPlugins extends PluginArray> = {
   <
     TReadFn extends (
       api: ReadApiClient<TSchema, TDefaultError>
     ) => Promise<SpooshResponse<unknown, unknown>>,
-    TReadOpts,
+    TReadOpts extends ResolvedReadOptions<
+      TSchema,
+      TPlugins,
+      TReadFn,
+      TDefaultError
+    >,
   >(
     readFn: TReadFn,
-    readOptions: TReadOpts &
-      BaseReadOptions &
-      ResolveTypes<
-        MergePluginOptions<TPlugins>["read"],
-        ResolverContext<
-          TSchema,
-          ExtractMethodData<TReadFn>,
-          InferError<ExtractMethodError<TReadFn>, TDefaultError>,
-          ExtractResponseQuery<TReadFn>,
-          ExtractResponseBody<TReadFn>,
-          ExtractResponseParamNames<TReadFn> extends never
-            ? never
-            : Record<ExtractResponseParamNames<TReadFn>, string | number>
-        >
-      >
+    readOptions: StrictOptions<
+      TReadOpts,
+      ResolvedReadOptions<TSchema, TPlugins, TReadFn, TDefaultError>
+    >
   ): BaseReadResult<
     ExtractMethodData<TReadFn>,
     InferError<ExtractMethodError<TReadFn>, TDefaultError>,
