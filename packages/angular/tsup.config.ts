@@ -3,7 +3,7 @@ import { defineConfig } from "tsup";
 export default defineConfig((options) => ({
   entry: { index: "src/index.ts" },
   external: ["@angular/core", "@spoosh/core"],
-  format: ["cjs", "esm"],
+  format: ["esm"],
   dts: true,
   splitting: false,
   platform: "browser",

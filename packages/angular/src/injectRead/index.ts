@@ -74,7 +74,12 @@ export function createInjectRead<
       ResolverContext<
         TSchema,
         ExtractData<TReadFn>,
-        InferError<ExtractError<TReadFn>>
+        InferError<ExtractError<TReadFn>>,
+        ExtractResponseQuery<TReadFn>,
+        ExtractResponseBody<TReadFn>,
+        ExtractResponseParamNames<TReadFn> extends never
+          ? never
+          : Record<ExtractResponseParamNames<TReadFn>, string | number>
       >
     >;
 

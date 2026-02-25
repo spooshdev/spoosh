@@ -33,6 +33,11 @@ import type {
   PagesTriggerOptions,
 } from "./types";
 import type { SpooshInstanceShape } from "../types/shared";
+import type {
+  ExtractResponseQuery,
+  ExtractResponseBody,
+  ExtractResponseParamNames,
+} from "../types/extraction";
 
 export function createInjectPages<
   TSchema,
@@ -86,7 +91,12 @@ export function createInjectPages<
         ResolverContext<
           TSchema,
           ExtractData<TReadFn>,
-          InferError<ExtractError<TReadFn>>
+          InferError<ExtractError<TReadFn>>,
+          ExtractResponseQuery<TReadFn>,
+          ExtractResponseBody<TReadFn>,
+          ExtractResponseParamNames<TReadFn> extends never
+            ? never
+            : Record<ExtractResponseParamNames<TReadFn>, string | number>
         >
       >
   ): BasePagesResult<
