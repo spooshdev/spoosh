@@ -2,6 +2,7 @@ import type {
   DevToolStoreInterface,
   DevToolTheme,
   ExportedTrace,
+  SubscriptionTrace,
 } from "../types";
 import { createActionRouter } from "./action-router";
 import {
@@ -21,6 +22,7 @@ import {
   renderImportList,
   renderImportDetail,
   renderSubscriptionDetail,
+  renderSubscriptionTabs,
 } from "./render";
 import { createRenderScheduler } from "./render-scheduler";
 import { createResizeController } from "./resize-controller";
@@ -457,35 +459,8 @@ export class DevToolPanel {
       }
     } else if (selectedItem?.type === "subscription") {
       const subscription = selectedItem;
-      const detailPanel = this.sidebar.querySelector(".spoosh-detail-panel");
 
-      if (detailPanel) {
-        const savedScrollTop =
-          this.sidebar.querySelector(".spoosh-tab-content")?.scrollTop ?? 0;
-
-        detailPanel.outerHTML = renderSubscriptionDetail({
-          subscription,
-          activeTab: state.subscriptionTab,
-          selectedMessageId: state.selectedMessageId,
-          expandedEventTypes: state.expandedEventTypes,
-          showPassedPlugins: state.showPassedPlugins,
-          showUnlistenedEvents: state.showUnlistenedEvents,
-          expandedSteps: state.expandedSteps,
-          expandedGroups: state.expandedGroups,
-          fullDiffViews: state.fullDiffViews,
-          knownPlugins: this.store.getKnownPlugins("subscription"),
-        });
-
-        if (savedScrollTop > 0) {
-          const newTabContent = this.sidebar.querySelector(
-            ".spoosh-tab-content"
-          );
-
-          if (newTabContent) {
-            newTabContent.scrollTop = savedScrollTop;
-          }
-        }
-      }
+      this.partialUpdateSubscription(subscription, state);
     }
   }
 
@@ -529,6 +504,71 @@ export class DevToolPanel {
           entry: selectedEntry,
           activeTab: state.internalTab,
         });
+      }
+    }
+  }
+
+  private partialUpdateSubscription(
+    subscription: SubscriptionTrace,
+    state: ReturnType<typeof this.viewModel.getState>
+  ): void {
+    if (!this.sidebar) return;
+
+    const messagesTabBtn = this.sidebar.querySelector(
+      '[data-subscription-tab="messages"]'
+    );
+
+    if (messagesTabBtn) {
+      messagesTabBtn.textContent = `Messages (${subscription.messages.length})`;
+    }
+
+    const pluginCount = this.getActivePluginCount(subscription);
+    const pluginsTabBtn = this.sidebar.querySelector(
+      '[data-subscription-tab="plugins"]'
+    );
+
+    if (pluginsTabBtn) {
+      pluginsTabBtn.textContent = `Plugins ${pluginCount > 0 ? `(${pluginCount})` : ""}`;
+    }
+
+    const msgBadge = this.sidebar.querySelector(
+      ".spoosh-detail-meta .spoosh-badge.neutral:last-child"
+    );
+
+    if (msgBadge) {
+      msgBadge.textContent = `${subscription.messageCount} msgs`;
+    }
+
+    const tabContent = this.sidebar.querySelector(".spoosh-tab-content");
+
+    if (tabContent) {
+      const savedScrollTop = tabContent.scrollTop ?? 0;
+
+      if (state.subscriptionTab === "plugins") {
+        tabContent.innerHTML = renderPluginsTab({
+          trace: {
+            id: subscription.id,
+            steps: subscription.steps,
+            operationType: "subscription",
+          },
+          knownPlugins: this.store.getKnownPlugins("subscription"),
+          showPassedPlugins: state.showPassedPlugins,
+          expandedSteps: state.expandedSteps,
+          expandedGroups: state.expandedGroups,
+          fullDiffViews: state.fullDiffViews,
+        });
+      } else {
+        tabContent.innerHTML = renderSubscriptionTabs({
+          subscription,
+          activeTab: state.subscriptionTab,
+          selectedMessageId: state.selectedMessageId,
+          expandedEventTypes: state.expandedEventTypes,
+          showUnlistenedEvents: state.showUnlistenedEvents,
+        });
+      }
+
+      if (savedScrollTop > 0) {
+        tabContent.scrollTop = savedScrollTop;
       }
     }
   }
