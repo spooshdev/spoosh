@@ -27,6 +27,7 @@
     "@spoosh/plugin-retry": "workspace:*",
     "@spoosh/plugin-transform": "workspace:*",
     "@spoosh/react": "workspace:*",
+    "@spoosh/transport-sse": "workspace:*",
     "msw": "^2.11.3",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",

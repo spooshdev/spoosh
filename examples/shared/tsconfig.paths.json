@@ -24,7 +24,8 @@
       "@spoosh/plugin-gc": ["../../packages/plugin-gc/src/index.ts"],
       "@spoosh/plugin-initial-data": ["../../packages/plugin-initial-data/src/index.ts"],
       "@spoosh/plugin-nextjs": ["../../packages/plugin-nextjs/src/index.ts"],
-      "@spoosh/plugin-qs": ["../../packages/plugin-qs/src/index.ts"]
+      "@spoosh/plugin-qs": ["../../packages/plugin-qs/src/index.ts"],
+      "@spoosh/transport-sse": ["../../packages/transport-sse/src/index.ts"]
     }
   }
 }
