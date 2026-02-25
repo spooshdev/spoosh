@@ -186,7 +186,8 @@ describe("createSubscriptionController", () => {
       await controller.subscribe();
       triggerData("message 1");
 
-      expect(callback).toHaveBeenCalledTimes(2);
+      // 3 calls: reset state, connected, data received
+      expect(callback).toHaveBeenCalledTimes(3);
     });
 
     it("should unsubscribe and update state", async () => {
@@ -425,6 +426,29 @@ describe("createSubscriptionController", () => {
       expect(state.error).toEqual(serverError);
       expect(state.isConnected).toBe(false);
       expect(callback).toHaveBeenCalled();
+    });
+
+    it("should reset error state when subscribing again", async () => {
+      const { controller, setMockError, setMockData } = createTestController<
+        string,
+        Error
+      >();
+
+      setMockError(new Error("First error"));
+      await controller.subscribe();
+
+      const stateAfterError = controller.getState();
+      expect(stateAfterError.error?.message).toBe("First error");
+      expect(stateAfterError.isConnected).toBe(false);
+
+      setMockError(undefined as never);
+      setMockData("success");
+      await controller.subscribe();
+
+      const stateAfterRetry = controller.getState();
+      expect(stateAfterRetry.error).toBeUndefined();
+      expect(stateAfterRetry.data).toBe("success");
+      expect(stateAfterRetry.isConnected).toBe(true);
     });
   });
 

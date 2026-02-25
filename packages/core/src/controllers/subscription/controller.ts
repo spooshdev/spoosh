@@ -106,6 +106,9 @@ export function createSubscriptionController<TData, TError>(
           handle = null;
         }
 
+        cachedState = { data: undefined, error: undefined, isConnected: false };
+        notify();
+
         const ctx = createContext();
 
         ctx.onData = (data: TData) => {
