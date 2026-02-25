@@ -20,6 +20,8 @@ prefetchPlugin({});
 prefetchPlugin({ staleTime: "5000" });
 // @ts-expect-error - timeout must be number
 prefetchPlugin({ timeout: "60000" });
+// @ts-expect-error - staleTime must be number
+prefetchPlugin({ staleTime: true });
 // @ts-expect-error - invalid option key
 prefetchPlugin({ invalidKey: true });
 
@@ -29,14 +31,9 @@ const spoosh = new Spoosh<TestSchema, DefaultError>("/api").use([
 const { prefetch } = create(spoosh);
 
 // =============================================================================
-// Instance API - prefetch
+// Instance API - prefetch (valid)
 // =============================================================================
 
 prefetch((api) => api("posts").GET());
 prefetch((api) => api("posts/:id").GET({ params: { id: "1" } }));
 prefetch((api) => api("activities").GET({ query: { limit: 10 } }));
-
-// =============================================================================
-// Note: prefetch plugin only provides instance API (prefetch function)
-// It doesn't add options to hooks like injectRead, injectWrite, etc.
-// =============================================================================

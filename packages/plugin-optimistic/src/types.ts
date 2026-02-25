@@ -83,6 +83,7 @@ export type OptimisticBuilder<
   TMethodConfig = unknown,
   TUserPath extends string = string,
   TResponse = unknown,
+  TError = unknown,
   TTiming extends "immediate" | "onSuccess" = "immediate",
   TUsed extends string = never,
   TCompleted extends boolean = false,
@@ -113,6 +114,7 @@ export type OptimisticBuilder<
           TMethodConfig,
           TUserPath,
           TResponse,
+          TError,
           TTiming,
           TUsed | "WHERE",
           TCompleted
@@ -139,6 +141,7 @@ export type OptimisticBuilder<
           TMethodConfig,
           TUserPath,
           TResponse,
+          TError,
           TTiming,
           TUsed | "UPDATE_CACHE",
           true
@@ -150,6 +153,7 @@ export type OptimisticBuilder<
           TMethodConfig,
           TUserPath,
           TResponse,
+          TError,
           TTiming,
           TUsed | "UPDATE_CACHE",
           true
@@ -169,6 +173,7 @@ export type OptimisticBuilder<
       TMethodConfig,
       TUserPath,
       TResponse,
+      TError,
       "onSuccess",
       TUsed | "ON_SUCCESS",
       TCompleted
@@ -187,6 +192,7 @@ export type OptimisticBuilder<
       TMethodConfig,
       TUserPath,
       TResponse,
+      TError,
       TTiming,
       TUsed | "NO_ROLLBACK",
       TCompleted
@@ -200,12 +206,13 @@ export type OptimisticBuilder<
     "ON_ERROR",
     TUsed,
     (
-      callback: (error: unknown) => void
+      callback: (error: TError) => void
     ) => OptimisticBuilder<
       TData,
       TMethodConfig,
       TUserPath,
       TResponse,
+      TError,
       TTiming,
       TUsed | "ON_ERROR",
       TCompleted
@@ -218,7 +225,7 @@ export type OptimisticBuilder<
  * Resolves literal paths (e.g., "posts/1") to schema keys (e.g., "posts/:id") using FindMatchingKey.
  * Uses TPath for param extraction to preserve user's param names.
  */
-type OptimisticPathMethods<TSchema, TPath extends string, TResponse> =
+type OptimisticPathMethods<TSchema, TPath extends string, TResponse, TError> =
   FindMatchingKey<TSchema, TPath> extends infer TKey
     ? TKey extends keyof TSchema
       ? TSchema[TKey] extends infer TRoute
@@ -230,6 +237,7 @@ type OptimisticPathMethods<TSchema, TPath extends string, TResponse> =
                   TGetConfig,
                   TPath,
                   TResponse,
+                  TError,
                   "immediate",
                   never,
                   false
@@ -246,11 +254,13 @@ type OptimisticPathMethods<TSchema, TPath extends string, TResponse> =
  * Accepts both schema-defined paths (e.g., "posts/:id") and literal paths (e.g., "posts/1").
  * Uses union with (string & {}) to allow any string while preserving autocomplete.
  */
-export type OptimisticApiHelper<TSchema, TResponse = unknown> = <
-  TPath extends ReadPaths<TSchema> | (string & {}),
->(
+export type OptimisticApiHelper<
+  TSchema,
+  TResponse = unknown,
+  TError = unknown,
+> = <TPath extends ReadPaths<TSchema> | (string & {})>(
   path: TPath
-) => OptimisticPathMethods<TSchema, TPath, TResponse>;
+) => OptimisticPathMethods<TSchema, TPath, TResponse, TError>;
 
 /**
  * A generic OptimisticTarget that accepts any data/response types.
@@ -306,8 +316,12 @@ type CompletedOptimisticBuilder = {
  * ]
  * ```
  */
-export type OptimisticCallbackFn<TSchema = unknown, TResponse = unknown> = (
-  api: OptimisticApiHelper<TSchema, TResponse>
+export type OptimisticCallbackFn<
+  TSchema = unknown,
+  TResponse = unknown,
+  TError = unknown,
+> = (
+  api: OptimisticApiHelper<TSchema, TResponse, TError>
 ) => CompletedOptimisticBuilder | CompletedOptimisticBuilder[];
 
 export type OptimisticPluginConfig = object;
@@ -317,6 +331,7 @@ export type OptimisticWriteOptions = object;
 export interface OptimisticWriteTriggerOptions<
   TSchema = unknown,
   TResponse = unknown,
+  TError = unknown,
 > {
   /**
    * Configure optimistic updates for this mutation.
@@ -354,7 +369,7 @@ export interface OptimisticWriteTriggerOptions<
    * });
    * ```
    */
-  optimistic?: OptimisticCallbackFn<TSchema, TResponse>;
+  optimistic?: OptimisticCallbackFn<TSchema, TResponse, TError>;
 }
 
 export type OptimisticReadOptions = object;
@@ -370,7 +385,11 @@ export type OptimisticWriteResult = object;
 declare module "@spoosh/core" {
   interface PluginResolvers<TContext> {
     optimistic:
-      | OptimisticCallbackFn<TContext["schema"], TContext["data"]>
+      | OptimisticCallbackFn<
+          TContext["schema"],
+          TContext["data"],
+          TContext["error"]
+        >
       | undefined;
   }
 }

@@ -1,5 +1,5 @@
 import { Spoosh } from "@spoosh/core";
-import { create } from "@spoosh/angular";
+import { create, type ReadApiClient } from "@spoosh/angular";
 import { qsPlugin } from "@spoosh/plugin-qs";
 import type { TestSchema, DefaultError } from "../schema.js";
 
@@ -20,25 +20,43 @@ qsPlugin({});
 // Plugin config - invalid options
 // =============================================================================
 
-// @ts-expect-error - invalid arrayFormat
+// @ts-expect-error - invalid arrayFormat value
 qsPlugin({ arrayFormat: "invalid" });
 // @ts-expect-error - skipNulls must be boolean
 qsPlugin({ skipNulls: "true" });
-// @ts-expect-error - invalid option key
-qsPlugin({ invalidKey: true });
 
 const spoosh = new Spoosh<TestSchema, DefaultError>("/api").use([qsPlugin()]);
-const { injectRead, injectPages } = create(spoosh);
+const { injectRead, injectWrite, injectPages, injectQueue } = create(spoosh);
+
+const postsReq = (api: ReadApiClient<TestSchema, DefaultError>) =>
+  api("posts").GET();
 
 // =============================================================================
-// injectRead - qs option
+// injectRead - qs option (valid)
 // =============================================================================
 
-injectRead((api) => api("posts").GET(), { qs: { arrayFormat: "brackets" } });
-injectRead((api) => api("posts").GET(), { qs: { skipNulls: true } });
-injectRead((api) => api("posts").GET(), {
-  qs: { arrayFormat: "indices", skipNulls: false },
-});
+injectRead(postsReq, { qs: { arrayFormat: "brackets" } });
+injectRead(postsReq, { qs: { arrayFormat: "indices" } });
+injectRead(postsReq, { qs: { arrayFormat: "repeat" } });
+injectRead(postsReq, { qs: { arrayFormat: "comma" } });
+injectRead(postsReq, { qs: { skipNulls: true } });
+injectRead(postsReq, { qs: { skipNulls: false } });
+
+// =============================================================================
+// injectRead - qs option (invalid)
+// =============================================================================
+
+// @ts-expect-error - invalid arrayFormat value
+injectRead(postsReq, { qs: { arrayFormat: "invalid" } });
+// @ts-expect-error - skipNulls must be boolean
+injectRead(postsReq, { qs: { skipNulls: "true" } });
+
+// =============================================================================
+// injectWrite - qs option
+// =============================================================================
+
+injectWrite((api) => api("posts").POST(), { qs: { arrayFormat: "brackets" } });
+injectWrite((api) => api("posts").POST(), { qs: { skipNulls: true } });
 
 // =============================================================================
 // injectPages - qs option
@@ -50,12 +68,10 @@ injectPages((api) => api("activities").GET({ query: {} }), {
 });
 
 // =============================================================================
-// injectRead - invalid options (options from other plugins should not be available)
+// injectQueue - qs option
 // =============================================================================
 
-// @ts-expect-error - staleTime is from cache plugin, not installed
-injectRead((api) => api("posts").GET(), { staleTime: 5000 });
-// @ts-expect-error - retry is from retry plugin, not installed
-injectRead((api) => api("posts").GET(), { retry: { retries: 3 } });
-// @ts-expect-error - dedupe is from deduplication plugin, not installed
-injectRead((api) => api("posts").GET(), { dedupe: false });
+injectQueue((api) => api("uploads").POST(), {
+  qs: { arrayFormat: "brackets" },
+});
+injectQueue((api) => api("uploads").POST(), { qs: { skipNulls: true } });

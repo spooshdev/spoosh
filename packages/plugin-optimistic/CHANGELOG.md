@@ -1,5 +1,9 @@
 # @spoosh/plugin-optimistic
 
+## 0.7.2
+
+- Fix `ON_ERROR` error type not correctly inferred.
+
 ## 0.7.1
 
 - Use `createSpooshPlugin` for automatic type inference

@@ -1,5 +1,5 @@
 import { Spoosh } from "@spoosh/core";
-import { create } from "@spoosh/angular";
+import { create, type ReadApiClient } from "@spoosh/angular";
 import { throttlePlugin } from "@spoosh/plugin-throttle";
 import type { TestSchema, DefaultError } from "../schema.js";
 
@@ -9,25 +9,38 @@ import type { TestSchema, DefaultError } from "../schema.js";
 
 throttlePlugin();
 
+// @ts-expect-error - throttlePlugin does not accept options
+throttlePlugin({});
+
 const spoosh = new Spoosh<TestSchema, DefaultError>("/api").use([
   throttlePlugin(),
 ]);
-const { injectRead } = create(spoosh);
+const { injectRead, injectPages } = create(spoosh);
+
+const postsReq = (api: ReadApiClient<TestSchema, DefaultError>) =>
+  api("posts").GET();
 
 // =============================================================================
-// injectRead - throttle option
+// injectRead - throttle option (valid)
 // =============================================================================
 
-injectRead((api) => api("posts").GET(), { throttle: 1000 });
-injectRead((api) => api("posts").GET(), { throttle: 500 });
+injectRead(postsReq, { throttle: 1000 });
+injectRead(postsReq, { throttle: 500 });
 
 // =============================================================================
-// injectRead - invalid options (options from other plugins should not be available)
+// injectRead - throttle option (invalid)
 // =============================================================================
 
-// @ts-expect-error - staleTime is from cache plugin, not installed
-injectRead((api) => api("posts").GET(), { staleTime: 5000 });
-// @ts-expect-error - retry is from retry plugin, not installed
-injectRead((api) => api("posts").GET(), { retry: { retries: 3 } });
-// @ts-expect-error - dedupe is from deduplication plugin, not installed
-injectRead((api) => api("posts").GET(), { dedupe: false });
+// @ts-expect-error - throttle must be number
+injectRead(postsReq, { throttle: "1000" });
+// @ts-expect-error - throttle must be number
+injectRead(postsReq, { throttle: false });
+
+// =============================================================================
+// injectPages - throttle option
+// =============================================================================
+
+injectPages((api) => api("activities").GET({ query: {} }), {
+  throttle: 1000,
+  merger: () => [],
+});

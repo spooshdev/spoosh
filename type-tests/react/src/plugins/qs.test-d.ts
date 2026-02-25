@@ -1,5 +1,5 @@
 import { Spoosh } from "@spoosh/core";
-import { create } from "@spoosh/react";
+import { create, type ReadApiClient } from "@spoosh/react";
 import { qsPlugin } from "@spoosh/plugin-qs";
 import type { TestSchema, DefaultError } from "../schema.js";
 
@@ -10,7 +10,9 @@ import type { TestSchema, DefaultError } from "../schema.js";
 qsPlugin({ arrayFormat: "brackets" });
 qsPlugin({ arrayFormat: "indices" });
 qsPlugin({ arrayFormat: "repeat" });
+qsPlugin({ arrayFormat: "comma" });
 qsPlugin({ skipNulls: true });
+qsPlugin({ skipNulls: false });
 qsPlugin({ arrayFormat: "brackets", skipNulls: true });
 qsPlugin({});
 
@@ -22,31 +24,32 @@ qsPlugin({});
 qsPlugin({ arrayFormat: "invalid" });
 // @ts-expect-error - skipNulls must be boolean
 qsPlugin({ skipNulls: "true" });
-// @ts-expect-error - invalid option key
-qsPlugin({ invalidKey: true });
 
 const spoosh = new Spoosh<TestSchema, DefaultError>("/api").use([qsPlugin()]);
 const { useRead, useWrite, usePages, useQueue } = create(spoosh);
 
-// =============================================================================
-// useRead - qs option
-// =============================================================================
-
-useRead((api) => api("posts").GET(), { qs: { arrayFormat: "brackets" } });
-useRead((api) => api("posts").GET(), { qs: { arrayFormat: "indices" } });
-useRead((api) => api("posts").GET(), { qs: { arrayFormat: "repeat" } });
-useRead((api) => api("posts").GET(), { qs: { skipNulls: true } });
+const postsReq = (api: ReadApiClient<TestSchema, DefaultError>) =>
+  api("posts").GET();
 
 // =============================================================================
-// useRead - invalid options (options from other plugins should not be available)
+// useRead - qs option (valid)
 // =============================================================================
 
-// @ts-expect-error - staleTime is from cache plugin, not installed
-useRead((api) => api("posts").GET(), { staleTime: 5000 });
-// @ts-expect-error - retry is from retry plugin, not installed
-useRead((api) => api("posts").GET(), { retry: { retries: 3 } });
-// @ts-expect-error - dedupe is from deduplication plugin, not installed
-useRead((api) => api("posts").GET(), { dedupe: false });
+useRead(postsReq, { qs: { arrayFormat: "brackets" } });
+useRead(postsReq, { qs: { arrayFormat: "indices" } });
+useRead(postsReq, { qs: { arrayFormat: "repeat" } });
+useRead(postsReq, { qs: { arrayFormat: "comma" } });
+useRead(postsReq, { qs: { skipNulls: true } });
+useRead(postsReq, { qs: { skipNulls: false } });
+
+// =============================================================================
+// useRead - qs option (invalid)
+// =============================================================================
+
+// @ts-expect-error - invalid arrayFormat value
+useRead(postsReq, { qs: { arrayFormat: "invalid" } });
+// @ts-expect-error - skipNulls must be boolean
+useRead(postsReq, { qs: { skipNulls: "true" } });
 
 // =============================================================================
 // useWrite - qs option

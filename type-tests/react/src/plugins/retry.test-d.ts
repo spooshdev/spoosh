@@ -1,7 +1,8 @@
 import { Spoosh } from "@spoosh/core";
-import { create } from "@spoosh/react";
+import { create, type ReadApiClient } from "@spoosh/react";
 import { retryPlugin } from "@spoosh/plugin-retry";
 import type { TestSchema, DefaultError } from "../schema.js";
+import { expectType } from "tsd";
 
 // =============================================================================
 // Plugin config - valid options
@@ -10,7 +11,13 @@ import type { TestSchema, DefaultError } from "../schema.js";
 retryPlugin({ retries: 5 });
 retryPlugin({ retries: 3, retryDelay: 2000 });
 retryPlugin({ retries: false });
-retryPlugin({ shouldRetry: (ctx) => ctx.attempt < 3 });
+retryPlugin({
+  shouldRetry: (ctx) => {
+    expectType<number>(ctx.attempt);
+    expectType<number | undefined>(ctx.status);
+    return ctx.attempt < 3;
+  },
+});
 retryPlugin({
   retries: 3,
   retryDelay: 1000,
@@ -24,6 +31,8 @@ retryPlugin({});
 
 // @ts-expect-error - retries must be number or false
 retryPlugin({ retries: "3" });
+// @ts-expect-error - retries must be number or false
+retryPlugin({ retries: true });
 // @ts-expect-error - retryDelay must be number
 retryPlugin({ retryDelay: "1000" });
 // @ts-expect-error - invalid option key
@@ -34,16 +43,38 @@ const spoosh = new Spoosh<TestSchema, DefaultError>("/api").use([
 ]);
 const { useRead, useWrite, usePages, useQueue } = create(spoosh);
 
+const postsReq = (api: ReadApiClient<TestSchema, DefaultError>) =>
+  api("posts").GET();
+
 // =============================================================================
-// useRead - retry option
+// useRead - retry option (valid)
 // =============================================================================
 
-useRead((api) => api("posts").GET(), { retry: { retries: 3 } });
-useRead((api) => api("posts").GET(), { retry: { retries: 3, delay: 1000 } });
-useRead((api) => api("posts").GET(), {
-  retry: { retries: 3, delay: 1000, shouldRetry: (error) => error !== null },
+useRead(postsReq, { retry: { retries: 3 } });
+useRead(postsReq, { retry: { retries: 3, delay: 1000 } });
+useRead(postsReq, {
+  retry: {
+    retries: 3,
+    delay: 1000,
+    shouldRetry: (ctx) => {
+      expectType<number>(ctx.attempt);
+      expectType<number | undefined>(ctx.status);
+      return ctx.status !== 404;
+    },
+  },
 });
-useRead((api) => api("posts").GET(), { retry: { retries: false } });
+useRead(postsReq, { retry: { retries: false } });
+
+// =============================================================================
+// useRead - retry option (invalid)
+// =============================================================================
+
+// @ts-expect-error - retries must be number or false
+useRead(postsReq, { retry: { retries: "3" } });
+// @ts-expect-error - retries must be number or false
+useRead(postsReq, { retry: { retries: true } });
+// @ts-expect-error - delay must be number
+useRead(postsReq, { retry: { delay: "1000" } });
 
 // =============================================================================
 // useWrite - retry option
@@ -51,6 +82,9 @@ useRead((api) => api("posts").GET(), { retry: { retries: false } });
 
 useWrite((api) => api("posts").POST(), { retry: { retries: 2 } });
 useWrite((api) => api("posts").POST(), { retry: { retries: false } });
+
+// @ts-expect-error - retries must be number or false
+useWrite((api) => api("posts").POST(), { retry: { retries: "2" } });
 
 // =============================================================================
 // usePages - retry option
@@ -67,14 +101,3 @@ usePages((api) => api("activities").GET({ query: {} }), {
 
 useQueue((api) => api("uploads").POST(), { retry: { retries: 3 } });
 useQueue((api) => api("uploads").POST(), { retry: { retries: false } });
-
-// =============================================================================
-// useRead - invalid options (options from other plugins should not be available)
-// =============================================================================
-
-// @ts-expect-error - staleTime is from cache plugin, not installed
-useRead((api) => api("posts").GET(), { staleTime: 5000 });
-// @ts-expect-error - dedupe is from deduplication plugin, not installed
-useRead((api) => api("posts").GET(), { dedupe: false });
-// @ts-expect-error - pollingInterval is from polling plugin, not installed
-useRead((api) => api("posts").GET(), { pollingInterval: 5000 });

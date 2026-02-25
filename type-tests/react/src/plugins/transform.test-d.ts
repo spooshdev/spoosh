@@ -1,6 +1,6 @@
 import { expectType } from "tsd";
 import { Spoosh } from "@spoosh/core";
-import { create } from "@spoosh/react";
+import { create, type ReadApiClient } from "@spoosh/react";
 import { transformPlugin } from "@spoosh/plugin-transform";
 import type { TestSchema, DefaultError } from "../schema.js";
 
@@ -18,11 +18,43 @@ const spoosh = new Spoosh<TestSchema, DefaultError>("/api").use([
 ]);
 const { useRead, useWrite, useQueue } = create(spoosh);
 
+const postsReq = (api: ReadApiClient<TestSchema, DefaultError>) =>
+  api("posts").GET();
+
 // =============================================================================
-// useRead - transform option and result
+// useRead - transform option (valid)
 // =============================================================================
 
-const read = useRead((api) => api("posts").GET(), {
+useRead(postsReq, {
+  transform: (data) => {
+    expectType<{ id: number; title: string }[]>(data);
+    return data.map((p) => p.title);
+  },
+});
+
+useRead(postsReq, {
+  transform: (data) => ({ count: data.length }),
+});
+
+// async transform
+useRead(postsReq, {
+  transform: async (data) => data.map((p) => p.title),
+});
+
+// =============================================================================
+// useRead - transform option (invalid)
+// =============================================================================
+
+// @ts-expect-error - transform must be a function
+useRead(postsReq, { transform: "invalid" });
+// @ts-expect-error - transform must be a function
+useRead(postsReq, { transform: true });
+
+// =============================================================================
+// useRead - transformedData result field
+// =============================================================================
+
+const read = useRead(postsReq, {
   transform: (data) => data.map((p) => p.title),
 });
 
@@ -31,18 +63,25 @@ if (read.meta.transformedData !== undefined) {
 }
 
 // =============================================================================
-// useRead - invalid options (options from other plugins should not be available)
+// useWrite - transform option (valid)
 // =============================================================================
 
-// @ts-expect-error - staleTime is from cache plugin, not installed
-useRead((api) => api("posts").GET(), { staleTime: 5000 });
-// @ts-expect-error - retry is from retry plugin, not installed
-useRead((api) => api("posts").GET(), { retry: { retries: 3 } });
-// @ts-expect-error - dedupe is from deduplication plugin, not installed
-useRead((api) => api("posts").GET(), { dedupe: false });
+useWrite((api) => api("posts").POST(), {
+  transform: (data) => {
+    expectType<{ id: number }>(data);
+    return { createdId: data.id };
+  },
+});
 
 // =============================================================================
-// useWrite - transform option and result
+// useWrite - transform option (invalid)
+// =============================================================================
+
+// @ts-expect-error - transform must be a function
+useWrite((api) => api("posts").POST(), { transform: "invalid" });
+
+// =============================================================================
+// useWrite - transformedData result field
 // =============================================================================
 
 const write = useWrite((api) => api("posts").POST(), {

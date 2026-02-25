@@ -1,7 +1,8 @@
 import { Spoosh } from "@spoosh/core";
-import { create } from "@spoosh/angular";
+import { create, type ReadApiClient } from "@spoosh/angular";
 import { debouncePlugin } from "@spoosh/plugin-debounce";
 import type { TestSchema, DefaultError } from "../schema.js";
+import { expectType } from "tsd";
 
 // =============================================================================
 // Plugin config - no options
@@ -9,25 +10,37 @@ import type { TestSchema, DefaultError } from "../schema.js";
 
 debouncePlugin();
 
+// @ts-expect-error - debouncePlugin does not accept options
+debouncePlugin({});
+
 const spoosh = new Spoosh<TestSchema, DefaultError>("/api").use([
   debouncePlugin(),
 ]);
 const { injectRead } = create(spoosh);
 
-// =============================================================================
-// injectRead - debounce option
-// =============================================================================
-
-injectRead((api) => api("posts").GET(), { debounce: 300 });
-injectRead((api) => api("posts").GET(), { debounce: 500 });
+const postsReq = (api: ReadApiClient<TestSchema, DefaultError>) =>
+  api("posts").GET();
 
 // =============================================================================
-// injectRead - invalid options (options from other plugins should not be available)
+// injectRead - debounce option (valid)
 // =============================================================================
 
-// @ts-expect-error - staleTime is from cache plugin, not installed
-injectRead((api) => api("posts").GET(), { staleTime: 5000 });
-// @ts-expect-error - retry is from retry plugin, not installed
-injectRead((api) => api("posts").GET(), { retry: { retries: 3 } });
-// @ts-expect-error - dedupe is from deduplication plugin, not installed
-injectRead((api) => api("posts").GET(), { dedupe: false });
+injectRead(postsReq, { debounce: 300 });
+injectRead(postsReq, { debounce: () => 500 });
+
+injectRead((api) => api("activities").GET({ query: {} }), {
+  debounce: ({ prevQuery }) => {
+    expectType<{ limit?: number; cursor?: number } | undefined>(prevQuery);
+    expectType<number | undefined>(prevQuery?.limit);
+    return prevQuery?.limit ? 300 : 0;
+  },
+});
+
+// =============================================================================
+// injectRead - debounce option (invalid)
+// =============================================================================
+
+// @ts-expect-error - debounce must be number or function
+injectRead(postsReq, { debounce: "300" });
+// @ts-expect-error - debounce must be number or function
+injectRead(postsReq, { debounce: false });

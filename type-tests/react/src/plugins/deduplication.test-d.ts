@@ -1,5 +1,5 @@
 import { Spoosh } from "@spoosh/core";
-import { create } from "@spoosh/react";
+import { create, type ReadApiClient } from "@spoosh/react";
 import { deduplicationPlugin } from "@spoosh/plugin-deduplication";
 import type { TestSchema, DefaultError } from "../schema.js";
 
@@ -17,10 +17,12 @@ deduplicationPlugin({});
 // Plugin config - invalid options
 // =============================================================================
 
-// @ts-expect-error - invalid read option
+// @ts-expect-error - read must be "in-flight" or false
 deduplicationPlugin({ read: "invalid-option" });
-// @ts-expect-error - invalid write option
+// @ts-expect-error - write must be "in-flight" or false
 deduplicationPlugin({ write: "cancel" });
+// @ts-expect-error - read must be "in-flight" or false
+deduplicationPlugin({ read: true });
 // @ts-expect-error - invalid option key
 deduplicationPlugin({ invalidKey: true });
 
@@ -29,19 +31,40 @@ const spoosh = new Spoosh<TestSchema, DefaultError>("/api").use([
 ]);
 const { useRead, useWrite, usePages } = create(spoosh);
 
-// =============================================================================
-// useRead - dedupe option
-// =============================================================================
-
-useRead((api) => api("posts").GET(), { dedupe: "in-flight" });
-useRead((api) => api("posts").GET(), { dedupe: false });
+const postsReq = (api: ReadApiClient<TestSchema, DefaultError>) =>
+  api("posts").GET();
 
 // =============================================================================
-// useWrite - dedupe option
+// useRead - dedupe option (valid)
+// =============================================================================
+
+useRead(postsReq, { dedupe: "in-flight" });
+useRead(postsReq, { dedupe: false });
+
+// =============================================================================
+// useRead - dedupe option (invalid)
+// =============================================================================
+
+// @ts-expect-error - dedupe must be "in-flight" or false
+useRead(postsReq, { dedupe: "invalid" });
+// @ts-expect-error - dedupe must be "in-flight" or false
+useRead(postsReq, { dedupe: true });
+
+// =============================================================================
+// useWrite - dedupe option (valid)
 // =============================================================================
 
 useWrite((api) => api("posts").POST(), { dedupe: "in-flight" });
 useWrite((api) => api("posts").POST(), { dedupe: false });
+
+// =============================================================================
+// useWrite - dedupe option (invalid)
+// =============================================================================
+
+// @ts-expect-error - dedupe must be "in-flight" or false
+useWrite((api) => api("posts").POST(), { dedupe: "invalid" });
+// @ts-expect-error - dedupe must be "in-flight" or false
+useWrite((api) => api("posts").POST(), { dedupe: true });
 
 // =============================================================================
 // usePages - dedupe option
@@ -56,14 +79,3 @@ usePages((api) => api("activities").GET({ query: {} }), {
   dedupe: false,
   merger: () => [],
 });
-
-// =============================================================================
-// useRead - invalid options (options from other plugins should not be available)
-// =============================================================================
-
-// @ts-expect-error - staleTime is from cache plugin, not installed
-useRead((api) => api("posts").GET(), { staleTime: 5000 });
-// @ts-expect-error - retry is from retry plugin, not installed
-useRead((api) => api("posts").GET(), { retry: { retries: 3 } });
-// @ts-expect-error - pollingInterval is from polling plugin, not installed
-useRead((api) => api("posts").GET(), { pollingInterval: 5000 });

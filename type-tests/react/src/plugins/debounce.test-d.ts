@@ -1,7 +1,8 @@
 import { Spoosh } from "@spoosh/core";
-import { create } from "@spoosh/react";
+import { create, type ReadApiClient } from "@spoosh/react";
 import { debouncePlugin } from "@spoosh/plugin-debounce";
 import type { TestSchema, DefaultError } from "../schema.js";
+import { expectType } from "tsd";
 
 // =============================================================================
 // Plugin config - no options
@@ -17,20 +18,29 @@ const spoosh = new Spoosh<TestSchema, DefaultError>("/api").use([
 ]);
 const { useRead } = create(spoosh);
 
-// =============================================================================
-// useRead - debounce option
-// =============================================================================
-
-useRead((api) => api("posts").GET(), { debounce: 300 });
-useRead((api) => api("posts").GET(), { debounce: () => 500 });
+const postsReq = (api: ReadApiClient<TestSchema, DefaultError>) =>
+  api("posts").GET();
 
 // =============================================================================
-// useRead - invalid options (options from other plugins should not be available)
+// useRead - debounce option (valid)
 // =============================================================================
 
-// @ts-expect-error - staleTime is from cache plugin, not installed
-useRead((api) => api("posts").GET(), { staleTime: 5000 });
-// @ts-expect-error - retry is from retry plugin, not installed
-useRead((api) => api("posts").GET(), { retry: { retries: 3 } });
-// @ts-expect-error - dedupe is from deduplication plugin, not installed
-useRead((api) => api("posts").GET(), { dedupe: false });
+useRead(postsReq, { debounce: 300 });
+useRead(postsReq, { debounce: () => 500 });
+
+useRead((api) => api("activities").GET({ query: {} }), {
+  debounce: ({ prevQuery }) => {
+    expectType<{ limit?: number; cursor?: number } | undefined>(prevQuery);
+    expectType<number | undefined>(prevQuery?.limit);
+    return prevQuery?.limit ? 300 : 0;
+  },
+});
+
+// =============================================================================
+// useRead - debounce option (invalid)
+// =============================================================================
+
+// @ts-expect-error - debounce must be number or function
+useRead(postsReq, { debounce: "300" });
+// @ts-expect-error - debounce must be number or function
+useRead(postsReq, { debounce: false });

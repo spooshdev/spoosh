@@ -106,9 +106,9 @@ usePages((api) => api("activities").GET({ query: {} }), {
   canFetchNext: ({ lastPage }) => {
     expectType<
       | {
-        items: { id: number; message: string }[];
-        nextCursor: number | null;
-      }
+          items: { id: number; message: string }[];
+          nextCursor: number | null;
+        }
       | undefined
     >(lastPage?.data);
     return lastPage?.data?.nextCursor !== null;

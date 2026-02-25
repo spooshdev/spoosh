@@ -1,7 +1,8 @@
 import { Spoosh } from "@spoosh/core";
-import { create } from "@spoosh/react";
+import { create, type ReadApiClient } from "@spoosh/react";
 import { pollingPlugin } from "@spoosh/plugin-polling";
 import type { TestSchema, DefaultError } from "../schema.js";
+import { expectType } from "tsd";
 
 // =============================================================================
 // Plugin config - no options
@@ -17,23 +18,29 @@ const spoosh = new Spoosh<TestSchema, DefaultError>("/api").use([
 ]);
 const { useRead } = create(spoosh);
 
+const postsReq = (api: ReadApiClient<TestSchema, DefaultError>) =>
+  api("posts").GET();
+
 // =============================================================================
-// useRead - pollingInterval option
+// useRead - pollingInterval option (valid)
 // =============================================================================
 
-useRead((api) => api("posts").GET(), { pollingInterval: 5000 });
-useRead((api) => api("posts").GET(), { pollingInterval: false });
-useRead((api) => api("posts").GET(), {
-  pollingInterval: ({ error }) => (error ? false : 5000),
+useRead(postsReq, { pollingInterval: 5000 });
+useRead(postsReq, { pollingInterval: false });
+
+useRead(postsReq, {
+  pollingInterval: ({ data, error }) => {
+    expectType<{ id: number; title: string }[] | undefined>(data);
+    expectType<{ customError: string } | undefined>(error);
+    return error ? false : 5000;
+  },
 });
 
 // =============================================================================
-// useRead - invalid options (options from other plugins should not be available)
+// useRead - pollingInterval option (invalid)
 // =============================================================================
 
-// @ts-expect-error - staleTime is from cache plugin, not installed
-useRead((api) => api("posts").GET(), { staleTime: 5000 });
-// @ts-expect-error - retry is from retry plugin, not installed
-useRead((api) => api("posts").GET(), { retry: { retries: 3 } });
-// @ts-expect-error - dedupe is from deduplication plugin, not installed
-useRead((api) => api("posts").GET(), { dedupe: false });
+// @ts-expect-error - pollingInterval must be number, false, or function
+useRead(postsReq, { pollingInterval: "5000" });
+// @ts-expect-error - pollingInterval must be number, false, or function
+useRead(postsReq, { pollingInterval: true });

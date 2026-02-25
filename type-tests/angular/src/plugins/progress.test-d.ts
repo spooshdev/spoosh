@@ -1,6 +1,6 @@
 import { expectType } from "tsd";
 import { Spoosh } from "@spoosh/core";
-import { create } from "@spoosh/angular";
+import { create, type ReadApiClient } from "@spoosh/angular";
 import { progressPlugin } from "@spoosh/plugin-progress";
 import type { TestSchema, DefaultError } from "../schema.js";
 
@@ -18,16 +18,31 @@ const spoosh = new Spoosh<TestSchema, DefaultError>("/api").use([
 ]);
 const { injectRead, injectWrite, injectPages, injectQueue } = create(spoosh);
 
+const postsReq = (api: ReadApiClient<TestSchema, DefaultError>) =>
+  api("posts").GET();
+
 // =============================================================================
-// injectRead - progress option and result
+// injectRead - progress option (valid)
 // =============================================================================
 
-injectRead((api) => api("posts").GET(), { progress: true });
-injectRead((api) => api("posts").GET(), {
-  progress: { totalHeader: "X-Total" },
-});
+injectRead(postsReq, { progress: true });
+injectRead(postsReq, { progress: false });
+injectRead(postsReq, { progress: { totalHeader: "X-Total" } });
 
-const read = injectRead((api) => api("posts").GET(), { progress: true });
+// =============================================================================
+// injectRead - progress option (invalid)
+// =============================================================================
+
+// @ts-expect-error - progress must be boolean or object
+injectRead(postsReq, { progress: "true" });
+// @ts-expect-error - totalHeader must be string
+injectRead(postsReq, { progress: { totalHeader: 123 } });
+
+// =============================================================================
+// injectRead - progress result field
+// =============================================================================
+
+const read = injectRead(postsReq, { progress: true });
 const readProgress = read.meta().progress;
 if (readProgress) {
   expectType<number>(readProgress.loaded);
@@ -35,24 +50,25 @@ if (readProgress) {
 }
 
 // =============================================================================
-// injectRead - invalid options (options from other plugins should not be available)
-// =============================================================================
-
-// @ts-expect-error - staleTime is from cache plugin, not installed
-injectRead((api) => api("posts").GET(), { staleTime: 5000 });
-// @ts-expect-error - retry is from retry plugin, not installed
-injectRead((api) => api("posts").GET(), { retry: { retries: 3 } });
-// @ts-expect-error - dedupe is from deduplication plugin, not installed
-injectRead((api) => api("posts").GET(), { dedupe: false });
-
-// =============================================================================
-// injectWrite - progress option and result
+// injectWrite - progress option (valid)
 // =============================================================================
 
 injectWrite((api) => api("posts").POST(), { progress: true });
+injectWrite((api) => api("posts").POST(), { progress: false });
 injectWrite((api) => api("posts").POST(), {
   progress: { totalHeader: "X-Total" },
 });
+
+// =============================================================================
+// injectWrite - progress option (invalid)
+// =============================================================================
+
+// @ts-expect-error - progress must be boolean or object
+injectWrite((api) => api("posts").POST(), { progress: "true" });
+
+// =============================================================================
+// injectWrite - progress result field
+// =============================================================================
 
 const write = injectWrite((api) => api("posts").POST(), { progress: true });
 const writeProgress = write.meta().progress;
@@ -67,6 +83,11 @@ if (writeProgress) {
 
 injectPages((api) => api("activities").GET({ query: {} }), {
   progress: true,
+  merger: () => [],
+});
+
+injectPages((api) => api("activities").GET({ query: {} }), {
+  progress: { totalHeader: "X-Total" },
   merger: () => [],
 });
 

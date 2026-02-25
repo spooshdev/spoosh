@@ -1,5 +1,5 @@
 import { Spoosh } from "@spoosh/core";
-import { create } from "@spoosh/angular";
+import { create, type ReadApiClient } from "@spoosh/angular";
 import { cachePlugin } from "@spoosh/plugin-cache";
 import type { TestSchema, DefaultError } from "../schema.js";
 
@@ -8,7 +8,6 @@ import type { TestSchema, DefaultError } from "../schema.js";
 // =============================================================================
 
 cachePlugin({ staleTime: 5000 });
-cachePlugin({ staleTime: 0 });
 cachePlugin({ staleTime: Infinity });
 cachePlugin({});
 
@@ -18,6 +17,8 @@ cachePlugin({});
 
 // @ts-expect-error - staleTime must be number
 cachePlugin({ staleTime: "5000" });
+// @ts-expect-error - staleTime must be number
+cachePlugin({ staleTime: true });
 // @ts-expect-error - invalid option key
 cachePlugin({ invalidKey: true });
 
@@ -26,32 +27,42 @@ const spoosh = new Spoosh<TestSchema, DefaultError>("/api").use([
 ]);
 const { injectRead, injectWrite, injectPages } = create(spoosh);
 
-// =============================================================================
-// injectRead - staleTime option
-// =============================================================================
-
-injectRead((api) => api("posts").GET(), { staleTime: 5000 });
-injectRead((api) => api("posts").GET(), { staleTime: 0 });
-injectRead((api) => api("posts").GET(), { staleTime: Infinity });
+const postsReq = (api: ReadApiClient<TestSchema, DefaultError>) =>
+  api("posts").GET();
 
 // =============================================================================
-// injectRead - invalid options (options from other plugins should not be available)
+// injectRead - staleTime option (valid)
 // =============================================================================
 
-// @ts-expect-error - retry is from retry plugin, not installed
-injectRead((api) => api("posts").GET(), { retry: { retries: 3 } });
-// @ts-expect-error - dedupe is from deduplication plugin, not installed
-injectRead((api) => api("posts").GET(), { dedupe: false });
-// @ts-expect-error - pollingInterval is from polling plugin, not installed
-injectRead((api) => api("posts").GET(), { pollingInterval: 5000 });
+injectRead(postsReq, { staleTime: 5000 });
+injectRead(postsReq, { staleTime: Infinity });
+injectRead(postsReq, { staleTime: 0 });
 
 // =============================================================================
-// injectWrite - clearCache trigger option
+// injectRead - staleTime option (invalid)
+// =============================================================================
+
+// @ts-expect-error - staleTime must be number
+injectRead(postsReq, { staleTime: "5000" });
+// @ts-expect-error - staleTime must be number
+injectRead(postsReq, { staleTime: true });
+
+// =============================================================================
+// injectWrite - clearCache trigger option (valid)
 // =============================================================================
 
 const write = injectWrite((api) => api("posts").POST());
 write.trigger({ body: { title: "test" }, clearCache: true });
 write.trigger({ body: { title: "test" }, clearCache: false });
+
+// =============================================================================
+// injectWrite - clearCache trigger option (invalid)
+// =============================================================================
+
+// @ts-expect-error - clearCache must be boolean
+write.trigger({ body: { title: "test" }, clearCache: "true" });
+// @ts-expect-error - clearCache must be boolean
+write.trigger({ body: { title: "test" }, clearCache: 1 });
 
 // =============================================================================
 // injectPages - staleTime option

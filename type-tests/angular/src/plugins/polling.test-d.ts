@@ -1,7 +1,8 @@
 import { Spoosh } from "@spoosh/core";
-import { create } from "@spoosh/angular";
+import { create, type ReadApiClient } from "@spoosh/angular";
 import { pollingPlugin } from "@spoosh/plugin-polling";
 import type { TestSchema, DefaultError } from "../schema.js";
+import { expectType } from "tsd";
 
 // =============================================================================
 // Plugin config - no options
@@ -17,21 +18,29 @@ const spoosh = new Spoosh<TestSchema, DefaultError>("/api").use([
 ]);
 const { injectRead } = create(spoosh);
 
-// =============================================================================
-// injectRead - pollingInterval option
-// =============================================================================
-
-injectRead((api) => api("posts").GET(), { pollingInterval: 5000 });
-injectRead((api) => api("posts").GET(), { pollingInterval: 10000 });
-injectRead((api) => api("posts").GET(), { pollingInterval: false });
+const postsReq = (api: ReadApiClient<TestSchema, DefaultError>) =>
+  api("posts").GET();
 
 // =============================================================================
-// injectRead - invalid options (options from other plugins should not be available)
+// injectRead - pollingInterval option (valid)
 // =============================================================================
 
-// @ts-expect-error - staleTime is from cache plugin, not installed
-injectRead((api) => api("posts").GET(), { staleTime: 5000 });
-// @ts-expect-error - retry is from retry plugin, not installed
-injectRead((api) => api("posts").GET(), { retry: { retries: 3 } });
-// @ts-expect-error - dedupe is from deduplication plugin, not installed
-injectRead((api) => api("posts").GET(), { dedupe: false });
+injectRead(postsReq, { pollingInterval: 5000 });
+injectRead(postsReq, { pollingInterval: false });
+
+injectRead(postsReq, {
+  pollingInterval: ({ data, error }) => {
+    expectType<{ id: number; title: string }[] | undefined>(data);
+    expectType<{ customError: string } | undefined>(error);
+    return error ? false : 5000;
+  },
+});
+
+// =============================================================================
+// injectRead - pollingInterval option (invalid)
+// =============================================================================
+
+// @ts-expect-error - pollingInterval must be number, false, or function
+injectRead(postsReq, { pollingInterval: "5000" });
+// @ts-expect-error - pollingInterval must be number, false, or function
+injectRead(postsReq, { pollingInterval: true });

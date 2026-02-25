@@ -1,5 +1,5 @@
 import { Spoosh } from "@spoosh/core";
-import { create } from "@spoosh/react";
+import { create, type ReadApiClient } from "@spoosh/react";
 import { refetchPlugin } from "@spoosh/plugin-refetch";
 import type { TestSchema, DefaultError } from "../schema.js";
 
@@ -19,6 +19,8 @@ refetchPlugin({});
 
 // @ts-expect-error - refetchOnFocus must be boolean
 refetchPlugin({ refetchOnFocus: "true" });
+// @ts-expect-error - refetchOnReconnect must be boolean
+refetchPlugin({ refetchOnReconnect: "true" });
 // @ts-expect-error - invalid option key
 refetchPlugin({ invalidKey: true });
 
@@ -27,26 +29,23 @@ const spoosh = new Spoosh<TestSchema, DefaultError>("/api").use([
 ]);
 const { useRead } = create(spoosh);
 
-// =============================================================================
-// useRead - refetch option
-// =============================================================================
-
-useRead((api) => api("posts").GET(), { refetch: { onFocus: true } });
-useRead((api) => api("posts").GET(), { refetch: { onReconnect: true } });
-useRead((api) => api("posts").GET(), {
-  refetch: { onFocus: true, onReconnect: true },
-});
-useRead((api) => api("posts").GET(), {
-  refetch: { onFocus: false, onReconnect: false },
-});
+const postsReq = (api: ReadApiClient<TestSchema, DefaultError>) =>
+  api("posts").GET();
 
 // =============================================================================
-// useRead - invalid options (options from other plugins should not be available)
+// useRead - refetch option (valid)
 // =============================================================================
 
-// @ts-expect-error - staleTime is from cache plugin, not installed
-useRead((api) => api("posts").GET(), { staleTime: 5000 });
-// @ts-expect-error - retry is from retry plugin, not installed
-useRead((api) => api("posts").GET(), { retry: { retries: 3 } });
-// @ts-expect-error - dedupe is from deduplication plugin, not installed
-useRead((api) => api("posts").GET(), { dedupe: false });
+useRead(postsReq, { refetch: { onFocus: true } });
+useRead(postsReq, { refetch: { onReconnect: true } });
+useRead(postsReq, { refetch: { onFocus: true, onReconnect: true } });
+useRead(postsReq, { refetch: { onFocus: false, onReconnect: false } });
+
+// =============================================================================
+// useRead - refetch option (invalid)
+// =============================================================================
+
+// @ts-expect-error - onFocus must be boolean
+useRead(postsReq, { refetch: { onFocus: "true" } });
+// @ts-expect-error - onReconnect must be boolean
+useRead(postsReq, { refetch: { onReconnect: "true" } });

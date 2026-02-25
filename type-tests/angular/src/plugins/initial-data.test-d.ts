@@ -1,6 +1,6 @@
 import { expectType } from "tsd";
 import { Spoosh } from "@spoosh/core";
-import { create } from "@spoosh/angular";
+import { create, type ReadApiClient } from "@spoosh/angular";
 import { initialDataPlugin } from "@spoosh/plugin-initial-data";
 import type { TestSchema, DefaultError } from "../schema.js";
 
@@ -18,26 +18,41 @@ const spoosh = new Spoosh<TestSchema, DefaultError>("/api").use([
 ]);
 const { injectRead, injectPages } = create(spoosh);
 
+const postsReq = (api: ReadApiClient<TestSchema, DefaultError>) =>
+  api("posts").GET();
+
 // =============================================================================
-// injectRead - initialData option
+// injectRead - initialData option (valid)
 // =============================================================================
 
-injectRead((api) => api("posts").GET(), {
+injectRead(postsReq, {
   initialData: [{ id: 1, title: "Initial Post" }],
 });
 
-injectRead((api) => api("posts").GET(), {
+injectRead(postsReq, {
   initialData: [{ id: 1, title: "Initial Post" }],
   refetchOnInitialData: true,
 });
 
-injectRead((api) => api("posts").GET(), {
+injectRead(postsReq, {
   initialData: [{ id: 1, title: "Initial Post" }],
   refetchOnInitialData: false,
 });
 
-// isInitialData result field available
-const read = injectRead((api) => api("posts").GET(), {
+// =============================================================================
+// injectRead - initialData option (invalid)
+// =============================================================================
+
+// @ts-expect-error - refetchOnInitialData must be boolean
+injectRead(postsReq, { initialData: [], refetchOnInitialData: "true" });
+// @ts-expect-error - refetchOnInitialData must be boolean
+injectRead(postsReq, { initialData: [], refetchOnInitialData: 1 });
+
+// =============================================================================
+// injectRead - isInitialData result field
+// =============================================================================
+
+const read = injectRead(postsReq, {
   initialData: [{ id: 1, title: "Test" }],
 });
 expectType<boolean>(read.meta().isInitialData);

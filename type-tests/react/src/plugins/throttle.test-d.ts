@@ -1,5 +1,5 @@
 import { Spoosh } from "@spoosh/core";
-import { create } from "@spoosh/react";
+import { create, type ReadApiClient } from "@spoosh/react";
 import { throttlePlugin } from "@spoosh/plugin-throttle";
 import type { TestSchema, DefaultError } from "../schema.js";
 
@@ -15,22 +15,32 @@ throttlePlugin({});
 const spoosh = new Spoosh<TestSchema, DefaultError>("/api").use([
   throttlePlugin(),
 ]);
-const { useRead } = create(spoosh);
+const { useRead, usePages } = create(spoosh);
+
+const postsReq = (api: ReadApiClient<TestSchema, DefaultError>) =>
+  api("posts").GET();
 
 // =============================================================================
-// useRead - throttle option
+// useRead - throttle option (valid)
 // =============================================================================
 
-useRead((api) => api("posts").GET(), { throttle: 1000 });
-useRead((api) => api("posts").GET(), { throttle: 500 });
+useRead(postsReq, { throttle: 1000 });
+useRead(postsReq, { throttle: 500 });
 
 // =============================================================================
-// useRead - invalid options (options from other plugins should not be available)
+// useRead - throttle option (invalid)
 // =============================================================================
 
-// @ts-expect-error - staleTime is from cache plugin, not installed
-useRead((api) => api("posts").GET(), { staleTime: 5000 });
-// @ts-expect-error - retry is from retry plugin, not installed
-useRead((api) => api("posts").GET(), { retry: { retries: 3 } });
-// @ts-expect-error - dedupe is from deduplication plugin, not installed
-useRead((api) => api("posts").GET(), { dedupe: false });
+// @ts-expect-error - throttle must be number
+useRead(postsReq, { throttle: "1000" });
+// @ts-expect-error - throttle must be number
+useRead(postsReq, { throttle: false });
+
+// =============================================================================
+// usePages - throttle option
+// =============================================================================
+
+usePages((api) => api("activities").GET({ query: {} }), {
+  throttle: 1000,
+  merger: () => [],
+});

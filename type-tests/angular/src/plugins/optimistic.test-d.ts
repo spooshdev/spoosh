@@ -1,6 +1,6 @@
 import { expectType } from "tsd";
 import { Spoosh } from "@spoosh/core";
-import { create } from "@spoosh/angular";
+import { create, type ReadApiClient } from "@spoosh/angular";
 import { optimisticPlugin } from "@spoosh/plugin-optimistic";
 import type { TestSchema, DefaultError } from "../schema.js";
 
@@ -18,18 +18,22 @@ const spoosh = new Spoosh<TestSchema, DefaultError>("/api").use([
 ]);
 const { injectRead, injectWrite } = create(spoosh);
 
+const postsReq = (api: ReadApiClient<TestSchema, DefaultError>) =>
+  api("posts").GET();
+
 // =============================================================================
 // injectRead - isOptimistic result field
 // =============================================================================
 
-const read = injectRead((api) => api("posts").GET());
+const read = injectRead(postsReq);
 expectType<boolean>(read.meta().isOptimistic);
 
 // =============================================================================
-// injectWrite - optimistic callback in trigger
+// injectWrite - optimistic callback in trigger (valid)
 // =============================================================================
 
 const write = injectWrite((api) => api("posts").POST());
+
 write.trigger({
   body: { title: "test" },
   optimistic: (api) =>
@@ -40,10 +44,74 @@ write.trigger({
 
 // optimistic update with single endpoint
 const deleteWrite = injectWrite((api) => api("posts/:id").DELETE());
+
 deleteWrite.trigger({
   params: { id: "1" },
   optimistic: (api) =>
     api("posts")
       .GET()
       .UPDATE_CACHE((posts) => posts.filter((p) => p.id !== 1)),
+});
+
+// optimistic with ON_SUCCESS
+write.trigger({
+  body: { title: "test" },
+  optimistic: (api) =>
+    api("posts")
+      .GET()
+      .ON_SUCCESS()
+      .UPDATE_CACHE((posts, response) => {
+        expectType<{ id: number; title: string }[]>(posts);
+        expectType<{ id: number }>(response);
+        return [...posts, { id: response.id, title: "test" }];
+      }),
+});
+
+// optimistic with WHERE filter (requires endpoint with query/params)
+write.trigger({
+  body: { title: "test" },
+  optimistic: (api) =>
+    api("posts/:id")
+      .GET()
+      .WHERE((entry) => {
+        expectType<Record<"id", string | number>>(entry.params);
+        return entry.params.id === "1";
+      })
+      .UPDATE_CACHE((post) => ({ ...post, title: "updated" })),
+});
+
+// optimistic with NO_ROLLBACK
+write.trigger({
+  body: { title: "test" },
+  optimistic: (api) =>
+    api("posts")
+      .GET()
+      .NO_ROLLBACK()
+      .UPDATE_CACHE((posts) => [...posts, { id: 999, title: "test" }]),
+});
+
+// optimistic with ON_ERROR
+write.trigger({
+  body: { title: "test" },
+  optimistic: (api) =>
+    api("posts")
+      .GET()
+      .ON_ERROR((error) => {
+        expectType<{ validation: string[] }>(error);
+        console.error(error);
+      })
+      .UPDATE_CACHE((posts) => [...posts, { id: 999, title: "test" }]),
+});
+
+// optimistic with multiple targets
+write.trigger({
+  body: { title: "test" },
+  optimistic: (api) => [
+    api("posts")
+      .GET()
+      .UPDATE_CACHE((posts) => [...posts, { id: 999, title: "test" }]),
+    api("users")
+      .GET()
+      .UPDATE_CACHE((users) => [...users]),
+  ],
 });
