@@ -1,0 +1,117 @@
+/* eslint-disable @typescript-eslint/no-unused-expressions */
+import { expectType } from "tsd";
+import { Spoosh, SpooshResponse, QueueStats } from "@spoosh/core";
+import { create } from "@spoosh/react";
+import { cachePlugin } from "@spoosh/plugin-cache";
+import type { TestSchema, DefaultError } from "../schema.js";
+
+const spoosh = new Spoosh<TestSchema, DefaultError>("/api").use([
+  cachePlugin(),
+]);
+const { useQueue } = create(spoosh);
+
+// =============================================================================
+// Basic usage
+// =============================================================================
+
+const uploadQueue = useQueue((api) => api("uploads").POST());
+
+// =============================================================================
+// Tasks array
+// =============================================================================
+
+uploadQueue.tasks;
+
+const task = uploadQueue.tasks[0];
+
+// =============================================================================
+// Task data inference
+// =============================================================================
+
+if (task?.data) {
+  expectType<{ url: string }>(task.data);
+  expectType<string>(task.data.url);
+}
+
+// =============================================================================
+// Task error inference
+// =============================================================================
+
+if (task?.error) {
+  expectType<{ uploadFailed: string }>(task.error);
+  expectType<string>(task.error.uploadFailed);
+
+  // @ts-expect-error - message is DefaultError, not uploads error
+  task.error.message;
+}
+
+// =============================================================================
+// Queue stats
+// =============================================================================
+
+expectType<QueueStats>(uploadQueue.stats);
+expectType<number>(uploadQueue.stats.pending);
+expectType<number>(uploadQueue.stats.running);
+expectType<number>(uploadQueue.stats.settled);
+expectType<number>(uploadQueue.stats.success);
+expectType<number>(uploadQueue.stats.failed);
+expectType<number>(uploadQueue.stats.total);
+expectType<number>(uploadQueue.stats.percentage);
+
+// =============================================================================
+// Trigger function - body required
+// =============================================================================
+
+uploadQueue.trigger({ body: new FormData() });
+
+// @ts-expect-error - body is required
+uploadQueue.trigger({});
+
+// =============================================================================
+// Trigger with custom ID
+// =============================================================================
+
+uploadQueue.trigger({ id: "custom-id", body: new FormData() });
+
+// =============================================================================
+// Trigger return type
+// =============================================================================
+
+const triggerResult = uploadQueue.trigger({ body: new FormData() });
+expectType<Promise<SpooshResponse<{ url: string }, { uploadFailed: string }>>>(
+  triggerResult
+);
+
+// =============================================================================
+// Abort function
+// =============================================================================
+
+uploadQueue.abort();
+uploadQueue.abort("task-id");
+
+// =============================================================================
+// Retry function
+// =============================================================================
+
+uploadQueue.retry();
+uploadQueue.retry("task-id");
+const retryResult = uploadQueue.retry("task-id");
+expectType<Promise<void>>(retryResult);
+
+// =============================================================================
+// Remove function
+// =============================================================================
+
+uploadQueue.remove("task-id");
+
+// =============================================================================
+// Remove settled function
+// =============================================================================
+
+uploadQueue.removeSettled();
+
+// =============================================================================
+// Clear function
+// =============================================================================
+
+uploadQueue.clear();
