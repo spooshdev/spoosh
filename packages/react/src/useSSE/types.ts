@@ -20,12 +20,16 @@ export interface UseSSEOptionsBase {
   retryDelay?: number;
 }
 
-type ParseFn = (data: string) => unknown;
+type ParseFn<TEvents extends Record<string, unknown> = Record<string, unknown>> =
+  (data: string) => Partial<TEvents>;
 
-export type TypedParseConfig<TEventKeys extends string> =
+export type TypedParseConfig<
+  TEventKeys extends string,
+  TEvents extends Record<string, unknown>,
+> =
   | ParseStrategy
-  | ParseFn
-  | Partial<Record<TEventKeys, ParseStrategy | ParseFn>>;
+  | ParseFn<TEvents>
+  | Partial<Record<TEventKeys, ParseStrategy | ((data: string) => unknown)>>;
 
 export type TypedAccumulateConfig<TEvents extends Record<string, unknown>> =
   | AccumulateStrategy
@@ -45,7 +49,7 @@ export interface TypedUseSSEOptions<
   events?: TSelectedEvents;
 
   /** Parse strategy for SSE event data. Defaults to 'auto'. */
-  parse?: TypedParseConfig<TEventKeys>;
+  parse?: TypedParseConfig<TEventKeys, TEvents>;
 
   /** Accumulate strategy for combining events. Defaults to 'replace'. */
   accumulate?: TypedAccumulateConfig<TEvents>;

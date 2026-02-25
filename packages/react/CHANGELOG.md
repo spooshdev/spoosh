@@ -1,5 +1,9 @@
 # @spoosh/react
 
+## 0.13.3
+
+- Use stricter type for `useWrite` hook options to prevent passing invalid properties. 
+
 ## 0.13.2
 
 - Improve excess property checking for `useRead` hook for stricter type safety when passing options.

@@ -1,5 +1,9 @@
 # @spoosh/angular
 
+## 0.10.3
+
+- Use stricter type for `injectWrite` hook options to prevent passing invalid properties.
+
 ## 0.10.2
 
 - Improve excess property checking for `injectRead` hook for stricter type safety when passing options.

@@ -51,6 +51,9 @@ const read = useRead((api) => api("posts").GET(), {
   progress: true,
   qs: { arrayFormat: "brackets" },
   transform: (data) => data,
+
+  // @ts-expect-error - should not allow unknown options
+  invalidProperty: "test",
 });
 
 // All result fields available

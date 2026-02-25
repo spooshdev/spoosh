@@ -11,6 +11,16 @@ const spoosh = new Spoosh<TestSchema, DefaultError>("/api").use([
 const { usePages } = create(spoosh);
 
 // =============================================================================
+// Hook Options
+// =============================================================================
+
+usePages((api) => api("activities").GET({ query: {} }), {
+  merger: () => [],
+  // @ts-expect-error - should not allow unknown options
+  invalidOption: "test",
+});
+
+// =============================================================================
 // Basic usage with merger
 // =============================================================================
 

@@ -11,6 +11,13 @@ const spoosh = new Spoosh<TestSchema, DefaultError>("/api").use([
 const { useWrite } = create(spoosh);
 
 // =============================================================================
+// Hook Options
+// =============================================================================
+
+// @ts-expect-error - should not allow unknown options
+useWrite((api) => api("posts").POST(), { invalidOption: "test" });
+
+// =============================================================================
 // Data inference - POST
 // =============================================================================
 
