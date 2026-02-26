@@ -308,6 +308,17 @@ export default function HomePage() {
               code="npm install @spoosh/core @spoosh/react"
               lang="bash"
             />
+            <div className="mt-10 pt-8 border-t border-fd-border">
+              <h3 className="text-lg font-semibold mb-2">
+                AI-Powered Development
+              </h3>
+              <p className="text-fd-muted-foreground text-sm mb-4">
+                Supercharge your AI coding assistant with Spoosh skills. Get
+                intelligent code completion, component patterns, and API
+                guidance directly in your editor.
+              </p>
+              <CodeBlock code="npx skills add spooshdev/skills" lang="bash" />
+            </div>
             <div className="mt-8 flex gap-4 justify-center flex-wrap">
               <Link
                 href="/docs/react/getting-started"
