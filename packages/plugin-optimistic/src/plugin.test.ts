@@ -1421,7 +1421,7 @@ describe("optimisticPlugin", () => {
       expect(entry?.state.data).toEqual({ id: 1, title: "Updated" });
     });
 
-    it("should match literal target against parameterized cache entry", async () => {
+    it("should NOT match literal target against parameterized cache entry (use pattern target instead)", async () => {
       const plugin = optimisticPlugin();
       const stateManager = createStateManager();
 
@@ -1454,7 +1454,7 @@ describe("optimisticPlugin", () => {
       await plugin.middleware!(context, next);
 
       const entry = stateManager.getCache(cacheKey);
-      expect(entry?.state.data).toEqual({ id: 1, title: "Updated" });
+      expect(entry?.state.data).toEqual({ id: 1, title: "Original" });
     });
 
     it("should filter with WHERE using mapped params when both paths are parameterized", async () => {
@@ -1493,6 +1493,202 @@ describe("optimisticPlugin", () => {
         updated: true,
       });
       expect(stateManager.getCache(cacheKey2)?.state.data).toEqual({ id: 2 });
+    });
+
+    it("should NOT match concrete path against parameterized cache entry", async () => {
+      const plugin = optimisticPlugin();
+      const stateManager = createStateManager();
+
+      const cacheKey =
+        '{"method":"GET","options":{"params":{"id":1}},"path":"posts/:id"}';
+      setupCacheEntry(
+        stateManager,
+        cacheKey,
+        { id: 1, title: "Original" },
+        "posts/:id"
+      );
+
+      const pluginOptions = createOptimisticPluginOptions(
+        "posts/paginated",
+        (data) => ({
+          ...(data as { id: number; title: string }),
+          title: "Updated",
+        })
+      );
+
+      const context = createMockContext({
+        stateManager,
+        pluginOptions,
+      });
+
+      const next = vi
+        .fn()
+        .mockResolvedValue({ data: { success: true }, status: 200 });
+
+      await plugin.middleware!(context, next);
+
+      const entry = stateManager.getCache(cacheKey);
+      expect(entry?.state.data).toEqual({ id: 1, title: "Original" });
+    });
+
+    it("should handle array path in cache key", async () => {
+      const plugin = optimisticPlugin();
+      const stateManager = createStateManager();
+
+      const cacheKey = '{"method":"GET","path":["posts","paginated"]}';
+      setupCacheEntry(stateManager, cacheKey, [{ id: 1 }], "posts/paginated");
+
+      const pluginOptions = createOptimisticPluginOptions(
+        "posts/paginated",
+        (data) => [...(data as Array<{ id: number }>), { id: 2 }]
+      );
+
+      const context = createMockContext({
+        stateManager,
+        pluginOptions,
+      });
+
+      const next = vi
+        .fn()
+        .mockResolvedValue({ data: { success: true }, status: 200 });
+
+      await plugin.middleware!(context, next);
+
+      const entry = stateManager.getCache(cacheKey);
+      expect(entry?.state.data).toEqual([{ id: 1 }, { id: 2 }]);
+    });
+  });
+
+  describe("WHERE predicate error handling", () => {
+    it("should skip entry when WHERE predicate throws error", async () => {
+      const plugin = optimisticPlugin();
+      const stateManager = createStateManager();
+
+      const cacheKey = '{"method":"GET","path":"posts"}';
+      setupCacheEntry(stateManager, cacheKey, [{ id: 1 }], "posts");
+
+      const pluginOptions = createOptimisticPluginOptions(
+        "posts",
+        (data) => [...(data as Array<{ id: number }>), { id: 2 }],
+        {
+          where: (opts) => {
+            const q = opts as { query: { page: number } };
+            return q.query.page === 1;
+          },
+        }
+      );
+
+      const context = createMockContext({
+        stateManager,
+        pluginOptions,
+      });
+
+      const next = vi
+        .fn()
+        .mockResolvedValue({ data: { success: true }, status: 200 });
+
+      await plugin.middleware!(context, next);
+
+      const entry = stateManager.getCache(cacheKey);
+      expect(entry?.state.data).toEqual([{ id: 1 }]);
+    });
+
+    it("should continue processing other entries when one WHERE throws", async () => {
+      const plugin = optimisticPlugin();
+      const stateManager = createStateManager();
+
+      const cacheKey1 = '{"method":"GET","path":"posts"}';
+      const cacheKey2 =
+        '{"method":"GET","options":{"query":{"page":1}},"path":"posts"}';
+
+      setupCacheEntry(stateManager, cacheKey1, [{ id: 1 }], "posts");
+      setupCacheEntry(stateManager, cacheKey2, [{ id: 2 }], "posts");
+
+      const pluginOptions = createOptimisticPluginOptions(
+        "posts",
+        (data) =>
+          (data as Array<{ id: number }>).map((p) => ({ ...p, updated: true })),
+        {
+          where: (opts) => {
+            const q = opts as { query?: { page: number } };
+            return q.query?.page === 1;
+          },
+        }
+      );
+
+      const context = createMockContext({
+        stateManager,
+        pluginOptions,
+      });
+
+      const next = vi
+        .fn()
+        .mockResolvedValue({ data: { success: true }, status: 200 });
+
+      await plugin.middleware!(context, next);
+
+      expect(stateManager.getCache(cacheKey1)?.state.data).toEqual([{ id: 1 }]);
+      expect(stateManager.getCache(cacheKey2)?.state.data).toEqual([
+        { id: 2, updated: true },
+      ]);
+    });
+  });
+
+  describe("no cache entry handling", () => {
+    it("should not update anything when target path has no matching cache entries", async () => {
+      const plugin = optimisticPlugin();
+      const stateManager = createStateManager();
+
+      const cacheKey = '{"method":"GET","path":"posts"}';
+      setupCacheEntry(stateManager, cacheKey, [{ id: 1 }], "posts");
+
+      const pluginOptions = createOptimisticPluginOptions("users", (data) => [
+        ...(data as Array<{ id: number }>),
+        { id: 2 },
+      ]);
+
+      const context = createMockContext({
+        stateManager,
+        pluginOptions,
+      });
+
+      const next = vi
+        .fn()
+        .mockResolvedValue({ data: { success: true }, status: 200 });
+
+      await plugin.middleware!(context, next);
+
+      const entry = stateManager.getCache(cacheKey);
+      expect(entry?.state.data).toEqual([{ id: 1 }]);
+    });
+
+    it("should handle onSuccess timing when no cache entry exists", async () => {
+      const plugin = optimisticPlugin();
+      const stateManager = createStateManager();
+
+      const cacheKey = '{"method":"GET","path":"posts"}';
+      setupCacheEntry(stateManager, cacheKey, [{ id: 1 }], "posts");
+
+      const pluginOptions = createOptimisticPluginOptions(
+        "nonexistent",
+        (data, response) => [
+          ...(data as Array<{ id: number }>),
+          response as { id: number },
+        ],
+        { timing: "onSuccess" }
+      );
+
+      const context = createMockContext({
+        stateManager,
+        pluginOptions,
+      });
+
+      const next = vi.fn().mockResolvedValue({ data: { id: 2 }, status: 201 });
+
+      await plugin.middleware!(context, next);
+
+      const entry = stateManager.getCache(cacheKey);
+      expect(entry?.state.data).toEqual([{ id: 1 }]);
     });
   });
 });

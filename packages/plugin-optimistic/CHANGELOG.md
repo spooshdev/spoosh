@@ -1,5 +1,9 @@
 # @spoosh/plugin-optimistic
 
+## 0.7.3
+
+- Fix concrete path incorrectly matching parameterized cache entries
+
 ## 0.7.2
 
 - Fix `ON_ERROR` error type not correctly inferred.

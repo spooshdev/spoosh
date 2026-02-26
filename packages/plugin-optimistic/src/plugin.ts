@@ -14,6 +14,14 @@ import type {
   OptimisticWriteResult,
   OptimisticTarget,
 } from "./types";
+import {
+  hasPatternParams,
+  pathMatchesPattern,
+  extractPathFromKey,
+  formatCacheKeyForTrace,
+  extractOptionsFromKey,
+  mapParamsToTargetNames,
+} from "./utils";
 
 type OptimisticSnapshot = {
   key: string;
@@ -69,125 +77,6 @@ function createOptimisticProxy<TSchema>(): TSchema {
   });
 
   return ((path: string) => createMethodsProxy(path)) as TSchema;
-}
-
-function isParameterSegment(segment: string): boolean {
-  return segment.startsWith(":");
-}
-
-function pathMatchesPattern(
-  actualPath: string,
-  pattern: string
-): {
-  matches: boolean;
-  params: Record<string, string>;
-  paramMapping: Record<string, string>;
-} {
-  const actualSegments = actualPath.split("/").filter(Boolean);
-  const patternSegments = pattern.split("/").filter(Boolean);
-
-  if (actualSegments.length !== patternSegments.length) {
-    return { matches: false, params: {}, paramMapping: {} };
-  }
-
-  const params: Record<string, string> = {};
-  const paramMapping: Record<string, string> = {};
-
-  for (let i = 0; i < patternSegments.length; i++) {
-    const patternSeg = patternSegments[i]!;
-    const actualSeg = actualSegments[i]!;
-
-    if (isParameterSegment(patternSeg)) {
-      const targetParamName = patternSeg.slice(1);
-
-      if (isParameterSegment(actualSeg)) {
-        const actualParamName = actualSeg.slice(1);
-        paramMapping[targetParamName] = actualParamName;
-        continue;
-      }
-
-      params[targetParamName] = actualSeg;
-    } else if (isParameterSegment(actualSeg)) {
-      continue;
-    } else if (patternSeg !== actualSeg) {
-      return { matches: false, params: {}, paramMapping: {} };
-    }
-  }
-
-  return { matches: true, params, paramMapping };
-}
-
-function hasPatternParams(path: string): boolean {
-  return path.split("/").some(isParameterSegment);
-}
-
-function extractPathFromKey(key: string): string | null {
-  try {
-    const parsed = JSON.parse(key) as { path?: string | string[] };
-    const path = parsed.path;
-
-    if (typeof path === "string") {
-      return path;
-    }
-
-    return null;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Extract options (query, params) from cache key for WHERE predicate.
- * Supports multiple cache key structures:
- * - Regular read: { path, method, options: { query?, params? } }
- * - Infinite read: { path, method, pageRequest: { query?, params? } }
- */
-function extractOptionsFromKey(
-  key: string
-): { query?: unknown; params?: unknown } | null {
-  try {
-    const parsed = JSON.parse(key);
-    const result: { query?: unknown; params?: unknown } = {};
-
-    const opts = parsed.options ?? parsed.pageRequest;
-
-    if (!opts) return null;
-
-    if (opts.query) {
-      result.query = opts.query;
-    }
-
-    if (opts.params) {
-      result.params = opts.params;
-    }
-
-    return Object.keys(result).length > 0 ? result : null;
-  } catch {
-    return null;
-  }
-}
-
-function mapParamsToTargetNames(
-  actualParams: Record<string, unknown> | undefined,
-  paramMapping: Record<string, string>
-): Record<string, unknown> {
-  if (!actualParams) return {};
-
-  const result: Record<string, unknown> = {};
-
-  for (const [targetName, actualName] of Object.entries(paramMapping)) {
-    if (actualName in actualParams) {
-      result[targetName] = actualParams[actualName];
-    }
-  }
-
-  for (const [key, value] of Object.entries(actualParams)) {
-    if (!Object.values(paramMapping).includes(key)) {
-      result[key] = value;
-    }
-  }
-
-  return result;
 }
 
 function resolveOptimisticTargets(context: PluginContext): OptimisticTarget[] {
@@ -253,15 +142,6 @@ function getMatchingEntries(
 
       if (actualPath === targetPath) {
         results.push({ key, entry, extractedParams: {}, paramMapping: {} });
-      } else if (hasPatternParams(actualPath)) {
-        const { matches, params, paramMapping } = pathMatchesPattern(
-          targetPath,
-          actualPath
-        );
-
-        if (matches) {
-          results.push({ key, entry, extractedParams: params, paramMapping });
-        }
       }
     }
   }
@@ -283,6 +163,11 @@ function applyOptimisticUpdate(
     target.method
   );
 
+  if (matchingEntries.length === 0) {
+    t?.skip(`Skipped ${target.path} (no cache entry)`);
+    return [];
+  }
+
   for (const { key, entry, extractedParams, paramMapping } of matchingEntries) {
     if (target.where) {
       const options = extractOptionsFromKey(key) ?? {};
@@ -298,12 +183,19 @@ function applyOptimisticUpdate(
         },
       };
 
-      if (!target.where(mergedOptions)) {
+      try {
+        if (!target.where(mergedOptions)) {
+          t?.skip(`Skipped ${formatCacheKeyForTrace(key)} (WHERE not matched)`);
+          continue;
+        }
+      } catch {
+        t?.skip(`Skipped ${formatCacheKeyForTrace(key)} (WHERE error)`);
         continue;
       }
     }
 
     if (entry?.state.data === undefined) {
+      t?.skip(`Skipped ${formatCacheKeyForTrace(key)} (no cached data)`);
       continue;
     }
 
@@ -320,11 +212,6 @@ function applyOptimisticUpdate(
     });
 
     stateManager.setMeta(key, { isOptimistic: true });
-
-    t?.log("Marked as optimistic", {
-      color: "info",
-      info: [{ value: { isOptimistic: true } }],
-    });
   }
 
   return snapshots;
@@ -332,8 +219,7 @@ function applyOptimisticUpdate(
 
 function confirmOptimistic(
   stateManager: StateManager,
-  snapshots: OptimisticSnapshot[],
-  t?: RequestTracer
+  snapshots: OptimisticSnapshot[]
 ): void {
   for (const { key } of snapshots) {
     const entry = stateManager.getCache(key);
@@ -344,19 +230,13 @@ function confirmOptimistic(
       });
 
       stateManager.setMeta(key, { isOptimistic: false });
-
-      t?.log("Optimistic confirmed", {
-        color: "success",
-        info: [{ value: { isOptimistic: false } }],
-      });
     }
   }
 }
 
 function rollbackOptimistic(
   stateManager: StateManager,
-  snapshots: OptimisticSnapshot[],
-  t?: RequestTracer
+  snapshots: OptimisticSnapshot[]
 ): void {
   for (const { key, previousData } of snapshots) {
     const entry = stateManager.getCache(key);
@@ -371,45 +251,24 @@ function rollbackOptimistic(
       });
 
       stateManager.setMeta(key, { isOptimistic: false });
-
-      t?.log("Optimistic rolled back", {
-        color: "warning",
-        info: [{ value: { isOptimistic: false } }],
-      });
     }
   }
 }
 
-function buildSnapshotDiff(
-  snapshots: OptimisticSnapshot[],
+function buildSingleDiff(
+  snapshot: OptimisticSnapshot,
   mode: "apply" | "rollback" | "onSuccess" = "apply"
 ): { before: unknown; after: unknown; label: string } {
-  const first = snapshots[0]!;
-
   const label =
     mode === "apply"
-      ? "Optimistic update to cache"
+      ? "Optimistic update"
       : mode === "rollback"
-        ? "Rollback optimistic changes"
-        : "Apply onSuccess updates";
-
-  if (snapshots.length === 1) {
-    return mode === "apply" || mode === "onSuccess"
-      ? { before: first.previousData, after: first.afterData, label }
-      : { before: first.afterData, after: first.previousData, label };
-  }
+        ? "Rollback optimistic"
+        : "onSuccess update";
 
   return mode === "apply" || mode === "onSuccess"
-    ? {
-        before: snapshots.map((s) => ({ key: s.key, data: s.previousData })),
-        after: snapshots.map((s) => ({ key: s.key, data: s.afterData })),
-        label,
-      }
-    : {
-        before: snapshots.map((s) => ({ key: s.key, data: s.afterData })),
-        after: snapshots.map((s) => ({ key: s.key, data: s.previousData })),
-        label,
-      };
+    ? { before: snapshot.previousData, after: snapshot.afterData, label }
+    : { before: snapshot.afterData, after: snapshot.previousData, label };
 }
 
 /**
@@ -499,13 +358,17 @@ export function optimisticPlugin() {
 
       for (const target of immediateTargets) {
         const snapshots = applyOptimisticUpdate(stateManager, target, t);
-        allSnapshots.push(...snapshots);
-      }
 
-      if (allSnapshots.length > 0) {
-        t?.log(`Applied ${allSnapshots.length} immediate update(s)`, {
-          diff: buildSnapshotDiff(allSnapshots),
-        });
+        for (const snapshot of snapshots) {
+          t?.log(
+            `Applied optimistic update to ${formatCacheKeyForTrace(snapshot.key)}`,
+            {
+              diff: buildSingleDiff(snapshot),
+            }
+          );
+        }
+
+        allSnapshots.push(...snapshots);
       }
 
       const response = await next();
@@ -516,12 +379,14 @@ export function optimisticPlugin() {
         );
 
         if (shouldRollback && allSnapshots.length > 0) {
-          rollbackOptimistic(stateManager, allSnapshots, t);
+          rollbackOptimistic(stateManager, allSnapshots);
 
-          t?.log(`Rolled back ${allSnapshots.length} update(s)`, {
-            color: "warning",
-            diff: buildSnapshotDiff(allSnapshots, "rollback"),
-          });
+          for (const snapshot of allSnapshots) {
+            t?.log(`Rolled back ${formatCacheKeyForTrace(snapshot.key)}`, {
+              color: "warning",
+              diff: buildSingleDiff(snapshot, "rollback"),
+            });
+          }
         }
 
         for (const target of targets) {
@@ -531,7 +396,7 @@ export function optimisticPlugin() {
         }
       } else {
         if (allSnapshots.length > 0) {
-          confirmOptimistic(stateManager, allSnapshots, t);
+          confirmOptimistic(stateManager, allSnapshots);
         }
 
         const onSuccessTargets = targets.filter(
@@ -548,6 +413,11 @@ export function optimisticPlugin() {
             target.path,
             target.method
           );
+
+          if (matchingEntries.length === 0) {
+            t?.skip(`Skipped ${target.path} (no cache entry)`);
+            continue;
+          }
 
           for (const {
             key,
@@ -569,22 +439,35 @@ export function optimisticPlugin() {
                 },
               };
 
-              if (!target.where(mergedOptions)) {
+              try {
+                if (!target.where(mergedOptions)) {
+                  t?.skip(
+                    `Skipped ${formatCacheKeyForTrace(key)} (WHERE not matched)`
+                  );
+                  continue;
+                }
+              } catch {
+                t?.skip(`Skipped ${formatCacheKeyForTrace(key)} (WHERE error)`);
                 continue;
               }
             }
 
             if (entry?.state.data === undefined) {
+              t?.skip(
+                `Skipped ${formatCacheKeyForTrace(key)} (no cached data)`
+              );
               continue;
             }
 
             const afterData = target.updater(entry.state.data, response.data);
 
-            onSuccessSnapshots.push({
+            const snapshot = {
               key,
               previousData: entry.state.data,
               afterData,
-            });
+            };
+
+            onSuccessSnapshots.push(snapshot);
 
             stateManager.setCache(key, {
               state: {
@@ -592,14 +475,15 @@ export function optimisticPlugin() {
                 data: afterData,
               },
             });
-          }
-        }
 
-        if (onSuccessSnapshots.length > 0) {
-          t?.log(`Applied ${onSuccessSnapshots.length} onSuccess update(s)`, {
-            color: "success",
-            diff: buildSnapshotDiff(onSuccessSnapshots, "onSuccess"),
-          });
+            t?.log(
+              `Applied onSuccess update to ${formatCacheKeyForTrace(key)}`,
+              {
+                color: "success",
+                diff: buildSingleDiff(snapshot, "onSuccess"),
+              }
+            );
+          }
         }
       }
 
