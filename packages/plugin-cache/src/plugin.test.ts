@@ -1,21 +1,19 @@
 import { createMockContext, createStateManager } from "@spoosh/test-utils";
-import type { StateManager, InstanceApiContext } from "@spoosh/core";
+import type { StateManager, ApiContext } from "@spoosh/core";
 
 import { cachePlugin } from "./plugin";
 import type { CacheInstanceApi } from "./types";
 
-function createMockInstanceApiContext(
-  stateManager?: StateManager
-): InstanceApiContext {
+function createMockApiContext(stateManager?: StateManager): ApiContext {
   return {
-    api: {},
+    spoosh: {},
     stateManager: stateManager ?? createStateManager(),
     eventEmitter: { on: vi.fn(), off: vi.fn(), emit: vi.fn() },
     pluginExecutor: {
       executeMiddleware: vi.fn(),
       createContext: vi.fn(),
     },
-  } as unknown as InstanceApiContext;
+  } as unknown as ApiContext;
 }
 
 describe("cachePlugin", () => {
@@ -264,18 +262,18 @@ describe("cachePlugin", () => {
     });
   });
 
-  describe("instanceApi", () => {
-    it("should have instanceApi defined", () => {
+  describe("api", () => {
+    it("should have api defined", () => {
       const plugin = cachePlugin();
-      expect(plugin.instanceApi).toBeDefined();
+      expect(plugin.api).toBeDefined();
     });
 
     it("should return clearCache function", () => {
       const plugin = cachePlugin();
-      const context = createMockInstanceApiContext();
-      const exports = plugin.instanceApi!(context) as CacheInstanceApi;
+      const apiContext = createMockApiContext();
+      const internal = plugin.api!(apiContext) as CacheInstanceApi;
 
-      expect(exports.clearCache).toBeInstanceOf(Function);
+      expect(internal.clearCache).toBeInstanceOf(Function);
     });
 
     it("should clear all cache entries when clearCache is called", () => {
@@ -293,10 +291,10 @@ describe("cachePlugin", () => {
 
       expect(stateManager.getSize()).toBe(2);
 
-      const context = createMockInstanceApiContext(stateManager);
-      const exports = plugin.instanceApi!(context) as CacheInstanceApi;
+      const apiContext = createMockApiContext(stateManager);
+      const internal = plugin.api!(apiContext) as CacheInstanceApi;
 
-      exports.clearCache();
+      internal.clearCache();
 
       expect(stateManager.getSize()).toBe(0);
       expect(stateManager.getCache("entry-1")).toBeUndefined();
@@ -306,29 +304,29 @@ describe("cachePlugin", () => {
     it("should not throw when clearing empty cache", () => {
       const plugin = cachePlugin();
       const stateManager = createStateManager();
-      const context = createMockInstanceApiContext(stateManager);
-      const exports = plugin.instanceApi!(context) as CacheInstanceApi;
+      const apiContext = createMockApiContext(stateManager);
+      const internal = plugin.api!(apiContext) as CacheInstanceApi;
 
-      expect(() => exports.clearCache()).not.toThrow();
+      expect(() => internal.clearCache()).not.toThrow();
     });
 
     it("should NOT emit refetchAll event when clearCache is called without options", () => {
       const plugin = cachePlugin();
       const stateManager = createStateManager();
       const emitMock = vi.fn();
-      const context = {
-        api: {},
+      const apiContext = {
+        spoosh: {},
         stateManager,
         eventEmitter: { on: vi.fn(), off: vi.fn(), emit: emitMock },
         pluginExecutor: {
           executeMiddleware: vi.fn(),
           createContext: vi.fn(),
         },
-      } as unknown as InstanceApiContext;
+      } as unknown as ApiContext;
 
-      const exports = plugin.instanceApi!(context) as CacheInstanceApi;
+      const internal = plugin.api!(apiContext) as CacheInstanceApi;
 
-      exports.clearCache();
+      internal.clearCache();
 
       expect(emitMock).not.toHaveBeenCalled();
     });
@@ -337,19 +335,19 @@ describe("cachePlugin", () => {
       const plugin = cachePlugin();
       const stateManager = createStateManager();
       const emitMock = vi.fn();
-      const context = {
-        api: {},
+      const apiContext = {
+        spoosh: {},
         stateManager,
         eventEmitter: { on: vi.fn(), off: vi.fn(), emit: emitMock },
         pluginExecutor: {
           executeMiddleware: vi.fn(),
           createContext: vi.fn(),
         },
-      } as unknown as InstanceApiContext;
+      } as unknown as ApiContext;
 
-      const exports = plugin.instanceApi!(context) as CacheInstanceApi;
+      const internal = plugin.api!(apiContext) as CacheInstanceApi;
 
-      exports.clearCache({ refetchAll: true });
+      internal.clearCache({ refetchAll: true });
 
       expect(emitMock).toHaveBeenCalledWith("refetchAll", undefined);
     });
@@ -358,19 +356,19 @@ describe("cachePlugin", () => {
       const plugin = cachePlugin();
       const stateManager = createStateManager();
       const emitMock = vi.fn();
-      const context = {
-        api: {},
+      const apiContext = {
+        spoosh: {},
         stateManager,
         eventEmitter: { on: vi.fn(), off: vi.fn(), emit: emitMock },
         pluginExecutor: {
           executeMiddleware: vi.fn(),
           createContext: vi.fn(),
         },
-      } as unknown as InstanceApiContext;
+      } as unknown as ApiContext;
 
-      const exports = plugin.instanceApi!(context) as CacheInstanceApi;
+      const internal = plugin.api!(apiContext) as CacheInstanceApi;
 
-      exports.clearCache({ refetchAll: false });
+      internal.clearCache({ refetchAll: false });
 
       expect(emitMock).not.toHaveBeenCalled();
     });

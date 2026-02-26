@@ -53,7 +53,7 @@ export function cachePlugin(config: CachePluginConfig = {}) {
     pagesOptions: CachePagesOptions;
     readResult: CacheReadResult;
     writeResult: CacheWriteResult;
-    instanceApi: CacheInstanceApi;
+    api: CacheInstanceApi;
   }>({
     name: PLUGIN_NAME,
     operations: ["read", "pages", "write"],
@@ -108,7 +108,7 @@ export function cachePlugin(config: CachePluginConfig = {}) {
       }
     },
 
-    instanceApi(context) {
+    api(context) {
       const { stateManager, eventEmitter } = context;
 
       const clearCache = (options?: ClearCacheOptions): void => {

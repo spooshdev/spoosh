@@ -71,7 +71,7 @@ export interface InvalidationPluginExports {
 }
 
 declare module "@spoosh/core" {
-  interface PluginExportsRegistry {
+  interface PluginInternalRegistry {
     "spoosh:invalidation": InvalidationPluginExports;
   }
 
@@ -79,7 +79,7 @@ declare module "@spoosh/core" {
     invalidate: InvalidateOption<TContext["schema"]> | undefined;
   }
 
-  interface InstanceApiResolvers<TSchema> {
+  interface ApiResolvers<TSchema> {
     invalidate: InvalidateFn<TSchema>;
   }
 }

@@ -1,5 +1,9 @@
 # @spoosh/devtool
 
+## 0.5.0
+
+- Update for core plugin API rename (`exports` → `internal`, `instanceApi` → `api`)
+
 ## 0.4.0
 
 - Support SSE event tracing in devtool.

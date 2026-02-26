@@ -1,5 +1,9 @@
 # @spoosh/plugin-prefetch
 
+## 0.6.0
+
+- Update for core plugin API rename (`exports` → `internal`, `instanceApi` → `api`)
+
 ## 0.5.1
 
 - Use `createSpooshPlugin` for automatic type inference

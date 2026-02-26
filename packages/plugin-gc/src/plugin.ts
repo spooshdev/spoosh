@@ -125,7 +125,7 @@ export function gcPlugin(options: GcPluginOptions = {}) {
 
   let runGcFn: (() => number) | undefined;
 
-  return createSpooshPlugin<{ instanceApi: GcPluginExports }>({
+  return createSpooshPlugin<{ api: GcPluginExports }>({
     name: PLUGIN_NAME,
     operations: [],
 
@@ -155,7 +155,7 @@ export function gcPlugin(options: GcPluginOptions = {}) {
       }, interval);
     },
 
-    instanceApi() {
+    api() {
       return {
         runGc: () => runGcFn?.() ?? 0,
       };

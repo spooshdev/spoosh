@@ -144,12 +144,12 @@ export function invalidationPlugin(config: InvalidationPluginConfig = {}) {
     readResult: InvalidationReadResult;
     writeResult: InvalidationWriteResult;
     queueResult: InvalidationQueueResult;
-    instanceApi: InvalidationInstanceApi;
+    api: InvalidationInstanceApi;
   }>({
     name: PLUGIN_NAME,
     operations: ["write", "queue"],
 
-    exports(context): InvalidationPluginExports {
+    internal(context): InvalidationPluginExports {
       return {
         setDefaultMode(value: InvalidationMode) {
           context.temp.set(INVALIDATION_DEFAULT_KEY, value);
@@ -182,7 +182,7 @@ export function invalidationPlugin(config: InvalidationPluginConfig = {}) {
       }
     },
 
-    instanceApi(context) {
+    api(context) {
       const { stateManager, eventEmitter } = context;
       const et = context.eventTracer?.(PLUGIN_NAME);
 

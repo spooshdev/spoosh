@@ -1,5 +1,9 @@
 # @spoosh/plugin-invalidation
 
+## 0.10.0
+
+- Update for core plugin API rename (`exports` → `internal`, `instanceApi` → `api`)
+
 ## 0.9.1
 
 - Use `createSpooshPlugin` for automatic type inference

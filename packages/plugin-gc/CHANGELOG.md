@@ -1,5 +1,9 @@
 # @spoosh/plugin-gc
 
+## 0.4.0
+
+- Update for core plugin API rename (`exports` → `internal`, `instanceApi` → `api`)
+
 ## 0.3.1
 
 - Use `createSpooshPlugin` for automatic type inference

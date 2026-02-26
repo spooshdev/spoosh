@@ -1,7 +1,7 @@
 import type { SpooshResponse } from "../../types/response.types";
 import type { StateManager } from "../../state";
 import type { EventEmitter } from "../../events/emitter";
-import type { InstancePluginExecutor } from "../../plugins/types";
+import type { ApiPluginExecutor } from "../../plugins/types";
 import type { HttpMethod } from "../../types/common.types";
 import type {
   QueueController,
@@ -17,7 +17,7 @@ export interface QueueControllerContext {
   api: unknown;
   stateManager: StateManager;
   eventEmitter: EventEmitter;
-  pluginExecutor: InstancePluginExecutor;
+  pluginExecutor: ApiPluginExecutor;
 }
 
 interface ItemPromiseHandlers<TData, TError> {

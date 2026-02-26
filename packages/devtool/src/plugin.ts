@@ -33,7 +33,7 @@ let globalPanel: DevToolPanel | null = null;
 
 export function devtool(
   config: DevToolConfig = {}
-): SpooshPlugin<{ instanceApi: DevToolInstanceApi }> {
+): SpooshPlugin<{ api: DevToolInstanceApi }> {
   const { enabled = true, showFloatingIcon = true, containerId } = config;
 
   if (!enabled || typeof window === "undefined") {
@@ -289,7 +289,7 @@ export function devtool(
       );
     },
 
-    instanceApi() {
+    api() {
       return {
         devtools: {
           exportTraces: () => store.exportTraces(),

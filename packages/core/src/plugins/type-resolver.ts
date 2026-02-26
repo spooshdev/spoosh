@@ -2,7 +2,7 @@ import type {
   ResolverContext,
   PluginResolvers,
   PluginResultResolvers,
-  InstanceApiResolvers,
+  ApiResolvers,
   DataAwareCallback,
   DataAwareTransform,
 } from "./types";
@@ -78,25 +78,25 @@ export type ResolveResultTypes<TResults, TOptions> = TResults &
   PluginResultResolvers<TOptions>;
 
 /**
- * Resolves instance API types with schema awareness.
- * Maps each key in TInstanceApi to its resolved type from resolvers.
+ * Resolves public API types with schema awareness.
+ * Maps each key in TApi to its resolved type from resolvers.
  *
- * Plugins extend InstanceApiResolvers via declaration merging to add their own
- * resolved instance API types.
+ * Plugins extend ApiResolvers via declaration merging to add their own
+ * resolved API types.
  *
  * @example
  * ```ts
  * // In your plugin's types.ts:
  * declare module "@spoosh/core" {
- *   interface InstanceApiResolvers<TSchema> {
+ *   interface ApiResolvers<TSchema> {
  *     prefetch: PrefetchFn<TSchema>;
  *   }
  * }
  * ```
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export type ResolveInstanceApi<TInstanceApi, TSchema, TReadOptions = object> = {
-  [K in keyof TInstanceApi]: K extends keyof InstanceApiResolvers<TSchema>
-    ? InstanceApiResolvers<TSchema>[K]
-    : TInstanceApi[K];
+export type ResolveApi<TApi, TSchema, TReadOptions = object> = {
+  [K in keyof TApi]: K extends keyof ApiResolvers<TSchema>
+    ? ApiResolvers<TSchema>[K]
+    : TApi[K];
 };

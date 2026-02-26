@@ -91,7 +91,7 @@ export function createPluginExecutor(
   const createPluginAccessor = (context: PluginContext): PluginAccessor => ({
     get(name: string) {
       const plugin = plugins.find((p) => p.name === name);
-      return plugin?.exports?.(context);
+      return plugin?.internal?.(context);
     },
   });
 

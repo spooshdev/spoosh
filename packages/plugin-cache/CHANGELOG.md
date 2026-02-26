@@ -1,5 +1,9 @@
 # @spoosh/plugin-cache
 
+## 0.7.0
+
+- Update for core plugin API rename (`exports` → `internal`, `instanceApi` → `api`)
+
 ## 0.6.1
 
 - Use `createSpooshPlugin` for automatic type inference

@@ -63,17 +63,17 @@ export function create<
     plugin.setup?.(setupContext);
   }
 
-  const instanceApiContext = {
-    api,
+  const apiContext = {
+    spoosh: api,
     stateManager,
     eventEmitter,
     pluginExecutor,
   };
 
-  const instanceApis = plugins.reduce(
+  const pluginApis = plugins.reduce(
     (acc, plugin) => {
-      if (plugin.instanceApi) {
-        return { ...acc, ...plugin.instanceApi(instanceApiContext) };
+      if (plugin.api) {
+        return { ...acc, ...plugin.api(apiContext) };
       }
 
       return acc;
@@ -86,7 +86,7 @@ export function create<
     injectWrite,
     injectPages,
     injectQueue,
-    ...instanceApis,
+    ...pluginApis,
   } as SpooshAngularFunctions<TDefaultError, TSchema, TPlugins>;
 }
 

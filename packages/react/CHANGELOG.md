@@ -1,5 +1,9 @@
 # @spoosh/react
 
+## 0.14.0
+
+- Update for core plugin API rename (`exports` → `internal`, `instanceApi` → `api`)
+
 ## 0.13.3
 
 - Use stricter type for `useWrite` hook options to prevent passing invalid properties.

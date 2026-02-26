@@ -86,7 +86,7 @@ export function deduplicationPlugin(config?: DeduplicationConfig) {
       return next();
     },
 
-    exports: () => ({
+    internal: () => ({
       getConfig: () => resolvedConfig,
       isDedupeEnabled: (
         operationType: string,

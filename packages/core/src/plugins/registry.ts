@@ -1,5 +1,5 @@
 import type { SpooshPlugin, PluginTypeConfig } from "./types";
-import type { ResolveInstanceApi } from "./type-resolver";
+import type { ResolveApi } from "./type-resolver";
 
 type ExtractReadOptions<T> =
   T extends SpooshPlugin<infer Types>
@@ -71,9 +71,9 @@ type ExtractWriteResult<T> =
       : object
     : object;
 
-type ExtractInstanceApi<T> =
+type ExtractApi<T> =
   T extends SpooshPlugin<infer Types>
-    ? Types extends { instanceApi: infer A }
+    ? Types extends { api: infer A }
       ? A
       : object
     : object;
@@ -108,11 +108,11 @@ export type MergePluginResults<
   subscribe: UnionToIntersection<ExtractSubscribeResult<TPlugins[number]>>;
 };
 
-export type MergePluginInstanceApi<
+export type MergePluginApi<
   TPlugins extends readonly SpooshPlugin<PluginTypeConfig>[],
   TSchema = unknown,
-> = ResolveInstanceApi<
-  UnionToIntersection<ExtractInstanceApi<TPlugins[number]>>,
+> = ResolveApi<
+  UnionToIntersection<ExtractApi<TPlugins[number]>>,
   TSchema,
   MergePluginOptions<TPlugins>["read"]
 >;

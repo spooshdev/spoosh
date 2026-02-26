@@ -1,5 +1,9 @@
 # @spoosh/core
 
+## 0.17.0
+
+- **Breaking**: Rename plugin `exports` to `internal` and `instanceApi` to `api`
+
 ## 0.16.0
 
 - Add `subscription` controller for managing real-time transports.

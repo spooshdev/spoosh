@@ -748,9 +748,9 @@ describe("createPluginExecutor", () => {
       });
     });
 
-    it("plugins.get returns plugin exports", () => {
+    it("plugins.get returns plugin internal", () => {
       const plugin = createMockPlugin("export-plugin", ["read"], {
-        exports: () => ({ testMethod: () => "test-result" }),
+        internal: () => ({ testMethod: () => "test-result" }),
       });
 
       const executor = createPluginExecutor([plugin]);
@@ -770,11 +770,11 @@ describe("createPluginExecutor", () => {
         eventEmitter,
       });
 
-      const exports = context.plugins.get("export-plugin") as {
+      const internal = context.plugins.get("export-plugin") as {
         testMethod: () => string;
       };
 
-      expect(exports?.testMethod()).toBe("test-result");
+      expect(internal?.testMethod()).toBe("test-result");
     });
 
     it("plugins.get returns undefined for unknown plugin", () => {
@@ -798,8 +798,8 @@ describe("createPluginExecutor", () => {
       expect(context.plugins.get("non-existent")).toBeUndefined();
     });
 
-    it("plugins.get returns undefined when plugin has no exports", () => {
-      const plugin = createMockPlugin("no-exports-plugin", ["read"]);
+    it("plugins.get returns undefined when plugin has no internal", () => {
+      const plugin = createMockPlugin("no-internal-plugin", ["read"]);
       const executor = createPluginExecutor([plugin]);
       const stateManager = createStateManager();
       const eventEmitter = createEventEmitter();
@@ -817,7 +817,7 @@ describe("createPluginExecutor", () => {
         eventEmitter,
       });
 
-      expect(context.plugins.get("no-exports-plugin")).toBeUndefined();
+      expect(context.plugins.get("no-internal-plugin")).toBeUndefined();
     });
   });
 

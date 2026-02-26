@@ -23,10 +23,10 @@ describe("deduplicationPlugin", () => {
     it("should export getConfig function", () => {
       const plugin = deduplicationPlugin();
       const context = createMockContext();
-      const exports = plugin.exports!(context) as DeduplicationExports;
+      const internal = plugin.internal!(context) as DeduplicationExports;
 
-      expect(exports.getConfig).toBeDefined();
-      expect(typeof exports.getConfig).toBe("function");
+      expect(internal.getConfig).toBeDefined();
+      expect(typeof internal.getConfig).toBe("function");
     });
   });
 
@@ -34,9 +34,9 @@ describe("deduplicationPlugin", () => {
     it("should default to in-flight deduplication for reads", () => {
       const plugin = deduplicationPlugin();
       const context = createMockContext();
-      const exports = plugin.exports!(context) as DeduplicationExports;
+      const internal = plugin.internal!(context) as DeduplicationExports;
 
-      expect(exports.getConfig()).toEqual({
+      expect(internal.getConfig()).toEqual({
         read: "in-flight",
         write: false,
       });
@@ -45,9 +45,9 @@ describe("deduplicationPlugin", () => {
     it("should default to no deduplication for writes", () => {
       const plugin = deduplicationPlugin();
       const context = createMockContext();
-      const exports = plugin.exports!(context) as DeduplicationExports;
+      const internal = plugin.internal!(context) as DeduplicationExports;
 
-      expect(exports.getConfig().write).toBe(false);
+      expect(internal.getConfig().write).toBe(false);
     });
   });
 
@@ -55,17 +55,17 @@ describe("deduplicationPlugin", () => {
     it("should respect custom read configuration", () => {
       const plugin = deduplicationPlugin({ read: false });
       const context = createMockContext();
-      const exports = plugin.exports!(context) as DeduplicationExports;
+      const internal = plugin.internal!(context) as DeduplicationExports;
 
-      expect(exports.getConfig().read).toBe(false);
+      expect(internal.getConfig().read).toBe(false);
     });
 
     it("should respect custom write configuration", () => {
       const plugin = deduplicationPlugin({ write: "in-flight" });
       const context = createMockContext();
-      const exports = plugin.exports!(context) as DeduplicationExports;
+      const internal = plugin.internal!(context) as DeduplicationExports;
 
-      expect(exports.getConfig().write).toBe("in-flight");
+      expect(internal.getConfig().write).toBe("in-flight");
     });
   });
 

@@ -221,7 +221,7 @@ export type PluginLifecycle = {
  *
  * // Plugin with instance-level API
  * SpooshPlugin<{
- *   instanceApi: { prefetch: (selector: Selector) => Promise<void> };
+ *   api: { prefetch: (selector: Selector) => Promise<void> };
  * }>
  * ```
  */
@@ -238,7 +238,7 @@ export type PluginTypeConfig = {
   writeResult?: object;
   queueResult?: object;
   subscribeResult?: object;
-  instanceApi?: object;
+  api?: object;
 };
 
 /**
@@ -248,7 +248,7 @@ export type PluginTypeConfig = {
  * - `middleware`: Wraps the fetch flow for full control (intercept, transform, modify)
  * - `afterResponse`: Called after every response, regardless of early returns
  * - `lifecycle`: Component lifecycle hooks (onMount, onUpdate, onUnmount)
- * - `exports`: Functions/variables accessible to other plugins
+ * - `internal`: Functions/variables accessible to other plugins
  *
  * @typeParam T - Plugin type configuration object. Specify only the types your plugin needs.
  *
@@ -295,12 +295,12 @@ export interface SpooshPlugin<T extends PluginTypeConfig = PluginTypeConfig> {
   lifecycle?: PluginLifecycle;
 
   /** Expose functions/variables for other plugins to access via `context.plugins.get(name)` */
-  exports?: (context: PluginContext) => object;
+  internal?: (context: PluginContext) => object;
 
   /**
    * One-time initialization when the Spoosh instance is created.
    * Use for setting up timers, event listeners, or other side effects.
-   * Runs before instanceApi is called.
+   * Runs before api is called.
    *
    * @example
    * ```ts
@@ -326,20 +326,18 @@ export interface SpooshPlugin<T extends PluginTypeConfig = PluginTypeConfig> {
 
   /**
    * Expose functions/properties on the framework adapter return value (e.g., create).
-   * Unlike `exports`, these are accessible directly from the instance, not just within plugin context.
+   * Unlike `internal`, these are accessible directly from the adapter, not just within plugin context.
    * Should be pure - use `setup` for side effects like timers or event listeners.
    *
    * @example
    * ```ts
-   * instanceApi: ({ api, stateManager }) => ({
+   * api: ({ spopiosh, stateManager }) => ({
    *   prefetch: async (selector) => { ... },
    *   invalidateAll: () => { ... },
    * })
    * ```
    */
-  instanceApi?: (
-    context: InstanceApiContext
-  ) => T extends { instanceApi: infer A } ? A : object;
+  api?: (context: ApiContext) => T extends { api: infer A } ? A : object;
 
   /**
    * Wrap a subscription adapter to add plugin behavior (e.g., caching, retry, logging).
@@ -520,7 +518,7 @@ export interface PluginResolvers<TContext extends ResolverContext> {
 export interface PluginResultResolvers<TOptions> {}
 
 /**
- * Registry for plugin exports. Extend via declaration merging for type-safe access.
+ * Registry for plugin internal APIs. Extend via declaration merging for type-safe access.
  *
  * Plugins can expose functions and variables that other plugins can access
  * via `context.plugins.get("plugin-name")`.
@@ -529,42 +527,42 @@ export interface PluginResultResolvers<TOptions> {}
  * ```ts
  * // In your plugin's types file:
  * declare module '@spoosh/core' {
- *   interface PluginExportsRegistry {
+ *   interface PluginInternalRegistry {
  *     "my-plugin": { myMethod: () => void }
  *   }
  * }
  * ```
  */
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface PluginExportsRegistry {}
+export interface PluginInternalRegistry {}
 
 /**
- * Registry for instance API type resolution. Extend via declaration merging.
+ * Registry for public API type resolution. Extend via declaration merging.
  *
- * Plugins that expose schema-aware instance APIs should extend this interface
+ * Plugins that expose schema-aware public APIs should extend this interface
  * to get proper type inference when the API is used.
  *
  * @example
  * ```ts
  * // In your plugin's types file:
  * declare module '@spoosh/core' {
- *   interface InstanceApiResolvers<TSchema> {
+ *   interface ApiResolvers<TSchema> {
  *     myFunction: MyFn<TSchema>;
  *   }
  * }
  * ```
  */
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type, @typescript-eslint/no-unused-vars
-export interface InstanceApiResolvers<TSchema> {}
+export interface ApiResolvers<TSchema> {}
 
 /**
- * Accessor for plugin exports with type-safe lookup.
+ * Accessor for plugin internal APIs with type-safe lookup.
  */
 export type PluginAccessor = {
-  /** Get a plugin's exported API by name. Returns undefined if plugin not found. */
-  get<K extends keyof PluginExportsRegistry>(
+  /** Get a plugin's internal API by name. Returns undefined if plugin not found. */
+  get<K extends keyof PluginInternalRegistry>(
     name: K
-  ): PluginExportsRegistry[K] | undefined;
+  ): PluginInternalRegistry[K] | undefined;
 
   get(name: string): unknown;
 };
@@ -581,10 +579,10 @@ export type RefetchEvent = {
 };
 
 /**
- * Minimal PluginExecutor interface for InstanceApiContext.
+ * Minimal PluginExecutor interface for ApiContext.
  * Avoids circular dependency with executor.ts.
  */
-export type InstancePluginExecutor = {
+export type ApiPluginExecutor = {
   executeMiddleware: <TData, TError>(
     operationType: OperationType,
     context: PluginContext,
@@ -604,14 +602,14 @@ export type InstancePluginExecutor = {
 };
 
 /**
- * Context provided to plugin's instanceApi function.
- * Used for creating framework-agnostic APIs exposed on the Spoosh instance.
+ * Context provided to plugin's api function.
+ * Used for creating framework-agnostic APIs exposed on the adapter.
  */
-export type InstanceApiContext<TApi = unknown> = {
-  api: TApi;
+export type ApiContext<TApi = unknown> = {
+  spoosh: TApi;
   stateManager: StateManager;
   eventEmitter: EventEmitter;
-  pluginExecutor: InstancePluginExecutor;
+  pluginExecutor: ApiPluginExecutor;
 
   /**
    * Creates an event tracer for standalone events.
@@ -627,7 +625,7 @@ export type InstanceApiContext<TApi = unknown> = {
 export type SetupContext = {
   stateManager: StateManager;
   eventEmitter: EventEmitter;
-  pluginExecutor: InstancePluginExecutor;
+  pluginExecutor: ApiPluginExecutor;
 
   /**
    * Creates an event tracer for standalone events.

@@ -67,13 +67,13 @@ export function prefetchPlugin(config: PrefetchPluginConfig = {}) {
   const { timeout } = config;
 
   return createSpooshPlugin<{
-    instanceApi: PrefetchInstanceApi;
+    api: PrefetchInstanceApi;
   }>({
     name: PLUGIN_NAME,
     operations: [],
 
-    instanceApi(context) {
-      const { api, stateManager, eventEmitter, pluginExecutor } = context;
+    api(context) {
+      const { spoosh, stateManager, eventEmitter, pluginExecutor } = context;
 
       const prefetch = async <TData = unknown, TError = unknown>(
         selector: (api: unknown) => unknown,
@@ -155,7 +155,7 @@ export function prefetchPlugin(config: PrefetchPluginConfig = {}) {
 
           try {
             const pathMethods = (
-              api as (path: string) => Record<string, unknown>
+              spoosh as (path: string) => Record<string, unknown>
             )(callPath);
             const method = pathMethods[callMethod] as (
               o?: unknown

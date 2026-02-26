@@ -1,5 +1,9 @@
 # @spoosh/angular
 
+## 0.11.0
+
+- Update for core plugin API rename (`exports` → `internal`, `instanceApi` → `api`)
+
 ## 0.10.3
 
 - Use stricter type for `injectWrite` hook options to prevent passing invalid properties.

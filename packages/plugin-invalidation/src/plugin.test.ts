@@ -1,8 +1,4 @@
-import type {
-  SpooshResponse,
-  StateManager,
-  InstanceApiContext,
-} from "@spoosh/core";
+import type { SpooshResponse, StateManager, ApiContext } from "@spoosh/core";
 import {
   createMockContext,
   createStateManager,
@@ -15,18 +11,16 @@ import type {
   InvalidationInstanceApi,
 } from "./types";
 
-function createMockInstanceApiContext(
-  stateManager?: StateManager
-): InstanceApiContext {
+function createMockApiContext(stateManager?: StateManager): ApiContext {
   return {
-    api: {},
+    spoosh: {},
     stateManager: stateManager ?? createStateManager(),
     eventEmitter: createEventEmitter(),
     pluginExecutor: {
       executeMiddleware: vi.fn(),
       createContext: vi.fn(),
     },
-  } as unknown as InstanceApiContext;
+  } as unknown as ApiContext;
 }
 
 describe("invalidationPlugin", () => {
@@ -42,11 +36,11 @@ describe("invalidationPlugin", () => {
     });
   });
 
-  describe("exports", () => {
+  describe("internal", () => {
     it("should export setDefaultMode function", () => {
       const plugin = invalidationPlugin();
       const context = createMockContext();
-      const pluginExports = plugin.exports!(
+      const pluginExports = plugin.internal!(
         context
       ) as InvalidationPluginExports;
 
@@ -58,7 +52,7 @@ describe("invalidationPlugin", () => {
       const plugin = invalidationPlugin();
       const temp = new Map();
       const context = createMockContext({ temp });
-      const pluginExports = plugin.exports!(
+      const pluginExports = plugin.internal!(
         context
       ) as InvalidationPluginExports;
 
@@ -806,21 +800,19 @@ describe("invalidationPlugin", () => {
     });
   });
 
-  describe("instanceApi", () => {
-    it("should have instanceApi defined", () => {
+  describe("api", () => {
+    it("should have api defined", () => {
       const plugin = invalidationPlugin();
-      expect(plugin.instanceApi).toBeDefined();
+      expect(plugin.api).toBeDefined();
     });
 
     it("should return invalidate function", () => {
       const plugin = invalidationPlugin();
-      const context = createMockInstanceApiContext();
-      const instanceApi = plugin.instanceApi!(
-        context
-      ) as InvalidationInstanceApi;
+      const apiContext = createMockApiContext();
+      const api = plugin.api!(apiContext) as InvalidationInstanceApi;
 
-      expect(instanceApi.invalidate).toBeDefined();
-      expect(typeof instanceApi.invalidate).toBe("function");
+      expect(api.invalidate).toBeDefined();
+      expect(typeof api.invalidate).toBe("function");
     });
 
     it("should mark cache entries as stale when invalidate is called with array", () => {
@@ -847,12 +839,10 @@ describe("invalidationPlugin", () => {
         stale: false,
       });
 
-      const context = createMockInstanceApiContext(stateManager);
-      const instanceApi = plugin.instanceApi!(
-        context
-      ) as InvalidationInstanceApi;
+      const apiContext = createMockApiContext(stateManager);
+      const api = plugin.api!(apiContext) as InvalidationInstanceApi;
 
-      instanceApi.invalidate(["users"]);
+      api.invalidate(["users"]);
 
       const usersEntry = stateManager.getCache(
         '{"method":"GET","path":["users"]}'
@@ -878,12 +868,10 @@ describe("invalidationPlugin", () => {
         stale: false,
       });
 
-      const context = createMockInstanceApiContext(stateManager);
-      const instanceApi = plugin.instanceApi!(
-        context
-      ) as InvalidationInstanceApi;
+      const apiContext = createMockApiContext(stateManager);
+      const api = plugin.api!(apiContext) as InvalidationInstanceApi;
 
-      instanceApi.invalidate("users");
+      api.invalidate("users");
 
       const usersEntry = stateManager.getCache(
         '{"method":"GET","path":["users"]}'
@@ -899,21 +887,19 @@ describe("invalidationPlugin", () => {
       const invalidateHandler = vi.fn();
       eventEmitter.on("invalidate", invalidateHandler);
 
-      const context = {
-        api: {},
+      const apiContext = {
+        spoosh: {},
         stateManager,
         eventEmitter,
         pluginExecutor: {
           executeMiddleware: vi.fn(),
           createContext: vi.fn(),
         },
-      } as unknown as InstanceApiContext;
+      } as unknown as ApiContext;
 
-      const instanceApi = plugin.instanceApi!(
-        context
-      ) as InvalidationInstanceApi;
+      const api = plugin.api!(apiContext) as InvalidationInstanceApi;
 
-      instanceApi.invalidate(["users", "posts"]);
+      api.invalidate(["users", "posts"]);
 
       expect(invalidateHandler).toHaveBeenCalledWith(["users", "posts"]);
     });
@@ -926,21 +912,19 @@ describe("invalidationPlugin", () => {
       const invalidateHandler = vi.fn();
       eventEmitter.on("invalidate", invalidateHandler);
 
-      const context = {
-        api: {},
+      const apiContext = {
+        spoosh: {},
         stateManager,
         eventEmitter,
         pluginExecutor: {
           executeMiddleware: vi.fn(),
           createContext: vi.fn(),
         },
-      } as unknown as InstanceApiContext;
+      } as unknown as ApiContext;
 
-      const instanceApi = plugin.instanceApi!(
-        context
-      ) as InvalidationInstanceApi;
+      const api = plugin.api!(apiContext) as InvalidationInstanceApi;
 
-      instanceApi.invalidate([]);
+      api.invalidate([]);
 
       expect(invalidateHandler).not.toHaveBeenCalled();
     });
@@ -955,21 +939,19 @@ describe("invalidationPlugin", () => {
       eventEmitter.on("refetchAll", refetchAllHandler);
       eventEmitter.on("invalidate", invalidateHandler);
 
-      const context = {
-        api: {},
+      const apiContext = {
+        spoosh: {},
         stateManager,
         eventEmitter,
         pluginExecutor: {
           executeMiddleware: vi.fn(),
           createContext: vi.fn(),
         },
-      } as unknown as InstanceApiContext;
+      } as unknown as ApiContext;
 
-      const instanceApi = plugin.instanceApi!(
-        context
-      ) as InvalidationInstanceApi;
+      const api = plugin.api!(apiContext) as InvalidationInstanceApi;
 
-      instanceApi.invalidate("*");
+      api.invalidate("*");
 
       expect(refetchAllHandler).toHaveBeenCalledWith(undefined);
       expect(invalidateHandler).not.toHaveBeenCalled();
@@ -985,21 +967,19 @@ describe("invalidationPlugin", () => {
       eventEmitter.on("refetchAll", refetchAllHandler);
       eventEmitter.on("invalidate", invalidateHandler);
 
-      const context = {
-        api: {},
+      const apiContext = {
+        spoosh: {},
         stateManager,
         eventEmitter,
         pluginExecutor: {
           executeMiddleware: vi.fn(),
           createContext: vi.fn(),
         },
-      } as unknown as InstanceApiContext;
+      } as unknown as ApiContext;
 
-      const instanceApi = plugin.instanceApi!(
-        context
-      ) as InvalidationInstanceApi;
+      const api = plugin.api!(apiContext) as InvalidationInstanceApi;
 
-      instanceApi.invalidate(["*", "users", "posts"]);
+      api.invalidate(["*", "users", "posts"]);
 
       expect(refetchAllHandler).toHaveBeenCalledWith(undefined);
       expect(invalidateHandler).not.toHaveBeenCalled();
@@ -1020,21 +1000,19 @@ describe("invalidationPlugin", () => {
         stale: false,
       });
 
-      const context = {
-        api: {},
+      const apiContext = {
+        spoosh: {},
         stateManager,
         eventEmitter,
         pluginExecutor: {
           executeMiddleware: vi.fn(),
           createContext: vi.fn(),
         },
-      } as unknown as InstanceApiContext;
+      } as unknown as ApiContext;
 
-      const instanceApi = plugin.instanceApi!(
-        context
-      ) as InvalidationInstanceApi;
+      const api = plugin.api!(apiContext) as InvalidationInstanceApi;
 
-      instanceApi.invalidate("*");
+      api.invalidate("*");
 
       const usersEntry = stateManager.getCache(
         '{"method":"GET","path":["users"]}'

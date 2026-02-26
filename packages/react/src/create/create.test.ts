@@ -64,7 +64,7 @@ describe("create", () => {
 
   describe("Instance APIs", () => {
     it("includes plugin instance APIs", () => {
-      const mockInstanceApi = vi.fn().mockReturnValue({
+      const mockApi = vi.fn().mockReturnValue({
         customMethod: vi.fn(),
         anotherMethod: vi.fn(),
       });
@@ -72,13 +72,13 @@ describe("create", () => {
       const plugin: SpooshPlugin = {
         name: "test-plugin",
         operations: ["read"],
-        instanceApi: mockInstanceApi,
+        api: mockApi,
       };
 
       const instance = createTestInstance([plugin]);
       const result = create(instance);
 
-      expect(mockInstanceApi).toHaveBeenCalled();
+      expect(mockApi).toHaveBeenCalled();
       expect(result).toHaveProperty("customMethod");
       expect(result).toHaveProperty("anotherMethod");
     });
@@ -89,7 +89,7 @@ describe("create", () => {
       const plugin: SpooshPlugin = {
         name: "test-plugin",
         operations: ["read"],
-        instanceApi: () => ({
+        api: () => ({
           customMethod: customMethodImpl,
         }),
       };

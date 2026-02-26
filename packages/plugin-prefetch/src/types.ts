@@ -38,7 +38,7 @@ export interface PrefetchInstanceApi {
 }
 
 declare module "@spoosh/core" {
-  interface InstanceApiResolvers<TSchema> {
+  interface ApiResolvers<TSchema> {
     prefetch: PrefetchFn<TSchema>;
   }
 }

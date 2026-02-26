@@ -1,6 +1,6 @@
 import type {
   PluginArray,
-  MergePluginInstanceApi,
+  MergePluginApi,
   MergePluginOptions,
   MergePluginResults,
   SpooshResponse,
@@ -307,6 +307,6 @@ export type SpooshAngularFunctions<
   injectWrite: InjectWriteFn<TDefaultError, TSchema, TPlugins>;
   injectPages: InjectPagesFn<TDefaultError, TSchema, TPlugins>;
   injectQueue: InjectQueueFn<TDefaultError, TSchema, TPlugins>;
-} & MergePluginInstanceApi<TPlugins, TSchema>;
+} & MergePluginApi<TPlugins, TSchema>;
 
 export type { SpooshInstanceShape, ExtractMethodData, ExtractMethodError };

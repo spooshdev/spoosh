@@ -100,23 +100,23 @@ describe("prefetchPlugin", () => {
     });
   });
 
-  describe("instanceApi", () => {
+  describe("api", () => {
     it("should return prefetch function", () => {
       const plugin = prefetchPlugin();
       const stateManager = createStateManager();
       const eventEmitter = createEventEmitter();
       const pluginExecutor = createMockPluginExecutor();
-      const api = createMockApi();
+      const mockApi = createMockApi();
 
-      const instanceApi = plugin.instanceApi!({
-        api,
+      const apiResult = plugin.api!({
+        spoosh: mockApi,
         stateManager,
         eventEmitter,
         pluginExecutor,
       });
 
-      expect(instanceApi.prefetch).toBeDefined();
-      expect(typeof instanceApi.prefetch).toBe("function");
+      expect(apiResult.prefetch).toBeDefined();
+      expect(typeof apiResult.prefetch).toBe("function");
     });
   });
 
@@ -126,15 +126,15 @@ describe("prefetchPlugin", () => {
       const stateManager = createStateManager();
       const eventEmitter = createEventEmitter();
       const pluginExecutor = createMockPluginExecutor();
-      const api = createMockApi();
+      const mockApi = createMockApi();
 
-      api("posts").GET.mockResolvedValue({
+      mockApi("posts").GET.mockResolvedValue({
         data: { posts: [{ id: 1 }] },
         status: 200,
       });
 
-      const { prefetch } = plugin.instanceApi!({
-        api,
+      const { prefetch } = plugin.api!({
+        spoosh: mockApi,
         stateManager,
         eventEmitter,
         pluginExecutor,
@@ -159,16 +159,16 @@ describe("prefetchPlugin", () => {
       const stateManager = createStateManager();
       const eventEmitter = createEventEmitter();
       const pluginExecutor = createMockPluginExecutor();
-      const api = createMockApi();
+      const mockApi = createMockApi();
 
       const errorResponse = { message: "Not found" };
-      api("posts").GET.mockResolvedValue({
+      mockApi("posts").GET.mockResolvedValue({
         error: errorResponse,
         status: 404,
       });
 
-      const { prefetch } = plugin.instanceApi!({
-        api,
+      const { prefetch } = plugin.api!({
+        spoosh: mockApi,
         stateManager,
         eventEmitter,
         pluginExecutor,
@@ -196,10 +196,10 @@ describe("prefetchPlugin", () => {
       const stateManager = createStateManager();
       const eventEmitter = createEventEmitter();
       const pluginExecutor = createMockPluginExecutor();
-      const api = createMockApi();
+      const mockApi = createMockApi();
 
-      const { prefetch } = plugin.instanceApi!({
-        api,
+      const { prefetch } = plugin.api!({
+        spoosh: mockApi,
         stateManager,
         eventEmitter,
         pluginExecutor,
@@ -218,10 +218,10 @@ describe("prefetchPlugin", () => {
       const stateManager = createStateManager();
       const eventEmitter = createEventEmitter();
       const pluginExecutor = createMockPluginExecutor();
-      const api = createMockApi();
+      const mockApi = createMockApi();
 
-      const { prefetch } = plugin.instanceApi!({
-        api,
+      const { prefetch } = plugin.api!({
+        spoosh: mockApi,
         stateManager,
         eventEmitter,
         pluginExecutor,
@@ -233,7 +233,7 @@ describe("prefetchPlugin", () => {
         })
       );
 
-      expect(api("posts").GET).toHaveBeenCalledWith(
+      expect(mockApi("posts").GET).toHaveBeenCalledWith(
         expect.objectContaining({
           query: { page: 1, limit: 10 },
         })
@@ -245,15 +245,15 @@ describe("prefetchPlugin", () => {
       const stateManager = createStateManager();
       const eventEmitter = createEventEmitter();
       const pluginExecutor = createMockPluginExecutor();
-      const api = createMockApi();
+      const mockApi = createMockApi();
 
-      api("users/:id").GET.mockResolvedValue({
+      mockApi("users/:id").GET.mockResolvedValue({
         data: { id: 1, name: "John" },
         status: 200,
       });
 
-      const { prefetch } = plugin.instanceApi!({
-        api,
+      const { prefetch } = plugin.api!({
+        spoosh: mockApi,
         stateManager,
         eventEmitter,
         pluginExecutor,
@@ -265,7 +265,7 @@ describe("prefetchPlugin", () => {
         })
       );
 
-      expect(api("users/:id").GET).toHaveBeenCalled();
+      expect(mockApi("users/:id").GET).toHaveBeenCalled();
 
       const queryKey = stateManager.createQueryKey({
         path: "users/:id",
@@ -292,10 +292,10 @@ describe("prefetchPlugin", () => {
         return next();
       });
 
-      const api = createMockApi();
+      const mockApi = createMockApi();
 
-      const { prefetch } = plugin.instanceApi!({
-        api,
+      const { prefetch } = plugin.api!({
+        spoosh: mockApi,
         stateManager,
         eventEmitter,
         pluginExecutor,
@@ -324,10 +324,10 @@ describe("prefetchPlugin", () => {
         return next();
       });
 
-      const api = createMockApi();
+      const mockApi = createMockApi();
 
-      const { prefetch } = plugin.instanceApi!({
-        api,
+      const { prefetch } = plugin.api!({
+        spoosh: mockApi,
         stateManager,
         eventEmitter,
         pluginExecutor,
@@ -352,7 +352,7 @@ describe("prefetchPlugin", () => {
       const stateManager = createStateManager();
       const eventEmitter = createEventEmitter();
       const pluginExecutor = createMockPluginExecutor();
-      const api = createMockApi();
+      const mockApi = createMockApi();
 
       const existingPromise = Promise.resolve({
         data: { posts: [{ id: 1 }] },
@@ -367,8 +367,8 @@ describe("prefetchPlugin", () => {
 
       stateManager.setPendingPromise(queryKey, existingPromise);
 
-      const { prefetch } = plugin.instanceApi!({
-        api,
+      const { prefetch } = plugin.api!({
+        spoosh: mockApi,
         stateManager,
         eventEmitter,
         pluginExecutor,
@@ -378,7 +378,7 @@ describe("prefetchPlugin", () => {
         (apiProxy as unknown as MockApi)("posts").GET()
       );
 
-      expect(api("posts").GET).not.toHaveBeenCalled();
+      expect(mockApi("posts").GET).not.toHaveBeenCalled();
       expect(result).toEqual({ data: { posts: [{ id: 1 }] }, status: 200 });
     });
 
@@ -387,18 +387,18 @@ describe("prefetchPlugin", () => {
       const stateManager = createStateManager();
       const eventEmitter = createEventEmitter();
       const pluginExecutor = createMockPluginExecutor();
-      const api = createMockApi();
+      const mockApi = createMockApi();
 
       let resolvePromise: (value: SpooshResponse<unknown, unknown>) => void;
-      api("posts").GET.mockImplementation(
+      mockApi("posts").GET.mockImplementation(
         () =>
           new Promise((resolve) => {
             resolvePromise = resolve;
           })
       );
 
-      const { prefetch } = plugin.instanceApi!({
-        api,
+      const { prefetch } = plugin.api!({
+        spoosh: mockApi,
         stateManager,
         eventEmitter,
         pluginExecutor,
@@ -415,7 +415,7 @@ describe("prefetchPlugin", () => {
 
       const [result1, result2] = await Promise.all([promise1, promise2]);
 
-      expect(api("posts").GET).toHaveBeenCalledTimes(1);
+      expect(mockApi("posts").GET).toHaveBeenCalledTimes(1);
       expect(result1).toEqual(result2);
     });
 
@@ -424,15 +424,15 @@ describe("prefetchPlugin", () => {
       const stateManager = createStateManager();
       const eventEmitter = createEventEmitter();
       const pluginExecutor = createMockPluginExecutor();
-      const api = createMockApi();
+      const mockApi = createMockApi();
 
-      api("posts").GET.mockResolvedValue({
+      mockApi("posts").GET.mockResolvedValue({
         data: { posts: [{ id: 1 }] },
         status: 200,
       });
 
-      const { prefetch } = plugin.instanceApi!({
-        api,
+      const { prefetch } = plugin.api!({
+        spoosh: mockApi,
         stateManager,
         eventEmitter,
         pluginExecutor,
@@ -442,7 +442,7 @@ describe("prefetchPlugin", () => {
         (apiProxy as unknown as MockApi)("posts").GET()
       );
 
-      api("posts").GET.mockResolvedValue({
+      mockApi("posts").GET.mockResolvedValue({
         data: { posts: [{ id: 2 }] },
         status: 200,
       });
@@ -451,7 +451,7 @@ describe("prefetchPlugin", () => {
         (apiProxy as unknown as MockApi)("posts").GET()
       );
 
-      expect(api("posts").GET).toHaveBeenCalledTimes(2);
+      expect(mockApi("posts").GET).toHaveBeenCalledTimes(2);
     });
   });
 
@@ -461,18 +461,18 @@ describe("prefetchPlugin", () => {
       const stateManager = createStateManager();
       const eventEmitter = createEventEmitter();
       const pluginExecutor = createMockPluginExecutor();
-      const api = createMockApi();
+      const mockApi = createMockApi();
 
       let resolvePromise: (value: SpooshResponse<unknown, unknown>) => void;
-      api("posts").GET.mockImplementation(
+      mockApi("posts").GET.mockImplementation(
         () =>
           new Promise((resolve) => {
             resolvePromise = resolve;
           })
       );
 
-      const { prefetch } = plugin.instanceApi!({
-        api,
+      const { prefetch } = plugin.api!({
+        spoosh: mockApi,
         stateManager,
         eventEmitter,
         pluginExecutor,
@@ -502,18 +502,18 @@ describe("prefetchPlugin", () => {
       const stateManager = createStateManager();
       const eventEmitter = createEventEmitter();
       const pluginExecutor = createMockPluginExecutor();
-      const api = createMockApi();
+      const mockApi = createMockApi();
 
       let resolvePromise: (value: SpooshResponse<unknown, unknown>) => void;
-      api("posts").GET.mockImplementation(
+      mockApi("posts").GET.mockImplementation(
         () =>
           new Promise((resolve) => {
             resolvePromise = resolve;
           })
       );
 
-      const { prefetch } = plugin.instanceApi!({
-        api,
+      const { prefetch } = plugin.api!({
+        spoosh: mockApi,
         stateManager,
         eventEmitter,
         pluginExecutor,
@@ -545,15 +545,15 @@ describe("prefetchPlugin", () => {
       const stateManager = createStateManager();
       const eventEmitter = createEventEmitter();
       const pluginExecutor = createMockPluginExecutor();
-      const api = createMockApi();
+      const mockApi = createMockApi();
 
-      api("posts").GET.mockResolvedValue({
+      mockApi("posts").GET.mockResolvedValue({
         data: { posts: [{ id: 1 }] },
         status: 200,
       });
 
-      const { prefetch } = plugin.instanceApi!({
-        api,
+      const { prefetch } = plugin.api!({
+        spoosh: mockApi,
         stateManager,
         eventEmitter,
         pluginExecutor,
@@ -580,20 +580,20 @@ describe("prefetchPlugin", () => {
       const stateManager = createStateManager();
       const eventEmitter = createEventEmitter();
       const pluginExecutor = createMockPluginExecutor();
-      const api = createMockApi();
+      const mockApi = createMockApi();
 
       let resolveFirstPromise: (
         value: SpooshResponse<unknown, unknown>
       ) => void;
-      api("posts").GET.mockImplementationOnce(
+      mockApi("posts").GET.mockImplementationOnce(
         () =>
           new Promise((resolve) => {
             resolveFirstPromise = resolve;
           })
       );
 
-      const { prefetch } = plugin.instanceApi!({
-        api,
+      const { prefetch } = plugin.api!({
+        spoosh: mockApi,
         stateManager,
         eventEmitter,
         pluginExecutor,
@@ -603,7 +603,7 @@ describe("prefetchPlugin", () => {
 
       await vi.advanceTimersByTimeAsync(5000);
 
-      api("posts").GET.mockResolvedValue({
+      mockApi("posts").GET.mockResolvedValue({
         data: { posts: [{ id: 2 }] },
         status: 200,
       });
@@ -612,7 +612,7 @@ describe("prefetchPlugin", () => {
         (apiProxy as unknown as MockApi)("posts").GET()
       );
 
-      expect(api("posts").GET).toHaveBeenCalledTimes(2);
+      expect(mockApi("posts").GET).toHaveBeenCalledTimes(2);
       expect(result).toEqual({ data: { posts: [{ id: 2 }] }, status: 200 });
 
       resolveFirstPromise!({ data: { posts: [] }, status: 200 });
@@ -625,15 +625,15 @@ describe("prefetchPlugin", () => {
       const stateManager = createStateManager();
       const eventEmitter = createEventEmitter();
       const pluginExecutor = createMockPluginExecutor();
-      const api = createMockApi();
+      const mockApi = createMockApi();
 
-      api("posts").GET.mockResolvedValue({
+      mockApi("posts").GET.mockResolvedValue({
         data: { posts: [] },
         status: 200,
       });
 
-      const { prefetch } = plugin.instanceApi!({
-        api,
+      const { prefetch } = plugin.api!({
+        spoosh: mockApi,
         stateManager,
         eventEmitter,
         pluginExecutor,
@@ -664,10 +664,10 @@ describe("prefetchPlugin", () => {
       const stateManager = createStateManager();
       const eventEmitter = createEventEmitter();
       const pluginExecutor = createMockPluginExecutor();
-      const api = createMockApi();
+      const mockApi = createMockApi();
 
-      const { prefetch } = plugin.instanceApi!({
-        api,
+      const { prefetch } = plugin.api!({
+        spoosh: mockApi,
         stateManager,
         eventEmitter,
         pluginExecutor,
@@ -693,10 +693,10 @@ describe("prefetchPlugin", () => {
       const stateManager = createStateManager();
       const eventEmitter = createEventEmitter();
       const pluginExecutor = createMockPluginExecutor();
-      const api = createMockApi();
+      const mockApi = createMockApi();
 
-      const { prefetch } = plugin.instanceApi!({
-        api,
+      const { prefetch } = plugin.api!({
+        spoosh: mockApi,
         stateManager,
         eventEmitter,
         pluginExecutor,
@@ -724,13 +724,13 @@ describe("prefetchPlugin", () => {
       const stateManager = createStateManager();
       const eventEmitter = createEventEmitter();
       const pluginExecutor = createMockPluginExecutor();
-      const api = createMockApi();
+      const mockApi = createMockApi();
 
       const thrownError = new Error("Network error");
-      api("posts").GET.mockRejectedValue(thrownError);
+      mockApi("posts").GET.mockRejectedValue(thrownError);
 
-      const { prefetch } = plugin.instanceApi!({
-        api,
+      const { prefetch } = plugin.api!({
+        spoosh: mockApi,
         stateManager,
         eventEmitter,
         pluginExecutor,

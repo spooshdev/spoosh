@@ -28,7 +28,7 @@ export type DeduplicationReadResult = object;
 export type DeduplicationWriteResult = object;
 
 declare module "@spoosh/core" {
-  interface PluginExportsRegistry {
+  interface PluginInternalRegistry {
     "spoosh:deduplication": {
       getConfig: () => { read: DedupeMode; write: DedupeMode };
       isDedupeEnabled: (

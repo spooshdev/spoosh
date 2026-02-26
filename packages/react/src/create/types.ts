@@ -7,7 +7,7 @@ import type {
   SpooshTransport,
   MergePluginOptions,
   MergePluginResults,
-  MergePluginInstanceApi,
+  MergePluginApi,
   ResolverContext,
   ResolveTypes,
   ResolveResultTypes,
@@ -481,7 +481,7 @@ type BaseSpooshReactHooks<
    * ```
    */
   useSubscription: UseSubscriptionFn<TDefaultError, TSchema, TPlugins>;
-} & MergePluginInstanceApi<TPlugins, TSchema>;
+} & MergePluginApi<TPlugins, TSchema>;
 
 /**
  * SSE hooks available when SSE transport is registered.
