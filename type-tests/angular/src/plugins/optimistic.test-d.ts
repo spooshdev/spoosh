@@ -112,9 +112,89 @@ write.trigger({
       .set((posts) => [...posts, { id: 999, title: "pending..." }])
       .confirmed()
       .set((posts, response) => {
-        const postId = (response as { id: number }).id;
+        expectType<{ id: number }>(response);
         return posts.map((p) =>
-          p.id === 999 ? { ...p, id: postId, title: "confirmed" } : p
+          p.id === 999 ? { ...p, id: response.id, title: "confirmed" } : p
         );
       }),
+});
+
+// =============================================================================
+// Invalid flows (should be type errors)
+// =============================================================================
+
+write.trigger({
+  body: { title: "test" },
+  optimistic: (cache) =>
+    cache("posts")
+      .set((posts) => posts)
+      // @ts-expect-error - cannot call set() twice in immediate mode
+      .set((posts) => posts),
+});
+
+write.trigger({
+  body: { title: "test" },
+  optimistic: (cache) =>
+    cache("posts")
+      .confirmed()
+      .set((posts) => posts)
+      // @ts-expect-error - cannot call set() twice in confirmed mode
+      .set((posts) => posts),
+});
+
+write.trigger({
+  body: { title: "test" },
+  optimistic: (cache) =>
+    cache("posts")
+      .confirmed()
+      // @ts-expect-error - cannot call confirmed() twice
+      .confirmed()
+      // @ts-expect-error - cannot call set() after confirmed() without set() first
+      .set((posts) => posts),
+});
+
+write.trigger({
+  body: { title: "test" },
+  optimistic: (cache) =>
+    cache("posts/:id")
+      .set((post) => post)
+      // @ts-expect-error - cannot call filter() after set()
+      .filter((e) => e.params.id === "1"),
+});
+
+write.trigger({
+  body: { title: "test" },
+  optimistic: (cache) =>
+    cache("posts/:id")
+      .filter((e) => e.params.id === "1")
+      // @ts-expect-error - cannot call filter() twice
+      .filter((e) => e.params.id === "2"),
+});
+
+write.trigger({
+  body: { title: "test" },
+  // @ts-expect-error - disableRollback requires immediate set first
+  optimistic: (cache) => cache("posts").disableRollback(),
+});
+
+write.trigger({
+  body: { title: "test" },
+  // @ts-expect-error - onError requires immediate set first
+  optimistic: (cache) => cache("posts").onError(() => { }),
+});
+
+write.trigger({
+  body: { title: "test" },
+  optimistic: (cache) =>
+    cache("posts")
+      .confirmed()
+      .set((posts) => posts)
+      // @ts-expect-error - disableRollback not available with confirmed-only
+      .disableRollback(),
+});
+
+write.trigger({
+  body: { title: "test" },
+  // @ts-expect-error - invalid cache path
+  optimistic: (cache) => cache("invalidPath").set((data) => data),
 });

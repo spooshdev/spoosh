@@ -89,6 +89,7 @@ export type CacheBuilder<
     : unknown) & {
   /**
    * Filter which cache entries to update based on query/params.
+   * Must be called before any `set()`.
    *
    * @param predicate - Function that receives cache entry info and returns true to match
    *
@@ -99,23 +100,27 @@ export type CacheBuilder<
    */
   filter: THasFilter extends true
     ? never
-    : FilterOptions<TMethodConfig, TUserPath> extends never
+    : THasImmediate extends true
       ? never
-      : (
-          predicate: (
-            entry: Simplify<FilterOptions<TMethodConfig, TUserPath>>
-          ) => boolean
-        ) => CacheBuilder<
-          TData,
-          TMethodConfig,
-          TUserPath,
-          TResponse,
-          TError,
-          TConfirmed,
-          THasImmediate,
-          THasConfirmed,
-          true
-        >;
+      : THasConfirmed extends true
+        ? never
+        : FilterOptions<TMethodConfig, TUserPath> extends never
+          ? never
+          : (
+              predicate: (
+                entry: Simplify<FilterOptions<TMethodConfig, TUserPath>>
+              ) => boolean
+            ) => CacheBuilder<
+              TData,
+              TMethodConfig,
+              TUserPath,
+              TResponse,
+              TError,
+              TConfirmed,
+              THasImmediate,
+              THasConfirmed,
+              true
+            >;
 
   /**
    * Set the cache data.
@@ -193,35 +198,41 @@ export type CacheBuilder<
   /**
    * Disable automatic rollback when mutation fails.
    * By default, optimistic updates are rolled back on error.
+   * Only available after calling `set()` in immediate mode.
    */
-  disableRollback: () => CacheBuilder<
-    TData,
-    TMethodConfig,
-    TUserPath,
-    TResponse,
-    TError,
-    TConfirmed,
-    THasImmediate,
-    THasConfirmed,
-    THasFilter
-  >;
+  disableRollback: THasImmediate extends true
+    ? () => CacheBuilder<
+        TData,
+        TMethodConfig,
+        TUserPath,
+        TResponse,
+        TError,
+        TConfirmed,
+        THasImmediate,
+        THasConfirmed,
+        THasFilter
+      >
+    : never;
 
   /**
    * Callback when mutation fails.
+   * Only available after calling `set()` in immediate mode.
    */
-  onError: (
-    callback: (error: TError) => void
-  ) => CacheBuilder<
-    TData,
-    TMethodConfig,
-    TUserPath,
-    TResponse,
-    TError,
-    TConfirmed,
-    THasImmediate,
-    THasConfirmed,
-    THasFilter
-  >;
+  onError: THasImmediate extends true
+    ? (
+        callback: (error: TError) => void
+      ) => CacheBuilder<
+        TData,
+        TMethodConfig,
+        TUserPath,
+        TResponse,
+        TError,
+        TConfirmed,
+        THasImmediate,
+        THasConfirmed,
+        THasFilter
+      >
+    : never;
 };
 
 /**
