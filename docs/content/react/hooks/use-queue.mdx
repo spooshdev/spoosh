@@ -50,16 +50,17 @@ const queue = useQueue((api) => api("uploads").POST(), {
 
 ## Returns
 
-| Property        | Type                            | Description                                          |
-| --------------- | ------------------------------- | ---------------------------------------------------- |
-| `trigger`       | `(input?) => Promise<Response>` | Add item to queue and execute, returns when complete |
-| `tasks`         | `QueueItem[]`                   | All tasks with their current status                  |
-| `stats`         | `QueueStats`                    | Queue statistics                                     |
-| `abort`         | `(id?) => void`                 | Abort task by ID, or all if no ID                    |
-| `retry`         | `(id?) => Promise<void>`        | Retry failed task by ID, or all failed               |
-| `remove`        | `(id: string) => void`          | Remove specific task by ID (aborts if active)        |
-| `removeSettled` | `() => void`                    | Remove all settled tasks (keeps pending/running)     |
-| `clear`         | `() => void`                    | Abort all and clear entire queue                     |
+| Property         | Type                            | Description                                          |
+| ---------------- | ------------------------------- | ---------------------------------------------------- |
+| `trigger`        | `(input?) => Promise<Response>` | Add item to queue and execute, returns when complete |
+| `tasks`          | `QueueItem[]`                   | All tasks with their current status                  |
+| `stats`          | `QueueStats`                    | Queue statistics                                     |
+| `abort`          | `(id?) => void`                 | Abort task by ID, or all if no ID                    |
+| `retry`          | `(id?) => Promise<void>`        | Retry failed task by ID, or all failed               |
+| `remove`         | `(id: string) => void`          | Remove specific task by ID (aborts if active)        |
+| `removeSettled`  | `() => void`                    | Remove all settled tasks (keeps pending/running)     |
+| `clear`          | `() => void`                    | Abort all and clear entire queue                     |
+| `setConcurrency` | `(n: number) => void`           | Update concurrency limit at runtime                  |
 
 ## QueueItem Properties
 
@@ -95,6 +96,42 @@ Each task in the `tasks` array has:
 | `query`          | `TQuery`                           | Query parameters                                 |
 | `params`         | `Record<string, string \| number>` | Path parameters                                  |
 | + plugin options | -                                  | Options from installed plugins                   |
+
+## Dynamic Concurrency
+
+Adjust concurrency at runtime using `setConcurrency`:
+
+```typescript
+function UploaderWithDynamicConcurrency() {
+  const [concurrency, setConcurrency] = useState(3);
+
+  const { trigger, stats, setConcurrency: setQueueConcurrency } = useQueue(
+    (api) => api("uploads").POST(),
+    { concurrency }
+  );
+
+  return (
+    <div>
+      <label>
+        Concurrency:
+        <input
+          type="number"
+          value={concurrency}
+          onChange={(e) => setConcurrency(Number(e.target.value))}
+          min={1}
+          max={10}
+        />
+        <button onClick={() => setQueueConcurrency(concurrency)}>
+          Apply
+        </button>
+      </label>
+      <p>Running: {stats.running} / Pending: {stats.pending}</p>
+    </div>
+  );
+}
+```
+
+When decreasing concurrency, already running tasks will complete, but new tasks won't start until the running count drops below the new limit.
 
 ## Progress Tracking
 

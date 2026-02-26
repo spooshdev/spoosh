@@ -22,7 +22,7 @@ export class Semaphore {
       this.current--;
     }
 
-    if (this.waiting.length > 0) {
+    if (this.waiting.length > 0 && this.current < this.max) {
       this.current++;
       this.waiting.shift()!(true);
     }

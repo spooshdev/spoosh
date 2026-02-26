@@ -162,6 +162,7 @@ export function createUseQueue<
       remove: controller.remove,
       removeSettled: controller.removeSettled,
       clear: controller.clear,
+      setConcurrency: controller.setConcurrency,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any;
   }

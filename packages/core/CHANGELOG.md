@@ -1,5 +1,9 @@
 # @spoosh/core
 
+## 0.17.1
+
+- Fix queue concurrent request decrement not working properly
+
 ## 0.17.0
 
 - **Breaking**: Rename plugin `exports` to `internal` and `instanceApi` to `api`

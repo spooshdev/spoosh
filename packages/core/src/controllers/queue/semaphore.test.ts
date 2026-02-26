@@ -144,6 +144,83 @@ describe("Semaphore", () => {
       expect(count).toBe(1);
       expect(semaphore.getWaitingCount()).toBe(2);
     });
+
+    it("should not release waiting when decreasing concurrency", async () => {
+      const semaphore = new Semaphore(3);
+
+      await semaphore.acquire();
+      await semaphore.acquire();
+      await semaphore.acquire();
+
+      let acquired = false;
+      semaphore.acquire().then(() => {
+        acquired = true;
+      });
+
+      semaphore.setConcurrency(1);
+
+      semaphore.release();
+      await new Promise((r) => setTimeout(r, 10));
+
+      expect(acquired).toBe(false);
+      expect(semaphore.getCurrent()).toBe(2);
+    });
+
+    it("should respect new lower limit after tasks complete", async () => {
+      const semaphore = new Semaphore(3);
+
+      await semaphore.acquire();
+      await semaphore.acquire();
+      await semaphore.acquire();
+
+      let acquiredCount = 0;
+      semaphore.acquire().then(() => acquiredCount++);
+      semaphore.acquire().then(() => acquiredCount++);
+
+      semaphore.setConcurrency(2);
+
+      semaphore.release();
+      await new Promise((r) => setTimeout(r, 10));
+      expect(acquiredCount).toBe(0);
+      expect(semaphore.getCurrent()).toBe(2);
+
+      semaphore.release();
+      await new Promise((r) => setTimeout(r, 10));
+      expect(acquiredCount).toBe(1);
+      expect(semaphore.getCurrent()).toBe(2);
+
+      semaphore.release();
+      await new Promise((r) => setTimeout(r, 10));
+      expect(acquiredCount).toBe(2);
+      expect(semaphore.getCurrent()).toBe(2);
+    });
+
+    it("should allow new acquisitions only when below new limit", async () => {
+      const semaphore = new Semaphore(5);
+
+      await semaphore.acquire();
+      await semaphore.acquire();
+      await semaphore.acquire();
+
+      semaphore.setConcurrency(2);
+
+      semaphore.release();
+      semaphore.release();
+
+      expect(semaphore.getCurrent()).toBe(1);
+
+      const acquired = await semaphore.acquire();
+      expect(acquired).toBe(true);
+      expect(semaphore.getCurrent()).toBe(2);
+
+      let blocked = true;
+      semaphore.acquire().then(() => {
+        blocked = false;
+      });
+
+      await new Promise((r) => setTimeout(r, 10));
+      expect(blocked).toBe(true);
+    });
   });
 
   describe("reset", () => {

@@ -1,6 +1,6 @@
 {
   "name": "@spoosh/react",
-  "version": "0.14.0",
+  "version": "0.14.1",
   "license": "MIT",
   "description": "React hooks for Spoosh API toolkit",
   "keywords": [
@@ -41,7 +41,7 @@
     "format": "prettier --write 'src/**/*.ts' '*.md'"
   },
   "peerDependencies": {
-    "@spoosh/core": ">=0.17.0",
+    "@spoosh/core": ">=0.17.1",
     "@spoosh/transport-sse": ">=0.1.0",
     "react": "^18 || ^19"
   },

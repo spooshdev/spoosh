@@ -1,5 +1,9 @@
 # @spoosh/angular
 
+## 0.11.1
+
+- Fix queue concurrent request decrement not working properly
+
 ## 0.11.0
 
 - Update for core plugin API rename (`exports` → `internal`, `instanceApi` → `api`)

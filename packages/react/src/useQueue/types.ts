@@ -86,6 +86,9 @@ export type UseQueueResult<TData, TError, TTriggerInput, TMeta = object> = {
 
   /** Abort all and clear queue */
   clear: () => void;
+
+  /** Update concurrency limit */
+  setConcurrency: (concurrency: number) => void;
 };
 
 /**

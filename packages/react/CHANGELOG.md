@@ -1,5 +1,10 @@
 # @spoosh/react
 
+## 0.14.1
+
+- Fix queue concurrent request decrement not working properly
+- Expose `setConcurrency` function from `useQueue` hook
+
 ## 0.14.0
 
 - Update for core plugin API rename (`exports` → `internal`, `instanceApi` → `api`)

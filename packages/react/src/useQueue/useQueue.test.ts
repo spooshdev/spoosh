@@ -68,7 +68,7 @@ function createTestHooks() {
 
 describe("useQueue", () => {
   describe("Basic Functionality", () => {
-    it("returns trigger, tasks, stats, abort, retry, remove, removeSettled, clear", () => {
+    it("returns trigger, tasks, stats, abort, retry, remove, removeSettled, clear, setConcurrency", () => {
       const { useQueue } = createTestHooks();
 
       const { result } = renderHook(() =>
@@ -83,6 +83,7 @@ describe("useQueue", () => {
       expect(result.current).toHaveProperty("remove");
       expect(result.current).toHaveProperty("removeSettled");
       expect(result.current).toHaveProperty("clear");
+      expect(result.current).toHaveProperty("setConcurrency");
     });
 
     it("initial tasks is empty array", () => {
@@ -231,6 +232,39 @@ describe("useQueue", () => {
       });
 
       rerender({ concurrency: 3 });
+
+      await waitFor(
+        () => {
+          expect(
+            result.current.stats.running + result.current.stats.pending
+          ).toBeGreaterThanOrEqual(2);
+        },
+        { timeout: 100 }
+      );
+    });
+
+    it("updates concurrency via setConcurrency method", async () => {
+      const { useQueue, setDelay } = createTestHooks();
+      setDelay(200);
+
+      const { result } = renderHook(() =>
+        useQueue((api: any) => api("uploads").POST(), { concurrency: 1 })
+      );
+
+      act(() => {
+        result.current.trigger({ body: { file: "1" } } as any);
+        result.current.trigger({ body: { file: "2" } } as any);
+        result.current.trigger({ body: { file: "3" } } as any);
+      });
+
+      await waitFor(() => {
+        expect(result.current.stats.running).toBe(1);
+        expect(result.current.stats.pending).toBe(2);
+      });
+
+      act(() => {
+        result.current.setConcurrency(3);
+      });
 
       await waitFor(
         () => {

@@ -136,3 +136,10 @@ uploadQueue.removeSettled();
 // =============================================================================
 
 uploadQueue.clear();
+
+// =============================================================================
+// SetConcurrency function
+// =============================================================================
+
+uploadQueue.setConcurrency(5);
+expectType<void>(uploadQueue.setConcurrency(10));
