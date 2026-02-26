@@ -1,3 +1,3 @@
 export * from "./types";
 export * from "./manager";
-export { createInitialState } from "./utils";
+export { createInitialState, generateSelfTagFromKey } from "./utils";

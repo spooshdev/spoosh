@@ -302,6 +302,62 @@ describe("createStateManager", () => {
       const cached = manager.getCache(key);
       expect(cached?.selfTag).toBeUndefined();
     });
+
+    it("should resolve path params in selfTag", () => {
+      const manager = createStateManager();
+      const key = manager.createQueryKey({
+        path: "posts/:id",
+        method: "GET",
+        options: { params: { id: 1 } },
+      });
+
+      manager.setCache(key, { state: createState({ data: "data" }) });
+
+      const cached = manager.getCache(key);
+      expect(cached?.selfTag).toBe("posts/1");
+    });
+
+    it("should resolve multiple path params in selfTag", () => {
+      const manager = createStateManager();
+      const key = manager.createQueryKey({
+        path: "posts/:postId/comments/:commentId",
+        method: "GET",
+        options: { params: { postId: 1, commentId: 42 } },
+      });
+
+      manager.setCache(key, { state: createState({ data: "data" }) });
+
+      const cached = manager.getCache(key);
+      expect(cached?.selfTag).toBe("posts/1/comments/42");
+    });
+
+    it("should handle array path in selfTag", () => {
+      const manager = createStateManager();
+      const key = JSON.stringify({
+        path: ["posts", "paginated"],
+        method: "GET",
+        options: { query: { page: 1 } },
+      });
+
+      manager.setCache(key, { state: createState({ data: "data" }) });
+
+      const cached = manager.getCache(key);
+      expect(cached?.selfTag).toBe("posts/paginated");
+    });
+
+    it("should resolve params from pageRequest for infinite queries", () => {
+      const manager = createStateManager();
+      const key = JSON.stringify({
+        path: "posts/:id",
+        method: "GET",
+        pageRequest: { params: { id: 5 } },
+      });
+
+      manager.setCache(key, { state: createState({ data: "data" }) });
+
+      const cached = manager.getCache(key);
+      expect(cached?.selfTag).toBe("posts/5");
+    });
   });
 
   describe("subscribeCache", () => {

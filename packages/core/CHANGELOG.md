@@ -3,6 +3,7 @@
 ## 0.17.0
 
 - **Breaking**: Rename plugin `exports` to `internal` and `instanceApi` to `api`
+- Fix cache `selfTag` generation not using dynamic params in path
 
 ## 0.16.0
 

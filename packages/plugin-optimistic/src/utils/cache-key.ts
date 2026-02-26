@@ -1,3 +1,5 @@
+import { generateSelfTagFromKey } from "@spoosh/core";
+
 export function extractPathFromKey(key: string): string | null {
   try {
     const parsed = JSON.parse(key) as { path?: string | string[] };
@@ -18,23 +20,16 @@ export function extractPathFromKey(key: string): string | null {
 }
 
 export function formatCacheKeyForTrace(key: string): string {
+  const resolvedPath = generateSelfTagFromKey(key);
+  if (!resolvedPath) return "unknown";
+
   try {
     const parsed = JSON.parse(key);
-    const rawPath = parsed.path;
-    const path =
-      typeof rawPath === "string"
-        ? rawPath
-        : Array.isArray(rawPath)
-          ? rawPath.join("/")
-          : null;
-
-    if (!path) return "unknown";
-
     const opts = parsed.options ?? parsed.pageRequest;
     const query = opts?.query as Record<string, unknown> | undefined;
 
     if (!query || Object.keys(query).length === 0) {
-      return path;
+      return resolvedPath;
     }
 
     const queryString = Object.entries(query)
@@ -43,9 +38,9 @@ export function formatCacheKeyForTrace(key: string): string {
       )
       .join("&");
 
-    return `${path}?${queryString}`;
+    return `${resolvedPath}?${queryString}`;
   } catch {
-    return "unknown";
+    return resolvedPath;
   }
 }
 
