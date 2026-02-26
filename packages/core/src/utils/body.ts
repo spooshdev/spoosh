@@ -26,11 +26,11 @@ export type SpooshBodyInternal<T = unknown> = {
  * trigger({ body: urlencoded({ key: "value" }) });
  * ```
  */
-declare class SpooshBodyClass<T> {
-  private __brand: T;
-}
+declare const __spooshBodyBrand: unique symbol;
 
-export type SpooshBody<T = unknown> = SpooshBodyClass<T>;
+export type SpooshBody<T = unknown> = {
+  readonly [__spooshBodyBrand]: T;
+};
 
 export function isSpooshBody(value: unknown): value is SpooshBody {
   return (
