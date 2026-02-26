@@ -832,6 +832,64 @@ describe("optimisticPlugin", () => {
       expect(entry1?.state.data).toEqual([{ id: 1, updated: true }]);
       expect(entry2?.state.data).toEqual([{ id: 2, updated: true }]);
     });
+
+    it("should convert params to strings for filter comparison", async () => {
+      const plugin = optimisticPlugin();
+      const stateManager = createStateManager();
+
+      const cacheKey1 =
+        '{"method":"GET","options":{"params":{"id":1}},"path":"posts/:id"}';
+      const cacheKey2 =
+        '{"method":"GET","options":{"params":{"id":2}},"path":"posts/:id"}';
+
+      setupCacheEntry(
+        stateManager,
+        cacheKey1,
+        { id: 1, title: "Post 1" },
+        "posts/:id"
+      );
+      setupCacheEntry(
+        stateManager,
+        cacheKey2,
+        { id: 2, title: "Post 2" },
+        "posts/:id"
+      );
+
+      const pluginOptions = createOptimisticPluginOptions(
+        "posts/:id",
+        (data) => ({
+          ...(data as { id: number; title: string }),
+          updated: true,
+        }),
+        {
+          filter: (opts) => {
+            const params = (opts as { params: { id: string } }).params;
+            return params.id === "1";
+          },
+        }
+      );
+
+      const context = createMockContext({
+        stateManager,
+        pluginOptions,
+      });
+
+      const next = vi
+        .fn()
+        .mockResolvedValue({ data: { success: true }, status: 200 });
+
+      await plugin.middleware!(context, next);
+
+      const entry1 = stateManager.getCache(cacheKey1);
+      const entry2 = stateManager.getCache(cacheKey2);
+
+      expect(entry1?.state.data).toEqual({
+        id: 1,
+        title: "Post 1",
+        updated: true,
+      });
+      expect(entry2?.state.data).toEqual({ id: 2, title: "Post 2" });
+    });
   });
 
   describe("edge cases", () => {
@@ -1314,7 +1372,7 @@ describe("optimisticPlugin", () => {
         }),
         {
           filter: (opts) =>
-            (opts as { params: { id: number } }).params.id === 1,
+            (opts as { params: { id: string } }).params.id === "1",
         }
       );
 
@@ -1474,7 +1532,7 @@ describe("optimisticPlugin", () => {
         (data) => ({ ...(data as { id: number }), updated: true }),
         {
           filter: (opts) =>
-            (opts as { params: { id: number } }).params.id === 1,
+            (opts as { params: { id: string } }).params.id === "1",
         }
       );
 

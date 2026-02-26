@@ -3,6 +3,7 @@
 ## 0.8.0
 
 - Redesign optimistic API to use chainable cache builder (`cache("path").filter().set().confirmed().set()`)
+- Convert `params` values to `string` for better compatibility with cache comparing logic
 
 ## 0.7.2
 

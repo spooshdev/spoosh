@@ -68,7 +68,7 @@ write.trigger({
   optimistic: (cache) =>
     cache("posts/:id")
       .filter((entry) => {
-        expectType<Record<"id", string | number>>(entry.params);
+        expectType<Record<"id", string>>(entry.params);
         return entry.params.id === "1";
       })
       .set((post) => ({ ...post, title: "updated" })),
@@ -180,7 +180,7 @@ write.trigger({
 write.trigger({
   body: { title: "test" },
   // @ts-expect-error - onError requires immediate set first
-  optimistic: (cache) => cache("posts").onError(() => { }),
+  optimistic: (cache) => cache("posts").onError(() => {}),
 });
 
 write.trigger({

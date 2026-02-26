@@ -250,7 +250,7 @@ function buildSingleDiff(
  * // With filter and confirmed update
  * trigger({
  *   optimistic: (cache) => cache("posts/:id")
- *     .filter(e => e.params.id === 1)
+ *     .filter(e => e.params.id === "1")
  *     .set(post => ({ ...post, pending: true }))
  *     .confirmed()
  *     .set((post, response) => response),

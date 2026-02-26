@@ -68,7 +68,7 @@ write.trigger({
   optimistic: (cache) =>
     cache("posts/:id")
       .filter((entry) => {
-        expectType<Record<"id", string | number>>(entry.params);
+        expectType<Record<"id", string>>(entry.params);
         return entry.params.id === "1";
       })
       .set((post) => ({ ...post, title: "updated" })),

@@ -1,4 +1,10 @@
-import type { OptimisticTarget } from "../types";
+import type { OptimisticTarget } from "../types.js";
+
+export type {
+  CacheBuilder,
+  CacheHelper,
+  OptimisticCallbackFn,
+} from "./types.js";
 
 function createBuilder(state: OptimisticTarget, isConfirmed = false): unknown {
   return {

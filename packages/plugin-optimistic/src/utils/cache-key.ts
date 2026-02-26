@@ -44,12 +44,24 @@ export function formatCacheKeyForTrace(key: string): string {
   }
 }
 
+function stringifyParams(
+  params: Record<string, unknown>
+): Record<string, string> {
+  const result: Record<string, string> = {};
+
+  for (const [key, value] of Object.entries(params)) {
+    result[key] = String(value);
+  }
+
+  return result;
+}
+
 export function extractOptionsFromKey(
   key: string
-): { query?: unknown; params?: unknown } | null {
+): { query?: unknown; params?: Record<string, string> } | null {
   try {
     const parsed = JSON.parse(key);
-    const result: { query?: unknown; params?: unknown } = {};
+    const result: { query?: unknown; params?: Record<string, string> } = {};
 
     const opts = parsed.options ?? parsed.pageRequest;
 
@@ -60,7 +72,7 @@ export function extractOptionsFromKey(
     }
 
     if (opts.params) {
-      result.params = opts.params;
+      result.params = stringifyParams(opts.params as Record<string, unknown>);
     }
 
     return Object.keys(result).length > 0 ? result : null;
@@ -72,20 +84,20 @@ export function extractOptionsFromKey(
 export function mapParamsToTargetNames(
   actualParams: Record<string, unknown> | undefined,
   paramMapping: Record<string, string>
-): Record<string, unknown> {
+): Record<string, string> {
   if (!actualParams) return {};
 
-  const result: Record<string, unknown> = {};
+  const result: Record<string, string> = {};
 
   for (const [targetName, actualName] of Object.entries(paramMapping)) {
     if (actualName in actualParams) {
-      result[targetName] = actualParams[actualName];
+      result[targetName] = String(actualParams[actualName]);
     }
   }
 
   for (const [key, value] of Object.entries(actualParams)) {
     if (!Object.values(paramMapping).includes(key)) {
-      result[key] = value;
+      result[key] = String(value);
     }
   }
 
