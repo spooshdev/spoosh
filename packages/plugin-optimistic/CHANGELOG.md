@@ -1,8 +1,8 @@
 # @spoosh/plugin-optimistic
 
-## 0.7.3
+## 0.8.0
 
-- Fix concrete path incorrectly matching parameterized cache entries
+- Redesign optimistic API to use chainable cache builder (`cache("path").filter().set().confirmed().set()`)
 
 ## 0.7.2
 

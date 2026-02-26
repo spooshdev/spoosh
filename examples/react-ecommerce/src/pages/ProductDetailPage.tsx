@@ -52,11 +52,10 @@ export function ProductDetailPage() {
 
     await likeProduct.trigger({
       params: { id: productId },
-      optimistic: (api) =>
-        api(`products/:id`)
-          .GET()
-          .WHERE(({ params }) => params.id === productId)
-          .UPDATE_CACHE((current) =>
+      optimistic: (cache) =>
+        cache(`products/:id`)
+          .filter(({ params }) => params.id === productId)
+          .set((current) =>
             current
               ? { ...current, likes_count: current.likes_count + 1 }
               : current
@@ -69,35 +68,31 @@ export function ProductDetailPage() {
 
     await addToCart.trigger({
       body: { product_id: product.id, quantity: 1 },
-      optimistic: (api) =>
-        api("cart")
-          .GET()
-          .UPDATE_CACHE((current) => {
-            const items = current ?? [];
-            const existing = items.find(
-              (item) => item.product_id === product.id
+      optimistic: (cache) =>
+        cache("cart").set((current) => {
+          const items = current ?? [];
+          const existing = items.find((item) => item.product_id === product.id);
+
+          if (existing) {
+            return items.map((item) =>
+              item.product_id === product.id
+                ? { ...item, quantity: item.quantity + 1 }
+                : item
             );
+          }
 
-            if (existing) {
-              return items.map((item) =>
-                item.product_id === product.id
-                  ? { ...item, quantity: item.quantity + 1 }
-                  : item
-              );
-            }
-
-            return [
-              {
-                id: `cart-${product.id}`,
-                product_id: product.id,
-                title: product.title,
-                image_url: product.image_url,
-                quantity: 1,
-                price_cents: product.price_cents,
-              },
-              ...items,
-            ];
-          }),
+          return [
+            {
+              id: `cart-${product.id}`,
+              product_id: product.id,
+              title: product.title,
+              image_url: product.image_url,
+              quantity: 1,
+              price_cents: product.price_cents,
+            },
+            ...items,
+          ];
+        }),
       // We don't invalidate here cuz if we go to cart page, it will fetch the latest cart data anyway.
       // This way we get an instant update to the cart UI without waiting for the server response.
     });
@@ -114,11 +109,10 @@ export function ProductDetailPage() {
     const result = await postComment.trigger({
       params: { id: productId },
       body: { body: content },
-      optimistic: (api) =>
-        api("products/:id/comments")
-          .GET()
-          .WHERE(({ params }) => params.id === productId)
-          .UPDATE_CACHE((current) => [
+      optimistic: (cache) =>
+        cache("products/:id/comments")
+          .filter(({ params }) => params.id === productId)
+          .set((current) => [
             {
               id: tempId,
               product_id: productId,

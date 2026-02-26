@@ -8,18 +8,17 @@ function createOptimisticTarget(
   targetPath: string,
   updater: (data: unknown, response?: unknown) => unknown,
   options: {
-    where?: (opts: unknown) => boolean;
-    timing?: "immediate" | "onSuccess";
+    filter?: (opts: unknown) => boolean;
+    confirmed?: boolean;
     rollbackOnError?: boolean;
     onError?: (error: unknown) => void;
   } = {}
 ): OptimisticTarget {
   return {
     path: targetPath,
-    method: "GET",
-    where: options.where,
-    updater,
-    timing: options.timing ?? "immediate",
+    filter: options.filter,
+    immediateUpdater: options.confirmed ? undefined : updater,
+    confirmedUpdater: options.confirmed ? updater : undefined,
     rollbackOnError: options.rollbackOnError ?? true,
     onError: options.onError,
   };
@@ -29,9 +28,9 @@ function createOptimisticPluginOptions(
   path: string,
   updater: (data: unknown, response?: unknown) => unknown,
   options: {
-    timing?: "immediate" | "onSuccess";
+    confirmed?: boolean;
     rollbackOnError?: boolean;
-    where?: (opts: unknown) => boolean;
+    filter?: (opts: unknown) => boolean;
     onError?: (error: unknown) => void;
   } = {}
 ): OptimisticWriteTriggerOptions {
@@ -588,8 +587,8 @@ describe("optimisticPlugin", () => {
     });
   });
 
-  describe("timing: onSuccess", () => {
-    it("should not apply update immediately when timing is onSuccess", async () => {
+  describe("confirmed updates", () => {
+    it("should not apply update immediately when confirmed", async () => {
       const plugin = optimisticPlugin();
       const stateManager = createStateManager();
 
@@ -600,7 +599,7 @@ describe("optimisticPlugin", () => {
       const pluginOptions = createOptimisticPluginOptions(
         "posts",
         (data) => [...(data as Array<{ id: number }>), { id: 2 }],
-        { timing: "onSuccess" }
+        { confirmed: true }
       );
 
       const context = createMockContext({
@@ -620,7 +619,7 @@ describe("optimisticPlugin", () => {
       expect(dataDuringNext).toEqual(originalData);
     });
 
-    it("should apply update after successful response when timing is onSuccess", async () => {
+    it("should apply update after successful response when confirmed", async () => {
       const plugin = optimisticPlugin();
       const stateManager = createStateManager();
 
@@ -633,7 +632,7 @@ describe("optimisticPlugin", () => {
           ...(data as Array<{ id: number }>),
           response as { id: number },
         ],
-        { timing: "onSuccess" }
+        { confirmed: true }
       );
 
       const context = createMockContext({
@@ -649,7 +648,7 @@ describe("optimisticPlugin", () => {
       expect(entry?.state.data).toEqual([{ id: 1 }, { id: 2 }]);
     });
 
-    it("should not apply onSuccess update when error occurs", async () => {
+    it("should not apply confirmed update when error occurs", async () => {
       const plugin = optimisticPlugin();
       const stateManager = createStateManager();
 
@@ -663,7 +662,7 @@ describe("optimisticPlugin", () => {
           ...(data as Array<{ id: number }>),
           response as { id: number },
         ],
-        { timing: "onSuccess" }
+        { confirmed: true }
       );
 
       const context = createMockContext({
@@ -759,8 +758,8 @@ describe("optimisticPlugin", () => {
     });
   });
 
-  describe("WHERE predicate matching", () => {
-    it("should only update entries matching the WHERE predicate", async () => {
+  describe("filter predicate matching", () => {
+    it("should only update entries matching the filter predicate", async () => {
       const plugin = optimisticPlugin();
       const stateManager = createStateManager();
 
@@ -777,7 +776,7 @@ describe("optimisticPlugin", () => {
         (data) =>
           (data as Array<{ id: number }>).map((p) => ({ ...p, updated: true })),
         {
-          where: (opts) =>
+          filter: (opts) =>
             (opts as { query: { page: number } }).query.page === 1,
         }
       );
@@ -800,7 +799,7 @@ describe("optimisticPlugin", () => {
       expect(entry2?.state.data).toEqual([{ id: 2 }]);
     });
 
-    it("should update all entries when WHERE is not provided", async () => {
+    it("should update all entries when filter is not provided", async () => {
       const plugin = optimisticPlugin();
       const stateManager = createStateManager();
 
@@ -1008,7 +1007,7 @@ describe("optimisticPlugin", () => {
       });
     });
 
-    it("should extract params from path and pass to WHERE predicate", async () => {
+    it("should extract params from path and pass to filter predicate", async () => {
       const plugin = optimisticPlugin();
       const stateManager = createStateManager();
 
@@ -1022,7 +1021,7 @@ describe("optimisticPlugin", () => {
         "posts/:id",
         (data) => ({ ...(data as { id: number }), updated: true }),
         {
-          where: (opts) =>
+          filter: (opts) =>
             (opts as { params: { id: string } }).params.id === "1",
         }
       );
@@ -1061,7 +1060,7 @@ describe("optimisticPlugin", () => {
         "posts/:postId/comments/:commentId",
         (data) => ({ ...(data as Record<string, unknown>), text: "Updated" }),
         {
-          where: (opts) => {
+          filter: (opts) => {
             const params = (
               opts as { params: { postId: string; commentId: string } }
             ).params;
@@ -1199,7 +1198,7 @@ describe("optimisticPlugin", () => {
       expect(entry?.state.data).toEqual(originalData);
     });
 
-    it("should apply onSuccess updates with pattern matching", async () => {
+    it("should apply confirmed updates with pattern matching", async () => {
       const plugin = optimisticPlugin();
       const stateManager = createStateManager();
 
@@ -1217,7 +1216,7 @@ describe("optimisticPlugin", () => {
           ...(data as { id: number; title: string }),
           title: (response as { title: string }).title,
         }),
-        { timing: "onSuccess" }
+        { confirmed: true }
       );
 
       const context = createMockContext({
@@ -1248,7 +1247,7 @@ describe("optimisticPlugin", () => {
       const pluginOptions = createOptimisticPluginOptions(
         "posts/:id",
         (data) => ({ ...(data as { id: number }), updated: true }),
-        { where: whereFn }
+        { filter: whereFn }
       );
 
       const context = createMockContext({
@@ -1314,7 +1313,8 @@ describe("optimisticPlugin", () => {
           title: "Updated",
         }),
         {
-          where: (opts) => (opts as { params: { id: number } }).params.id === 1,
+          filter: (opts) =>
+            (opts as { params: { id: number } }).params.id === 1,
         }
       );
 
@@ -1457,7 +1457,7 @@ describe("optimisticPlugin", () => {
       expect(entry?.state.data).toEqual({ id: 1, title: "Original" });
     });
 
-    it("should filter with WHERE using mapped params when both paths are parameterized", async () => {
+    it("should filter using mapped params when both paths are parameterized", async () => {
       const plugin = optimisticPlugin();
       const stateManager = createStateManager();
 
@@ -1473,7 +1473,8 @@ describe("optimisticPlugin", () => {
         "posts/:id",
         (data) => ({ ...(data as { id: number }), updated: true }),
         {
-          where: (opts) => (opts as { params: { id: number } }).params.id === 1,
+          filter: (opts) =>
+            (opts as { params: { id: number } }).params.id === 1,
         }
       );
 
@@ -1559,8 +1560,8 @@ describe("optimisticPlugin", () => {
     });
   });
 
-  describe("WHERE predicate error handling", () => {
-    it("should skip entry when WHERE predicate throws error", async () => {
+  describe("filter predicate error handling", () => {
+    it("should skip entry when filter predicate throws error", async () => {
       const plugin = optimisticPlugin();
       const stateManager = createStateManager();
 
@@ -1571,7 +1572,7 @@ describe("optimisticPlugin", () => {
         "posts",
         (data) => [...(data as Array<{ id: number }>), { id: 2 }],
         {
-          where: (opts) => {
+          filter: (opts) => {
             const q = opts as { query: { page: number } };
             return q.query.page === 1;
           },
@@ -1593,7 +1594,7 @@ describe("optimisticPlugin", () => {
       expect(entry?.state.data).toEqual([{ id: 1 }]);
     });
 
-    it("should continue processing other entries when one WHERE throws", async () => {
+    it("should continue processing other entries when one filter throws", async () => {
       const plugin = optimisticPlugin();
       const stateManager = createStateManager();
 
@@ -1609,7 +1610,7 @@ describe("optimisticPlugin", () => {
         (data) =>
           (data as Array<{ id: number }>).map((p) => ({ ...p, updated: true })),
         {
-          where: (opts) => {
+          filter: (opts) => {
             const q = opts as { query?: { page: number } };
             return q.query?.page === 1;
           },
@@ -1662,7 +1663,7 @@ describe("optimisticPlugin", () => {
       expect(entry?.state.data).toEqual([{ id: 1 }]);
     });
 
-    it("should handle onSuccess timing when no cache entry exists", async () => {
+    it("should handle confirmed update when no cache entry exists", async () => {
       const plugin = optimisticPlugin();
       const stateManager = createStateManager();
 
@@ -1675,7 +1676,7 @@ describe("optimisticPlugin", () => {
           ...(data as Array<{ id: number }>),
           response as { id: number },
         ],
-        { timing: "onSuccess" }
+        { confirmed: true }
       );
 
       const context = createMockContext({

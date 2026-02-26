@@ -27,18 +27,17 @@ type ExtractQuery<T> = T extends { query: infer Q }
  */
 export type OptimisticTarget = {
   path: string;
-  method: string;
-  where?: (options: unknown) => boolean;
-  updater?: (data: unknown, response?: unknown) => unknown;
-  timing: "immediate" | "onSuccess";
+  filter?: (options: unknown) => boolean;
+  immediateUpdater?: (data: unknown) => unknown;
+  confirmedUpdater?: (data: unknown, response: unknown) => unknown;
   rollbackOnError: boolean;
   onError?: (error: unknown) => void;
 };
 
 /**
- * WHERE options for filtering cache entries.
+ * Filter options for filtering cache entries.
  */
-type WhereOptions<TMethodConfig, TUserPath extends string> =
+type FilterOptions<TMethodConfig, TUserPath extends string> =
   HasParams<TUserPath> extends true
     ? HasQuery<TMethodConfig> extends true
       ? {
@@ -55,41 +54,39 @@ type WhereOptions<TMethodConfig, TUserPath extends string> =
       : never;
 
 /**
- * Conditionally include a method if it hasn't been used yet.
- */
-type IfNotUsed<
-  TMethod extends string,
-  TUsed extends string,
-  TType,
-> = TMethod extends TUsed ? never : TType;
-
-/**
- * Brand for completed builders (UPDATE_CACHE was called).
+ * Brand for completed builders (at least one set() was called).
  * @internal
  */
 declare const COMPLETED_BRAND: unique symbol;
 
 /**
- * Chainable builder after GET().
- * Methods can be chained in any order, but each method can only be called once.
- * Internal properties are hidden from autocomplete.
+ * Chainable builder for cache operations.
  *
- * @typeParam TTiming - Tracks whether ON_SUCCESS was called to determine UPDATE_CACHE signature
- * @typeParam TUsed - Tracks which methods have been called to prevent duplicate calls
- * @typeParam TCompleted - Tracks whether UPDATE_CACHE was called (required for valid builder)
+ * @typeParam TData - The data type of the cache entry
+ * @typeParam TMethodConfig - The method configuration from schema
+ * @typeParam TUserPath - The user's path string
+ * @typeParam TResponse - The mutation response type
+ * @typeParam TError - The error type
+ * @typeParam TConfirmed - Whether we're in confirmed mode
+ * @typeParam THasImmediate - Whether immediate set() was called
+ * @typeParam THasConfirmed - Whether confirmed set() was called
+ * @typeParam THasFilter - Whether filter() was called
  */
-export type OptimisticBuilder<
+export type CacheBuilder<
   TData = unknown,
   TMethodConfig = unknown,
   TUserPath extends string = string,
   TResponse = unknown,
   TError = unknown,
-  TTiming extends "immediate" | "onSuccess" = "immediate",
-  TUsed extends string = never,
-  TCompleted extends boolean = false,
-> = (TCompleted extends true
+  TConfirmed extends boolean = false,
+  THasImmediate extends boolean = false,
+  THasConfirmed extends boolean = false,
+  THasFilter extends boolean = false,
+> = (THasImmediate extends true
   ? { readonly [COMPLETED_BRAND]: true }
-  : unknown) & {
+  : THasConfirmed extends true
+    ? { readonly [COMPLETED_BRAND]: true }
+    : unknown) & {
   /**
    * Filter which cache entries to update based on query/params.
    *
@@ -97,152 +94,156 @@ export type OptimisticBuilder<
    *
    * @example
    * ```ts
-   * .WHERE(entry => entry.query.page === 1)
+   * .filter(entry => entry.params.id === 1)
    * ```
    */
-  WHERE: IfNotUsed<
-    "WHERE",
-    TUsed,
-    WhereOptions<TMethodConfig, TUserPath> extends never
+  filter: THasFilter extends true
+    ? never
+    : FilterOptions<TMethodConfig, TUserPath> extends never
       ? never
       : (
           predicate: (
-            entry: Simplify<WhereOptions<TMethodConfig, TUserPath>>
+            entry: Simplify<FilterOptions<TMethodConfig, TUserPath>>
           ) => boolean
-        ) => OptimisticBuilder<
+        ) => CacheBuilder<
           TData,
           TMethodConfig,
           TUserPath,
           TResponse,
           TError,
-          TTiming,
-          TUsed | "WHERE",
-          TCompleted
-        >
-  >;
+          TConfirmed,
+          THasImmediate,
+          THasConfirmed,
+          true
+        >;
 
   /**
-   * Specify how to update the cached data optimistically.
-   * This method is required - an optimistic update must have an updater function.
+   * Set the cache data.
    *
-   * For immediate updates (default): receives only the current data.
-   * For ON_SUCCESS: receives current data and the mutation response.
+   * In immediate mode (default): receives only the current data.
+   * In confirmed mode: receives current data and the mutation response.
    *
-   * @param updater - Function that receives current data (and response if ON_SUCCESS), returns updated data
+   * @param updater - Function that receives current data (and response if confirmed), returns updated data
+   *
+   * @example
+   * ```ts
+   * // Immediate (optimistic)
+   * .set(data => ({ ...data, pending: true }))
+   *
+   * // Confirmed (post-success)
+   * .confirmed().set((data, response) => response)
+   * ```
    */
-  UPDATE_CACHE: IfNotUsed<
-    "UPDATE_CACHE",
-    TUsed,
-    TTiming extends "onSuccess"
-      ? (
+  set: TConfirmed extends true
+    ? THasConfirmed extends true
+      ? never
+      : (
           updater: (data: TData, response: TResponse) => TData
-        ) => OptimisticBuilder<
+        ) => CacheBuilder<
           TData,
           TMethodConfig,
           TUserPath,
           TResponse,
           TError,
-          TTiming,
-          TUsed | "UPDATE_CACHE",
-          true
+          TConfirmed,
+          THasImmediate,
+          true,
+          THasFilter
         >
+    : THasImmediate extends true
+      ? never
       : (
           updater: (data: TData) => TData
-        ) => OptimisticBuilder<
+        ) => CacheBuilder<
           TData,
           TMethodConfig,
           TUserPath,
           TResponse,
           TError,
-          TTiming,
-          TUsed | "UPDATE_CACHE",
-          true
-        >
-  >;
+          TConfirmed,
+          true,
+          THasConfirmed,
+          THasFilter
+        >;
 
   /**
-   * Apply optimistic update only after mutation succeeds.
-   * By default, updates are applied immediately before mutation completes.
-   * When using ON_SUCCESS, UPDATE_CACHE receives the mutation response as second argument.
+   * Switch to confirmed mode. The next set() will be applied after mutation succeeds.
+   *
+   * @example
+   * ```ts
+   * .set(data => ({ ...data, pending: true }))  // immediate
+   * .confirmed()
+   * .set((data, response) => response)          // after success
+   * ```
    */
-  ON_SUCCESS: IfNotUsed<
-    "ON_SUCCESS",
-    TUsed,
-    () => OptimisticBuilder<
-      TData,
-      TMethodConfig,
-      TUserPath,
-      TResponse,
-      TError,
-      "onSuccess",
-      TUsed | "ON_SUCCESS",
-      TCompleted
-    >
-  >;
+  confirmed: TConfirmed extends true
+    ? never
+    : () => CacheBuilder<
+        TData,
+        TMethodConfig,
+        TUserPath,
+        TResponse,
+        TError,
+        true,
+        THasImmediate,
+        THasConfirmed,
+        THasFilter
+      >;
 
   /**
    * Disable automatic rollback when mutation fails.
    * By default, optimistic updates are rolled back on error.
    */
-  NO_ROLLBACK: IfNotUsed<
-    "NO_ROLLBACK",
-    TUsed,
-    () => OptimisticBuilder<
-      TData,
-      TMethodConfig,
-      TUserPath,
-      TResponse,
-      TError,
-      TTiming,
-      TUsed | "NO_ROLLBACK",
-      TCompleted
-    >
+  disableRollback: () => CacheBuilder<
+    TData,
+    TMethodConfig,
+    TUserPath,
+    TResponse,
+    TError,
+    TConfirmed,
+    THasImmediate,
+    THasConfirmed,
+    THasFilter
   >;
 
   /**
    * Callback when mutation fails.
    */
-  ON_ERROR: IfNotUsed<
-    "ON_ERROR",
-    TUsed,
-    (
-      callback: (error: TError) => void
-    ) => OptimisticBuilder<
-      TData,
-      TMethodConfig,
-      TUserPath,
-      TResponse,
-      TError,
-      TTiming,
-      TUsed | "ON_ERROR",
-      TCompleted
-    >
+  onError: (
+    callback: (error: TError) => void
+  ) => CacheBuilder<
+    TData,
+    TMethodConfig,
+    TUserPath,
+    TResponse,
+    TError,
+    TConfirmed,
+    THasImmediate,
+    THasConfirmed,
+    THasFilter
   >;
 };
 
 /**
- * Path methods proxy for optimistic API - only GET.
- * Resolves literal paths (e.g., "posts/1") to schema keys (e.g., "posts/:id") using FindMatchingKey.
- * Uses TPath for param extraction to preserve user's param names.
+ * Cache selector that resolves paths to their schema definitions.
  */
-type OptimisticPathMethods<TSchema, TPath extends string, TResponse, TError> =
+type CacheSelector<TSchema, TPath extends string, TResponse, TError> =
   FindMatchingKey<TSchema, TPath> extends infer TKey
     ? TKey extends keyof TSchema
       ? TSchema[TKey] extends infer TRoute
         ? "GET" extends keyof TRoute
           ? TRoute["GET"] extends infer TGetConfig
-            ? {
-                GET: () => OptimisticBuilder<
-                  ExtractData<TGetConfig>,
-                  TGetConfig,
-                  TPath,
-                  TResponse,
-                  TError,
-                  "immediate",
-                  never,
-                  false
-                >;
-              }
+            ? CacheBuilder<
+                ExtractData<TGetConfig>,
+                TGetConfig,
+                TPath,
+                TResponse,
+                TError,
+                false,
+                false,
+                false,
+                false
+              >
             : never
           : never
         : never
@@ -250,30 +251,20 @@ type OptimisticPathMethods<TSchema, TPath extends string, TResponse, TError> =
     : never;
 
 /**
- * Helper type for creating the optimistic API proxy.
+ * Helper type for creating the cache selector.
  * Accepts both schema-defined paths (e.g., "posts/:id") and literal paths (e.g., "posts/1").
- * Uses union with (string & {}) to allow any string while preserving autocomplete.
  */
-export type OptimisticApiHelper<
-  TSchema,
-  TResponse = unknown,
-  TError = unknown,
-> = <TPath extends ReadPaths<TSchema> | (string & {})>(
+export type CacheHelper<TSchema, TResponse = unknown, TError = unknown> = <
+  TPath extends ReadPaths<TSchema> | (string & {}),
+>(
   path: TPath
-) => OptimisticPathMethods<TSchema, TPath, TResponse, TError>;
+) => CacheSelector<TSchema, TPath, TResponse, TError>;
 
 /**
- * A generic OptimisticTarget that accepts any data/response types.
- * Used for the return type of the callback.
- */
-export type AnyOptimisticTarget = OptimisticTarget;
-
-/**
- * A completed builder that has UPDATE_CACHE called.
- * Uses the brand to ensure UPDATE_CACHE was called.
+ * A completed builder that has at least one set() called.
  * @internal
  */
-type CompletedOptimisticBuilder = {
+type CompletedCacheBuilder = {
   readonly [COMPLETED_BRAND]: true;
 };
 
@@ -282,37 +273,35 @@ type CompletedOptimisticBuilder = {
  *
  * @example
  * ```ts
- * // Single target - immediate update (no response)
- * optimistic: (api) => api("posts")
- *   .GET()
- *   .UPDATE_CACHE(posts => posts.filter(p => p.id !== deletedId))
+ * // Optimistic only
+ * optimistic: (cache) => cache("posts")
+ *   .set(posts => posts.filter(p => p.id !== deletedId))
  * ```
  *
  * @example
  * ```ts
- * // With WHERE filter and options
- * optimistic: (api) => api("posts")
- *   .GET()
- *   .WHERE(entry => entry.query.page === 1)
- *   .NO_ROLLBACK()
- *   .UPDATE_CACHE(posts => [...posts, newPost])
+ * // Confirmed only (post-success)
+ * optimistic: (cache) => cache("posts")
+ *   .confirmed()
+ *   .set((posts, newPost) => [...posts, newPost])
  * ```
  *
  * @example
  * ```ts
- * // Apply update after mutation succeeds (with typed response)
- * optimistic: (api) => api("posts")
- *   .GET()
- *   .ON_SUCCESS()
- *   .UPDATE_CACHE((posts, response) => [...posts, response])
+ * // Both optimistic and confirmed
+ * optimistic: (cache) => cache("posts/:id")
+ *   .filter(e => e.params.id === 1)
+ *   .set(post => ({ ...post, pending: true }))
+ *   .confirmed()
+ *   .set((post, response) => response)
  * ```
  *
  * @example
  * ```ts
  * // Multiple targets
- * optimistic: (api) => [
- *   api("posts").GET().UPDATE_CACHE(posts => posts.filter(p => p.id !== id)),
- *   api("stats").GET().UPDATE_CACHE(stats => ({ ...stats, count: stats.count - 1 })),
+ * optimistic: (cache) => [
+ *   cache("posts").set(posts => posts.filter(p => p.id !== id)),
+ *   cache("stats").set(stats => ({ ...stats, count: stats.count - 1 })),
  * ]
  * ```
  */
@@ -321,8 +310,8 @@ export type OptimisticCallbackFn<
   TResponse = unknown,
   TError = unknown,
 > = (
-  api: OptimisticApiHelper<TSchema, TResponse, TError>
-) => CompletedOptimisticBuilder | CompletedOptimisticBuilder[];
+  cache: CacheHelper<TSchema, TResponse, TError>
+) => CompletedCacheBuilder | CompletedCacheBuilder[];
 
 export type OptimisticPluginConfig = object;
 
@@ -338,34 +327,22 @@ export interface OptimisticWriteTriggerOptions<
    *
    * @example
    * ```ts
-   * // Immediate update (default) - no response available
+   * // Optimistic update
    * trigger({
-   *   optimistic: (api) => api("posts")
-   *     .GET()
-   *     .UPDATE_CACHE(posts => posts.filter(p => p.id !== deletedId)),
+   *   optimistic: (cache) => cache("posts")
+   *     .set(posts => posts.filter(p => p.id !== deletedId)),
    * });
    * ```
    *
    * @example
    * ```ts
-   * // With WHERE filter and disable rollback
+   * // With filter and confirmed update
    * trigger({
-   *   optimistic: (api) => api("posts")
-   *     .GET()
-   *     .NO_ROLLBACK()
-   *     .WHERE(entry => entry.query.page === 1)
-   *     .UPDATE_CACHE(posts => [newPost, ...posts]),
-   * });
-   * ```
-   *
-   * @example
-   * ```ts
-   * // Apply after success - response is available
-   * trigger({
-   *   optimistic: (api) => api("posts")
-   *     .GET()
-   *     .ON_SUCCESS()
-   *     .UPDATE_CACHE((posts, newPost) => [...posts, newPost]),
+   *   optimistic: (cache) => cache("posts/:id")
+   *     .filter(e => e.params.id === 1)
+   *     .set(post => ({ ...post, pending: true }))
+   *     .confirmed()
+   *     .set((post, response) => response),
    * });
    * ```
    */

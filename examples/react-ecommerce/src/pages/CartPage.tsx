@@ -25,12 +25,10 @@ export function CartPage() {
   async function handleRemove(itemId: string) {
     await removeItem.trigger({
       params: { id: itemId },
-      optimistic: (api) =>
-        api("cart")
-          .GET()
-          .UPDATE_CACHE((current) =>
-            (current ?? []).filter((item) => item.id !== itemId)
-          ),
+      optimistic: (cache) =>
+        cache("cart").set((current) =>
+          (current ?? []).filter((item) => item.id !== itemId)
+        ),
       invalidate: ["self", "cart"],
     });
   }

@@ -642,10 +642,8 @@ deletePost = injectWrite((api) => api("posts/:id").DELETE());
 // optimistic is passed to trigger(), not hook options
 await this.deletePost.trigger({
   params: { id: deletedId },
-  optimistic: (api) =>
-    api("posts")
-      .GET()
-      .UPDATE_CACHE((posts) => posts.filter((p) => p.id !== deletedId)),
+  optimistic: (cache) =>
+    cache("posts").set((posts) => posts.filter((p) => p.id !== deletedId)),
 });
 ```
 

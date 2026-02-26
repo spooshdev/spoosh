@@ -32,40 +32,41 @@ const { trigger } = useWrite((api) => api("posts/:id").DELETE());
 trigger({
   params: { id },
   // Optimistic delete - instantly remove item from list
-  optimistic: (api) =>
-    api("posts")
-      .GET()
-      .UPDATE_CACHE((posts) => posts.filter((p) => p.id !== id)),
+  optimistic: (cache) =>
+    cache("posts").set((posts) => posts.filter((p) => p.id !== id)),
 });
 
-// Optimistic update with response data (onSuccess timing)
+// Confirmed update - update cache after successful response
 trigger({
-  optimistic: (api) =>
-    api("posts")
-      .GET()
-      .ON_SUCCESS()
-      .UPDATE_CACHE((posts, newPost) => [newPost!, ...posts]),
+  optimistic: (cache) =>
+    cache("posts")
+      .confirmed()
+      .set((posts, newPost) => [newPost, ...posts]),
+});
+
+// Both immediate and confirmed updates
+trigger({
+  optimistic: (cache) =>
+    cache("posts")
+      .set((posts) => [...posts, { id: -1, title: "Saving..." }])
+      .confirmed()
+      .set((posts, newPost) => posts.map((p) => (p.id === -1 ? newPost : p))),
 });
 
 // Multiple targets
 trigger({
-  optimistic: (api) => [
-    api("posts")
-      .GET()
-      .UPDATE_CACHE((posts) => posts.filter((p) => p.id !== id)),
-    api("stats")
-      .GET()
-      .UPDATE_CACHE((stats) => ({ ...stats, count: stats.count - 1 })),
+  optimistic: (cache) => [
+    cache("posts").set((posts) => posts.filter((p) => p.id !== id)),
+    cache("stats").set((stats) => ({ ...stats, count: stats.count - 1 })),
   ],
 });
 
 // Filter by request params
 trigger({
-  optimistic: (api) =>
-    api("posts")
-      .GET()
-      .WHERE((request) => request.query?.page === 1)
-      .UPDATE_CACHE((posts, newPost) => [newPost!, ...posts]),
+  optimistic: (cache) =>
+    cache("posts/:id")
+      .filter((entry) => entry.params.id === "1")
+      .set((post) => ({ ...post, title: "Updated" })),
 });
 ```
 
@@ -73,22 +74,21 @@ trigger({
 
 ### Per-Request Options
 
-| Option       | Type                            | Description                           |
-| ------------ | ------------------------------- | ------------------------------------- |
-| `optimistic` | `(api) => builder \| builder[]` | Callback to define optimistic updates |
+| Option       | Type                              | Description                           |
+| ------------ | --------------------------------- | ------------------------------------- |
+| `optimistic` | `(cache) => builder \| builder[]` | Callback to define optimistic updates |
 
-### Builder Methods (DSL)
+### Builder Methods
 
 Chain methods to configure optimistic updates:
 
-| Method              | Description                               |
-| ------------------- | ----------------------------------------- |
-| `.GET()`            | Select the GET endpoint to update         |
-| `.WHERE(fn)`        | Filter which cache entries to update      |
-| `.UPDATE_CACHE(fn)` | Update cache immediately (default timing) |
-| `.ON_SUCCESS()`     | Switch to onSuccess timing mode           |
-| `.NO_ROLLBACK()`    | Disable automatic rollback on error       |
-| `.ON_ERROR(fn)`     | Error callback                            |
+| Method               | Description                                     |
+| -------------------- | ----------------------------------------------- |
+| `.filter(fn)`        | Filter which cache entries to update            |
+| `.set(fn)`           | Update cache (immediate before `.confirmed()`)  |
+| `.confirmed()`       | Switch to confirmed mode (update after success) |
+| `.disableRollback()` | Disable automatic rollback on error             |
+| `.onError(fn)`       | Error callback                                  |
 
 ### Result
 
@@ -96,9 +96,10 @@ Chain methods to configure optimistic updates:
 | -------------- | --------- | --------------------------------------------------- |
 | `isOptimistic` | `boolean` | `true` if current data is from an optimistic update |
 
-### Timing Modes
+### Update Modes
 
-| Usage                            | Description                                                                                          |
-| -------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `.UPDATE_CACHE(fn)`              | **Immediate** - Update cache instantly before request completes. Rollback on error.                  |
-| `.ON_SUCCESS().UPDATE_CACHE(fn)` | **On Success** - Wait for successful response, then update cache. `fn` receives response as 2nd arg. |
+| Usage                          | Description                                                                                         |
+| ------------------------------ | --------------------------------------------------------------------------------------------------- |
+| `.set(fn)`                     | **Immediate** - Update cache instantly before request completes. Rollback on error.                 |
+| `.confirmed().set(fn)`         | **Confirmed** - Wait for successful response, then update cache. `fn` receives response as 2nd arg. |
+| `.set(fn).confirmed().set(fn)` | **Both** - Immediate update, then replace with confirmed data on success.                           |

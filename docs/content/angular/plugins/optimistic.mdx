@@ -61,16 +61,14 @@ export class PostListComponent {
   handleDelete(id: number) {
     this.deletePost.trigger({
       params: { id },
-      optimistic: (api) =>
-        api("posts")
-          .GET()
-          .UPDATE_CACHE((posts) => posts.filter((p) => p.id !== id)),
+      optimistic: (cache) =>
+        cache("posts").set((posts) => posts.filter((p) => p.id !== id)),
     });
   }
 }
 ```
 
-The `UPDATE_CACHE` function receives the current cached data and returns the optimistically updated data.
+The `set` function receives the current cached data and returns the optimistically updated data.
 
 ## Optimistic Create
 
@@ -82,33 +80,48 @@ private createPost = injectWrite((api) => api("posts").POST());
 submit() {
   this.createPost.trigger({
     body: { title: "Draft Post", content: "..." },
-    optimistic: (api) =>
-      api("posts")
-        .GET()
-        .UPDATE_CACHE((posts) => [
-          { id: Date.now(), title: "Draft Post", content: "..." },
-          ...posts,
-        ]),
+    optimistic: (cache) =>
+      cache("posts").set((posts) => [
+        { id: Date.now(), title: "Draft Post", content: "..." },
+        ...posts,
+      ]),
   });
 }
 ```
 
 ## Using Response Data
 
-Use `ON_SUCCESS` to update the cache with the actual server response instead of fabricated data:
+Use `confirmed()` to update the cache with the actual server response instead of fabricated data:
 
 ```typescript
 this.createPost.trigger({
   body: { title: "New Post", content: "..." },
-  optimistic: (api) =>
-    api("posts")
-      .GET()
-      .ON_SUCCESS()
-      .UPDATE_CACHE((posts, newPost) => [newPost!, ...posts]),
+  optimistic: (cache) =>
+    cache("posts")
+      .confirmed()
+      .set((posts, newPost) => [newPost, ...posts]),
 });
 ```
 
-The second argument to `UPDATE_CACHE` is the mutation response, available after the server responds successfully.
+The second argument to `set` is the mutation response, available after the server responds successfully.
+
+## Both Immediate and Confirmed Updates
+
+You can chain both immediate (optimistic) and confirmed updates in a single call:
+
+```typescript
+this.createPost.trigger({
+  body: { title: "New Post", content: "..." },
+  optimistic: (cache) =>
+    cache("posts")
+      .set((posts) => [
+        { id: -1, title: "Saving...", content: "..." },
+        ...posts,
+      ])
+      .confirmed()
+      .set((posts, newPost) => posts.map((p) => (p.id === -1 ? newPost : p))),
+});
+```
 
 ## Updating Multiple Caches
 
@@ -117,20 +130,19 @@ Return an array to update several cache entries at once:
 ```typescript
 this.deletePost.trigger({
   params: { id },
-  optimistic: (api) => [
-    api("posts")
-      .GET()
-      .UPDATE_CACHE((posts) => posts.filter((p) => p.id !== id)),
-    api("stats")
-      .GET()
-      .UPDATE_CACHE((stats) => ({ ...stats, postCount: stats.postCount - 1 })),
+  optimistic: (cache) => [
+    cache("posts").set((posts) => posts.filter((p) => p.id !== id)),
+    cache("stats").set((stats) => ({
+      ...stats,
+      postCount: stats.postCount - 1,
+    })),
   ],
 });
 ```
 
 ## Filtering Cache Entries
 
-When the same endpoint is called with different parameters, multiple cache entries exist. Use `WHERE` to target specific entries based on their request parameters:
+When the same endpoint is called with different parameters, multiple cache entries exist. Use `filter` to target specific entries based on their request parameters:
 
 ```typescript
 // If you have multiple cached queries:
@@ -141,25 +153,23 @@ When the same endpoint is called with different parameters, multiple cache entri
 // Only prepend to page 1 results
 this.createPost.trigger({
   body: newPost,
-  optimistic: (api) =>
-    api("posts")
-      .GET()
-      .WHERE((request) => request.query?.page === 1)
-      .UPDATE_CACHE((posts) => [newPost, ...posts]),
+  optimistic: (cache) =>
+    cache("posts")
+      .filter((entry) => entry.query?.page === 1)
+      .set((posts) => [newPost, ...posts]),
 });
 ```
 
-Without `WHERE`, all cached entries for that endpoint would be updated. The `request` parameter in the callback contains the original request's `query`, `params`, and `body`:
+Without `filter`, all cached entries for that endpoint would be updated. The `entry` parameter in the callback contains the original request's `query` and `params`:
 
 ```typescript
 // Only update cache for a specific category
 this.createPost.trigger({
   body: newPost,
-  optimistic: (api) =>
-    api("posts")
-      .GET()
-      .WHERE((request) => request.query?.category === newPost.category)
-      .UPDATE_CACHE((posts) => [newPost, ...posts]),
+  optimistic: (cache) =>
+    cache("posts")
+      .filter((entry) => entry.query?.category === newPost.category)
+      .set((posts) => [newPost, ...posts]),
 });
 ```
 
@@ -189,29 +199,27 @@ export class PostListComponent {
 
 ## Controlling Rollback
 
-By default, optimistic updates roll back on error. Use `NO_ROLLBACK` to keep the optimistic state:
+By default, optimistic updates roll back on error. Use `disableRollback()` to keep the optimistic state:
 
 ```typescript
 this.createPost.trigger({
-  optimistic: (api) =>
-    api("posts")
-      .GET()
-      .NO_ROLLBACK()
-      .UPDATE_CACHE((posts) => [...posts, newPost]),
+  optimistic: (cache) =>
+    cache("posts")
+      .set((posts) => [...posts, newPost])
+      .disableRollback(),
 });
 ```
 
-Handle errors manually with `ON_ERROR`:
+Handle errors manually with `onError`:
 
 ```typescript
 this.createPost.trigger({
-  optimistic: (api) =>
-    api("posts")
-      .GET()
-      .ON_ERROR((error) => {
+  optimistic: (cache) =>
+    cache("posts")
+      .set((posts) => [...posts, newPost])
+      .onError((error) => {
         this.showToast(`Failed to save: ${error.message}`);
-      })
-      .UPDATE_CACHE((posts) => [...posts, newPost]),
+      }),
 });
 ```
 
@@ -225,10 +233,8 @@ private deletePost = injectWrite((api) => api("posts/:id").DELETE());
 // In your method:
 this.deletePost.trigger({
   params: { id },
-  optimistic: (api) =>
-    api("posts")
-      .GET()
-      .UPDATE_CACHE((posts) => posts.filter((p) => p.id !== id)),
+  optimistic: (cache) =>
+    cache("posts").set((posts) => posts.filter((p) => p.id !== id)),
   // "all" invalidates tags from the mutation path (posts/:id),
   // not the optimistic target path (posts)
   invalidate: "all",
@@ -239,29 +245,29 @@ this.deletePost.trigger({
 
 ### Per-Request Options
 
-| Option       | Type                            | Description                           |
-| ------------ | ------------------------------- | ------------------------------------- |
-| `optimistic` | `(api) => builder \| builder[]` | Callback to define optimistic updates |
+| Option       | Type                              | Description                           |
+| ------------ | --------------------------------- | ------------------------------------- |
+| `optimistic` | `(cache) => builder \| builder[]` | Callback to define optimistic updates |
 
-### Builder Methods (DSL)
+### Builder Methods
 
 Chain methods to configure optimistic updates:
 
-| Method              | Description                               |
-| ------------------- | ----------------------------------------- |
-| `.GET()`            | Select the GET endpoint to update         |
-| `.WHERE(fn)`        | Filter which cache entries to update      |
-| `.UPDATE_CACHE(fn)` | Update cache immediately (default timing) |
-| `.ON_SUCCESS()`     | Switch to onSuccess timing mode           |
-| `.NO_ROLLBACK()`    | Disable automatic rollback on error       |
-| `.ON_ERROR(fn)`     | Error callback                            |
+| Method               | Description                                     |
+| -------------------- | ----------------------------------------------- |
+| `.filter(fn)`        | Filter which cache entries to update            |
+| `.set(fn)`           | Update cache (immediate before `.confirmed()`)  |
+| `.confirmed()`       | Switch to confirmed mode (update after success) |
+| `.disableRollback()` | Disable automatic rollback on error             |
+| `.onError(fn)`       | Error callback                                  |
 
-### Timing Modes
+### Update Modes
 
-| Usage                            | Description                                                                                          |
-| -------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `.UPDATE_CACHE(fn)`              | **Immediate** - Update cache instantly before request completes. Rollback on error.                  |
-| `.ON_SUCCESS().UPDATE_CACHE(fn)` | **On Success** - Wait for successful response, then update cache. `fn` receives response as 2nd arg. |
+| Usage                          | Description                                                                                         |
+| ------------------------------ | --------------------------------------------------------------------------------------------------- |
+| `.set(fn)`                     | **Immediate** - Update cache instantly before request completes. Rollback on error.                 |
+| `.confirmed().set(fn)`         | **Confirmed** - Wait for successful response, then update cache. `fn` receives response as 2nd arg. |
+| `.set(fn).confirmed().set(fn)` | **Both** - Immediate update, then replace with confirmed data on success.                           |
 
 ### Result
 

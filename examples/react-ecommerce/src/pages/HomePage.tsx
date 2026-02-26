@@ -29,12 +29,10 @@ export function HomePage() {
 
   const [page, setPage] = useState(1);
 
-  const products = useRead(
-    (api) =>
-      api("products").GET({
-        query: { page },
-      }),
-    { keepPreviousData: true }
+  const products = useRead((api) =>
+    api("products").GET({
+      query: { page },
+    })
   );
 
   const addToCart = useWrite((api) => api("cart").POST());
@@ -51,36 +49,32 @@ export function HomePage() {
   function handleAddToCart(product: ProductRaw) {
     void addToCart.trigger({
       body: { product_id: product.id, quantity: 1 },
-      optimistic: (api) =>
-        api("cart")
-          .GET()
-          .UPDATE_CACHE((current) => {
-            const items = current ?? [];
+      optimistic: (cache) =>
+        cache("cart").set((current) => {
+          const items = current ?? [];
 
-            const existing = items.find(
-              (item) => item.product_id === product.id
+          const existing = items.find((item) => item.product_id === product.id);
+
+          if (existing) {
+            return items.map((item) =>
+              item.product_id === product.id
+                ? { ...item, quantity: item.quantity + 1 }
+                : item
             );
+          }
 
-            if (existing) {
-              return items.map((item) =>
-                item.product_id === product.id
-                  ? { ...item, quantity: item.quantity + 1 }
-                  : item
-              );
-            }
-
-            return [
-              {
-                id: `cart-${product.id}`,
-                product_id: product.id,
-                title: product.title,
-                image_url: product.image_url,
-                quantity: 1,
-                price_cents: product.price_cents,
-              },
-              ...items,
-            ];
-          }),
+          return [
+            {
+              id: `cart-${product.id}`,
+              product_id: product.id,
+              title: product.title,
+              image_url: product.image_url,
+              quantity: 1,
+              price_cents: product.price_cents,
+            },
+            ...items,
+          ];
+        }),
     });
   }
 

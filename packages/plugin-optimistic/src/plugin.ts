@@ -22,62 +22,13 @@ import {
   extractOptionsFromKey,
   mapParamsToTargetNames,
 } from "./utils";
+import { createCacheProxy } from "./builder";
 
 type OptimisticSnapshot = {
   key: string;
   previousData: unknown;
   afterData: unknown;
 };
-
-/**
- * Creates a chainable builder for optimistic updates.
- * All methods are available in any order.
- * Runtime object includes both data properties and builder methods.
- */
-function createBuilder(state: OptimisticTarget): unknown {
-  return {
-    ...state,
-
-    WHERE(predicate: (options: unknown) => boolean) {
-      return createBuilder({ ...state, where: predicate });
-    },
-
-    UPDATE_CACHE(updater: (data: unknown, response?: unknown) => unknown) {
-      return createBuilder({ ...state, updater });
-    },
-
-    ON_SUCCESS() {
-      return createBuilder({ ...state, timing: "onSuccess" });
-    },
-
-    NO_ROLLBACK() {
-      return createBuilder({ ...state, rollbackOnError: false });
-    },
-
-    ON_ERROR(callback: (error: unknown) => void) {
-      return createBuilder({ ...state, onError: callback });
-    },
-  };
-}
-
-/**
- * Creates a proxy for selecting cache entries with the fluent optimistic API.
- *
- * @returns A proxy that supports: api("path").GET().UPDATE_CACHE(...).WHERE(...)...
- */
-function createOptimisticProxy<TSchema>(): TSchema {
-  const createMethodsProxy = (path: string): unknown => ({
-    GET: () =>
-      createBuilder({
-        path,
-        method: "GET",
-        timing: "immediate",
-        rollbackOnError: true,
-      }),
-  });
-
-  return ((path: string) => createMethodsProxy(path)) as TSchema;
-}
 
 function resolveOptimisticTargets(context: PluginContext): OptimisticTarget[] {
   const pluginOptions = context.pluginOptions as
@@ -86,8 +37,8 @@ function resolveOptimisticTargets(context: PluginContext): OptimisticTarget[] {
 
   if (!pluginOptions?.optimistic) return [];
 
-  const apiProxy = createOptimisticProxy();
-  const result = pluginOptions.optimistic(apiProxy as never);
+  const cacheProxy = createCacheProxy();
+  const result = pluginOptions.optimistic(cacheProxy as never);
 
   const targets = Array.isArray(result) ? result : [result];
 
@@ -96,8 +47,7 @@ function resolveOptimisticTargets(context: PluginContext): OptimisticTarget[] {
 
 function getMatchingEntries(
   stateManager: StateManager,
-  targetPath: string,
-  targetMethod: string
+  targetPath: string
 ): Array<{
   key: string;
   entry: ReturnType<StateManager["getCache"]>;
@@ -111,14 +61,13 @@ function getMatchingEntries(
     paramMapping: Record<string, string>;
   }> = [];
 
-  if (hasPatternParams(targetPath)) {
-    const allEntries = stateManager.getAllCacheEntries();
+  const allEntries = stateManager.getAllCacheEntries();
 
+  if (hasPatternParams(targetPath)) {
     for (const { key, entry } of allEntries) {
-      if (!key.includes(`"method":"${targetMethod}"`)) continue;
+      if (!key.includes(`"method":"GET"`)) continue;
 
       const actualPath = extractPathFromKey(key);
-
       if (!actualPath) continue;
 
       const { matches, params, paramMapping } = pathMatchesPattern(
@@ -131,13 +80,10 @@ function getMatchingEntries(
       }
     }
   } else {
-    const allEntries = stateManager.getAllCacheEntries();
-
     for (const { key, entry } of allEntries) {
-      if (!key.includes(`"method":"${targetMethod}"`)) continue;
+      if (!key.includes(`"method":"GET"`)) continue;
 
       const actualPath = extractPathFromKey(key);
-
       if (!actualPath) continue;
 
       if (actualPath === targetPath) {
@@ -149,19 +95,15 @@ function getMatchingEntries(
   return results;
 }
 
-function applyOptimisticUpdate(
+function applyUpdate(
   stateManager: StateManager,
   target: OptimisticTarget,
+  updater: (data: unknown, response?: unknown) => unknown,
+  response: unknown | undefined,
   t?: RequestTracer
 ): OptimisticSnapshot[] {
-  if (!target.updater) return [];
-
   const snapshots: OptimisticSnapshot[] = [];
-  const matchingEntries = getMatchingEntries(
-    stateManager,
-    target.path,
-    target.method
-  );
+  const matchingEntries = getMatchingEntries(stateManager, target.path);
 
   if (matchingEntries.length === 0) {
     t?.skip(`Skipped ${target.path} (no cache entry)`);
@@ -169,7 +111,7 @@ function applyOptimisticUpdate(
   }
 
   for (const { key, entry, extractedParams, paramMapping } of matchingEntries) {
-    if (target.where) {
+    if (target.filter) {
       const options = extractOptionsFromKey(key) ?? {};
       const mappedParams = mapParamsToTargetNames(
         options.params as Record<string, unknown> | undefined,
@@ -184,12 +126,14 @@ function applyOptimisticUpdate(
       };
 
       try {
-        if (!target.where(mergedOptions)) {
-          t?.skip(`Skipped ${formatCacheKeyForTrace(key)} (WHERE not matched)`);
+        if (!target.filter(mergedOptions)) {
+          t?.skip(
+            `Skipped ${formatCacheKeyForTrace(key)} (filter not matched)`
+          );
           continue;
         }
       } catch {
-        t?.skip(`Skipped ${formatCacheKeyForTrace(key)} (WHERE error)`);
+        t?.skip(`Skipped ${formatCacheKeyForTrace(key)} (filter error)`);
         continue;
       }
     }
@@ -199,8 +143,7 @@ function applyOptimisticUpdate(
       continue;
     }
 
-    const afterData = target.updater(entry.state.data, undefined);
-
+    const afterData = updater(entry.state.data, response);
     snapshots.push({ key, previousData: entry.state.data, afterData });
 
     stateManager.setCache(key, {
@@ -257,16 +200,16 @@ function rollbackOptimistic(
 
 function buildSingleDiff(
   snapshot: OptimisticSnapshot,
-  mode: "apply" | "rollback" | "onSuccess" = "apply"
+  mode: "apply" | "rollback" | "confirmed" = "apply"
 ): { before: unknown; after: unknown; label: string } {
   const label =
     mode === "apply"
       ? "Optimistic update"
       : mode === "rollback"
         ? "Rollback optimistic"
-        : "onSuccess update";
+        : "Confirmed update";
 
-  return mode === "apply" || mode === "onSuccess"
+  return mode === "apply" || mode === "confirmed"
     ? { before: snapshot.previousData, after: snapshot.afterData, label }
     : { before: snapshot.afterData, after: snapshot.previousData, label };
 }
@@ -295,34 +238,32 @@ function buildSingleDiff(
  *     optimisticPlugin(),
  *   ]);
  *
- * // Methods can be chained in any order
+ * // Optimistic update
  * trigger({
- *   optimistic: (api) => api("posts")
- *     .GET()
- *     .UPDATE_CACHE(posts => posts.filter(p => p.id !== deletedId)),
+ *   optimistic: (cache) => cache("posts")
+ *     .set(posts => posts.filter(p => p.id !== deletedId)),
  * });
  * ```
  *
  * @example
  * ```ts
- * // With WHERE filter and disable rollback
+ * // With filter and confirmed update
  * trigger({
- *   optimistic: (api) => api("posts")
- *     .GET()
- *     .NO_ROLLBACK()
- *     .WHERE(entry => entry.query.page === 1)
- *     .UPDATE_CACHE(posts => [newPost, ...posts]),
+ *   optimistic: (cache) => cache("posts/:id")
+ *     .filter(e => e.params.id === 1)
+ *     .set(post => ({ ...post, pending: true }))
+ *     .confirmed()
+ *     .set((post, response) => response),
  * });
  * ```
  *
  * @example
  * ```ts
- * // Apply after success with typed response
+ * // Confirmed only (post-success)
  * trigger({
- *   optimistic: (api) => api("posts")
- *     .GET()
- *     .ON_SUCCESS()
- *     .UPDATE_CACHE((posts, newPost) => [...posts, newPost]),
+ *   optimistic: (cache) => cache("posts")
+ *     .confirmed()
+ *     .set((posts, newPost) => [...posts, newPost]),
  * });
  * ```
  */
@@ -353,35 +294,40 @@ export function optimisticPlugin() {
 
       context.plugins.get("spoosh:invalidation")?.setDefaultMode("none");
 
-      const immediateTargets = targets.filter((t) => t.timing !== "onSuccess");
-      const allSnapshots: OptimisticSnapshot[] = [];
+      const allImmediateSnapshots: OptimisticSnapshot[] = [];
 
-      for (const target of immediateTargets) {
-        const snapshots = applyOptimisticUpdate(stateManager, target, t);
+      for (const target of targets) {
+        if (!target.immediateUpdater) continue;
+
+        const snapshots = applyUpdate(
+          stateManager,
+          target,
+          target.immediateUpdater,
+          undefined,
+          t
+        );
 
         for (const snapshot of snapshots) {
           t?.log(
             `Applied optimistic update to ${formatCacheKeyForTrace(snapshot.key)}`,
-            {
-              diff: buildSingleDiff(snapshot),
-            }
+            { diff: buildSingleDiff(snapshot) }
           );
         }
 
-        allSnapshots.push(...snapshots);
+        allImmediateSnapshots.push(...snapshots);
       }
 
       const response = await next();
 
       if (response.error) {
         const shouldRollback = targets.some(
-          (t) => t.rollbackOnError && t.timing !== "onSuccess"
+          (target) => target.rollbackOnError && target.immediateUpdater
         );
 
-        if (shouldRollback && allSnapshots.length > 0) {
-          rollbackOptimistic(stateManager, allSnapshots);
+        if (shouldRollback && allImmediateSnapshots.length > 0) {
+          rollbackOptimistic(stateManager, allImmediateSnapshots);
 
-          for (const snapshot of allSnapshots) {
+          for (const snapshot of allImmediateSnapshots) {
             t?.log(`Rolled back ${formatCacheKeyForTrace(snapshot.key)}`, {
               color: "warning",
               diff: buildSingleDiff(snapshot, "rollback"),
@@ -395,92 +341,27 @@ export function optimisticPlugin() {
           }
         }
       } else {
-        if (allSnapshots.length > 0) {
-          confirmOptimistic(stateManager, allSnapshots);
+        if (allImmediateSnapshots.length > 0) {
+          confirmOptimistic(stateManager, allImmediateSnapshots);
         }
 
-        const onSuccessTargets = targets.filter(
-          (target) => target.timing === "onSuccess"
-        );
+        for (const target of targets) {
+          if (!target.confirmedUpdater) continue;
 
-        const onSuccessSnapshots: OptimisticSnapshot[] = [];
-
-        for (const target of onSuccessTargets) {
-          if (!target.updater) continue;
-
-          const matchingEntries = getMatchingEntries(
+          const snapshots = applyUpdate(
             stateManager,
-            target.path,
-            target.method
+            target,
+            target.confirmedUpdater,
+            response.data,
+            t
           );
 
-          if (matchingEntries.length === 0) {
-            t?.skip(`Skipped ${target.path} (no cache entry)`);
-            continue;
-          }
-
-          for (const {
-            key,
-            entry,
-            extractedParams,
-            paramMapping,
-          } of matchingEntries) {
-            if (target.where) {
-              const options = extractOptionsFromKey(key) ?? {};
-              const mappedParams = mapParamsToTargetNames(
-                options.params as Record<string, unknown> | undefined,
-                paramMapping
-              );
-              const mergedOptions = {
-                ...options,
-                params: {
-                  ...extractedParams,
-                  ...mappedParams,
-                },
-              };
-
-              try {
-                if (!target.where(mergedOptions)) {
-                  t?.skip(
-                    `Skipped ${formatCacheKeyForTrace(key)} (WHERE not matched)`
-                  );
-                  continue;
-                }
-              } catch {
-                t?.skip(`Skipped ${formatCacheKeyForTrace(key)} (WHERE error)`);
-                continue;
-              }
-            }
-
-            if (entry?.state.data === undefined) {
-              t?.skip(
-                `Skipped ${formatCacheKeyForTrace(key)} (no cached data)`
-              );
-              continue;
-            }
-
-            const afterData = target.updater(entry.state.data, response.data);
-
-            const snapshot = {
-              key,
-              previousData: entry.state.data,
-              afterData,
-            };
-
-            onSuccessSnapshots.push(snapshot);
-
-            stateManager.setCache(key, {
-              state: {
-                ...entry.state,
-                data: afterData,
-              },
-            });
-
+          for (const snapshot of snapshots) {
             t?.log(
-              `Applied onSuccess update to ${formatCacheKeyForTrace(key)}`,
+              `Applied confirmed update to ${formatCacheKeyForTrace(snapshot.key)}`,
               {
                 color: "success",
-                diff: buildSingleDiff(snapshot, "onSuccess"),
+                diff: buildSingleDiff(snapshot, "confirmed"),
               }
             );
           }
