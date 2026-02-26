@@ -165,8 +165,8 @@ afterResponse(context, response) {
   });
 }
 
-// ✅ Right - Use exports
-exports(context) {
+// ✅ Right - Use internal
+internal(context) {
   return {
     enableRetry() {
       context.temp.set("retry:enabled", true);
@@ -352,7 +352,7 @@ export function myPlugin(): SpooshPlugin<{
   pagesResult: MyPagesResult;
 
   // What gets added to create() return
-  instanceApi: MyInstanceApi;
+  api: MyApi;
 }> {
   // Plugin implementation
 }
@@ -595,7 +595,7 @@ afterResponse(context, response) {
 **Don't use `setMeta` for:**
 
 - ❌ Internal tracking
-- ❌ Plugin-to-plugin communication (use `exports` or `context.temp`)
+- ❌ Plugin-to-plugin communication (use `internal` or `context.temp`)
 - ❌ Response modification (return modified response instead)
 
 **Key points:**

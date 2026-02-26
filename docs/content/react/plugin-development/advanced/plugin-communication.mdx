@@ -3,16 +3,16 @@ title: Plugin Communication
 description: How plugins share data and coordinate with each other
 ---
 
-Plugins often need to share data or coordinate behavior. Spoosh provides two mechanisms: `context.temp` for passing data within the same plugin (middleware → afterResponse), and `exports` + `context.plugins.get()` for plugin-to-plugin communication.
+Plugins often need to share data or coordinate behavior. Spoosh provides two mechanisms: `context.temp` for passing data within the same plugin (middleware → afterResponse), and `internal` + `context.plugins.get()` for plugin-to-plugin communication.
 
 ## Two Communication Patterns
 
 | Pattern          | Scope                        | Use When                                             |
 | ---------------- | ---------------------------- | ---------------------------------------------------- |
 | **context.temp** | Within same plugin           | Pass data from middleware to afterResponse/lifecycle |
-| **exports**      | Between plugins (persistent) | Expose APIs other plugins can call                   |
+| **internal**     | Between plugins (persistent) | Expose APIs other plugins can call                   |
 
-**Decision rule:** If another plugin needs to call you, use `exports`. If only you need the data during this request, use `context.temp`.
+**Decision rule:** If another plugin needs to call you, use `internal`. If only you need the data during this request, use `context.temp`.
 
 ## context.temp - Internal Plugin Data
 
@@ -21,7 +21,7 @@ Plugins often need to share data or coordinate behavior. Spoosh provides two mec
 <Callout type="warning">
 **Not for Plugin-to-Plugin Communication**
 
-While `context.temp` can technically be accessed by other plugins, this is **not recommended**. Reading another plugin's `context.temp` is considered an internal implementation detail and may break at any time. Use `exports` and `context.plugins.get()` for plugin-to-plugin communication instead.
+While `context.temp` can technically be accessed by other plugins, this is **not recommended**. Reading another plugin's `context.temp` is considered an internal implementation detail and may break at any time. Use `internal` and `context.plugins.get()` for plugin-to-plugin communication instead.
 
 </Callout>
 
@@ -31,7 +31,7 @@ While `context.temp` can technically be accessed by other plugins, this is **not
 - ✅ Pass timing/state from middleware to lifecycle hooks (same plugin)
 - ✅ Store data in middleware, use in onUnmount for cleanup (same plugin)
 - ✅ Temporary calculations within your plugin's request flow
-- ❌ NOT for sharing data between different plugins (use `exports` instead)
+- ❌ NOT for sharing data between different plugins (use `internal` instead)
 
 ### Basic Example: Within Same Plugin
 
@@ -235,9 +235,9 @@ function pollingPlugin(): SpooshPlugin {
 - Data persists for the lifetime of the request and its associated lifecycle hooks
 - Cleanup always happens, even if component unmounts early
 
-## exports - Persistent Plugin APIs
+## internal - Persistent Plugin APIs
 
-The `exports` property lets plugins expose functions that other plugins can call via `context.plugins.get()`.
+The `internal` property lets plugins expose functions that other plugins can call via `context.plugins.get()`.
 
 ### When to Use
 
@@ -249,7 +249,7 @@ The `exports` property lets plugins expose functions that other plugins can call
 ### Basic Example
 
 ```typescript
-// Plugin A: Exports an API
+// Plugin A: Exposes an API
 function featureFlagPlugin(): SpooshPlugin {
   const flags = new Map<string, boolean>();
 
@@ -257,7 +257,7 @@ function featureFlagPlugin(): SpooshPlugin {
     name: "my-app:feature-flags",
     operations: ["read", "write"],
 
-    exports(context) {
+    internal(context) {
       return {
         isEnabled(flag: string): boolean {
           return flags.get(flag) ?? false;
@@ -304,10 +304,10 @@ function conditionalCachePlugin(): SpooshPlugin {
 
 The optimistic plugin depends on the invalidation plugin and coordinates with it.
 
-**Invalidation Plugin (Exports API):**
+**Invalidation Plugin (Internal API):**
 
 ```typescript
-export interface InvalidationPluginExports {
+export interface InvalidationPluginInternal {
   setDefaultMode: (value: InvalidationMode) => void;
 }
 
@@ -318,7 +318,7 @@ export function invalidationPlugin(
     name: "spoosh:invalidation",
     operations: ["write"],
 
-    exports(context): InvalidationPluginExports {
+    internal(context): InvalidationPluginInternal {
       return {
         setDefaultMode(value: InvalidationMode) {
           context.temp.set("invalidation:defaultMode", value);
@@ -366,15 +366,15 @@ export function optimisticPlugin(): SpooshPlugin {
 3. Optimistic plugin calls `setDefaultMode("none")` to disable invalidation for this request
 4. User can still override with explicit `invalidate` option
 
-## Type-Safe Exports
+## Type-Safe Internal
 
 Use module augmentation to make `context.plugins.get()` type-safe:
 
-### Step 1: Define Export Types
+### Step 1: Define Internal Types
 
 ```typescript
 // types.ts
-export interface MyPluginExports {
+export interface MyPluginInternal {
   doSomething: (value: string) => void;
   getSomething: () => string;
 }
@@ -385,8 +385,8 @@ export interface MyPluginExports {
 ```typescript
 // types.ts
 declare module "@spoosh/core" {
-  interface PluginExportsRegistry {
-    "my-plugin": MyPluginExports;
+  interface PluginInternalRegistry {
+    "my-plugin": MyPluginInternal;
   }
 }
 ```
@@ -395,14 +395,14 @@ declare module "@spoosh/core" {
 
 ```typescript
 // plugin.ts
-import type { MyPluginExports } from "./types";
+import type { MyPluginInternal } from "./types";
 
 export function myPlugin(): SpooshPlugin {
   return {
     name: "my-plugin",
     operations: ["read"],
 
-    exports(context): MyPluginExports {
+    internal(context): MyPluginInternal {
       return {
         doSomething(value: string) {
           console.log(value);
@@ -437,13 +437,13 @@ middleware: async (context, next) => {
 
 ```typescript
 // types.ts
-export interface InvalidationPluginExports {
+export interface InvalidationPluginInternal {
   setDefaultMode: (value: InvalidationMode) => void;
 }
 
 declare module "@spoosh/core" {
-  interface PluginExportsRegistry {
-    "spoosh:invalidation": InvalidationPluginExports;
+  interface PluginInternalRegistry {
+    "spoosh:invalidation": InvalidationPluginInternal;
   }
 }
 ```
@@ -467,7 +467,7 @@ context.plugins.get("spoosh:invalidation")?.setDefaultMode("none");
 
 **Example:** Your plugin starts polling in middleware, stores the timer ID in temp, cleans it up in onUnmount
 
-### Use exports When (Inter-Plugin)
+### Use internal When (Inter-Plugin)
 
 - ✅ **Plugin-to-plugin communication** - Other plugins need to call your APIs
 - ✅ Exposing functionality other plugins can use
@@ -495,11 +495,11 @@ middleware: async (context, next) => {
 };
 ```
 
-**✅ RIGHT - Using exports for cross-plugin communication:**
+**✅ RIGHT - Using internal for cross-plugin communication:**
 
 ```typescript
-// Plugin A - Expose API via exports
-exports(context) {
+// Plugin A - Expose API via internal
+internal(context) {
   return {
     getData(): string {
       return "some data";
@@ -518,7 +518,7 @@ middleware: async (context, next) => {
 ### Don't Use Either When
 
 - ❌ Sharing data with users → use [`setMeta`](/docs/react/plugin-development/advanced/meta-storage)
-- ❌ Adding methods to create() return → use [`instanceApi`](/docs/react/plugin-development/advanced/instance-api)
+- ❌ Adding methods to create() return → use [`api`](/docs/react/plugin-development/advanced/instance-api)
 - ❌ Modifying the response → return modified response in middleware/afterResponse
 
 ## Common Patterns
@@ -527,7 +527,7 @@ middleware: async (context, next) => {
 
 ```typescript
 // Plugin A provides feature flag
-exports(context) {
+internal(context) {
   return {
     shouldCache(): boolean {
       return context.pluginOptions?.enableCache ?? true;
@@ -553,7 +553,7 @@ middleware: async (context, next) => {
 // Plugin A manages request IDs
 const requestIds = new Map<string, string>();
 
-exports(context) {
+internal(context) {
   return {
     getRequestId(queryKey: string): string | undefined {
       return requestIds.get(queryKey);
@@ -581,7 +581,7 @@ middleware: async (context, next) => {
 
 ```typescript
 // Plugin exposes both persistent and temporary APIs
-exports(context) {
+internal(context) {
   return {
     setTemporaryFlag(key: string, value: boolean) {
       // Store in temp for this request only
@@ -649,10 +649,10 @@ context.temp.set("my-plugin:flag", true);
 context.temp.set("flag", true);
 ```
 
-### 3. Document Exported APIs
+### 3. Document Internal APIs
 
 ```typescript
-exports(context) {
+internal(context) {
   return {
     /**
      * Sets the default invalidation mode for this request.
@@ -665,13 +665,13 @@ exports(context) {
 }
 ```
 
-### 4. Type Your Exports
+### 4. Type Your Internal
 
 ```typescript
 // ✅ Good - Type-safe via module augmentation
 declare module "@spoosh/core" {
-  interface PluginExportsRegistry {
-    "my-plugin": MyPluginExports;
+  interface PluginInternalRegistry {
+    "my-plugin": MyPluginInternal;
   }
 }
 
@@ -679,11 +679,11 @@ declare module "@spoosh/core" {
 context.plugins.get("my-plugin") as any;
 ```
 
-### 5. Keep Exports Focused
+### 5. Keep Internal Focused
 
 ```typescript
 // ✅ Good - Focused API
-exports(context) {
+internal(context) {
   return {
     setMode(mode: string) { ... },
     getMode(): string { ... },
@@ -691,7 +691,7 @@ exports(context) {
 }
 
 // ❌ Bad - Too many methods
-exports(context) {
+internal(context) {
   return {
     setMode() { ... },
     getMode() { ... },
@@ -714,7 +714,7 @@ exports(context) {
 - Request-scoped, cleared after each request
 - NOT recommended for plugin-to-plugin communication
 
-**exports:**
+**internal:**
 
 - **Inter-plugin communication** (between different plugins)
 - Persistent APIs other plugins can call
@@ -723,7 +723,7 @@ exports(context) {
 
 **Type Safety:**
 
-- Use `PluginExportsRegistry` for type-safe exports
+- Use `PluginInternalRegistry` for type-safe internal
 - Always check for undefined when using `plugins.get()`
 - Use `dependencies` array for required plugins
 

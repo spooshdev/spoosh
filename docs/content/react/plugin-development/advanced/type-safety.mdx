@@ -68,7 +68,7 @@ export interface MyQueueResult {
   retryCount?: number;
 }
 
-export interface MyInstanceApi {
+export interface MyApi {
   // Methods added to create() return value
   setTimeout: (timeout: number) => void;
 }
@@ -173,7 +173,7 @@ import type {
   MyReadResult,
   MyWriteResult,
   MyQueueResult,
-  MyInstanceApi,
+  MyApi,
 } from "./types";
 
 export function myPlugin(config: MyPluginConfig = {}): SpooshPlugin<{
@@ -185,7 +185,7 @@ export function myPlugin(config: MyPluginConfig = {}): SpooshPlugin<{
   readResult: MyReadResult;
   writeResult: MyWriteResult;
   queueResult: MyQueueResult;
-  instanceApi: MyInstanceApi;
+  api: MyApi;
 }> {
   return {
     name: "my-app:timeout",
@@ -199,7 +199,7 @@ export function myPlugin(config: MyPluginConfig = {}): SpooshPlugin<{
       return next();
     },
 
-    instanceApi: ({ stateManager }) => ({
+    api: ({ stateManager }) => ({
       setTimeout(timeout: number) {
         // Implementation
       },
@@ -224,7 +224,7 @@ The approach above works but requires manual type casting. Use `createSpooshPlug
 - `useQueue` trigger accepts `MyQueueTriggerOptions`
 - Hook results include `MyReadResult` / `MyWriteResult`
 - Queue item meta includes `MyQueueResult`
-- `create()` return includes `MyInstanceApi`
+- `create()` return includes `MyApi`
 
 ## Minimal Example
 
@@ -244,14 +244,14 @@ export function simplePlugin(): SpooshPlugin<{
 ```
 
 ```typescript
-// Plugin that only has instance API
+// Plugin that only has api
 export function apiOnlyPlugin(): SpooshPlugin<{
-  instanceApi: { reset: () => void };
+  api: { reset: () => void };
 }> {
   return {
     name: "api-only",
     operations: [],
-    instanceApi: () => ({ reset: () => {} }),
+    api: () => ({ reset: () => {} }),
   };
 }
 ```
@@ -279,7 +279,7 @@ export interface ClearCacheOptions {
   refetchAll?: boolean;
 }
 
-export interface CacheInstanceApi {
+export interface CacheApi {
   /** Clear all cached data. */
   clearCache: (options?: ClearCacheOptions) => void;
 }
@@ -321,7 +321,7 @@ import type {
   CachePagesOptions,
   CacheReadResult,
   CacheWriteResult,
-  CacheInstanceApi,
+  CacheApi,
   ClearCacheOptions,
 } from "./types";
 
@@ -335,7 +335,7 @@ export function cachePlugin(config: CachePluginConfig = {}) {
     pagesOptions: CachePagesOptions;
     readResult: CacheReadResult;
     writeResult: CacheWriteResult;
-    instanceApi: CacheInstanceApi;
+    api: CacheApi;
   }>({
     name: "spoosh:cache",
     operations: ["read", "pages", "write"],
@@ -369,7 +369,7 @@ export function cachePlugin(config: CachePluginConfig = {}) {
       }
     },
 
-    instanceApi(context) {
+    api(context) {
       const { stateManager, eventEmitter } = context;
 
       const clearCache = (options?: ClearCacheOptions): void => {
@@ -413,7 +413,7 @@ await trigger({
   clearCache: true, // ✅ TypeScript knows this trigger option
 });
 
-// Type-safe instance API
+// Type-safe api
 clearCache({ refetchAll: true }); // ✅ TypeScript knows this method
 ```
 
@@ -532,22 +532,22 @@ declare module "@spoosh/core" {
 }
 ```
 
-**`InstanceApiResolvers<TSchema>`** - Schema-aware instance APIs
+**`ApiResolvers<TSchema>`** - Schema-aware APIs
 
 ```typescript
 declare module "@spoosh/core" {
-  interface InstanceApiResolvers<TSchema> {
+  interface ApiResolvers<TSchema> {
     prefetch: PrefetchFn<TSchema>;
     invalidate: InvalidateFn<TSchema>;
   }
 }
 ```
 
-**`PluginExportsRegistry`** - Type-safe plugin exports
+**`PluginInternalRegistry`** - Type-safe plugin internal
 
 ```typescript
 declare module "@spoosh/core" {
-  interface PluginExportsRegistry {
+  interface PluginInternalRegistry {
     "my-plugin": {
       doSomething: () => void;
     };
@@ -663,8 +663,8 @@ When building a type-safe plugin:
 
 - ✅ Use `PluginResolvers` for schema-aware options
 - ✅ Use `PluginResultResolvers` for inferred results
-- ✅ Use `InstanceApiResolvers` for schema-aware instance APIs
-- ✅ Use `PluginExportsRegistry` for type-safe exports
+- ✅ Use `ApiResolvers` for schema-aware APIs
+- ✅ Use `PluginInternalRegistry` for type-safe internal
 
 **Documentation:**
 
@@ -799,7 +799,7 @@ export interface RetryReadOptions {
 
 **Basic Type Safety:**
 
-1. Define type interfaces (config, options, trigger options, results, instanceApi)
+1. Define type interfaces (config, options, trigger options, results, api)
 2. Pass to `SpooshPlugin<{...}>` generic
 3. Export from index.ts
 

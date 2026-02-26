@@ -41,7 +41,7 @@ const spoosh = new Spoosh<ApiSchema, Error>("/api").use([
 1. **Priority Sorting** - Plugins are sorted by `priority` (lower numbers run first, default: 0)
 2. **Plugin Storage** - Sorted plugins are stored in the Spoosh instance
 3. **Executor Creation** - A PluginExecutor is created to manage middleware chains
-4. **Framework Adapter** - When you call `create(spoosh)`, plugins' `instanceApi` functions execute
+4. **Framework Adapter** - When you call `create(spoosh)`, plugins' `api` functions execute
 
 ## The PluginContext Object
 
@@ -256,7 +256,7 @@ interface PluginTypeConfig {
   pagesOptions?: object;
   readResult?: object;
   writeResult?: object;
-  instanceApi?: object;
+  api?: object;
 }
 ```
 
@@ -275,14 +275,14 @@ interface CacheReadResult {
   isFromCache?: boolean;
 }
 
-interface CacheInstanceApi {
+interface CacheApi {
   clearCache: (options?: { refetchAll?: boolean }) => void;
 }
 
 export function cachePlugin(config: CachePluginConfig = {}): SpooshPlugin<{
   readOptions: CacheReadOptions;
   readResult: CacheReadResult;
-  instanceApi: CacheInstanceApi;
+  api: CacheApi;
 }> {
   return {
     name: "spoosh:cache",
@@ -296,7 +296,7 @@ export function cachePlugin(config: CachePluginConfig = {}): SpooshPlugin<{
       // ...
     },
 
-    instanceApi(context) {
+    api(context) {
       return {
         clearCache: (options) => {
           context.stateManager.clear();

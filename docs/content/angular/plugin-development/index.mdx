@@ -293,8 +293,8 @@ Here are the main properties you can use in a plugin:
     onUpdate?: Function;
     onUnmount?: Function;
   };
-  exports?: Function;              // Provide APIs to other plugins
-  instanceApi?: Function;          // Add methods to create() result
+  internal?: Function;             // Provide APIs to other plugins
+  api?: Function;                  // Add methods to create() result
 }
 ```
 

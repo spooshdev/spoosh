@@ -185,7 +185,7 @@ export function myPlugin(config: MyPluginConfig = {}): SpooshPlugin<{
   readResult: MyReadResult;
   writeResult: MyWriteResult;
   queueResult: MyQueueResult;
-  instanceApi: MyInstanceApi;
+  api: MyInstanceApi;
 }> {
   return {
     name: "my-app:timeout",
@@ -199,7 +199,7 @@ export function myPlugin(config: MyPluginConfig = {}): SpooshPlugin<{
       return next();
     },
 
-    instanceApi: ({ stateManager }) => ({
+    api: ({ stateManager }) => ({
       setTimeout(timeout: number) {
         // Implementation
       },
@@ -246,12 +246,12 @@ export function simplePlugin(): SpooshPlugin<{
 ```typescript
 // Plugin that only has instance API
 export function apiOnlyPlugin(): SpooshPlugin<{
-  instanceApi: { reset: () => void };
+  api: { reset: () => void };
 }> {
   return {
     name: "api-only",
     operations: [],
-    instanceApi: () => ({ reset: () => {} }),
+    api: () => ({ reset: () => {} }),
   };
 }
 ```
@@ -335,7 +335,7 @@ export function cachePlugin(config: CachePluginConfig = {}) {
     pagesOptions: CachePagesOptions;
     readResult: CacheReadResult;
     writeResult: CacheWriteResult;
-    instanceApi: CacheInstanceApi;
+    api: CacheInstanceApi;
   }>({
     name: "spoosh:cache",
     operations: ["read", "pages", "write"],
@@ -369,7 +369,7 @@ export function cachePlugin(config: CachePluginConfig = {}) {
       }
     },
 
-    instanceApi(context) {
+    api(context) {
       const { stateManager, eventEmitter } = context;
 
       const clearCache = (options?: ClearCacheOptions): void => {
@@ -532,22 +532,22 @@ declare module "@spoosh/core" {
 }
 ```
 
-**`InstanceApiResolvers<TSchema>`** - Schema-aware instance APIs
+**`ApiResolvers<TSchema>`** - Schema-aware instance APIs
 
 ```typescript
 declare module "@spoosh/core" {
-  interface InstanceApiResolvers<TSchema> {
+  interface ApiResolvers<TSchema> {
     prefetch: PrefetchFn<TSchema>;
     invalidate: InvalidateFn<TSchema>;
   }
 }
 ```
 
-**`PluginExportsRegistry`** - Type-safe plugin exports
+**`PluginInternalRegistry`** - Type-safe plugin internal
 
 ```typescript
 declare module "@spoosh/core" {
-  interface PluginExportsRegistry {
+  interface PluginInternalRegistry {
     "my-plugin": {
       doSomething: () => void;
     };
@@ -663,8 +663,8 @@ When building a type-safe plugin:
 
 - ✅ Use `PluginResolvers` for schema-aware options
 - ✅ Use `PluginResultResolvers` for inferred results
-- ✅ Use `InstanceApiResolvers` for schema-aware instance APIs
-- ✅ Use `PluginExportsRegistry` for type-safe exports
+- ✅ Use `ApiResolvers` for schema-aware instance APIs
+- ✅ Use `PluginInternalRegistry` for type-safe internal
 
 **Documentation:**
 
@@ -799,7 +799,7 @@ export interface RetryReadOptions {
 
 **Basic Type Safety:**
 
-1. Define type interfaces (config, options, trigger options, results, instanceApi)
+1. Define type interfaces (config, options, trigger options, results, api)
 2. Pass to `SpooshPlugin<{...}>` generic
 3. Export from index.ts
 

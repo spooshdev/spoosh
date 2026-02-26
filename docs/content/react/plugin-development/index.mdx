@@ -293,8 +293,8 @@ Here are the main properties you can use in a plugin:
     onUpdate?: Function;
     onUnmount?: Function;
   };
-  exports?: Function;              // Provide APIs to other plugins
-  instanceApi?: Function;          // Add methods to create() result
+  internal?: Function;             // Provide APIs to other plugins
+  api?: Function;                  // Add methods to create() result
 }
 ```
 
@@ -310,7 +310,7 @@ Want to learn more advanced techniques?
 - **[Lifecycle](/docs/react/plugin-development/advanced/lifecycle)** - Managing state, tracking instances, cleanup
 - **[Architecture](/docs/react/plugin-development/advanced/architecture)** - How plugins work internally, execution order, PluginContext
 - **[Type Safety](/docs/react/plugin-development/advanced/type-safety)** - Making your plugins type-safe with TypeScript
-- **[Instance APIs](/docs/react/plugin-development/advanced/instance-api)** - Extending the Spoosh instance with custom methods (advanced)
+- **[API](/docs/react/plugin-development/advanced/instance-api)** - Extending the Spoosh instance with custom methods (advanced)
 - **[Testing](/docs/react/plugin-development/advanced/testing)** - Unit tests, integration tests, test utilities
 
 Check out the [official plugins](/docs/react/plugins) for real-world examples.

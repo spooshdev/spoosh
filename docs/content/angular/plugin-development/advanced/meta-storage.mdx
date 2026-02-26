@@ -160,15 +160,15 @@ afterResponse(context, response) {
 **Don't use for plugin-to-plugin communication**
 
 ```typescript
-// ❌ Wrong - Use exports or context.temp
+// ❌ Wrong - Use internal or context.temp
 afterResponse(context, response) {
   context.stateManager.setMeta(context.queryKey, {
     shouldRetry: true,  // Other plugins need this, not users
   });
 }
 
-// ✅ Right - Use exports
-exports(context) {
+// ✅ Right - Use internal
+internal(context) {
   return {
     enableRetry() {
       context.temp.set("retry:enabled", true);
@@ -354,7 +354,7 @@ export function myPlugin(): SpooshPlugin<{
   pagesResult: MyPagesResult;
 
   // What gets added to create() return
-  instanceApi: MyInstanceApi;
+  api: MyInstanceApi;
 }> {
   // Plugin implementation
 }
@@ -597,7 +597,7 @@ afterResponse(context, response) {
 **Don't use `setMeta` for:**
 
 - ❌ Internal tracking
-- ❌ Plugin-to-plugin communication (use `exports` or `context.temp`)
+- ❌ Plugin-to-plugin communication (use `internal` or `context.temp`)
 - ❌ Response modification (return modified response instead)
 
 **Key points:**
