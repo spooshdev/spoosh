@@ -29,7 +29,6 @@ export function CartPage() {
         cache("cart").set((current) =>
           (current ?? []).filter((item) => item.id !== itemId)
         ),
-      invalidate: ["self", "cart"],
     });
   }
 
