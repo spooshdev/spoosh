@@ -241,6 +241,37 @@ export const layoutCSS = `
     background: var(--spoosh-bg);
   }
 
+  .spoosh-diff-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .spoosh-diff-side {
+    min-width: 0;
+  }
+
+  .spoosh-diff-side-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--spoosh-text-muted);
+    margin-bottom: 4px;
+    letter-spacing: 0.5px;
+  }
+
+  .spoosh-diff-before .spoosh-json,
+  .spoosh-diff-after .spoosh-json {
+    margin: 0;
+  }
+
+  .spoosh-diff-description {
+    font-size: 11px;
+    color: var(--spoosh-text-muted);
+    margin-bottom: 8px;
+  }
+
   .spoosh-diff-header {
     display: flex;
     justify-content: flex-end;

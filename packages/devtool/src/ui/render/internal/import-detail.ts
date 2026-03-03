@@ -23,6 +23,7 @@ export interface ImportDetailContext {
   fullDiffViews?: ReadonlySet<string>;
   selectedMessageId?: string | null;
   expandedEventTypes?: ReadonlySet<string>;
+  collapsedJsonPaths?: ReadonlyMap<string, ReadonlySet<string>>;
 }
 
 const copyIcon = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -200,7 +201,8 @@ function renderImportPluginsTab(
   trace: ExportedTrace,
   expandedSteps: ReadonlySet<string>,
   expandedGroups: ReadonlySet<string>,
-  fullDiffViews: ReadonlySet<string>
+  fullDiffViews: ReadonlySet<string>,
+  collapsedJsonPaths: ReadonlyMap<string, ReadonlySet<string>>
 ): string {
   const steps = toPluginStepEvents(trace.id, trace.steps);
 
@@ -231,6 +233,7 @@ function renderImportPluginsTab(
             `${trace.id}:${group[0]!.plugin}:${group[0]!.timestamp}`
           ),
           fullDiffViews,
+          collapsedJsonPaths,
         })
       );
     } else {
@@ -243,6 +246,7 @@ function renderImportPluginsTab(
           ),
           expandedSteps,
           fullDiffViews,
+          collapsedJsonPaths,
         })
       );
     }
@@ -255,6 +259,7 @@ function renderImportPluginsTab(
         step: fetchStep,
         isExpanded: false,
         fullDiffViews,
+        collapsedJsonPaths,
       })
     );
   }
@@ -271,6 +276,7 @@ function renderImportPluginsTab(
             `${trace.id}:${group[0]!.plugin}:${group[0]!.timestamp}`
           ),
           fullDiffViews,
+          collapsedJsonPaths,
         })
       );
     } else {
@@ -283,6 +289,7 @@ function renderImportPluginsTab(
           ),
           expandedSteps,
           fullDiffViews,
+          collapsedJsonPaths,
         })
       );
     }
@@ -315,6 +322,7 @@ function renderImportTraceTabContent(ctx: ImportDetailContext): string {
     expandedSteps = new Set<string>(),
     expandedGroups = new Set<string>(),
     fullDiffViews = new Set<string>(),
+    collapsedJsonPaths = new Map<string, ReadonlySet<string>>(),
   } = ctx;
 
   if (!item || item.type !== "request") return "";
@@ -331,7 +339,8 @@ function renderImportTraceTabContent(ctx: ImportDetailContext): string {
         item,
         expandedSteps,
         expandedGroups,
-        fullDiffViews
+        fullDiffViews,
+        collapsedJsonPaths
       );
     default:
       return "";
@@ -605,7 +614,8 @@ function renderSSEPluginsTab(
   sub: ExportedSSE,
   expandedSteps: ReadonlySet<string>,
   expandedGroups: ReadonlySet<string>,
-  fullDiffViews: ReadonlySet<string>
+  fullDiffViews: ReadonlySet<string>,
+  collapsedJsonPaths: ReadonlyMap<string, ReadonlySet<string>>
 ): string {
   const steps = toPluginStepEvents(sub.id, sub.steps);
 
@@ -626,6 +636,7 @@ function renderSSEPluginsTab(
             `${sub.id}:${group[0]!.plugin}:${group[0]!.timestamp}`
           ),
           fullDiffViews,
+          collapsedJsonPaths,
         })
       );
     } else {
@@ -638,6 +649,7 @@ function renderSSEPluginsTab(
           ),
           expandedSteps,
           fullDiffViews,
+          collapsedJsonPaths,
         })
       );
     }
@@ -659,6 +671,7 @@ function renderImportSSETabContent(ctx: ImportDetailContext): string {
     expandedSteps = new Set<string>(),
     expandedGroups = new Set<string>(),
     fullDiffViews = new Set<string>(),
+    collapsedJsonPaths = new Map<string, ReadonlySet<string>>(),
   } = ctx;
 
   if (!item || item.type !== "sse") return "";
@@ -675,7 +688,8 @@ function renderImportSSETabContent(ctx: ImportDetailContext): string {
         item,
         expandedSteps,
         expandedGroups,
-        fullDiffViews
+        fullDiffViews,
+        collapsedJsonPaths
       );
     default:
       return "";

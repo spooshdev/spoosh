@@ -254,6 +254,7 @@ export class DevToolPanel {
         expandedSteps: state.expandedSteps,
         expandedGroups: state.expandedGroups,
         fullDiffViews: state.fullDiffViews,
+        collapsedJsonPaths: state.collapsedJsonPaths,
       });
       tabContent.innerHTML = html;
 
@@ -436,6 +437,7 @@ export class DevToolPanel {
             expandedSteps: state.expandedSteps,
             expandedGroups: state.expandedGroups,
             fullDiffViews: state.fullDiffViews,
+            collapsedJsonPaths: state.collapsedJsonPaths,
           });
         } else if (state.activeTab === "data") {
           const currentlyShowingSpinner =
@@ -449,7 +451,7 @@ export class DevToolPanel {
             tabContent.querySelector(".spoosh-spinner");
 
           if (currentlyShowingSpinner && !isPending) {
-            tabContent.innerHTML = renderMetaTab(selectedTrace);
+            tabContent.innerHTML = renderMetaTab(selectedTrace, state);
           }
         }
 
@@ -557,6 +559,7 @@ export class DevToolPanel {
           expandedSteps: state.expandedSteps,
           expandedGroups: state.expandedGroups,
           fullDiffViews: state.fullDiffViews,
+          collapsedJsonPaths: state.collapsedJsonPaths,
         });
       } else {
         tabContent.innerHTML = renderSubscriptionTabs({
@@ -679,8 +682,9 @@ export class DevToolPanel {
         showUnlistenedEvents: state.showUnlistenedEvents,
         expandedSteps: state.expandedSteps,
         expandedGroups: state.expandedGroups,
-        fullDiffViews: state.fullDiffViews,
         knownPlugins: this.store.getKnownPlugins("subscription"),
+        fullDiffViews: state.fullDiffViews,
+        collapsedJsonPaths: state.collapsedJsonPaths,
       });
     } else {
       const selectedTrace =
@@ -830,6 +834,7 @@ export class DevToolPanel {
           fullDiffViews: state.fullDiffViews,
           selectedMessageId: state.selectedMessageId,
           expandedEventTypes: state.expandedEventTypes,
+          collapsedJsonPaths: state.collapsedJsonPaths,
         });
 
     const hasSession = session !== null;
@@ -920,6 +925,7 @@ export class DevToolPanel {
           fullDiffViews: state.fullDiffViews,
           selectedMessageId: state.selectedMessageId,
           expandedEventTypes: state.expandedEventTypes,
+          collapsedJsonPaths: state.collapsedJsonPaths,
         });
       }
     }

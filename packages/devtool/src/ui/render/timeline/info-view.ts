@@ -1,7 +1,15 @@
 import type { TraceInfo } from "../../../types";
-import { formatJson } from "../../utils";
+import { formatJsonTree } from "../../utils/json-tree";
 
-export function renderTraceInfo(info: TraceInfo[]): string {
+export interface TraceInfoContext {
+  info: TraceInfo[];
+  contextId: string;
+  collapsedPaths: ReadonlySet<string>;
+}
+
+export function renderTraceInfo(ctx: TraceInfoContext): string {
+  const { info, contextId, collapsedPaths } = ctx;
+
   if (!info || info.length === 0) {
     return "";
   }
@@ -15,7 +23,11 @@ export function renderTraceInfo(info: TraceInfo[]): string {
       return `
         <div class="spoosh-info-item">
           ${label}
-          <pre class="spoosh-info-value">${formatJson(item.value)}</pre>
+          <pre class="spoosh-info-value">${formatJsonTree(item.value, {
+            withLineNumbers: true,
+            contextId,
+            collapsedPaths,
+          })}</pre>
         </div>
       `;
     })

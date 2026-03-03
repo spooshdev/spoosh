@@ -1,5 +1,10 @@
 # @spoosh/devtool
 
+## 0.6.0
+
+- Render line numbers in json view
+- Implement expand/collapse in json view
+
 ## 0.5.0
 
 - Update for core plugin API rename (`exports` → `internal`, `instanceApi` → `api`)

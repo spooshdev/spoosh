@@ -146,7 +146,13 @@ function renderBody(
       typeof body.value === "object" && body.value !== null
         ? sanitizeFormData(body.value as Record<string, unknown>)
         : body.value;
-    return renderDataSection("Body", displayValue, contextId, collapsedPaths, body.kind);
+    return renderDataSection(
+      "Body",
+      displayValue,
+      contextId,
+      collapsedPaths,
+      body.kind
+    );
   }
 
   if (isFormData(body)) {
@@ -156,7 +162,13 @@ function renderBody(
       formDataObj[key] = sanitizeFormValue(value);
     });
 
-    return renderDataSection("Body", formDataObj, contextId, collapsedPaths, "form");
+    return renderDataSection(
+      "Body",
+      formDataObj,
+      contextId,
+      collapsedPaths,
+      "form"
+    );
   }
 
   return renderDataSection("Body", body, contextId, collapsedPaths, "json");

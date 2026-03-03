@@ -19,6 +19,7 @@ export interface PluginsTabContext {
   expandedSteps: ReadonlySet<string>;
   expandedGroups: ReadonlySet<string>;
   fullDiffViews: ReadonlySet<string>;
+  collapsedJsonPaths: ReadonlyMap<string, ReadonlySet<string>>;
 }
 
 export function renderPluginsTab(ctx: PluginsTabContext): string {
@@ -29,6 +30,7 @@ export function renderPluginsTab(ctx: PluginsTabContext): string {
     expandedSteps,
     expandedGroups,
     fullDiffViews,
+    collapsedJsonPaths,
   } = ctx;
   const steps = trace.steps;
 
@@ -75,6 +77,7 @@ export function renderPluginsTab(ctx: PluginsTabContext): string {
               `${trace.id}:${pluginSteps[0]!.plugin}:${pluginSteps[0]!.timestamp}`
             ),
             fullDiffViews,
+            collapsedJsonPaths,
           })
         );
       } else {
@@ -87,6 +90,7 @@ export function renderPluginsTab(ctx: PluginsTabContext): string {
             ),
             expandedSteps,
             fullDiffViews,
+            collapsedJsonPaths,
           })
         );
       }
@@ -102,6 +106,7 @@ export function renderPluginsTab(ctx: PluginsTabContext): string {
         step: fetchStep,
         isExpanded: false,
         fullDiffViews,
+        collapsedJsonPaths,
       })
     );
   }
@@ -118,6 +123,7 @@ export function renderPluginsTab(ctx: PluginsTabContext): string {
             `${trace.id}:${group[0]!.plugin}:${group[0]!.timestamp}`
           ),
           fullDiffViews,
+          collapsedJsonPaths,
         })
       );
     } else {
@@ -130,6 +136,7 @@ export function renderPluginsTab(ctx: PluginsTabContext): string {
           ),
           expandedSteps,
           fullDiffViews,
+          collapsedJsonPaths,
         })
       );
     }

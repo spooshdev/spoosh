@@ -8,6 +8,7 @@ export interface TimelineStepContext {
   step: PluginStepEvent;
   isExpanded: boolean;
   fullDiffViews: ReadonlySet<string>;
+  collapsedJsonPaths: ReadonlyMap<string, ReadonlySet<string>>;
 }
 
 const COLOR_MAP: Record<string, string> = {
@@ -26,7 +27,7 @@ const STAGE_COLORS: Record<string, string> = {
 };
 
 export function renderTimelineStep(ctx: TimelineStepContext): string {
-  const { traceId, step, isExpanded, fullDiffViews } = ctx;
+  const { traceId, step, isExpanded, fullDiffViews, collapsedJsonPaths } = ctx;
   const isFetch = step.plugin === "spoosh:fetch";
   const isSkip = step.stage === "skip";
   const stepKey = `${traceId}:${step.plugin}:${step.timestamp}`;
@@ -52,11 +53,13 @@ export function renderTimelineStep(ctx: TimelineStepContext): string {
     `;
   }
 
+  const collapsedPaths = collapsedJsonPaths.get(stepKey) ?? new Set<string>();
+
   const expandedContent =
     isExpanded && hasExpandableContent
       ? `<div class="spoosh-plugin-details">
-          ${step.info ? renderTraceInfo(step.info) : ""}
-          ${hasDiff && step.diff ? renderPluginDiff({ stepKey, diff: step.diff, showFull: fullDiffViews.has(stepKey) }) : ""}
+          ${step.info ? renderTraceInfo({ info: step.info, contextId: stepKey, collapsedPaths }) : ""}
+          ${hasDiff && step.diff ? renderPluginDiff({ stepKey, diff: step.diff, showFull: fullDiffViews.has(stepKey), collapsedPaths }) : ""}
         </div>`
       : "";
 

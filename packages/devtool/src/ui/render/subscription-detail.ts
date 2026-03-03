@@ -17,6 +17,7 @@ export interface SubscriptionDetailContext {
   expandedGroups: ReadonlySet<string>;
   fullDiffViews: ReadonlySet<string>;
   knownPlugins: string[];
+  collapsedJsonPaths: ReadonlyMap<string, ReadonlySet<string>>;
 }
 
 function getStatusIndicator(status: SubscriptionTrace["status"]): string {
@@ -72,6 +73,7 @@ function renderTabContent(ctx: SubscriptionDetailContext): string {
     expandedGroups,
     fullDiffViews,
     knownPlugins,
+    collapsedJsonPaths,
   } = ctx;
 
   if (!subscription) return "";
@@ -88,6 +90,7 @@ function renderTabContent(ctx: SubscriptionDetailContext): string {
       expandedSteps,
       expandedGroups,
       fullDiffViews,
+      collapsedJsonPaths,
     });
   }
 

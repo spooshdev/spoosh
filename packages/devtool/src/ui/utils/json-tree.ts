@@ -127,7 +127,10 @@ function renderTreeNode(
   }
 }
 
-export function formatJsonTree(data: unknown, options: JsonTreeOptions = {}): string {
+export function formatJsonTree(
+  data: unknown,
+  options: JsonTreeOptions = {}
+): string {
   const lines: string[] = [];
 
   const rootNode: TreeNode = {

@@ -167,12 +167,15 @@ export function getDiffLinesWithContext(
 }
 
 export function renderDiffLines(lines: DiffLine[]): string {
+  const lineNumWidth = String(lines.length).length;
+
   return lines
-    .map((line) => {
+    .map((line, index) => {
       const prefix =
         line.type === "added" ? "+" : line.type === "removed" ? "-" : " ";
       const className = `spoosh-diff-line-${line.type}`;
-      return `<div class="${className}"><span class="spoosh-diff-prefix">${prefix}</span>${highlightJson(line.content)}</div>`;
+      const lineNum = String(index + 1).padStart(lineNumWidth, " ");
+      return `<div class="${className}"><span class="spoosh-json-line-num">${lineNum}</span><span class="spoosh-diff-prefix">${prefix}</span>${highlightJson(line.content)}</div>`;
     })
     .join("");
 }

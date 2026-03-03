@@ -8,6 +8,7 @@ export interface GroupedStepsContext {
   isExpanded: boolean;
   expandedSteps: ReadonlySet<string>;
   fullDiffViews: ReadonlySet<string>;
+  collapsedJsonPaths: ReadonlyMap<string, ReadonlySet<string>>;
 }
 
 const COLOR_MAP: Record<string, string> = {
@@ -50,7 +51,14 @@ export function groupConsecutiveSteps(
 }
 
 export function renderGroupedSteps(ctx: GroupedStepsContext): string {
-  const { traceId, steps, isExpanded, expandedSteps, fullDiffViews } = ctx;
+  const {
+    traceId,
+    steps,
+    isExpanded,
+    expandedSteps,
+    fullDiffViews,
+    collapsedJsonPaths,
+  } = ctx;
   const firstStep = steps[0]!;
   const lastStep = steps[steps.length - 1]!;
   const groupKey = `${traceId}:group:${firstStep.plugin}:${firstStep.timestamp}`;
@@ -77,6 +85,7 @@ export function renderGroupedSteps(ctx: GroupedStepsContext): string {
             `${traceId}:${step.plugin}:${step.timestamp}`
           ),
           fullDiffViews,
+          collapsedJsonPaths,
         })
       )
       .join("");

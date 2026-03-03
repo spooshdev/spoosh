@@ -25,11 +25,14 @@ function renderDataSection(
         <button class="spoosh-code-copy-btn" data-action="copy" data-copy-content="${escapeHtml(jsonStr)}" title="Copy">
           ${copyIcon}
         </button>
-        <pre class="spoosh-json${isError ? " error" : ""}">${formatJsonTree(data, {
-          withLineNumbers: true,
-          contextId,
-          collapsedPaths,
-        })}</pre>
+        <pre class="spoosh-json${isError ? " error" : ""}">${formatJsonTree(
+          data,
+          {
+            withLineNumbers: true,
+            contextId,
+            collapsedPaths,
+          }
+        )}</pre>
       </div>
     </div>
   `;
@@ -49,7 +52,13 @@ function renderDataTab(
   const { state } = entry.entry;
 
   if (state.error) {
-    return renderDataSection("Error", state.error, contextId, collapsedPaths, true);
+    return renderDataSection(
+      "Error",
+      state.error,
+      contextId,
+      collapsedPaths,
+      true
+    );
   }
 
   if (state.data === undefined) {

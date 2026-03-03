@@ -8,6 +8,7 @@ export interface PluginDiffContext {
   stepKey: string;
   diff: { before: unknown; after: unknown; label?: string };
   showFull: boolean;
+  collapsedPaths: ReadonlySet<string>;
 }
 
 export function renderPluginDiff(ctx: PluginDiffContext): string {

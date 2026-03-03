@@ -64,7 +64,7 @@ function renderTabContent(ctx: DetailPanelContext): string {
     case "request":
       return renderRequestTab(trace, state, ctx.sensitiveHeaders);
     case "meta":
-      return renderMetaTab(trace);
+      return renderMetaTab(trace, state);
     case "plugins":
       return renderPluginsTab({
         trace,
@@ -73,6 +73,7 @@ function renderTabContent(ctx: DetailPanelContext): string {
         expandedSteps,
         expandedGroups,
         fullDiffViews,
+        collapsedJsonPaths: state.collapsedJsonPaths,
       });
     default:
       return "";

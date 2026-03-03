@@ -1,5 +1,7 @@
 import type { OperationTrace } from "../../../types";
-import { escapeHtml, formatJson } from "../../utils";
+import type { ViewModelState } from "../../view-model";
+import { escapeHtml } from "../../utils";
+import { formatJsonTree } from "../../utils/json-tree";
 
 const copyIcon = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
   <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
@@ -10,7 +12,10 @@ export function getMetaCount(trace: OperationTrace): number {
   return trace.meta ? Object.keys(trace.meta).length : 0;
 }
 
-export function renderMetaTab(trace: OperationTrace): string {
+export function renderMetaTab(
+  trace: OperationTrace,
+  state: ViewModelState
+): string {
   const isPending = trace.duration === undefined;
 
   if (isPending) {
@@ -29,6 +34,8 @@ export function renderMetaTab(trace: OperationTrace): string {
   }
 
   const jsonStr = JSON.stringify(meta, null, 2);
+  const contextId = `meta-${trace.id}`;
+  const collapsedPaths = state.collapsedJsonPaths.get(contextId) ?? new Set();
 
   return `
     <div class="spoosh-data-section">
@@ -37,7 +44,11 @@ export function renderMetaTab(trace: OperationTrace): string {
         <button class="spoosh-code-copy-btn" data-action="copy" data-copy-content="${escapeHtml(jsonStr)}" title="Copy">
           ${copyIcon}
         </button>
-        <pre class="spoosh-json">${formatJson(meta)}</pre>
+        <pre class="spoosh-json">${formatJsonTree(meta, {
+          withLineNumbers: true,
+          contextId,
+          collapsedPaths,
+        })}</pre>
       </div>
     </div>
   `;
