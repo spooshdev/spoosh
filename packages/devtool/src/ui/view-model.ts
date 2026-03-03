@@ -52,6 +52,7 @@ export interface ViewModelState {
   expandedEventTypes: ReadonlySet<string>;
   traceTypeFilter: TraceTypeFilter;
   showUnlistenedEvents: boolean;
+  collapsedJsonPaths: ReadonlyMap<string, ReadonlySet<string>>;
 }
 
 type Listener = () => void;
@@ -88,6 +89,7 @@ const DEFAULT_STATE: ViewModelState = {
   expandedEventTypes: new Set(),
   traceTypeFilter: "all",
   showUnlistenedEvents: false,
+  collapsedJsonPaths: new Map(),
 };
 
 export interface ViewModel {
@@ -139,6 +141,7 @@ export interface ViewModel {
     store: DevToolStoreInterface
   ): void;
   toggleUnlistenedEvents(): void;
+  toggleJsonPath(contextId: string, path: string): void;
 }
 
 export function createViewModel(): ViewModel {
@@ -149,6 +152,7 @@ export function createViewModel(): ViewModel {
   const mutableExpandedGroups = new Set<string>();
   const mutableFullDiffViews = new Set<string>();
   const mutableExpandedEventTypes = new Set<string>();
+  const mutableCollapsedJsonPaths = new Map<string, Set<string>>();
 
   state = {
     ...state,
@@ -156,6 +160,7 @@ export function createViewModel(): ViewModel {
     expandedGroups: mutableExpandedGroups,
     fullDiffViews: mutableFullDiffViews,
     expandedEventTypes: mutableExpandedEventTypes,
+    collapsedJsonPaths: mutableCollapsedJsonPaths,
   };
 
   loadSettings();
@@ -470,6 +475,22 @@ export function createViewModel(): ViewModel {
     notify();
   }
 
+  function toggleJsonPath(contextId: string, path: string): void {
+    if (!mutableCollapsedJsonPaths.has(contextId)) {
+      mutableCollapsedJsonPaths.set(contextId, new Set());
+    }
+
+    const paths = mutableCollapsedJsonPaths.get(contextId)!;
+
+    if (paths.has(path)) {
+      paths.delete(path);
+    } else {
+      paths.add(path);
+    }
+
+    notify();
+  }
+
   return {
     getState,
     subscribe,
@@ -509,5 +530,6 @@ export function createViewModel(): ViewModel {
     toggleEventType,
     setTraceTypeFilter,
     toggleUnlistenedEvents,
+    toggleJsonPath,
   };
 }

@@ -128,11 +128,55 @@ export const detailCSS = `
     overflow-x: auto;
     white-space: pre-wrap;
     word-break: break-word;
+    transition: opacity 0.1s ease-out;
   }
 
   .spoosh-json.error {
     border-color: var(--spoosh-error);
     background: rgba(248, 81, 73, 0.05);
+  }
+
+  /* ===== JSON Tree Styles ===== */
+  .spoosh-json-line-num {
+    display: inline-block;
+    min-width: 2.5em;
+    padding-right: 0.5em;
+    text-align: right;
+    color: var(--spoosh-text-muted);
+    opacity: 0.5;
+    user-select: none;
+  }
+
+  .spoosh-json-arrow-col {
+    display: inline-block;
+    width: 1.2em;
+    text-align: center;
+    vertical-align: top;
+    user-select: none;
+  }
+
+  .spoosh-json-toggle {
+    display: inline-block;
+    cursor: pointer;
+    color: var(--spoosh-text-muted);
+    user-select: none;
+    transition: color 0.15s, opacity 0.15s;
+    font-size: 10px;
+    opacity: 0;
+  }
+
+  .spoosh-json:hover .spoosh-json-toggle {
+    opacity: 1;
+  }
+
+  .spoosh-json-toggle:hover {
+    color: var(--spoosh-primary);
+  }
+
+  .spoosh-json-preview {
+    color: var(--spoosh-text-muted);
+    font-style: italic;
+    opacity: 0.7;
   }
 
   /* ===== Code Block with Copy ===== */

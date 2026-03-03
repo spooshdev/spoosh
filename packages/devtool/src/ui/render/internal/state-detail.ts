@@ -1,6 +1,7 @@
 import type { CacheEntryDisplay } from "../../../types";
-import type { InternalTab } from "../../view-model";
-import { escapeHtml, formatJson, formatTime, parseQueryKey } from "../../utils";
+import type { InternalTab, ViewModelState } from "../../view-model";
+import { escapeHtml, formatTime, parseQueryKey } from "../../utils";
+import { formatJsonTree } from "../../utils/json-tree";
 import { renderStateTabs } from "./state-tabs";
 
 const copyIcon = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -11,6 +12,8 @@ const copyIcon = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" st
 function renderDataSection(
   label: string,
   data: unknown,
+  contextId: string,
+  collapsedPaths: ReadonlySet<string>,
   isError = false
 ): string {
   const jsonStr = JSON.stringify(data, null, 2);
@@ -22,7 +25,11 @@ function renderDataSection(
         <button class="spoosh-code-copy-btn" data-action="copy" data-copy-content="${escapeHtml(jsonStr)}" title="Copy">
           ${copyIcon}
         </button>
-        <pre class="spoosh-json${isError ? " error" : ""}">${formatJson(data)}</pre>
+        <pre class="spoosh-json${isError ? " error" : ""}">${formatJsonTree(data, {
+          withLineNumbers: true,
+          contextId,
+          collapsedPaths,
+        })}</pre>
       </div>
     </div>
   `;
@@ -31,13 +38,18 @@ function renderDataSection(
 export interface StateDetailContext {
   entry: CacheEntryDisplay | null;
   activeTab: InternalTab;
+  state: ViewModelState;
 }
 
-function renderDataTab(entry: CacheEntryDisplay): string {
+function renderDataTab(
+  entry: CacheEntryDisplay,
+  contextId: string,
+  collapsedPaths: ReadonlySet<string>
+): string {
   const { state } = entry.entry;
 
   if (state.error) {
-    return renderDataSection("Error", state.error, true);
+    return renderDataSection("Error", state.error, contextId, collapsedPaths, true);
   }
 
   if (state.data === undefined) {
@@ -45,12 +57,16 @@ function renderDataTab(entry: CacheEntryDisplay): string {
   }
 
   return `
-    ${renderDataSection("Cached Data", state.data)}
-    ${entry.entry.previousData !== undefined ? renderDataSection("Previous Data", entry.entry.previousData) : ""}
+    ${renderDataSection("Cached Data", state.data, contextId, collapsedPaths)}
+    ${entry.entry.previousData !== undefined ? renderDataSection("Previous Data", entry.entry.previousData, contextId, collapsedPaths) : ""}
   `;
 }
 
-function renderMetaTab(entry: CacheEntryDisplay): string {
+function renderMetaTab(
+  entry: CacheEntryDisplay,
+  contextId: string,
+  collapsedPaths: ReadonlySet<string>
+): string {
   const { entry: stateEntry } = entry;
   const metaEntries = Array.from(stateEntry.meta.entries());
 
@@ -83,11 +99,15 @@ function renderMetaTab(entry: CacheEntryDisplay): string {
         )
         .join("")}
     </div>
-    ${metaEntries.length > 0 ? renderDataSection("Plugin Metadata", Object.fromEntries(metaEntries)) : ""}
+    ${metaEntries.length > 0 ? renderDataSection("Plugin Metadata", Object.fromEntries(metaEntries), contextId, collapsedPaths) : ""}
   `;
 }
 
-function renderRawTab(entry: CacheEntryDisplay): string {
+function renderRawTab(
+  entry: CacheEntryDisplay,
+  contextId: string,
+  collapsedPaths: ReadonlySet<string>
+): string {
   const raw = {
     queryKey: entry.queryKey,
     state: entry.entry.state,
@@ -99,25 +119,27 @@ function renderRawTab(entry: CacheEntryDisplay): string {
     subscriberCount: entry.subscriberCount,
   };
 
-  return renderDataSection("Raw State Entry", raw);
+  return renderDataSection("Raw State Entry", raw, contextId, collapsedPaths);
 }
 
 function renderTabContent(
   entry: CacheEntryDisplay,
-  activeTab: InternalTab
+  activeTab: InternalTab,
+  contextId: string,
+  collapsedPaths: ReadonlySet<string>
 ): string {
   switch (activeTab) {
     case "data":
-      return renderDataTab(entry);
+      return renderDataTab(entry, contextId, collapsedPaths);
     case "meta":
-      return renderMetaTab(entry);
+      return renderMetaTab(entry, contextId, collapsedPaths);
     case "raw":
-      return renderRawTab(entry);
+      return renderRawTab(entry, contextId, collapsedPaths);
   }
 }
 
 export function renderStateDetail(ctx: StateDetailContext): string {
-  const { entry, activeTab } = ctx;
+  const { entry, activeTab, state } = ctx;
 
   if (!entry) {
     return `
@@ -144,6 +166,9 @@ export function renderStateDetail(ctx: StateDetailContext): string {
   const isStale = entry.entry.stale === true;
   const fullPath = queryParams ? `${path}?${queryParams}` : path;
 
+  const contextId = `state-${entry.queryKey}`;
+  const collapsedPaths = state.collapsedJsonPaths.get(contextId) ?? new Set();
+
   return `
     <div class="spoosh-detail-panel">
       <div class="spoosh-detail-header">
@@ -162,7 +187,7 @@ export function renderStateDetail(ctx: StateDetailContext): string {
       ${renderStateTabs({ activeTab })}
 
       <div class="spoosh-tab-content">
-        ${renderTabContent(entry, activeTab)}
+        ${renderTabContent(entry, activeTab, contextId, collapsedPaths)}
       </div>
 
       <div class="spoosh-state-actions">

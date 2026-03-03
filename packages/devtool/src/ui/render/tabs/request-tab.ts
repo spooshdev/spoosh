@@ -1,5 +1,7 @@
 import type { OperationTrace } from "../../../types";
-import { escapeHtml, formatJson } from "../../utils";
+import type { ViewModelState } from "../../view-model";
+import { escapeHtml } from "../../utils";
+import { formatJsonTree } from "../../utils/json-tree";
 
 const copyIcon = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
   <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
@@ -19,6 +21,8 @@ const eyeOffIcon = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" 
 function renderDataSection(
   label: string,
   data: unknown,
+  contextId: string,
+  collapsedPaths: ReadonlySet<string>,
   badge?: string
 ): string {
   const jsonStr = JSON.stringify(data, null, 2);
@@ -30,7 +34,11 @@ function renderDataSection(
         <button class="spoosh-code-copy-btn" data-action="copy" data-copy-content="${escapeHtml(jsonStr)}" title="Copy">
           ${copyIcon}
         </button>
-        <pre class="spoosh-json">${formatJson(data)}</pre>
+        <pre class="spoosh-json">${formatJsonTree(data, {
+          withLineNumbers: true,
+          contextId,
+          collapsedPaths,
+        })}</pre>
       </div>
     </div>
   `;
@@ -128,13 +136,17 @@ function sanitizeFormData(
   return result;
 }
 
-function renderBody(body: unknown): string {
+function renderBody(
+  body: unknown,
+  contextId: string,
+  collapsedPaths: ReadonlySet<string>
+): string {
   if (isSpooshBody(body)) {
     const displayValue =
       typeof body.value === "object" && body.value !== null
         ? sanitizeFormData(body.value as Record<string, unknown>)
         : body.value;
-    return renderDataSection("Body", displayValue, body.kind);
+    return renderDataSection("Body", displayValue, contextId, collapsedPaths, body.kind);
   }
 
   if (isFormData(body)) {
@@ -144,10 +156,10 @@ function renderBody(body: unknown): string {
       formDataObj[key] = sanitizeFormValue(value);
     });
 
-    return renderDataSection("Body", formDataObj, "form");
+    return renderDataSection("Body", formDataObj, contextId, collapsedPaths, "form");
   }
 
-  return renderDataSection("Body", body, "json");
+  return renderDataSection("Body", body, contextId, collapsedPaths, "json");
 }
 
 function renderHeaderRow(
@@ -204,6 +216,7 @@ function renderHeadersSection(
 
 export function renderRequestTab(
   trace: OperationTrace,
+  state: ViewModelState,
   sensitiveHeaders: Set<string>
 ): string {
   const { query, body, params } = trace.request;
@@ -222,11 +235,13 @@ export function renderRequestTab(
     return `<div class="spoosh-empty-tab">No request data</div>`;
   }
 
+  const baseContextId = `request-${trace.id}`;
+
   return `
     ${hasHeaders ? renderHeadersSection(headers, sensitiveHeaders) : ""}
-    ${hasTags ? renderDataSection("Tags", trace.tags) : ""}
-    ${hasParams ? renderDataSection("Params", params) : ""}
-    ${hasQuery ? renderDataSection("Query", query) : ""}
-    ${hasBody ? renderBody(body) : ""}
+    ${hasTags ? renderDataSection("Tags", trace.tags, `${baseContextId}-tags`, state.collapsedJsonPaths.get(`${baseContextId}-tags`) ?? new Set()) : ""}
+    ${hasParams ? renderDataSection("Params", params, `${baseContextId}-params`, state.collapsedJsonPaths.get(`${baseContextId}-params`) ?? new Set()) : ""}
+    ${hasQuery ? renderDataSection("Query", query, `${baseContextId}-query`, state.collapsedJsonPaths.get(`${baseContextId}-query`) ?? new Set()) : ""}
+    ${hasBody ? renderBody(body, `${baseContextId}-body`, state.collapsedJsonPaths.get(`${baseContextId}-body`) ?? new Set()) : ""}
   `;
 }

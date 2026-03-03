@@ -4,6 +4,7 @@ import type {
   PositionMode,
   SidebarPosition,
   ThemeMode,
+  ViewModelState,
 } from "../view-model";
 import { escapeHtml, formatTime } from "../utils";
 import { renderSettings } from "./settings";
@@ -31,6 +32,7 @@ export interface DetailPanelContext {
   autoSelectIncoming: boolean;
   sensitiveHeaders: Set<string>;
   isContainerMode?: boolean;
+  state: ViewModelState;
 }
 
 function getActivePluginCount(trace: OperationTrace): number {
@@ -51,15 +53,16 @@ function renderTabContent(ctx: DetailPanelContext): string {
     expandedGroups,
     fullDiffViews,
     knownPlugins,
+    state,
   } = ctx;
 
   if (!trace) return "";
 
   switch (activeTab) {
     case "data":
-      return renderDataTab(trace);
+      return renderDataTab(trace, state);
     case "request":
-      return renderRequestTab(trace, ctx.sensitiveHeaders);
+      return renderRequestTab(trace, state, ctx.sensitiveHeaders);
     case "meta":
       return renderMetaTab(trace);
     case "plugins":

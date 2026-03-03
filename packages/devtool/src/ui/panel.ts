@@ -442,7 +442,7 @@ export class DevToolPanel {
             tabContent.querySelector(".spoosh-spinner");
 
           if (currentlyShowingSpinner && !isPending) {
-            tabContent.innerHTML = renderDataTab(selectedTrace);
+            tabContent.innerHTML = renderDataTab(selectedTrace, state);
           }
         } else if (state.activeTab === "meta") {
           const currentlyShowingSpinner =
@@ -503,6 +503,7 @@ export class DevToolPanel {
         detailPanel.outerHTML = renderStateDetail({
           entry: selectedEntry,
           activeTab: state.internalTab,
+          state,
         });
       }
     }
@@ -702,6 +703,7 @@ export class DevToolPanel {
         autoSelectIncoming: state.autoSelectIncoming,
         sensitiveHeaders: this.sensitiveHeaders,
         isContainerMode: this.isContainerMode,
+        state,
       });
     }
 
@@ -751,6 +753,7 @@ export class DevToolPanel {
       : renderStateDetail({
           entry: selectedEntry ?? null,
           activeTab: state.internalTab,
+          state,
         });
 
     return `

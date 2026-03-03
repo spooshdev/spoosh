@@ -47,7 +47,8 @@ export type ActionIntent =
   | { type: "select-message"; messageId: string }
   | { type: "toggle-event-type"; eventType: string }
   | { type: "set-type-filter"; filter: TraceTypeFilter }
-  | { type: "toggle-unlistened" };
+  | { type: "toggle-unlistened" }
+  | { type: "toggle-json-path"; contextId: string; path: string };
 
 export interface ActionRouterCallbacks {
   onRender: () => void;
@@ -269,6 +270,17 @@ export function createActionRouter(
 
     if (typeFilter) {
       return { type: "set-type-filter", filter: typeFilter as TraceTypeFilter };
+    }
+
+    if (action === "toggle-json-path") {
+      const contextId = target
+        .closest("[data-context-id]")
+        ?.getAttribute("data-context-id");
+      const path = target.closest("[data-path]")?.getAttribute("data-path");
+
+      if (contextId && path !== null && path !== undefined) {
+        return { type: "toggle-json-path", contextId, path };
+      }
     }
 
     if (filter) {
@@ -524,6 +536,10 @@ export function createActionRouter(
 
       case "toggle-unlistened":
         viewModel.toggleUnlistenedEvents();
+        break;
+
+      case "toggle-json-path":
+        viewModel.toggleJsonPath(intent.contextId, intent.path);
         break;
     }
 

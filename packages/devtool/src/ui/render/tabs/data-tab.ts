@@ -1,5 +1,7 @@
 import type { OperationTrace } from "../../../types";
-import { escapeHtml, formatJson } from "../../utils";
+import type { ViewModelState } from "../../view-model";
+import { escapeHtml } from "../../utils";
+import { formatJsonTree } from "../../utils/json-tree";
 
 const copyIcon = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
   <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
@@ -9,6 +11,8 @@ const copyIcon = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" st
 function renderDataSection(
   label: string,
   data: unknown,
+  contextId: string,
+  collapsedPaths: ReadonlySet<string>,
   isError = false
 ): string {
   const jsonStr = JSON.stringify(data, null, 2);
@@ -20,13 +24,20 @@ function renderDataSection(
         <button class="spoosh-code-copy-btn" data-action="copy" data-copy-content="${escapeHtml(jsonStr)}" title="Copy">
           ${copyIcon}
         </button>
-        <pre class="spoosh-json${isError ? " error" : ""}">${formatJson(data)}</pre>
+        <pre class="spoosh-json${isError ? " error" : ""}">${formatJsonTree(data, {
+          withLineNumbers: true,
+          contextId,
+          collapsedPaths,
+        })}</pre>
       </div>
     </div>
   `;
 }
 
-export function renderDataTab(trace: OperationTrace): string {
+export function renderDataTab(
+  trace: OperationTrace,
+  state: ViewModelState
+): string {
   const isPending = trace.duration === undefined;
 
   if (isPending) {
@@ -44,16 +55,21 @@ export function renderDataTab(trace: OperationTrace): string {
     return `<div class="spoosh-empty-tab">No response data</div>`;
   }
 
+  const contextId = `data-${trace.id}`;
+  const collapsedPaths = state.collapsedJsonPaths.get(contextId) ?? new Set();
+
   if (response.aborted) {
     return renderDataSection(
       "Aborted",
-      response.error ?? "Request was aborted"
+      response.error ?? "Request was aborted",
+      contextId,
+      collapsedPaths
     );
   }
 
   if (response.error) {
-    return renderDataSection("Error", response.error, true);
+    return renderDataSection("Error", response.error, contextId, collapsedPaths, true);
   }
 
-  return renderDataSection("Response Data", response.data);
+  return renderDataSection("Response Data", response.data, contextId, collapsedPaths);
 }
