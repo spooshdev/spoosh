@@ -15,13 +15,13 @@ import type {
   OptimisticTarget,
 } from "./types";
 import {
-  hasPatternParams,
   pathMatchesPattern,
-  extractPathFromKey,
   formatCacheKeyForTrace,
   extractOptionsFromKey,
-  mapParamsToTargetNames,
 } from "./utils";
+import { generateSelfTagFromKey } from "@spoosh/core";
+
+type TargetWithState = OptimisticTarget & { __state?: OptimisticTarget };
 import { createCacheProxy } from "./builder";
 
 type OptimisticSnapshot = {
@@ -52,43 +52,25 @@ function getMatchingEntries(
   key: string;
   entry: ReturnType<StateManager["getCache"]>;
   extractedParams: Record<string, string>;
-  paramMapping: Record<string, string>;
 }> {
   const results: Array<{
     key: string;
     entry: ReturnType<StateManager["getCache"]>;
     extractedParams: Record<string, string>;
-    paramMapping: Record<string, string>;
   }> = [];
 
   const allEntries = stateManager.getAllCacheEntries();
 
-  if (hasPatternParams(targetPath)) {
-    for (const { key, entry } of allEntries) {
-      if (!key.includes(`"method":"GET"`)) continue;
+  for (const { key, entry } of allEntries) {
+    if (!key.includes(`"method":"GET"`)) continue;
 
-      const actualPath = extractPathFromKey(key);
-      if (!actualPath) continue;
+    const resolvedPath = generateSelfTagFromKey(key);
+    if (!resolvedPath) continue;
 
-      const { matches, params, paramMapping } = pathMatchesPattern(
-        actualPath,
-        targetPath
-      );
+    const { matches, params } = pathMatchesPattern(resolvedPath, targetPath);
 
-      if (matches) {
-        results.push({ key, entry, extractedParams: params, paramMapping });
-      }
-    }
-  } else {
-    for (const { key, entry } of allEntries) {
-      if (!key.includes(`"method":"GET"`)) continue;
-
-      const actualPath = extractPathFromKey(key);
-      if (!actualPath) continue;
-
-      if (actualPath === targetPath) {
-        results.push({ key, entry, extractedParams: {}, paramMapping: {} });
-      }
+    if (matches) {
+      results.push({ key, entry, extractedParams: params });
     }
   }
 
@@ -106,30 +88,28 @@ function applyUpdate(
   const matchingEntries = getMatchingEntries(stateManager, target.path);
 
   if (matchingEntries.length === 0) {
-    t?.skip(`Skipped ${target.path} (no cache entry)`);
     return [];
   }
 
-  for (const { key, entry, extractedParams, paramMapping } of matchingEntries) {
-    if (target.filter) {
+  for (const { key, entry, extractedParams } of matchingEntries) {
+    // Access filter from __state if available (from builder), otherwise from target directly (from tests/direct usage)
+    const targetWithState = target as TargetWithState;
+    const filterPredicate = targetWithState.__state
+      ? targetWithState.__state.filter
+      : target.filter;
+
+    if (filterPredicate) {
       const options = extractOptionsFromKey(key) ?? {};
-      const mappedParams = mapParamsToTargetNames(
-        options.params as Record<string, unknown> | undefined,
-        paramMapping
-      );
       const mergedOptions = {
         ...options,
         params: {
+          ...options.params,
           ...extractedParams,
-          ...mappedParams,
         },
       };
 
       try {
-        if (!target.filter(mergedOptions)) {
-          t?.skip(
-            `Skipped ${formatCacheKeyForTrace(key)} (filter not matched)`
-          );
+        if (!filterPredicate(mergedOptions)) {
           continue;
         }
       } catch {
@@ -139,7 +119,6 @@ function applyUpdate(
     }
 
     if (entry?.state.data === undefined) {
-      t?.skip(`Skipped ${formatCacheKeyForTrace(key)} (no cached data)`);
       continue;
     }
 
@@ -297,12 +276,17 @@ export function optimisticPlugin() {
       const allImmediateSnapshots: OptimisticSnapshot[] = [];
 
       for (const target of targets) {
-        if (!target.immediateUpdater) continue;
+        const targetWithState = target as TargetWithState;
+        const immediateUpdater = targetWithState.__state
+          ? targetWithState.__state.immediateUpdater
+          : target.immediateUpdater;
+
+        if (!immediateUpdater) continue;
 
         const snapshots = applyUpdate(
           stateManager,
           target,
-          target.immediateUpdater,
+          immediateUpdater,
           undefined,
           t
         );
@@ -320,9 +304,16 @@ export function optimisticPlugin() {
       const response = await next();
 
       if (response.error) {
-        const shouldRollback = targets.some(
-          (target) => target.rollbackOnError && target.immediateUpdater
-        );
+        const shouldRollback = targets.some((target) => {
+          const targetWithState = target as TargetWithState;
+          const rollbackOnError = targetWithState.__state
+            ? targetWithState.__state.rollbackOnError
+            : target.rollbackOnError;
+          const immediateUpdater = targetWithState.__state
+            ? targetWithState.__state.immediateUpdater
+            : target.immediateUpdater;
+          return rollbackOnError && immediateUpdater;
+        });
 
         if (shouldRollback && allImmediateSnapshots.length > 0) {
           rollbackOptimistic(stateManager, allImmediateSnapshots);
@@ -336,8 +327,13 @@ export function optimisticPlugin() {
         }
 
         for (const target of targets) {
-          if (target.onError) {
-            target.onError(response.error);
+          const targetWithState = target as TargetWithState;
+          const onError = targetWithState.__state
+            ? targetWithState.__state.onError
+            : target.onError;
+
+          if (onError) {
+            onError(response.error);
           }
         }
       } else {
@@ -346,12 +342,17 @@ export function optimisticPlugin() {
         }
 
         for (const target of targets) {
-          if (!target.confirmedUpdater) continue;
+          const targetWithState = target as TargetWithState;
+          const confirmedUpdater = targetWithState.__state
+            ? targetWithState.__state.confirmedUpdater
+            : target.confirmedUpdater;
+
+          if (!confirmedUpdater) continue;
 
           const snapshots = applyUpdate(
             stateManager,
             target,
-            target.confirmedUpdater,
+            confirmedUpdater,
             response.data,
             t
           );

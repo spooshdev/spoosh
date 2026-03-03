@@ -1,5 +1,13 @@
 # @spoosh/plugin-optimistic
 
+## 0.8.2
+
+- Fix filtering not working correctly
+
+## 0.8.1
+
+- Use exact match comparison when targeting cache entry
+
 ## 0.8.0
 
 - Redesign optimistic API to use chainable cache builder (`cache("path").filter().set().confirmed().set()`)

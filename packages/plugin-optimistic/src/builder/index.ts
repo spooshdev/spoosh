@@ -10,6 +10,9 @@ function createBuilder(state: OptimisticTarget, isConfirmed = false): unknown {
   return {
     ...state,
 
+    // Expose the internal state so the plugin can access predicates
+    __state: state,
+
     filter(predicate: (options: unknown) => boolean) {
       return createBuilder({ ...state, filter: predicate }, isConfirmed);
     },

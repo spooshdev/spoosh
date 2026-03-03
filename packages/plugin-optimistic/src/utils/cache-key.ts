@@ -80,26 +80,3 @@ export function extractOptionsFromKey(
     return null;
   }
 }
-
-export function mapParamsToTargetNames(
-  actualParams: Record<string, unknown> | undefined,
-  paramMapping: Record<string, string>
-): Record<string, string> {
-  if (!actualParams) return {};
-
-  const result: Record<string, string> = {};
-
-  for (const [targetName, actualName] of Object.entries(paramMapping)) {
-    if (actualName in actualParams) {
-      result[targetName] = String(actualParams[actualName]);
-    }
-  }
-
-  for (const [key, value] of Object.entries(actualParams)) {
-    if (!Object.values(paramMapping).includes(key)) {
-      result[key] = String(value);
-    }
-  }
-
-  return result;
-}
