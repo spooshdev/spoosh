@@ -92,6 +92,16 @@ export class ExtensionBridge {
   private isEnabled = false;
   private pendingTraceIds = new Set<string>();
   private pendingSubscriptionIds = new Set<string>();
+  private lastTraceStepCounts = new Map<string, number>();
+  private lastSubscriptionStates = new Map<
+    string,
+    {
+      status: SubscriptionTrace["status"];
+      messageCount: number;
+      accumulatedData: Record<string, unknown>;
+    }
+  >();
+  private lastCacheEntriesHash = "";
 
   constructor(store: DevToolStore) {
     this.store = store;
@@ -133,11 +143,27 @@ export class ExtensionBridge {
     const subscriptions = this.store.getSubscriptions();
 
     for (const trace of traces) {
-      if (!this.pendingTraceIds.has(trace.id)) {
+      const isNew = !this.pendingTraceIds.has(trace.id);
+
+      if (isNew) {
         this.pendingTraceIds.add(trace.id);
+        this.lastTraceStepCounts.set(trace.id, trace.steps.length);
         this.sendMessage("TRACE_STARTED", {
           trace: this.serializeOperationTrace(trace),
         });
+      } else {
+        const lastStepCount = this.lastTraceStepCounts.get(trace.id) ?? 0;
+
+        if (trace.steps.length > lastStepCount) {
+          for (let i = lastStepCount; i < trace.steps.length; i++) {
+            this.sendMessage("TRACE_STEP", {
+              traceId: trace.id,
+              step: trace.steps[i],
+            });
+          }
+
+          this.lastTraceStepCounts.set(trace.id, trace.steps.length);
+        }
       }
 
       if (trace.duration !== undefined) {
@@ -153,17 +179,85 @@ export class ExtensionBridge {
     }
 
     for (const sub of subscriptions) {
-      if (!this.pendingSubscriptionIds.has(sub.id)) {
+      const isNew = !this.pendingSubscriptionIds.has(sub.id);
+
+      if (isNew) {
         this.pendingSubscriptionIds.add(sub.id);
+        this.lastSubscriptionStates.set(sub.id, {
+          status: sub.status,
+          messageCount: sub.messageCount,
+          accumulatedData: { ...sub.accumulatedData },
+        });
         this.sendMessage("SUBSCRIPTION_STARTED", {
           subscription: this.serializeSubscriptionTrace(sub),
         });
+      } else {
+        const lastState = this.lastSubscriptionStates.get(sub.id);
+
+        if (lastState) {
+          if (lastState.status !== sub.status) {
+            this.sendMessage("SUBSCRIPTION_UPDATED", {
+              subscriptionId: sub.id,
+              status: sub.status,
+              error: sub.error
+                ? { message: sub.error.message, name: sub.error.name }
+                : undefined,
+              connectedAt: sub.connectedAt,
+              disconnectedAt: sub.disconnectedAt,
+            });
+            lastState.status = sub.status;
+          }
+
+          if (sub.messageCount > lastState.messageCount) {
+            for (let i = lastState.messageCount; i < sub.messageCount; i++) {
+              const msg = sub.messages[i];
+
+              if (msg) {
+                this.sendMessage("SUBSCRIPTION_MESSAGE", {
+                  subscriptionId: sub.id,
+                  message: {
+                    id: msg.id,
+                    eventType: msg.eventType,
+                    timestamp: msg.timestamp,
+                    rawData: msg.rawData,
+                    accumulatedSnapshot: msg.accumulatedSnapshot,
+                    previousSnapshot: msg.previousSnapshot,
+                  },
+                });
+              }
+            }
+
+            lastState.messageCount = sub.messageCount;
+            lastState.accumulatedData = { ...sub.accumulatedData };
+          }
+        }
       }
     }
+
+    this.syncCacheEntries();
 
     this.sendMessage("COUNT_UPDATED", {
       totalTraceCount: this.store.getTotalTraceCount(),
     });
+  }
+
+  private syncCacheEntries(): void {
+    const entries = this.store.getCacheEntries();
+    const hash = this.computeCacheHash(entries);
+
+    if (hash !== this.lastCacheEntriesHash) {
+      this.lastCacheEntriesHash = hash;
+      this.sendMessage("CACHE_UPDATED", { entries });
+    }
+  }
+
+  private computeCacheHash(entries: CacheEntryDisplay[]): string {
+    return entries
+      .map(
+        (e) =>
+          `${e.queryKey}:${e.entry.state.timestamp ?? 0}:${e.entry.stale}:${e.subscriberCount}`
+      )
+      .join("|");
   }
 
   private handleCommand(command: ExtensionCommand): void {
@@ -178,6 +272,9 @@ export class ExtensionBridge {
         this.store.clear();
         this.pendingTraceIds.clear();
         this.pendingSubscriptionIds.clear();
+        this.lastTraceStepCounts.clear();
+        this.lastSubscriptionStates.clear();
+        this.lastCacheEntriesHash = "";
         this.sendMessage("TRACES_CLEARED", undefined);
         break;
 
@@ -248,13 +345,22 @@ export class ExtensionBridge {
 
     this.pendingTraceIds.clear();
     this.pendingSubscriptionIds.clear();
+    this.lastTraceStepCounts.clear();
+    this.lastSubscriptionStates.clear();
+    this.lastCacheEntriesHash = this.computeCacheHash(cacheEntries);
 
     for (const trace of traces) {
       this.pendingTraceIds.add(trace.id);
+      this.lastTraceStepCounts.set(trace.id, trace.steps.length);
     }
 
     for (const sub of subscriptions) {
       this.pendingSubscriptionIds.add(sub.id);
+      this.lastSubscriptionStates.set(sub.id, {
+        status: sub.status,
+        messageCount: sub.messageCount,
+        accumulatedData: { ...sub.accumulatedData },
+      });
     }
 
     const payload: FullSyncPayload = {

@@ -4,7 +4,10 @@ import {
   type PageMessage,
   type ExtensionCommand,
 } from "../shared/protocol";
-import { CONNECTION_NAME, DEVTOOLS_PAGE_CONNECTION_NAME } from "../shared/constants";
+import {
+  CONNECTION_NAME,
+  DEVTOOLS_PAGE_CONNECTION_NAME,
+} from "../shared/constants";
 
 interface TabConnection {
   port: chrome.runtime.Port;
@@ -103,14 +106,12 @@ chrome.runtime.onConnect.addListener((port) => {
   if (port.name === DEVTOOLS_PAGE_CONNECTION_NAME) {
     let tabId: number | undefined;
 
-    port.onMessage.addListener(
-      (message: { type: string; tabId?: number }) => {
-        if (message.type === "INIT_DEVTOOLS_PAGE" && message.tabId) {
-          tabId = message.tabId;
-          devtoolsPageConnections.set(tabId, port);
-        }
+    port.onMessage.addListener((message: { type: string; tabId?: number }) => {
+      if (message.type === "INIT_DEVTOOLS_PAGE" && message.tabId) {
+        tabId = message.tabId;
+        devtoolsPageConnections.set(tabId, port);
       }
-    );
+    });
 
     port.onDisconnect.addListener(() => {
       if (tabId) {

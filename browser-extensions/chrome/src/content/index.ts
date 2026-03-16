@@ -21,10 +21,12 @@ window.addEventListener("message", (event) => {
 
   if (data?.source !== PAGE_MESSAGE_SOURCE) return;
 
-  chrome.runtime.sendMessage({
-    ...data,
-    tabId: undefined,
-  }).catch(() => {});
+  chrome.runtime
+    .sendMessage({
+      ...data,
+      tabId: undefined,
+    })
+    .catch(() => {});
 });
 
 chrome.runtime.onMessage.addListener((message: ExtensionCommand) => {
