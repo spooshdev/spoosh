@@ -17,6 +17,7 @@ import { resolvePathString } from "@spoosh/core";
 
 import { DevToolStore } from "./store";
 import { DevToolPanel } from "./ui/panel";
+import { ExtensionBridge } from "./extension-bridge";
 import type { DevToolConfig, DevToolInstanceApi } from "./types";
 import type { DedupeMode } from "@spoosh/plugin-deduplication";
 
@@ -30,6 +31,7 @@ const DEFAULT_SENSITIVE_HEADERS = [
 
 let globalStore: DevToolStore | null = null;
 let globalPanel: DevToolPanel | null = null;
+let globalExtensionBridge: ExtensionBridge | null = null;
 
 export function devtool(
   config: DevToolConfig = {}
@@ -175,6 +177,11 @@ export function devtool(
           containerId,
         });
         globalPanel.mount();
+      }
+
+      if (!globalExtensionBridge) {
+        globalExtensionBridge = new ExtensionBridge(store);
+        globalExtensionBridge.init();
       }
 
       ctx.eventEmitter.on("invalidate", (tags: string[]) => {

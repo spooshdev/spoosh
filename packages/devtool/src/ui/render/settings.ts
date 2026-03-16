@@ -21,6 +21,19 @@ export function renderSettings(ctx: SettingsRenderContext): string {
     isContainerMode,
   } = ctx;
 
+  const buttonPositionRow = isContainerMode
+    ? ""
+    : `
+          <div class="spoosh-settings-row">
+            <span class="spoosh-settings-label">Button Position</span>
+            <select class="spoosh-settings-select" data-setting="position">
+              <option value="bottom-right" ${position === "bottom-right" ? "selected" : ""}>Bottom Right</option>
+              <option value="bottom-left" ${position === "bottom-left" ? "selected" : ""}>Bottom Left</option>
+              <option value="top-right" ${position === "top-right" ? "selected" : ""}>Top Right</option>
+              <option value="top-left" ${position === "top-left" ? "selected" : ""}>Top Left</option>
+            </select>
+          </div>`;
+
   const sidebarPositionRow = isContainerMode
     ? ""
     : `
@@ -48,15 +61,7 @@ export function renderSettings(ctx: SettingsRenderContext): string {
               <option value="light" ${theme === "light" ? "selected" : ""}>Light</option>
             </select>
           </div>
-          <div class="spoosh-settings-row">
-            <span class="spoosh-settings-label">Button Position</span>
-            <select class="spoosh-settings-select" data-setting="position">
-              <option value="bottom-right" ${position === "bottom-right" ? "selected" : ""}>Bottom Right</option>
-              <option value="bottom-left" ${position === "bottom-left" ? "selected" : ""}>Bottom Left</option>
-              <option value="top-right" ${position === "top-right" ? "selected" : ""}>Top Right</option>
-              <option value="top-left" ${position === "top-left" ? "selected" : ""}>Top Left</option>
-            </select>
-          </div>
+          ${buttonPositionRow}
           ${sidebarPositionRow}
         </div>
         <div class="spoosh-settings-section">

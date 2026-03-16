@@ -1,6 +1,6 @@
 {
   "name": "@spoosh/devtool",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Visual debugging plugin for Spoosh - floating devtool panel with plugin execution visualization",
   "license": "MIT",
   "repository": {
