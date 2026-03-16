@@ -29,6 +29,6 @@ port.onMessage.addListener((message: PageMessage) => {
   if (message?.source !== PAGE_MESSAGE_SOURCE) return;
 
   if (message.type === "FOCUS_PANEL" && panelRef) {
-    panelRef.show();
+    (panelRef as unknown as { show: () => void }).show();
   }
 });

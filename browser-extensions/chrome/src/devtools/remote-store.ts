@@ -40,7 +40,7 @@ export class RemoteStore implements DevToolStoreInterface {
   private tabId: number;
   private subscribers = new Set<SubscriberCallback>();
   private isConnected = false;
-  private connectionState: ConnectionState = "not_detected";
+  private connectionState: ConnectionState = "connecting";
 
   private traces: OperationTrace[] = [];
   private subscriptions: SubscriptionTrace[] = [];

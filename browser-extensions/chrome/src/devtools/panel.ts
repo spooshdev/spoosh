@@ -55,6 +55,7 @@ class ExtensionPanel {
   private traceCount = 0;
   private lastSeenCount = 0;
   private lastConnectionState: ConnectionState = "not_detected";
+  private initialLoadComplete = false;
 
   constructor() {
     const tabId = chrome.devtools.inspectedWindow.tabId;
@@ -101,8 +102,13 @@ class ExtensionPanel {
 
   init(): void {
     this.injectStyles();
-    this.showNotDetected();
+    this.showConnecting();
     this.store.connect();
+
+    setTimeout(() => {
+      this.initialLoadComplete = true;
+      this.renderScheduler.immediate(() => this.render());
+    }, 300);
 
     this.unsubscribe = this.store.subscribe(() => {
       const currentState = this.store.state;
@@ -121,7 +127,9 @@ class ExtensionPanel {
         }
 
         if (currentState === "connected") {
-          this.renderScheduler.immediate(() => this.render());
+          if (this.initialLoadComplete) {
+            this.renderScheduler.immediate(() => this.render());
+          }
           return;
         }
       }
