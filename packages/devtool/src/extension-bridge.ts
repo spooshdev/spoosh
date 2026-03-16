@@ -160,6 +160,10 @@ export class ExtensionBridge {
         });
       }
     }
+
+    this.sendMessage("COUNT_UPDATED", {
+      totalTraceCount: this.store.getTotalTraceCount(),
+    });
   }
 
   private handleCommand(command: ExtensionCommand): void {

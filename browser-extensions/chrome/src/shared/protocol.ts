@@ -99,7 +99,10 @@ export type PageMessageType =
   | "CACHE_UPDATED"
   | "FILTERS_CHANGED"
   | "TRACES_CLEARED"
-  | "TRACES_IMPORTED";
+  | "TRACES_IMPORTED"
+  | "COUNT_UPDATED"
+  | "PAGE_NAVIGATING"
+  | "FOCUS_PANEL";
 
 export interface PageMessage {
   source: typeof PAGE_MESSAGE_SOURCE;

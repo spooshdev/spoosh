@@ -18,6 +18,15 @@
     },
     "default_title": "Spoosh DevTools"
   },
+  "commands": {
+    "open-panel": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+S",
+        "mac": "Command+Shift+S"
+      },
+      "description": "Open Spoosh DevTools panel"
+    }
+  },
   "permissions": ["scripting", "storage"],
   "host_permissions": ["<all_urls>"],
   "background": {
