@@ -24,7 +24,7 @@ window.addEventListener("message", (event) => {
   chrome.runtime.sendMessage({
     ...data,
     tabId: undefined,
-  });
+  }).catch(() => {});
 });
 
 chrome.runtime.onMessage.addListener((message: ExtensionCommand) => {

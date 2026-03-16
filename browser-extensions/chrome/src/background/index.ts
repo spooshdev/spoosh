@@ -188,11 +188,6 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
     clearBadgeCount(tabId);
 
     if (connection) {
-      connection.port.postMessage({
-        source: PAGE_MESSAGE_SOURCE,
-        type: "PAGE_NAVIGATING",
-      });
-
       setTimeout(() => {
         chrome.tabs
           .sendMessage(tabId, {

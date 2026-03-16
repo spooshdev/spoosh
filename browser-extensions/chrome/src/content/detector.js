@@ -23,7 +23,7 @@
 
   if (!checkForSpoosh()) {
     let attempts = 0;
-    const maxAttempts = 50;
+    const maxAttempts = 15;
 
     const interval = setInterval(() => {
       attempts++;
@@ -41,6 +41,6 @@
           );
         }
       }
-    }, 200);
+    }, 100);
   }
 })();

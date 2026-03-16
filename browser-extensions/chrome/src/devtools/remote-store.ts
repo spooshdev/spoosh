@@ -172,10 +172,6 @@ export class RemoteStore implements DevToolStoreInterface {
       case "TRACES_IMPORTED":
         this.handleTracesImported(message.payload as TracesImportedPayload);
         break;
-
-      case "PAGE_NAVIGATING" as PageMessage["type"]:
-        this.handlePageNavigating();
-        break;
     }
   }
 
@@ -338,17 +334,6 @@ export class RemoteStore implements DevToolStoreInterface {
 
   private handleTracesImported(payload: TracesImportedPayload): void {
     this.importedSession = payload.session;
-    this.notify();
-  }
-
-  private handlePageNavigating(): void {
-    this.connectionState = "connecting";
-    this.traces = [];
-    this.subscriptions = [];
-    this.events = [];
-    this.cacheEntries = [];
-    this.totalTraceCount = 0;
-    this.activeCount = 0;
     this.notify();
   }
 
