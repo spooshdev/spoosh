@@ -15,6 +15,7 @@ const tabConnections = new Map<number, TabConnection>();
 const devtoolsPageConnections = new Map<number, chrome.runtime.Port>();
 const spooshDetectedTabs = new Set<number>();
 const tabTraceCounts = new Map<number, number>();
+const tabBaselineCounts = new Map<number, number>();
 
 function updateIcon(tabId: number) {
   if (!chrome.action) return;
@@ -72,22 +73,19 @@ chrome.runtime.onMessage.addListener((message: PageMessage, sender) => {
     spooshDetectedTabs.delete(tabId);
     updateIcon(tabId);
     clearBadgeCount(tabId);
-  } else if (message.type === "FULL_SYNC") {
+  } else if (message.type === "FULL_SYNC" || message.type === "COUNT_UPDATED") {
     const payload = message.payload as { totalTraceCount?: number };
-    tabTraceCounts.set(tabId, payload?.totalTraceCount ?? 0);
+    const totalCount = payload?.totalTraceCount ?? 0;
+    tabTraceCounts.set(tabId, totalCount);
 
     if (!tabConnections.has(tabId)) {
-      updateBadgeCount(tabId, payload?.totalTraceCount ?? 0);
-    }
-  } else if (message.type === "COUNT_UPDATED") {
-    const payload = message.payload as { totalTraceCount?: number };
-    tabTraceCounts.set(tabId, payload?.totalTraceCount ?? 0);
-
-    if (!tabConnections.has(tabId)) {
-      updateBadgeCount(tabId, payload?.totalTraceCount ?? 0);
+      const baseline = tabBaselineCounts.get(tabId) ?? 0;
+      const newCount = Math.max(0, totalCount - baseline);
+      updateBadgeCount(tabId, newCount);
     }
   } else if (message.type === "TRACES_CLEARED") {
     tabTraceCounts.set(tabId, 0);
+    tabBaselineCounts.set(tabId, 0);
 
     if (!tabConnections.has(tabId)) {
       updateBadgeCount(tabId, 0);
@@ -137,6 +135,7 @@ chrome.runtime.onConnect.addListener((port) => {
       if (message.type === "INIT" && message.tabId) {
         tabId = message.tabId;
         tabConnections.set(tabId, { port, tabId });
+        tabBaselineCounts.delete(tabId);
         clearBadgeCount(tabId);
 
         if (spooshDetectedTabs.has(tabId)) {
@@ -172,10 +171,9 @@ chrome.runtime.onConnect.addListener((port) => {
     if (tabId) {
       tabConnections.delete(tabId);
 
-      const count = tabTraceCounts.get(tabId) ?? 0;
-      if (count > 0) {
-        updateBadgeCount(tabId, count);
-      }
+      const currentCount = tabTraceCounts.get(tabId) ?? 0;
+      tabBaselineCounts.set(tabId, currentCount);
+      clearBadgeCount(tabId);
     }
   });
 });
@@ -185,6 +183,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
 
   if (changeInfo.status === "loading") {
     spooshDetectedTabs.delete(tabId);
+    tabBaselineCounts.delete(tabId);
     updateIcon(tabId);
     clearBadgeCount(tabId);
 
@@ -223,6 +222,7 @@ chrome.tabs.onRemoved.addListener((tabId) => {
   tabConnections.delete(tabId);
   devtoolsPageConnections.delete(tabId);
   tabTraceCounts.delete(tabId);
+  tabBaselineCounts.delete(tabId);
 });
 
 chrome.commands.onCommand.addListener((command, tab) => {
