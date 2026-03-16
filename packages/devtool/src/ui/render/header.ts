@@ -13,6 +13,7 @@ export interface HeaderRenderContext {
   hideFilters?: boolean;
   hideClear?: boolean;
   hideTypeFilter?: boolean;
+  hideClose?: boolean;
 }
 
 const TYPE_FILTER_ICONS: Record<string, string> = {
@@ -38,6 +39,7 @@ export function renderHeader(ctx: HeaderRenderContext): string {
     hideFilters,
     hideClear,
     hideTypeFilter,
+    hideClose,
   } = ctx;
 
   // TODO: Add "ws" back when WebSocket transport is implemented
@@ -97,11 +99,15 @@ export function renderHeader(ctx: HeaderRenderContext): string {
                 </svg>
               </button>`
         }
-        <button class="spoosh-icon-btn" data-action="close" title="Close">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M18 6L6 18M6 6l12 12"/>
-          </svg>
-        </button>
+        ${
+          hideClose
+            ? ""
+            : `<button class="spoosh-icon-btn" data-action="close" title="Close">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+              </button>`
+        }
       </div>
     </div>
     <div class="spoosh-search">

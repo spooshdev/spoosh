@@ -14,7 +14,7 @@
     "typecheck": "turbo run typecheck --filter='./packages/*'",
     "test:types": "turbo run test:types --filter='./type-tests/*'",
     "lint": "turbo run lint --filter='./packages/*'",
-    "format": "turbo run format //#format:root --filter='./packages/*' --filter='./examples/*' --filter='./docs' --filter='./type-tests/*'",
+    "format": "turbo run format //#format:root --filter='./packages/*' --filter='./examples/*' --filter='./docs' --filter='./type-tests/*' --filter='./browser-extensions/*'",
     "format:root": "prettier --write '*.md'",
     "changeset": "changeset",
     "bump": "changeset version",

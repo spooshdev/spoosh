@@ -1,5 +1,9 @@
 # @spoosh/devtool
 
+## 0.7.0
+
+- Create binding for devtool to connect with browser extension
+
 ## 0.6.0
 
 - Render line numbers in json view
