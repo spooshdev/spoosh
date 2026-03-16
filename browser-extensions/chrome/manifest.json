@@ -44,7 +44,7 @@
   "devtools_page": "src/devtools/devtools.html",
   "web_accessible_resources": [
     {
-      "resources": ["src/content/detector.js"],
+      "resources": ["src/content/detector.js", "icons/*"],
       "matches": ["<all_urls>"]
     }
   ]
