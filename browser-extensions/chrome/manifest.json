@@ -16,7 +16,8 @@
       "48": "icons/icon-48-inactive.png",
       "128": "icons/icon-128-inactive.png"
     },
-    "default_title": "Spoosh DevTools"
+    "default_title": "Spoosh DevTools",
+    "default_popup": "src/popup/popup.html"
   },
   "commands": {
     "open-panel": {

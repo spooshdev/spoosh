@@ -15,6 +15,7 @@ export default defineConfig({
       input: {
         devtools: resolve(__dirname, "src/devtools/devtools.html"),
         panel: resolve(__dirname, "src/devtools/panel.html"),
+        popup: resolve(__dirname, "src/popup/popup.html"),
       },
     },
   },

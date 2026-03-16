@@ -62,22 +62,32 @@ function clearBadgeCount(tabId: number) {
   }
 }
 
-chrome.runtime.onMessage.addListener((message: PageMessage, sender) => {
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message?.type === "GET_DETECTION_STATUS" && message.tabId) {
+    sendResponse({ detected: spooshDetectedTabs.has(message.tabId) });
+    return true;
+  }
+
   const tabId = sender.tab?.id;
 
   if (!tabId) return;
 
-  if (message?.source !== PAGE_MESSAGE_SOURCE) return;
+  const pageMessage = message as PageMessage;
 
-  if (message.type === "SPOOSH_DETECTED") {
+  if (pageMessage?.source !== PAGE_MESSAGE_SOURCE) return;
+
+  if (pageMessage.type === "SPOOSH_DETECTED") {
     spooshDetectedTabs.add(tabId);
     updateIcon(tabId);
-  } else if (message.type === "SPOOSH_NOT_DETECTED") {
+  } else if (pageMessage.type === "SPOOSH_NOT_DETECTED") {
     spooshDetectedTabs.delete(tabId);
     updateIcon(tabId);
     clearBadgeCount(tabId);
-  } else if (message.type === "FULL_SYNC" || message.type === "COUNT_UPDATED") {
-    const payload = message.payload as { totalTraceCount?: number };
+  } else if (
+    pageMessage.type === "FULL_SYNC" ||
+    pageMessage.type === "COUNT_UPDATED"
+  ) {
+    const payload = pageMessage.payload as { totalTraceCount?: number };
     const totalCount = payload?.totalTraceCount ?? 0;
     tabTraceCounts.set(tabId, totalCount);
 
@@ -86,7 +96,7 @@ chrome.runtime.onMessage.addListener((message: PageMessage, sender) => {
       const newCount = Math.max(0, totalCount - baseline);
       updateBadgeCount(tabId, newCount);
     }
-  } else if (message.type === "TRACES_CLEARED") {
+  } else if (pageMessage.type === "TRACES_CLEARED") {
     tabTraceCounts.set(tabId, 0);
     tabBaselineCounts.set(tabId, 0);
 
@@ -98,7 +108,7 @@ chrome.runtime.onMessage.addListener((message: PageMessage, sender) => {
   const connection = tabConnections.get(tabId);
 
   if (connection) {
-    connection.port.postMessage(message);
+    connection.port.postMessage(pageMessage);
   }
 });
 
