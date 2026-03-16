@@ -56,6 +56,9 @@ class ExtensionPanel {
   private lastSeenCount = 0;
   private lastConnectionState: ConnectionState = "not_detected";
   private initialLoadComplete = false;
+  private lastRenderedTraceId: string | null = null;
+  private lastRenderedStateKey: string | null = null;
+  private lastRenderedInternalTab: string | null = null;
 
   constructor() {
     const tabId = chrome.devtools.inspectedWindow.tabId;
@@ -365,6 +368,10 @@ class ExtensionPanel {
     this.autoSelectFirst();
 
     const state = this.viewModel.getState();
+    this.lastRenderedTraceId = state.selectedTraceId;
+    this.lastRenderedStateKey = state.selectedStateKey;
+    this.lastRenderedInternalTab = state.internalTab;
+
     const tabContent = this.container.querySelector(".spoosh-tab-content");
     const savedScrollTop = tabContent?.scrollTop ?? 0;
 
@@ -652,7 +659,20 @@ class ExtensionPanel {
 
     const state = this.viewModel.getState();
 
+    if (state.selectedTraceId !== this.lastRenderedTraceId) {
+      this.render();
+      return;
+    }
+
     if (state.activeView === "state") {
+      if (
+        state.selectedStateKey !== this.lastRenderedStateKey ||
+        state.internalTab !== this.lastRenderedInternalTab
+      ) {
+        this.render();
+        return;
+      }
+
       this.partialUpdateState();
       return;
     }

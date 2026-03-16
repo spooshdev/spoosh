@@ -71,13 +71,23 @@ function renderDataTab(
   `;
 }
 
+function getMetaEntries(
+  meta: Map<string, unknown> | Record<string, unknown>
+): Array<[string, unknown]> {
+  if (meta instanceof Map) {
+    return Array.from(meta.entries());
+  }
+
+  return Object.entries(meta);
+}
+
 function renderMetaTab(
   entry: CacheEntryDisplay,
   contextId: string,
   collapsedPaths: ReadonlySet<string>
 ): string {
   const { entry: stateEntry } = entry;
-  const metaEntries = Array.from(stateEntry.meta.entries());
+  const metaEntries = getMetaEntries(stateEntry.meta);
 
   const info = [
     {
@@ -123,7 +133,7 @@ function renderRawTab(
     tags: entry.entry.tags,
     selfTag: entry.entry.selfTag,
     stale: entry.entry.stale,
-    meta: Object.fromEntries(entry.entry.meta),
+    meta: Object.fromEntries(getMetaEntries(entry.entry.meta)),
     previousData: entry.entry.previousData,
     subscriberCount: entry.subscriberCount,
   };
