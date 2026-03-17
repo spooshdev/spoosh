@@ -2,54 +2,61 @@ import type { DiffLine } from "../../types";
 import { highlightJson } from "./format";
 
 function jsonToLines(obj: unknown, indent = 0): string[] {
-  if (obj === undefined) return ["undefined"];
-  if (obj === null) return ["null"];
-
   const spaces = "  ".repeat(indent);
 
-  if (Array.isArray(obj)) {
-    if (obj.length === 0) return ["[]"];
+  if (obj === undefined) return [`${spaces}undefined`];
+  if (obj === null) return [`${spaces}null`];
 
-    const lines = ["["];
+  if (Array.isArray(obj)) {
+    if (obj.length === 0) return [`${spaces}[]`];
+
+    const lines = [`${spaces}[`];
 
     obj.forEach((item, i) => {
       const itemLines = jsonToLines(item, indent + 1);
       const comma = i < obj.length - 1 ? "," : "";
       itemLines[itemLines.length - 1] += comma;
-      lines.push(...itemLines.map((l) => spaces + "  " + l));
+      lines.push(...itemLines);
     });
 
-    lines.push(spaces + "]");
+    lines.push(`${spaces}]`);
     return lines;
   }
 
   if (typeof obj === "object") {
     const entries = Object.entries(obj);
 
-    if (entries.length === 0) return ["{}"];
+    if (entries.length === 0) return [`${spaces}{}`];
 
-    const lines = ["{"];
+    const lines = [`${spaces}{`];
+    const childSpaces = "  ".repeat(indent + 1);
 
     entries.forEach(([key, value], i) => {
       const valueLines = jsonToLines(value, indent + 1);
       const comma = i < entries.length - 1 ? "," : "";
 
-      if (valueLines.length === 1) {
-        lines.push(`${spaces}  "${key}": ${valueLines[0]}${comma}`);
+      const firstLine = valueLines[0];
+
+      if (!firstLine) {
+        lines.push(`${childSpaces}"${key}": undefined${comma}`);
+      } else if (valueLines.length === 1) {
+        const valueStr = firstLine.trimStart();
+        lines.push(`${childSpaces}"${key}": ${valueStr}${comma}`);
       } else {
-        lines.push(`${spaces}  "${key}": ${valueLines[0]}`);
-        valueLines.slice(1, -1).forEach((l) => lines.push(spaces + "  " + l));
-        lines.push(spaces + "  " + valueLines[valueLines.length - 1] + comma);
+        lines.push(`${childSpaces}"${key}": ${firstLine.trimStart()}`);
+        valueLines.slice(1, -1).forEach((l) => lines.push(l));
+        const lastLine = valueLines[valueLines.length - 1] ?? "";
+        lines.push(lastLine + comma);
       }
     });
 
-    lines.push(spaces + "}");
+    lines.push(`${spaces}}`);
     return lines;
   }
 
-  if (typeof obj === "string") return [`"${obj}"`];
+  if (typeof obj === "string") return [`${spaces}"${obj}"`];
 
-  return [String(obj)];
+  return [`${spaces}${String(obj)}`];
 }
 
 function computeLCS(before: string[], after: string[]): number[][] {

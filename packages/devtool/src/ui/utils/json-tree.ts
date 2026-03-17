@@ -59,7 +59,7 @@ function renderTreeNode(
 ): void {
   const { contextId = "json", collapsedPaths = new Set() } = options;
   const { value, key, path, isLast, depth } = node;
-  const indentStyle = depth > 0 ? ` style="padding-left: ${depth * 16}px"` : "";
+  const indentStyle = depth > 0 ? ` style="padding-left: ${depth * 2}ch"` : "";
   const isExpanded = !collapsedPaths.has(path);
 
   if (isPrimitive(value)) {
@@ -121,7 +121,7 @@ function renderTreeNode(
     });
 
     const closingIndentStyle =
-      depth > 0 ? ` style="padding-left: ${depth * 16}px"` : "";
+      depth > 0 ? ` style="padding-left: ${depth * 2}ch"` : "";
     const comma = isLast ? "" : ",";
     lines.push(
       `<span class="spoosh-json-arrow-col"></span><span class="spoosh-json-content"${closingIndentStyle}>${closeBracket}${comma}</span>`

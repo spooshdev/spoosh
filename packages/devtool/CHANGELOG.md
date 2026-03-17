@@ -1,5 +1,9 @@
 # @spoosh/devtool
 
+## 0.7.1
+
+- Improve devtool indentation for diff view to enhance readability
+
 ## 0.7.0
 
 - Create binding for devtool to connect with browser extension
