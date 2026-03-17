@@ -190,36 +190,19 @@ chrome.runtime.onConnect.addListener((port) => {
 });
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
-  const connection = tabConnections.get(tabId);
-
-  if (changeInfo.status === "loading") {
-    spooshDetectedTabs.delete(tabId);
+  if (changeInfo.status === "complete") {
     tabBaselineCounts.delete(tabId);
-    updateIcon(tabId);
     clearBadgeCount(tabId);
 
-    if (connection) {
-      setTimeout(() => {
-        chrome.tabs
-          .sendMessage(tabId, {
-            source: EXTENSION_MESSAGE_SOURCE,
-            type: "REQUEST_DETECTION",
-          })
-          .catch(() => {});
-      }, 500);
-    }
-    return;
-  }
-
-  if (changeInfo.url && connection && spooshDetectedTabs.has(tabId)) {
-    setTimeout(() => {
-      chrome.tabs
-        .sendMessage(tabId, {
-          source: EXTENSION_MESSAGE_SOURCE,
-          type: "REQUEST_DETECTION",
-        })
-        .catch(() => {});
-    }, 100);
+    chrome.tabs
+      .sendMessage(tabId, {
+        source: EXTENSION_MESSAGE_SOURCE,
+        type: "REQUEST_DETECTION",
+      })
+      .catch(() => {
+        spooshDetectedTabs.delete(tabId);
+        updateIcon(tabId);
+      });
   }
 });
 

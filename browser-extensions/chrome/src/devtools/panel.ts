@@ -44,6 +44,14 @@ import {
 import { escapeHtml } from "@devtool/ui/utils";
 import type { ExportedItem, SubscriptionTrace } from "@devtool/types";
 
+const DEFAULT_SENSITIVE_HEADERS = new Set([
+  "authorization",
+  "proxy-authorization",
+  "cookie",
+  "set-cookie",
+  "x-api-key",
+]);
+
 class ExtensionPanel {
   private store: RemoteStore;
   private viewModel = createViewModel();
@@ -475,7 +483,7 @@ class ExtensionPanel {
         sidebarPosition: state.sidebarPosition,
         maxHistory: state.maxHistory,
         autoSelectIncoming: state.autoSelectIncoming,
-        sensitiveHeaders: new Set(),
+        sensitiveHeaders: DEFAULT_SENSITIVE_HEADERS,
         isContainerMode: true,
         state,
       });
