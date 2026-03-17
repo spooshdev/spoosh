@@ -126,8 +126,6 @@ export const detailCSS = `
     font-size: 11px;
     line-height: 1.4;
     overflow-x: auto;
-    white-space: pre-wrap;
-    word-break: break-word;
     transition: opacity 0.1s ease-out;
   }
 
@@ -137,8 +135,13 @@ export const detailCSS = `
   }
 
   /* ===== JSON Tree Styles ===== */
+  .spoosh-json-line {
+    display: flex;
+    align-items: flex-start;
+  }
+
   .spoosh-json-line-num {
-    display: inline-block;
+    flex-shrink: 0;
     min-width: 2.5em;
     padding-right: 0.5em;
     text-align: right;
@@ -148,11 +151,16 @@ export const detailCSS = `
   }
 
   .spoosh-json-arrow-col {
-    display: inline-block;
+    flex-shrink: 0;
     width: 1.2em;
     text-align: center;
-    vertical-align: top;
     user-select: none;
+  }
+
+  .spoosh-json-content {
+    flex: 1;
+    min-width: 0;
+    word-break: break-all;
   }
 
   .spoosh-json-toggle {

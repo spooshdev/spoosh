@@ -59,7 +59,7 @@ function renderTreeNode(
 ): void {
   const { contextId = "json", collapsedPaths = new Set() } = options;
   const { value, key, path, isLast, depth } = node;
-  const indent = "  ".repeat(depth);
+  const indentStyle = depth > 0 ? ` style="padding-left: ${depth * 16}px"` : "";
   const isExpanded = !collapsedPaths.has(path);
 
   if (isPrimitive(value)) {
@@ -68,7 +68,7 @@ function renderTreeNode(
       : "";
     const comma = isLast ? "" : ",";
     lines.push(
-      `<span class="spoosh-json-arrow-col"></span>${indent}${keyPart}${formatPrimitiveValue(value)}${comma}`
+      `<span class="spoosh-json-arrow-col"></span><span class="spoosh-json-content"${indentStyle}>${keyPart}${formatPrimitiveValue(value)}${comma}</span>`
     );
     return;
   }
@@ -88,7 +88,7 @@ function renderTreeNode(
   if (isEmpty) {
     const comma = isLast ? "" : ",";
     lines.push(
-      `<span class="spoosh-json-arrow-col"></span>${indent}${keyPart}${openBracket}${closeBracket}${comma}`
+      `<span class="spoosh-json-arrow-col"></span><span class="spoosh-json-content"${indentStyle}>${keyPart}${openBracket}${closeBracket}${comma}</span>`
     );
     return;
   }
@@ -99,7 +99,7 @@ function renderTreeNode(
     : ` <span class="spoosh-json-preview">${isArray ? `${entries.length} items` : `${entries.length} keys`}</span>`;
 
   lines.push(
-    `<span class="spoosh-json-arrow-col"><span class="spoosh-json-toggle" data-action="toggle-json-path" data-context-id="${contextId}" data-path="${escapeHtml(path)}">${expandIcon}</span></span>${indent}${keyPart}${openBracket}${previewText}`
+    `<span class="spoosh-json-arrow-col"><span class="spoosh-json-toggle" data-action="toggle-json-path" data-context-id="${contextId}" data-path="${escapeHtml(path)}">${expandIcon}</span></span><span class="spoosh-json-content"${indentStyle}>${keyPart}${openBracket}${previewText}</span>`
   );
 
   if (isExpanded) {
@@ -120,9 +120,11 @@ function renderTreeNode(
       renderTreeNode(childNode, options, lines);
     });
 
+    const closingIndentStyle =
+      depth > 0 ? ` style="padding-left: ${depth * 16}px"` : "";
     const comma = isLast ? "" : ",";
     lines.push(
-      `<span class="spoosh-json-arrow-col"></span>${indent}${closeBracket}${comma}`
+      `<span class="spoosh-json-arrow-col"></span><span class="spoosh-json-content"${closingIndentStyle}>${closeBracket}${comma}</span>`
     );
   }
 }
@@ -148,7 +150,9 @@ export function formatJsonTree(
   renderTreeNode(rootNode, options, lines);
 
   if (!options.withLineNumbers) {
-    return lines.join("\n");
+    return lines
+      .map((line) => `<div class="spoosh-json-line">${line}</div>`)
+      .join("");
   }
 
   const maxLineNum = lines.length;
@@ -157,7 +161,7 @@ export function formatJsonTree(
   return lines
     .map((line, index) => {
       const lineNum = String(index + 1).padStart(lineNumWidth, " ");
-      return `<span class="spoosh-json-line-num">${lineNum}</span>${line}`;
+      return `<div class="spoosh-json-line"><span class="spoosh-json-line-num">${lineNum}</span>${line}</div>`;
     })
-    .join("\n");
+    .join("");
 }
