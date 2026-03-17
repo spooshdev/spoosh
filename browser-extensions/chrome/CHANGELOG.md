@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.0.2
+
+- Fix spoosh detection not working after service worker disconnects
+- Fix request type filtering not working in DevTools panel
+
 ## 0.0.1
 
 Initial release.

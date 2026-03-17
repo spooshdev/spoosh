@@ -530,7 +530,16 @@ export class RemoteStore implements DevToolStoreInterface {
     value: DevToolFilters[K]
   ): void {
     this.filters[key] = value;
-    this.sendCommand({ type: "SET_FILTER", payload: { key, value } });
+
+    const serializedValue =
+      key === "operationTypes" && value instanceof Set
+        ? Array.from(value)
+        : value;
+
+    this.sendCommand({
+      type: "SET_FILTER",
+      payload: { key, value: serializedValue },
+    });
     this.notify();
   }
 

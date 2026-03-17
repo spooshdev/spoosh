@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Spoosh DevTools",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "DevTools panel for debugging Spoosh applications",
   "icons": {
     "16": "icons/icon-16.png",
