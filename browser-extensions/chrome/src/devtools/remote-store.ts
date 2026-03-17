@@ -600,7 +600,12 @@ export class RemoteStore implements DevToolStoreInterface {
   }
 
   importTraces(data: ExportedItem[], filename: string): void {
-    this.sendCommand({ type: "IMPORT_TRACES", payload: { data, filename } });
+    this.importedSession = {
+      filename,
+      items: data,
+      importedAt: Date.now(),
+    };
+    this.notify();
   }
 
   getImportedSession(): ImportedSession | null {

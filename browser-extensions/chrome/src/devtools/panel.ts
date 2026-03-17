@@ -123,17 +123,26 @@ class ExtensionPanel {
 
     this.unsubscribe = this.store.subscribe(() => {
       const currentState = this.store.state;
+      const activeView = this.viewModel.getState().activeView;
 
       if (currentState !== this.lastConnectionState) {
         this.lastConnectionState = currentState;
 
         if (currentState === "not_detected") {
-          this.showNotDetected();
+          if (activeView === "import") {
+            this.renderScheduler.immediate(() => this.render());
+          } else {
+            this.showNotDetected();
+          }
           return;
         }
 
         if (currentState === "connecting") {
-          this.showConnecting();
+          if (activeView === "import") {
+            this.renderScheduler.immediate(() => this.render());
+          } else {
+            this.showConnecting();
+          }
           return;
         }
 
@@ -273,7 +282,7 @@ class ExtensionPanel {
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        height: 100%;
+        flex: 1;
         padding: 40px;
         text-align: center;
         color: var(--spoosh-text-muted);
@@ -323,6 +332,23 @@ class ExtensionPanel {
         to { transform: rotate(360deg); }
       }
 
+      .spoosh-go-import-btn {
+        margin-top: 16px;
+        padding: 8px 16px;
+        background: var(--spoosh-primary);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: opacity 0.15s;
+      }
+
+      .spoosh-go-import-btn:hover {
+        opacity: 0.9;
+      }
+
       /* Remove drag cursors in extension context */
       .spoosh-header,
       .spoosh-settings-header,
@@ -334,29 +360,36 @@ class ExtensionPanel {
   }
 
   private showNotDetected(): void {
-    const notDetectedHtml = `
+    const state = this.viewModel.getState();
+    const html = `
       <div class="not-detected">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
         <h2>Spoosh not detected</h2>
-        <p>This page doesn't appear to be using Spoosh, or the devtool plugin is not enabled. Make sure you have the <code>devtool()</code> plugin registered in your Spoosh instance.</p>
+        <p>This page doesn't appear to be using Spoosh, or the devtool plugin is not enabled.</p>
+        <button class="spoosh-go-import-btn" data-action="go-import">Go to Import View</button>
       </div>
+      ${renderBottomBar({ activeView: state.activeView, theme: state.theme })}
     `;
     this.container.textContent = "";
-    this.container.insertAdjacentHTML("beforeend", notDetectedHtml);
+    this.container.insertAdjacentHTML("beforeend", html);
+    this.attachEvents();
   }
 
   private showConnecting(): void {
-    const connectingHtml = `
+    const state = this.viewModel.getState();
+    const html = `
       <div class="not-detected connecting">
         <div class="connecting-spinner"></div>
         <h2>Connecting...</h2>
         <p>Waiting for Spoosh to initialize on this page.</p>
       </div>
+      ${renderBottomBar({ activeView: state.activeView, theme: state.theme })}
     `;
     this.container.textContent = "";
-    this.container.insertAdjacentHTML("beforeend", connectingHtml);
+    this.container.insertAdjacentHTML("beforeend", html);
+    this.attachEvents();
   }
 
   private renderImmediate(): void {
@@ -364,7 +397,10 @@ class ExtensionPanel {
   }
 
   private render(): void {
-    if (this.store.state !== "connected") {
+    const state = this.viewModel.getState();
+    const isConnected = this.store.state === "connected";
+
+    if (!isConnected && state.activeView !== "import") {
       if (this.store.state === "connecting") {
         this.showConnecting();
       } else {
@@ -373,9 +409,10 @@ class ExtensionPanel {
       return;
     }
 
-    this.autoSelectFirst();
+    if (isConnected) {
+      this.autoSelectFirst();
+    }
 
-    const state = this.viewModel.getState();
     this.lastRenderedTraceId = state.selectedTraceId;
     this.lastRenderedStateKey = state.selectedStateKey;
     this.lastRenderedInternalTab = state.internalTab;

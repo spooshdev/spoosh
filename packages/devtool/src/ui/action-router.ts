@@ -39,6 +39,7 @@ export type ActionIntent =
   | { type: "delete-state"; key: string }
   | { type: "clear-all-state" }
   | { type: "import-file" }
+  | { type: "go-import" }
   | { type: "select-imported-trace"; traceId: string }
   | { type: "clear-imports" }
   | { type: "import-search"; query: string }
@@ -195,6 +196,10 @@ export function createActionRouter(
 
     if (action === "import-file") {
       return { type: "import-file" };
+    }
+
+    if (action === "go-import") {
+      return { type: "go-import" };
     }
 
     if (action === "clear-imports") {
@@ -500,6 +505,10 @@ export function createActionRouter(
       case "import-file":
         onImportFile?.();
         return;
+
+      case "go-import":
+        viewModel.setActiveView("import");
+        break;
 
       case "select-imported-trace":
         viewModel.selectImportedTrace(intent.traceId);

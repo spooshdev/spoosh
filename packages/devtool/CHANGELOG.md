@@ -1,5 +1,9 @@
 # @spoosh/devtool
 
+## 0.7.2
+
+- Fix import traces not working properly for extension
+
 ## 0.7.1
 
 - Improve devtool indentation for diff view to enhance readability
