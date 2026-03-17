@@ -71,13 +71,34 @@ export class RemoteStore implements DevToolStoreInterface {
     });
 
     this.port.onDisconnect.addListener(() => {
-      this.isConnected = false;
-      this.connectionState = "not_detected";
       this.port = null;
+      this.reconnect();
     });
 
     this.port.postMessage({ type: "INIT", tabId: this.tabId });
     this.isConnected = true;
+  }
+
+  private reconnect(): void {
+    try {
+      this.port = chrome.runtime.connect({ name: CONNECTION_NAME });
+
+      this.port.onMessage.addListener((message: PageMessage) => {
+        this.handleMessage(message);
+      });
+
+      this.port.onDisconnect.addListener(() => {
+        this.port = null;
+        this.reconnect();
+      });
+
+      this.port.postMessage({ type: "INIT", tabId: this.tabId });
+      this.isConnected = true;
+    } catch {
+      this.isConnected = false;
+      this.connectionState = "not_detected";
+      this.notify();
+    }
   }
 
   disconnect(): void {
@@ -99,7 +120,9 @@ export class RemoteStore implements DevToolStoreInterface {
   }
 
   private handleMessage(message: PageMessage): void {
-    if (message?.source !== PAGE_MESSAGE_SOURCE) return;
+    if (message?.source !== PAGE_MESSAGE_SOURCE) {
+      return;
+    }
 
     switch (message.type) {
       case "SPOOSH_DETECTED":

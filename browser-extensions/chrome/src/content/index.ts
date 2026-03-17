@@ -8,7 +8,9 @@ import {
 function injectDetectorScript() {
   const script = document.createElement("script");
   script.src = chrome.runtime.getURL("src/content/detector.js");
-  script.onload = () => script.remove();
+  script.onload = () => {
+    script.remove();
+  };
   (document.head || document.documentElement).appendChild(script);
 }
 

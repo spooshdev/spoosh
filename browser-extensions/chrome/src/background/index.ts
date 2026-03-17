@@ -70,11 +70,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   const tabId = sender.tab?.id;
 
-  if (!tabId) return;
+  if (!tabId) {
+    return;
+  }
 
   const pageMessage = message as PageMessage;
 
-  if (pageMessage?.source !== PAGE_MESSAGE_SOURCE) return;
+  if (pageMessage?.source !== PAGE_MESSAGE_SOURCE) {
+    return;
+  }
 
   if (pageMessage.type === "SPOOSH_DETECTED") {
     spooshDetectedTabs.add(tabId);
@@ -149,7 +153,9 @@ chrome.runtime.onConnect.addListener((port) => {
         tabBaselineCounts.delete(tabId);
         clearBadgeCount(tabId);
 
-        if (spooshDetectedTabs.has(tabId)) {
+        const isAlreadyDetected = spooshDetectedTabs.has(tabId);
+
+        if (isAlreadyDetected) {
           port.postMessage({
             source: PAGE_MESSAGE_SOURCE,
             type: "SPOOSH_DETECTED",
