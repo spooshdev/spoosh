@@ -28,7 +28,6 @@
       "description": "Open Spoosh DevTools panel"
     }
   },
-  "permissions": ["scripting", "storage"],
   "host_permissions": ["<all_urls>"],
   "background": {
     "service_worker": "src/background/index.ts",
