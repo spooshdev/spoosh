@@ -5,12 +5,8 @@ import type {
   PluginStepEvent,
 } from "../../../types";
 import type { DetailTab, SubscriptionDetailTab } from "../../view-model";
-import {
-  escapeHtml,
-  formatJson,
-  formatTime,
-  formatDuration,
-} from "../../utils";
+import { escapeHtml, formatTime, formatDuration } from "../../utils";
+import { formatJsonTree } from "../../utils/json-tree";
 import { renderTimelineStep, groupConsecutiveSteps } from "../timeline";
 import { renderGroupedSteps } from "../timeline/group";
 
@@ -34,19 +30,29 @@ const copyIcon = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" st
 function renderCodeSection(
   label: string,
   data: unknown,
+  contextId: string,
+  collapsedPaths: ReadonlySet<string>,
   isError = false,
   badge?: string
 ): string {
-  const jsonStr = JSON.stringify(data, null, 2);
+  const isString = typeof data === "string";
+  const copyContent = isString ? data : JSON.stringify(data, null, 2);
+  const formattedContent = isString
+    ? `<span class="spoosh-json-content">${escapeHtml(data)}</span>`
+    : formatJsonTree(data, {
+        withLineNumbers: true,
+        contextId,
+        collapsedPaths,
+      });
 
   return `
     <div class="spoosh-data-section">
       <div class="spoosh-data-label">${label}${badge ? ` <span class="spoosh-body-type ${badge}">${badge}</span>` : ""}</div>
       <div class="spoosh-code-block">
-        <button class="spoosh-code-copy-btn" data-action="copy" data-copy-content="${escapeHtml(jsonStr)}" title="Copy">
+        <button class="spoosh-code-copy-btn" data-action="copy" data-copy-content="${escapeHtml(copyContent)}" title="Copy">
           ${copyIcon}
         </button>
-        <pre class="spoosh-json${isError ? " error" : ""}">${formatJson(data)}</pre>
+        <pre class="spoosh-json${isError ? " error" : ""}">${formattedContent}</pre>
       </div>
     </div>
   `;
@@ -83,16 +89,41 @@ function isFormDataWrapper(
   return "[FormData]" in obj && typeof obj["[FormData]"] === "object";
 }
 
-function renderBodySection(body: unknown): string {
+function renderBodySection(
+  body: unknown,
+  contextId: string,
+  collapsedPaths: ReadonlySet<string>
+): string {
   if (isSpooshBody(body)) {
-    return renderCodeSection("Body", body.value, false, body.kind);
+    return renderCodeSection(
+      "Body",
+      body.value,
+      contextId,
+      collapsedPaths,
+      false,
+      body.kind
+    );
   }
 
   if (isFormDataWrapper(body)) {
-    return renderCodeSection("Body", body["[FormData]"], false, "form");
+    return renderCodeSection(
+      "Body",
+      body["[FormData]"],
+      contextId,
+      collapsedPaths,
+      false,
+      "form"
+    );
   }
 
-  return renderCodeSection("Body", body, false, "json");
+  return renderCodeSection(
+    "Body",
+    body,
+    contextId,
+    collapsedPaths,
+    false,
+    "json"
+  );
 }
 
 function toPluginStepEvents(
@@ -112,8 +143,12 @@ function toPluginStepEvents(
   })) as PluginStepEvent[];
 }
 
-function renderImportDataTab(trace: ExportedTrace): string {
+function renderImportDataTab(
+  trace: ExportedTrace,
+  collapsedPaths: ReadonlySet<string>
+): string {
   const response = trace.response as Record<string, unknown> | undefined;
+  const contextId = `import-data-${trace.id}`;
 
   if (!response) {
     return `<div class="spoosh-empty-tab">No response data</div>`;
@@ -122,15 +157,28 @@ function renderImportDataTab(trace: ExportedTrace): string {
   if (response.aborted) {
     return renderCodeSection(
       "Aborted",
-      response.error ?? "Request was aborted"
+      response.error ?? "Request was aborted",
+      contextId,
+      collapsedPaths
     );
   }
 
   if (response.error) {
-    return renderCodeSection("Error", response.error, true);
+    return renderCodeSection(
+      "Error",
+      response.error,
+      contextId,
+      collapsedPaths,
+      true
+    );
   }
 
-  return renderCodeSection("Response Data", response.data ?? response);
+  return renderCodeSection(
+    "Response Data",
+    response.data ?? response,
+    contextId,
+    collapsedPaths
+  );
 }
 
 function renderHeadersSection(headers: Record<string, string>): string {
@@ -154,7 +202,10 @@ function renderHeadersSection(headers: Record<string, string>): string {
   `;
 }
 
-function renderImportRequestTab(trace: ExportedTrace): string {
+function renderImportRequestTab(
+  trace: ExportedTrace,
+  collapsedPaths: ReadonlySet<string>
+): string {
   const request = trace.request as Record<string, unknown> | undefined;
   const { query, body, params, headers } = (request ?? {}) as Record<
     string,
@@ -180,21 +231,33 @@ function renderImportRequestTab(trace: ExportedTrace): string {
     return `<div class="spoosh-empty-tab">No request data</div>`;
   }
 
+  const contextId = `import-request-${trace.id}`;
+
   return `
     ${hasHeaders ? renderHeadersSection(headers as Record<string, string>) : ""}
-    ${hasTags ? renderCodeSection("Tags", trace.tags) : ""}
-    ${hasParams ? renderCodeSection("Params", params) : ""}
-    ${hasQuery ? renderCodeSection("Query", query) : ""}
-    ${hasBody ? renderBodySection(body) : ""}
+    ${hasTags ? renderCodeSection("Tags", trace.tags, contextId, collapsedPaths) : ""}
+    ${hasParams ? renderCodeSection("Params", params, contextId, collapsedPaths) : ""}
+    ${hasQuery ? renderCodeSection("Query", query, contextId, collapsedPaths) : ""}
+    ${hasBody ? renderBodySection(body, contextId, collapsedPaths) : ""}
   `;
 }
 
-function renderImportMetaTab(trace: ExportedTrace): string {
+function renderImportMetaTab(
+  trace: ExportedTrace,
+  collapsedPaths: ReadonlySet<string>
+): string {
   if (!trace.meta || Object.keys(trace.meta).length === 0) {
     return `<div class="spoosh-empty-tab">No meta data</div>`;
   }
 
-  return renderCodeSection("Plugin Meta", trace.meta);
+  const contextId = `import-meta-${trace.id}`;
+
+  return renderCodeSection(
+    "Plugin Meta",
+    trace.meta,
+    contextId,
+    collapsedPaths
+  );
 }
 
 function renderImportPluginsTab(
@@ -327,13 +390,25 @@ function renderImportTraceTabContent(ctx: ImportDetailContext): string {
 
   if (!item || item.type !== "request") return "";
 
+  const getCollapsedPaths = (contextId: string) =>
+    collapsedJsonPaths.get(contextId) ?? new Set<string>();
+
   switch (activeTab) {
     case "data":
-      return renderImportDataTab(item);
+      return renderImportDataTab(
+        item,
+        getCollapsedPaths(`import-data-${item.id}`)
+      );
     case "request":
-      return renderImportRequestTab(item);
+      return renderImportRequestTab(
+        item,
+        getCollapsedPaths(`import-request-${item.id}`)
+      );
     case "meta":
-      return renderImportMetaTab(item);
+      return renderImportMetaTab(
+        item,
+        getCollapsedPaths(`import-meta-${item.id}`)
+      );
     case "plugins":
       return renderImportPluginsTab(
         item,
@@ -437,7 +512,8 @@ function getSSEDuration(sub: ExportedSSE): string {
 
 function renderSSEMessagesTab(
   sub: ExportedSSE,
-  selectedMessageId: string | null
+  selectedMessageId: string | null,
+  collapsedJsonPaths: ReadonlyMap<string, ReadonlySet<string>>
 ): string {
   if (sub.messages.length === 0) {
     return `<div class="spoosh-empty">No messages received</div>`;
@@ -452,6 +528,9 @@ function renderSSEMessagesTab(
           const time = formatTime(msg.timestamp);
           const expandIcon = isExpanded ? "▼" : "▶";
           const jsonStr = JSON.stringify(msg.rawData, null, 2);
+          const contextId = `import-sse-msg-${sub.id}-${msg.id}`;
+          const collapsedPaths =
+            collapsedJsonPaths.get(contextId) ?? new Set<string>();
 
           return `
             <div class="spoosh-message-row${isExpanded ? " expanded" : ""}">
@@ -469,7 +548,7 @@ function renderSSEMessagesTab(
                     <button class="spoosh-code-copy-btn" data-action="copy" data-copy-content="${escapeHtml(jsonStr)}" title="Copy">
                       ${copyIcon}
                     </button>
-                    <pre class="spoosh-json">${formatJson(msg.rawData)}</pre>
+                    <pre class="spoosh-json">${formatJsonTree(msg.rawData, { withLineNumbers: true, contextId, collapsedPaths })}</pre>
                   </div>
                 </div>
               `
@@ -485,7 +564,8 @@ function renderSSEMessagesTab(
 
 function renderSSEAccumulatedTab(
   sub: ExportedSSE,
-  expandedEventTypes: ReadonlySet<string>
+  expandedEventTypes: ReadonlySet<string>,
+  collapsedJsonPaths: ReadonlyMap<string, ReadonlySet<string>>
 ): string {
   const eventTypes = Object.keys(sub.accumulatedData);
 
@@ -506,6 +586,9 @@ function renderSSEAccumulatedTab(
             const data = sub.accumulatedData[eventType];
             const jsonStr = JSON.stringify(data, null, 2);
             const expandIcon = isExpanded ? "▼" : "▶";
+            const contextId = `import-sse-acc-${sub.id}-${eventType}`;
+            const collapsedPaths =
+              collapsedJsonPaths.get(contextId) ?? new Set<string>();
 
             return `
               <div class="spoosh-event-section ${isExpanded ? "expanded" : ""}">
@@ -521,7 +604,7 @@ function renderSSEAccumulatedTab(
                       <button class="spoosh-code-copy-btn" data-action="copy" data-copy-content="${escapeHtml(jsonStr)}" title="Copy">
                         ${copyIcon}
                       </button>
-                      <pre class="spoosh-json">${formatJson(data)}</pre>
+                      <pre class="spoosh-json">${formatJsonTree(data, { withLineNumbers: true, contextId, collapsedPaths })}</pre>
                     </div>
                   </div>
                 `
@@ -678,9 +761,13 @@ function renderImportSSETabContent(ctx: ImportDetailContext): string {
 
   switch (subscriptionTab) {
     case "messages":
-      return renderSSEMessagesTab(item, selectedMessageId);
+      return renderSSEMessagesTab(item, selectedMessageId, collapsedJsonPaths);
     case "accumulated":
-      return renderSSEAccumulatedTab(item, expandedEventTypes);
+      return renderSSEAccumulatedTab(
+        item,
+        expandedEventTypes,
+        collapsedJsonPaths
+      );
     case "connection":
       return renderSSEConnectionTab(item);
     case "plugins":

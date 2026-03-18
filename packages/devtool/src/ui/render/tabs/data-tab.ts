@@ -15,23 +15,24 @@ function renderDataSection(
   collapsedPaths: ReadonlySet<string>,
   isError = false
 ): string {
-  const jsonStr = JSON.stringify(data, null, 2);
+  const isString = typeof data === "string";
+  const copyContent = isString ? data : JSON.stringify(data, null, 2);
+  const formattedContent = isString
+    ? `<span class="spoosh-json-content">${escapeHtml(data)}</span>`
+    : formatJsonTree(data, {
+        withLineNumbers: true,
+        contextId,
+        collapsedPaths,
+      });
 
   return `
     <div class="spoosh-data-section">
       <div class="spoosh-data-label">${label}</div>
       <div class="spoosh-code-block">
-        <button class="spoosh-code-copy-btn" data-action="copy" data-copy-content="${escapeHtml(jsonStr)}" title="Copy">
+        <button class="spoosh-code-copy-btn" data-action="copy" data-copy-content="${escapeHtml(copyContent)}" title="Copy">
           ${copyIcon}
         </button>
-        <pre class="spoosh-json${isError ? " error" : ""}">${formatJsonTree(
-          data,
-          {
-            withLineNumbers: true,
-            contextId,
-            collapsedPaths,
-          }
-        )}</pre>
+        <pre class="spoosh-json${isError ? " error" : ""}">${formattedContent}</pre>
       </div>
     </div>
   `;

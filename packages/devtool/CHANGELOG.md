@@ -1,5 +1,9 @@
 # @spoosh/devtool
 
+## 0.7.3
+
+- Fix white spaces and newlines not rendering correctly in import view
+
 ## 0.7.2
 
 - Fix import traces not working properly for extension
