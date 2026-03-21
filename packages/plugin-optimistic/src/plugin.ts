@@ -271,7 +271,8 @@ export function optimisticPlugin() {
         return next();
       }
 
-      context.plugins.get("spoosh:invalidation")?.setDefaultMode("none");
+      // Disable auto-invalidation (user can still pass explicit invalidate option)
+      context.plugins.get("spoosh:invalidation")?.disableAutoInvalidate();
 
       const allImmediateSnapshots: OptimisticSnapshot[] = [];
 

@@ -308,7 +308,7 @@ The optimistic plugin depends on the invalidation plugin and coordinates with it
 
 ```typescript
 export interface InvalidationPluginInternal {
-  setDefaultMode: (value: InvalidationMode) => void;
+  disableAutoInvalidate: () => void;
 }
 
 export function invalidationPlugin(
@@ -320,8 +320,8 @@ export function invalidationPlugin(
 
     internal(context): InvalidationPluginInternal {
       return {
-        setDefaultMode(value: InvalidationMode) {
-          context.temp.set("invalidation:defaultMode", value);
+        disableAutoInvalidate() {
+          context.temp.set("invalidation:disabled", true);
         },
       };
     },
@@ -347,7 +347,7 @@ export function optimisticPlugin(): SpooshPlugin {
 
       if (targets.length > 0) {
         // Tell invalidation plugin to NOT invalidate (we're doing optimistic update)
-        context.plugins.get("spoosh:invalidation")?.setDefaultMode("none");
+        context.plugins.get("spoosh:invalidation")?.disableAutoInvalidate();
       }
 
       // Apply optimistic updates...
@@ -363,7 +363,7 @@ export function optimisticPlugin(): SpooshPlugin {
 
 1. Optimistic updates immediately modify cache
 2. By default, invalidation would mark cache as stale (defeating the purpose)
-3. Optimistic plugin calls `setDefaultMode("none")` to disable invalidation for this request
+3. Optimistic plugin calls `disableAutoInvalidate()` to disable invalidation for this request
 4. User can still override with explicit `invalidate` option
 
 ## Type-Safe Internal
@@ -438,7 +438,7 @@ middleware: async (context, next) => {
 ```typescript
 // types.ts
 export interface InvalidationPluginInternal {
-  setDefaultMode: (value: InvalidationMode) => void;
+  disableAutoInvalidate: () => void;
 }
 
 declare module "@spoosh/core" {
@@ -452,7 +452,7 @@ Now other plugins get autocomplete and type checking:
 
 ```typescript
 // Fully type-safe!
-context.plugins.get("spoosh:invalidation")?.setDefaultMode("none");
+context.plugins.get("spoosh:invalidation")?.disableAutoInvalidate();
 ```
 
 ## When to Use Each Pattern
@@ -474,7 +474,7 @@ context.plugins.get("spoosh:invalidation")?.setDefaultMode("none");
 - ✅ Coordinating behavior between different plugins
 - ✅ Plugin dependencies (Plugin A requires Plugin B's API)
 
-**Example:** Optimistic plugin calls invalidation plugin's `setDefaultMode()` API
+**Example:** Optimistic plugin calls invalidation plugin's `disableAutoInvalidate()` API
 
 ### Wrong vs Right: Cross-Plugin Communication
 
@@ -615,7 +615,7 @@ export function optimisticPlugin(): SpooshPlugin {
 
     middleware: async (context, next) => {
       // Safe to assume invalidation plugin exists
-      context.plugins.get("spoosh:invalidation")?.setDefaultMode("none");
+      context.plugins.get("spoosh:invalidation")?.disableAutoInvalidate();
       return next();
     },
   };
@@ -655,11 +655,11 @@ context.temp.set("flag", true);
 internal(context) {
   return {
     /**
-     * Sets the default invalidation mode for this request.
-     * @param value - "all" | "self" | "none"
+     * Disables automatic invalidation for this request.
+     * Useful when doing optimistic updates.
      */
-    setDefaultMode(value: InvalidationMode) {
-      context.temp.set("invalidation:defaultMode", value);
+    disableAutoInvalidate() {
+      context.temp.set("invalidation:disabled", true);
     },
   };
 }

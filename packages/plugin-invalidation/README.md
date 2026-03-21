@@ -1,6 +1,6 @@
 # @spoosh/plugin-invalidation
 
-Cache invalidation plugin for Spoosh - auto-invalidates related queries after mutations.
+Cache invalidation plugin for Spoosh - auto-invalidates related queries after mutations using wildcard patterns.
 
 **[Documentation](https://spoosh.dev/docs/react/plugins/invalidation)** · **Requirements:** TypeScript >= 5.0 · **Peer Dependencies:** `@spoosh/core`
 
@@ -12,29 +12,28 @@ npm install @spoosh/plugin-invalidation
 
 ## How It Works
 
-Tags are automatically generated from the API path hierarchy:
+Tags are automatically generated from the API path:
 
 ```typescript
-// Query tags are generated from the path:
-useRead((api) => api("users").GET());
-// → tags: ["users"]
+useRead((api) => api("posts").GET());
+// → tag: "posts"
 
-useRead((api) => api("users/:id").GET({ params: { id: 123 } }));
-// → tags: ["users", "users/123"]
+useRead((api) => api("posts/:id").GET({ params: { id: 123 } }));
+// → tag: "posts/123"
 
-useRead((api) => api("users/:id/posts").GET({ params: { id: 123 } }));
-// → tags: ["users", "users/123", "users/123/posts"]
+useRead((api) => api("posts/:id/comments").GET({ params: { id: 123 } }));
+// → tag: "posts/123/comments"
 ```
 
-When a mutation succeeds, related queries are automatically invalidated:
+When a mutation succeeds, related queries are automatically invalidated using wildcard patterns:
 
 ```typescript
-// Creating a post at users/123/posts invalidates:
-const { trigger } = useWrite((api) => api("users/:id/posts").POST());
-await trigger({ params: { id: 123 }, body: { title: "New Post" } });
+const { trigger } = useWrite((api) => api("posts/:id/comments").POST());
+await trigger({ params: { id: 123 }, body: { text: "Hello" } });
 
-// ✓ Invalidates: "users", "users/123", "users/123/posts"
-// All queries matching these tags will refetch automatically
+// Default behavior (autoInvalidate: true):
+// Invalidates: ["posts", "posts/*"]
+// ✓ Matches: "posts", "posts/123", "posts/123/comments", etc.
 ```
 
 ## Usage
@@ -49,80 +48,51 @@ const { trigger } = useWrite((api) => api("posts").POST());
 await trigger({ body: { title: "New Post" } });
 ```
 
-## Default Configuration
+## Pattern Matching
 
-```typescript
-// Default: invalidate all related tags (full hierarchy)
-invalidationPlugin(); // same as { defaultMode: "all" }
-
-// Only invalidate the exact endpoint by default
-invalidationPlugin({ defaultMode: "self" });
-
-// Disable auto-invalidation by default (manual only)
-invalidationPlugin({ defaultMode: "none" });
-```
+| Pattern | Matches | Does NOT Match |
+|---------|---------|----------------|
+| `"posts"` | `"posts"` (exact) | `"posts/1"`, `"users"` |
+| `"posts/*"` | `"posts/1"`, `"posts/1/comments"` | `"posts"` (parent) |
+| `["posts", "posts/*"]` | `"posts"` AND all children | - |
 
 ## Per-Request Invalidation
 
 ```typescript
-// Mode only (string)
+// Exact match only
 await trigger({
   body: { title: "New Post" },
-  invalidate: "all", // Invalidate entire path hierarchy
+  invalidate: "posts",
 });
 
+// Children only (not the parent)
 await trigger({
   body: { title: "New Post" },
-  invalidate: "self", // Only invalidate the exact endpoint
+  invalidate: "posts/*",
 });
 
+// Parent AND all children
 await trigger({
   body: { title: "New Post" },
-  invalidate: "none", // No invalidation
+  invalidate: ["posts", "posts/*"],
 });
 
-// Single tag (string)
+// Multiple patterns
 await trigger({
   body: { title: "New Post" },
-  invalidate: "posts", // Invalidate only "posts" tag
+  invalidate: ["posts", "users/*", "dashboard"],
 });
 
-// Multiple tags (array without mode keyword)
+// Disable invalidation for this mutation
 await trigger({
   body: { title: "New Post" },
-  invalidate: ["posts", "users", "custom-tag"],
-  // → Default mode: 'none' (only explicit tags are invalidated)
+  invalidate: false,
 });
 
-// Mode + Tags (array with mode keyword at any position)
+// Global refetch - triggers ALL queries to refetch
 await trigger({
   body: { title: "New Post" },
-  invalidate: ["all", "dashboard", "stats"],
-  // → 'all' mode + explicit tags
-});
-
-await trigger({
-  body: { title: "New Post" },
-  invalidate: ["posts", "self", "users"],
-  // → 'self' mode + explicit tags
-});
-
-await trigger({
-  body: { title: "New Post" },
-  invalidate: ["dashboard", "stats", "all"],
-  // → 'all' mode + explicit tags (mode can be anywhere)
-});
-
-// Wildcard - global refetch
-await trigger({
-  body: { title: "New Post" },
-  invalidate: "*", // Triggers ALL queries to refetch
-});
-
-// Combined with clearCache (from @spoosh/plugin-cache)
-await trigger({
-  clearCache: true, // Clear all cached data
-  invalidate: "*", // Then refetch all queries
+  invalidate: "*",
 });
 ```
 
@@ -130,91 +100,74 @@ await trigger({
 
 ### Plugin Config
 
-| Option        | Type                        | Default | Description                                         |
-| ------------- | --------------------------- | ------- | --------------------------------------------------- |
-| `defaultMode` | `"all" \| "self" \| "none"` | `"all"` | Default invalidation mode when option not specified |
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `autoInvalidate` | `boolean` | `true` | Auto-generate invalidation patterns from path |
+
+```typescript
+// Default: auto-invalidate using [firstSegment, firstSegment/*]
+invalidationPlugin(); // same as { autoInvalidate: true }
+
+// Disable auto-invalidation (manual only)
+invalidationPlugin({ autoInvalidate: false });
+```
 
 ### Per-Request Options
 
-| Option       | Type                                                     | Description                                                                                                                      |
-| ------------ | -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `invalidate` | `"all" \| "self" \| "none" \| "*" \| string \| string[]` | Mode (`"all"`, `"self"`, `"none"`), wildcard (`"*"` for global refetch), single tag, or array of tags with optional mode keyword |
+| Option | Type | Description |
+|--------|------|-------------|
+| `invalidate` | `string \| string[] \| false \| "*"` | Pattern(s) to invalidate, `false` to disable, or `"*"` for global refetch |
 
-### Invalidation Modes
+## Default Behavior
 
-| Mode     | Description                             | Example                                                     |
-| -------- | --------------------------------------- | ----------------------------------------------------------- |
-| `"all"`  | Invalidate all tags from path hierarchy | `users/123/posts` → `users`, `users/123`, `users/123/posts` |
-| `"self"` | Only invalidate the exact endpoint tag  | `users/123/posts` → `users/123/posts`                       |
-| `"none"` | Disable auto-invalidation (manual only) | No automatic invalidation                                   |
-| `"*"`    | Global refetch - triggers all queries   | All active queries refetch                                  |
-
-### Understanding `"all"` vs `"*"`
-
-These two options serve different purposes:
-
-- **`"all"`** - Invalidates all tags **from the current endpoint's path hierarchy**. If you're mutating `users/123/posts`, it invalidates `["users", "users/123", "users/123/posts"]`. It's scoped to the mutation's path.
-
-- **`"*"`** - Triggers a **global refetch of every active query** in your app, regardless of tags. Use this sparingly for scenarios like "user logged out" or "full data sync from server".
+When `autoInvalidate: true` (default) and no `invalidate` option is provided:
 
 ```typescript
-// "all" - scoped to this mutation's path hierarchy
-await trigger({ invalidate: "all" });
-// If path is users/123/posts → invalidates: users, users/123, users/123/posts
+// POST /posts/123/comments
+// → Invalidates: ["posts", "posts/*"]
 
-// "*" - refetches ALL queries in the entire app
-await trigger({ invalidate: "*" });
-// Every active useRead/injectRead will refetch
+// The first path segment is used to generate patterns:
+// - "posts" - exact match for the root
+// - "posts/*" - all children under posts
 ```
 
 ## Instance API
 
-The plugin exposes `invalidate` for manually triggering cache invalidation outside of mutations:
+The plugin exposes `invalidate` for manual cache invalidation:
 
 ```typescript
 import { create } from "@spoosh/react";
 
 const { useRead, invalidate } = create(spoosh);
 
-// Invalidate with string array
-invalidate(["users", "posts"]);
+// Single pattern
+invalidate("posts");
 
-// Invalidate with single string
-invalidate("users");
+// Multiple patterns
+invalidate(["posts", "users/*"]);
 
-// Global refetch - triggers ALL queries to refetch
+// Global refetch
 invalidate("*");
 
-// Useful for external events like WebSocket messages
-socket.on("data-changed", (tags) => {
-  invalidate(tags);
+// Useful for external events
+socket.on("posts-updated", () => {
+  invalidate(["posts", "posts/*"]);
 });
 
-// WebSocket: trigger global refetch
 socket.on("full-sync", () => {
   invalidate("*");
 });
 ```
 
-| Method       | Description                                                            |
-| ------------ | ---------------------------------------------------------------------- |
-| `invalidate` | Manually invalidate cache entries by tags, or use `"*"` to refetch all |
-
 ## Combining with Cache Plugin
 
-For scenarios like logout or user switching, combine `invalidate: "*"` with `clearCache` from `@spoosh/plugin-cache`:
+For scenarios like logout, combine with `clearCache` from `@spoosh/plugin-cache`:
 
 ```typescript
 const { trigger } = useWrite((api) => api("auth/logout").POST());
 
-// Clear cache + trigger all queries to refetch
 await trigger({
-  clearCache: true, // From cache plugin: clear all cached data
-  invalidate: "*", // From invalidation plugin: trigger all queries to refetch
+  clearCache: true,  // Clear all cached data
+  invalidate: "*",   // Trigger all queries to refetch
 });
 ```
-
-This ensures both:
-
-1. All cached data is cleared (no stale data from previous session)
-2. All active queries refetch with fresh data

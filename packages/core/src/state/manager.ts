@@ -1,4 +1,5 @@
 import type { CacheEntry } from "../plugins/types";
+import { matchTags } from "../utils/matchTag";
 import { sortObjectKeys } from "../utils/sortObjectKeys";
 import type {
   CacheEntryWithKey,
@@ -103,9 +104,9 @@ export function createStateManager(): StateManager {
       };
     },
 
-    getCacheByTags<TData>(tags: string[]) {
+    getCacheByTags<TData>(patterns: string[]) {
       for (const entry of cache.values()) {
-        const hasMatch = entry.tags.some((tag) => tags.includes(tag));
+        const hasMatch = entry.tags.some((tag) => matchTags(tag, patterns));
 
         if (hasMatch && entry.state.data !== undefined) {
           return entry as CacheEntry<TData>;
@@ -115,11 +116,11 @@ export function createStateManager(): StateManager {
       return undefined;
     },
 
-    getCacheEntriesByTags<TData, TError>(tags: string[]) {
+    getCacheEntriesByTags<TData, TError>(patterns: string[]) {
       const entries: CacheEntryWithKey<TData, TError>[] = [];
 
       cache.forEach((entry, key) => {
-        const hasMatch = entry.tags.some((tag) => tags.includes(tag));
+        const hasMatch = entry.tags.some((tag) => matchTags(tag, patterns));
 
         if (hasMatch) {
           entries.push({
@@ -168,9 +169,9 @@ export function createStateManager(): StateManager {
       notifySubscribers(key);
     },
 
-    markStale(tags) {
+    markStale(patterns) {
       cache.forEach((entry) => {
-        const hasMatch = entry.tags.some((tag) => tags.includes(tag));
+        const hasMatch = entry.tags.some((tag) => matchTags(tag, patterns));
 
         if (hasMatch) {
           entry.stale = true;

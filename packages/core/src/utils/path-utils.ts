@@ -1,35 +1,25 @@
-import { generateTags } from "./generateTags";
-
-export type TagMode = "all" | "self" | "none";
-
-type TagModeInArray = "all" | "self";
+import { normalizeTag } from "./matchTag";
 
 /**
  * Common tag options used across plugins and operations.
  */
 export type TagOptions = {
   /**
-   * Unified tag option (follows invalidation pattern)
-   * - String: mode only ('all' | 'self' | 'none')
-   * - Array: custom tags only OR [mode keyword mixed with custom tags]
-   *   - If array contains 'all' or 'self', it's treated as mode + tags
-   *   - Otherwise, it's custom tags only (replaces auto-generated tags)
-   *   - 'none' keyword should NOT be used in arrays (use string 'none' instead)
+   * Custom tags to use instead of auto-generated tag.
+   * Can be a single tag string or an array of tags.
    */
-  tags?: TagMode | (TagModeInArray | (string & {}))[];
+  tags?: string | string[];
 };
 
-function resolveTagMode(mode: TagMode, path: string[]): string[] {
-  switch (mode) {
-    case "all":
-      return generateTags(path);
-    case "self":
-      return [path.join("/")];
-    case "none":
-      return [];
-  }
-}
-
+/**
+ * Resolves tags for a cache entry.
+ * Returns a single tag by default (the joined path), or custom tags if provided.
+ * All tags are normalized (leading "/" removed) for consistency.
+ *
+ * @param options - Tag options containing optional custom tags
+ * @param resolvedPath - The resolved path segments
+ * @returns Array of normalized tags
+ */
 export function resolveTags(
   options: TagOptions | undefined,
   resolvedPath: string[]
@@ -37,33 +27,20 @@ export function resolveTags(
   const tagsOption = options?.tags;
 
   if (!tagsOption) {
-    return generateTags(resolvedPath);
+    const tag = resolvedPath.join("/");
+    return tag ? [normalizeTag(tag)] : [];
   }
 
   if (typeof tagsOption === "string") {
-    return resolveTagMode(tagsOption, resolvedPath);
+    return [normalizeTag(tagsOption)];
   }
 
   if (Array.isArray(tagsOption)) {
-    const tags: string[] = [];
-    let mode: TagMode | null = null;
-
-    for (const item of tagsOption) {
-      if (item === "all" || item === "self") {
-        mode = item as TagMode;
-      } else if (typeof item === "string") {
-        tags.push(item);
-      }
-    }
-
-    if (mode) {
-      tags.push(...resolveTagMode(mode, resolvedPath));
-    }
-
-    return [...new Set(tags)];
+    return [...new Set(tagsOption.map(normalizeTag))];
   }
 
-  return generateTags(resolvedPath);
+  const tag = resolvedPath.join("/");
+  return tag ? [normalizeTag(tag)] : [];
 }
 
 export function resolvePath(

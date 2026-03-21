@@ -683,24 +683,24 @@ describe("optimisticPlugin", () => {
   });
 
   describe("autoInvalidate default behavior", () => {
-    it("should set autoInvalidate default to none when optimistic is used", async () => {
+    it("should disable auto-invalidation via internal API when optimistic is used", async () => {
       const plugin = optimisticPlugin();
       const stateManager = createStateManager();
 
       const cacheKey = '{"method":"GET","path":"posts"}';
       setupCacheEntry(stateManager, cacheKey, [{ id: 1 }], "posts");
 
-      const setDefaultMode = vi.fn();
       const pluginOptions = createOptimisticPluginOptions(
         "posts",
         (data) => data
       );
 
+      const disableAutoInvalidate = vi.fn();
       const context = createMockContext({
         stateManager,
         pluginOptions,
         plugins: {
-          get: vi.fn().mockReturnValue({ setDefaultMode }),
+          get: vi.fn().mockReturnValue({ disableAutoInvalidate }),
         },
       });
 
@@ -710,7 +710,38 @@ describe("optimisticPlugin", () => {
 
       await plugin.middleware!(context, next);
 
-      expect(setDefaultMode).toHaveBeenCalledWith("none");
+      expect(disableAutoInvalidate).toHaveBeenCalled();
+    });
+
+    it("should not override user-provided invalidate option", async () => {
+      const plugin = optimisticPlugin();
+      const stateManager = createStateManager();
+
+      const cacheKey = '{"method":"GET","path":"posts"}';
+      setupCacheEntry(stateManager, cacheKey, [{ id: 1 }], "posts");
+
+      const pluginOptions = {
+        ...createOptimisticPluginOptions("posts", (data) => data),
+        invalidate: ["posts", "posts/*"],
+      } as Record<string, unknown>;
+
+      const disableAutoInvalidate = vi.fn();
+      const context = createMockContext({
+        stateManager,
+        pluginOptions,
+        plugins: {
+          get: vi.fn().mockReturnValue({ disableAutoInvalidate }),
+        },
+      });
+
+      const next = vi
+        .fn()
+        .mockResolvedValue({ data: { success: true }, status: 200 });
+
+      await plugin.middleware!(context, next);
+
+      // User's invalidate option should be preserved
+      expect(pluginOptions.invalidate).toEqual(["posts", "posts/*"]);
     });
   });
 

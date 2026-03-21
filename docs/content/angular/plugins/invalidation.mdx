@@ -3,7 +3,7 @@ title: Invalidation
 description: Auto-invalidate queries after mutations
 ---
 
-The invalidation plugin automatically refreshes related queries after mutations succeed. This keeps your UI in sync without manual refetching.
+The invalidation plugin automatically refreshes related queries after mutations succeed using wildcard pattern matching. This keeps your UI in sync without manual refetching.
 
 ## Installation
 
@@ -26,87 +26,67 @@ const spoosh = new Spoosh<ApiSchema, Error>("/api").use([
 ]);
 ```
 
-## Default Configuration
+## Configuration
 
 ```typescript
-// Default: invalidate all related tags (full hierarchy)
-invalidationPlugin(); // same as { defaultMode: "all" }
+// Default: auto-invalidate using [firstSegment, firstSegment/*]
+invalidationPlugin(); // same as { autoInvalidate: true }
 
-// Only invalidate the exact endpoint by default
-invalidationPlugin({ defaultMode: "self" });
-
-// Disable auto-invalidation by default (manual only)
-invalidationPlugin({ defaultMode: "none" });
+// Disable auto-invalidation (manual only)
+invalidationPlugin({ autoInvalidate: false });
 ```
 
 ## How It Works
 
-Tags are automatically generated from the API path hierarchy:
+Tags are automatically generated from the resolved API path:
 
 ```typescript
-// Query tags are generated from the path:
-injectRead((api) => api("users").GET());
-// → tags: ["users"]
+injectRead((api) => api("posts").GET());
+// → tag: "posts"
 
-injectRead((api) => api("users/:id").GET({ params: { id: 123 } }));
-// → tags: ["users", "users/123"]
+injectRead((api) => api("posts/:id").GET({ params: { id: 123 } }));
+// → tag: "posts/123"
 
-injectRead((api) => api("users/:id/posts").GET({ params: { id: 123 } }));
-// → tags: ["users", "users/123", "users/123/posts"]
+injectRead((api) => api("posts/:id/comments").GET({ params: { id: 123 } }));
+// → tag: "posts/123/comments"
 ```
 
 ### Custom Tags on Queries
 
-You can override or extend auto-generated tags using the unified `tags` option:
+You can provide custom tags to override the auto-generated tag:
 
 ```typescript
-// Mode only - 'all' generates full hierarchy
-posts = injectRead(
-  (api) => api("users/:id/posts").GET({ params: { id: "123" } }),
-  {
-    tags: "all", // ['users', 'users/123', 'users/123/posts']
-  }
-);
-
-// Mode only - 'self' generates only exact path
-posts = injectRead(
-  (api) => api("users/:id/posts").GET({ params: { id: "123" } }),
-  {
-    tags: "self", // ['users/123/posts']
-  }
-);
-
-// Custom tags only - replaces auto-generated tags
+// Custom tag - replaces auto-generated tag
 users = injectRead((api) => api("users").GET(), {
-  tags: ["custom-users", "dashboard"], // ['custom-users', 'dashboard']
+  tags: "my-users",
 });
+// → tag: "my-users"
 
-// Mode + custom tags - 'all' mode combined with custom tags
-posts = injectRead(
-  (api) => api("users/:id/posts").GET({ params: { id: "123" } }),
-  {
-    tags: ["all", "dashboard"], // ['users', 'users/123', 'users/123/posts', 'dashboard']
-  }
-);
-
-// Mode + custom tags - 'self' mode combined with custom tags
-posts = injectRead(
-  (api) => api("users/:id/posts").GET({ params: { id: "123" } }),
-  {
-    tags: ["self", "dashboard"], // ['users/123/posts', 'dashboard']
-  }
-);
+// Multiple custom tags
+users = injectRead((api) => api("users").GET(), {
+  tags: ["users", "dashboard"],
+});
+// → tags: ["users", "dashboard"]
 ```
 
-When a mutation succeeds, related queries are automatically invalidated:
+When a mutation succeeds, related queries are automatically invalidated using wildcard patterns:
 
 ```typescript
-createPost = injectWrite((api) => api("users/:id/posts").POST());
+createComment = injectWrite((api) => api("posts/:id/comments").POST());
 
-await createPost.trigger({ params: { id: 123 }, body: { title: "New Post" } });
-// ✓ Invalidates: "users", "users/123", "users/123/posts"
-// All queries matching these tags will refetch automatically
+await createComment.trigger({ params: { id: 123 }, body: { text: "Hello" } });
+// Default behavior (autoInvalidate: true):
+// Invalidates: ["posts", "posts/*"]
+// ✓ Matches: "posts", "posts/123", "posts/123/comments", etc.
 ```
+
+## Pattern Matching
+
+| Pattern | Matches | Does NOT Match |
+|---------|---------|----------------|
+| `"posts"` | `"posts"` (exact only) | `"posts/1"`, `"users"` |
+| `"posts/*"` | `"posts/1"`, `"posts/1/comments"` | `"posts"` (parent) |
+| `["posts", "posts/*"]` | `"posts"` AND all children | - |
 
 ## Per-Request Invalidation
 
@@ -115,52 +95,40 @@ Override the default invalidation behavior for specific mutations:
 ```typescript
 createPost = injectWrite((api) => api("posts").POST());
 
-// Mode only (string)
+// Exact match only
 await createPost.trigger({
   body: { title: "New Post" },
-  invalidate: "all", // Invalidate entire path hierarchy
+  invalidate: "posts",
 });
 
+// Children only (not the parent)
 await createPost.trigger({
   body: { title: "New Post" },
-  invalidate: "self", // Only invalidate the exact endpoint
+  invalidate: "posts/*",
 });
 
+// Parent AND all children
 await createPost.trigger({
   body: { title: "New Post" },
-  invalidate: "none", // No invalidation
+  invalidate: ["posts", "posts/*"],
 });
 
-// Single tag (string)
+// Multiple patterns
 await createPost.trigger({
   body: { title: "New Post" },
-  invalidate: "posts", // Invalidate only "posts" tag
+  invalidate: ["posts", "users/*", "dashboard"],
 });
 
-// Multiple tags (array without mode keyword)
+// Disable invalidation for this mutation
 await createPost.trigger({
   body: { title: "New Post" },
-  invalidate: ["posts", "users", "custom-tag"],
-  // → Only explicit tags are invalidated
+  invalidate: false,
 });
 
-// Mode + Tags (array with mode keyword)
+// Global refetch - triggers ALL queries to refetch
 await createPost.trigger({
   body: { title: "New Post" },
-  invalidate: ["all", "dashboard", "stats"],
-  // → 'all' mode + explicit tags
-});
-
-await createPost.trigger({
-  body: { title: "New Post" },
-  invalidate: ["posts", "self", "users"],
-  // → 'self' mode + explicit tags
-});
-
-// Wildcard - global refetch
-await createPost.trigger({
-  body: { title: "New Post" },
-  invalidate: "*", // Triggers ALL queries to refetch
+  invalidate: "*",
 });
 
 // Combined with clearCache (from @spoosh/plugin-cache)
@@ -174,48 +142,32 @@ await createPost.trigger({
 
 ### Plugin Config
 
-| Option        | Type                        | Default | Description                                         |
-| ------------- | --------------------------- | ------- | --------------------------------------------------- |
-| `defaultMode` | `"all" \| "self" \| "none"` | `"all"` | Default invalidation mode when option not specified |
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `autoInvalidate` | `boolean` | `true` | Auto-generate invalidation patterns from path |
 
 ### Per-Request Options
 
-| Option       | Type                                                     | Description                                                                                                                      |
-| ------------ | -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `invalidate` | `"all" \| "self" \| "none" \| "*" \| string \| string[]` | Mode (`"all"`, `"self"`, `"none"`), wildcard (`"*"` for global refetch), single tag, or array of tags with optional mode keyword |
+| Option | Type | Description |
+|--------|------|-------------|
+| `invalidate` | `string \| string[] \| false \| "*"` | Pattern(s) to invalidate, `false` to disable, or `"*"` for global refetch |
 
-## Invalidation Modes
+## Default Behavior
 
-| Mode     | Description                                       |
-| -------- | ------------------------------------------------- |
-| `"all"`  | Invalidate all tags from path hierarchy (default) |
-| `"self"` | Only invalidate the exact endpoint tag            |
-| `"none"` | Disable auto-invalidation (manual only)           |
-| `"*"`    | Global refetch - triggers all queries to refetch  |
-
-### Understanding `"all"` vs `"*"`
-
-These two options serve different purposes:
-
-- **`"all"`** - Invalidates all tags **from the current endpoint's path hierarchy**. If you're mutating `users/123/posts`, it invalidates `["users", "users/123", "users/123/posts"]`. It's scoped to the mutation's path.
-
-- **`"*"`** - Triggers a **global refetch of every active query** in your app, regardless of tags. Use this sparingly for scenarios like "user logged out" or "full data sync from server".
+When `autoInvalidate: true` (default) and no `invalidate` option is provided:
 
 ```typescript
-createPost = injectWrite((api) => api("users/:id/posts").POST());
+// POST /posts/123/comments
+// → Invalidates: ["posts", "posts/*"]
 
-// "all" - scoped to this mutation's path hierarchy
-await createPost.trigger({ invalidate: "all" });
-// If path is users/123/posts → invalidates: users, users/123, users/123/posts
-
-// "*" - refetches ALL queries in the entire app
-await createPost.trigger({ invalidate: "*" });
-// Every active injectRead will refetch
+// The first path segment is used to generate patterns:
+// - "posts" - exact match for the root
+// - "posts/*" - all children under posts
 ```
 
 ## Examples
 
-### Nested Path Invalidation
+### Wildcard Pattern Invalidation
 
 ```typescript
 // Creating a new post
@@ -223,90 +175,62 @@ createPost = injectWrite((api) => api("posts").POST());
 
 await createPost.trigger({
   body: { title: "New Post" },
-  invalidate: "all",
+  invalidate: ["posts", "posts/*"],
 });
-// Invalidates: ["posts"]
+// Invalidates: "posts" and all posts/*, matching posts/1, posts/2, etc.
 
-// Updating a specific post
+// Updating a specific post - invalidate only children
 updatePost = injectWrite((api) => api("posts/:id").PATCH());
 
-const postId = 1;
 await updatePost.trigger({
-  params: { id: postId },
+  params: { id: 1 },
   body: { title: "Updated" },
-  invalidate: "all",
+  invalidate: "posts/*",
 });
-// Invalidates: ["posts", `posts/${postId}`]
+// Invalidates: posts/1, posts/1/comments, etc. (NOT "posts" itself)
 
-// Deleting a comment on a post
-deleteComment = injectWrite((api) =>
-  api("posts/:postId/comments/:id").DELETE()
+// Delete all comments for a post
+deleteComments = injectWrite((api) =>
+  api("posts/:postId/comments").DELETE()
 );
 
-const postId = 5;
-const commentId = 10;
-await deleteComment.trigger({
-  params: { postId, id: commentId },
-  invalidate: "all",
+await deleteComments.trigger({
+  params: { postId: 5 },
+  invalidate: ["posts/5/comments", "posts/5/comments/*"],
 });
-// Invalidates: ["posts", `posts/${postId}`, `posts/${postId}/comments`, `posts/${postId}/comments/${commentId}`]
+// Invalidates: posts/5/comments and all its children
 ```
 
-### Mode Comparison
-
-```typescript
-// Path: posts/:id/comments
-createComment = injectWrite((api) => api("posts/:id/comments").POST());
-
-const postId = 1;
-
-// Mode "all" invalidates full hierarchy
-await createComment.trigger({
-  params: { id: postId },
-  body: { text: "Great post!" },
-  invalidate: "all",
-});
-// Invalidates: ["posts", `posts/${postId}`, `posts/${postId}/comments`]
-
-// Mode "self" invalidates only exact endpoint
-await createComment.trigger({
-  params: { id: postId },
-  body: { text: "Great post!" },
-  invalidate: "self",
-});
-// Invalidates: [`posts/${postId}/comments`]
-
-// Mode "none" invalidates nothing
-await createComment.trigger({
-  params: { id: postId },
-  body: { text: "Great post!" },
-  invalidate: "none",
-});
-// Invalidates: []
-```
-
-### Combining Mode with Explicit Tags
+### Exact vs Wildcard
 
 ```typescript
 createComment = injectWrite((api) => api("posts/:id/comments").POST());
 
-const postId = 1;
-
-// Invalidate hierarchy + specific tags
+// Exact match - only invalidates queries with tag "posts"
 await createComment.trigger({
-  params: { id: postId },
+  params: { id: 1 },
   body: { text: "Great post!" },
-  invalidate: ["all", "dashboard", "user-stats"],
+  invalidate: "posts",
 });
-// Invalidates: ["posts", `posts/${postId}`, `posts/${postId}/comments`, "dashboard", "user-stats"]
+// ✓ Matches: "posts"
+// ✗ Does NOT match: "posts/1", "posts/1/comments"
 
-// Invalidate self + specific tags
+// Wildcard - invalidates all children
 await createComment.trigger({
-  params: { id: postId },
+  params: { id: 1 },
   body: { text: "Great post!" },
-  invalidate: ["self", `posts/${postId}`, "dashboard"],
+  invalidate: "posts/*",
 });
-// Invalidates: [`posts/${postId}/comments`, `posts/${postId}`, "dashboard"]
+// ✓ Matches: "posts/1", "posts/1/comments", "posts/2"
+// ✗ Does NOT match: "posts"
+
+// Both - invalidates parent and all children
+await createComment.trigger({
+  params: { id: 1 },
+  body: { text: "Great post!" },
+  invalidate: ["posts", "posts/*"],
+});
+// ✓ Matches: "posts", "posts/1", "posts/1/comments", "posts/2"
 ```
 
 ## Manual Invalidation
@@ -318,11 +242,11 @@ import { create } from "@spoosh/angular";
 
 const { injectRead, invalidate } = create(spoosh);
 
-// Invalidate with string array
-invalidate(["users", "posts"]);
-
-// Invalidate with single string
+// Single pattern
 invalidate("posts");
+
+// Multiple patterns
+invalidate(["posts", "users/*"]);
 
 // Global refetch - triggers ALL queries to refetch
 invalidate("*");
@@ -331,7 +255,7 @@ invalidate("*");
 ### WebSocket Example
 
 ```typescript
-import { Component, OnDestroy, OnInit, inject } from "@angular/core";
+import { Component, OnDestroy, OnInit } from "@angular/core";
 import { invalidate } from "./spoosh";
 
 @Component({
@@ -340,18 +264,17 @@ import { invalidate } from "./spoosh";
 })
 export class DashboardComponent implements OnInit, OnDestroy {
   ngOnInit() {
-    socket.on("data-changed", (tags: string[]) => {
-      invalidate(tags);
+    socket.on("posts-updated", () => {
+      invalidate(["posts", "posts/*"]);
     });
 
-    // Trigger global refetch on full sync
     socket.on("full-sync", () => {
       invalidate("*");
     });
   }
 
   ngOnDestroy() {
-    socket.off("data-changed");
+    socket.off("posts-updated");
     socket.off("full-sync");
   }
 }

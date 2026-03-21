@@ -1,7 +1,7 @@
 import {
   resolvePathString,
   createSpooshPlugin,
-  type PluginContext,
+  normalizeTag,
 } from "@spoosh/core";
 
 import type {
@@ -14,88 +14,60 @@ import type {
   InvalidationReadResult,
   InvalidationWriteResult,
   InvalidationQueueResult,
-  InvalidationMode,
-  InvalidationPluginExports,
   InvalidationInstanceApi,
+  InvalidationPluginInternal,
+  InvalidateOption,
 } from "./types";
 
 const PLUGIN_NAME = "spoosh:invalidation";
-const INVALIDATION_DEFAULT_KEY = "invalidation:defaultMode";
-
-function resolveModeTags(
-  context: PluginContext,
-  mode: InvalidationMode
-): string[] {
-  const params = context.request.params as
-    | Record<string, string | number>
-    | undefined;
-
-  switch (mode) {
-    case "all":
-      return context.tags.map((tag) => resolvePathString(tag, params));
-    case "self":
-      return [resolvePathString(context.path, params)];
-    case "none":
-      return [];
-  }
-}
+const AUTO_INVALIDATE_DISABLED_KEY = "invalidation:autoDisabled";
 
 function resolveInvalidateTags(
-  context: PluginContext,
-  defaultMode: InvalidationMode
-): string[] {
-  const invalidateOption = (
-    context.pluginOptions as
-      | InvalidationWriteTriggerOptions
-      | InvalidationQueueTriggerOptions
-      | undefined
-  )?.invalidate;
+  path: string,
+  params: Record<string, string | number> | undefined,
+  invalidateOption: InvalidateOption | undefined,
+  autoInvalidate: boolean
+): string[] | false {
+  if (invalidateOption === false) {
+    return false;
+  }
 
-  if (!invalidateOption) {
-    const overrideDefault = context.temp.get(INVALIDATION_DEFAULT_KEY) as
-      | InvalidationMode
-      | undefined;
-    const effectiveDefault = overrideDefault ?? defaultMode;
-    return resolveModeTags(context, effectiveDefault);
+  if (invalidateOption === "*" || invalidateOption === "/*") {
+    return ["*"];
   }
 
   if (typeof invalidateOption === "string") {
-    if (
-      invalidateOption === "all" ||
-      invalidateOption === "self" ||
-      invalidateOption === "none"
-    ) {
-      return resolveModeTags(context, invalidateOption);
+    const normalized = normalizeTag(invalidateOption);
+    // "/*" normalizes to "*" which is global refetch
+    if (normalized === "*") {
+      return ["*"];
     }
-
-    return [invalidateOption];
+    return [normalized];
   }
 
   if (Array.isArray(invalidateOption)) {
-    const tags: string[] = [];
-    let mode: InvalidationMode = "none";
-
-    for (const item of invalidateOption) {
-      if (item === "all" || item === "self") {
-        mode = item as InvalidationMode;
-      } else if (typeof item === "string") {
-        tags.push(item);
-      }
-    }
-
-    tags.push(...resolveModeTags(context, mode));
-
-    return [...new Set(tags)];
+    return [...new Set(invalidateOption.map(normalizeTag))];
   }
 
-  return [];
+  if (!autoInvalidate) {
+    return false;
+  }
+
+  const resolvedPath = normalizeTag(resolvePathString(path, params));
+  const firstSegment = resolvedPath.split("/")[0];
+
+  if (!firstSegment) {
+    return false;
+  }
+
+  return [firstSegment, `${firstSegment}/*`];
 }
 
 /**
  * Enables automatic cache invalidation after mutations.
  *
  * Marks related cache entries as stale and triggers refetches
- * based on tags or explicit invalidation targets.
+ * based on wildcard patterns or explicit invalidation targets.
  *
  * @param config - Plugin configuration
  *
@@ -107,24 +79,24 @@ function resolveInvalidateTags(
  *
  * const spoosh = new Spoosh<ApiSchema, Error>("/api")
  *   .use([
- *     invalidationPlugin({ defaultMode: "all" }),
+ *     invalidationPlugin({ autoInvalidate: true }),
  *   ]);
  *
  * // Per-mutation invalidation
  * trigger({
- *   invalidate: "self", // Mode only
+ *   invalidate: "posts", // Exact match only
  * });
  *
  * trigger({
- *   invalidate: "posts", // Single tag
+ *   invalidate: "posts/*", // Children only (posts/1, posts/1/comments)
  * });
  *
  * trigger({
- *   invalidate: ["posts", "users"], // Multiple tags
+ *   invalidate: ["posts", "posts/*"], // posts AND all children
  * });
  *
  * trigger({
- *   invalidate: ["all", "posts", "custom-tag"], // Mode + tags
+ *   invalidate: false, // Disable invalidation
  * });
  *
  * trigger({
@@ -133,7 +105,7 @@ function resolveInvalidateTags(
  * ```
  */
 export function invalidationPlugin(config: InvalidationPluginConfig = {}) {
-  const { defaultMode = "all" } = config;
+  const { autoInvalidate = true } = config;
 
   return createSpooshPlugin<{
     readOptions: InvalidationReadOptions;
@@ -145,23 +117,40 @@ export function invalidationPlugin(config: InvalidationPluginConfig = {}) {
     writeResult: InvalidationWriteResult;
     queueResult: InvalidationQueueResult;
     api: InvalidationInstanceApi;
+    internal: InvalidationPluginInternal;
   }>({
     name: PLUGIN_NAME,
     operations: ["write", "queue"],
-
-    internal(context): InvalidationPluginExports {
-      return {
-        setDefaultMode(value: InvalidationMode) {
-          context.temp.set(INVALIDATION_DEFAULT_KEY, value);
-        },
-      };
-    },
 
     afterResponse(context, response) {
       const t = context.tracer?.(PLUGIN_NAME);
 
       if (!response.error) {
-        const tags = resolveInvalidateTags(context, defaultMode);
+        const params = context.request.params as
+          | Record<string, string | number>
+          | undefined;
+
+        const invalidateOption = (
+          context.pluginOptions as
+            | InvalidationWriteTriggerOptions
+            | InvalidationQueueTriggerOptions
+            | undefined
+        )?.invalidate;
+
+        const isAutoDisabled = context.temp.get(AUTO_INVALIDATE_DISABLED_KEY);
+        const effectiveAutoInvalidate = isAutoDisabled ? false : autoInvalidate;
+
+        const tags = resolveInvalidateTags(
+          context.path,
+          params,
+          invalidateOption,
+          effectiveAutoInvalidate
+        );
+
+        if (tags === false) {
+          t?.skip("Invalidation disabled", { color: "muted" });
+          return;
+        }
 
         if (tags.includes("*")) {
           t?.log("Refetch all", { color: "warning" });
@@ -170,14 +159,14 @@ export function invalidationPlugin(config: InvalidationPluginConfig = {}) {
         }
 
         if (tags.length > 0) {
-          t?.log("Invalidated tags", {
+          t?.log("Invalidated patterns", {
             color: "info",
-            info: [{ label: "Tags", value: tags }],
+            info: [{ label: "Patterns", value: tags }],
           });
           context.stateManager.markStale(tags);
           context.eventEmitter.emit("invalidate", tags);
         } else {
-          t?.skip("No tags to invalidate", { color: "muted" });
+          t?.skip("No patterns to invalidate", { color: "muted" });
         }
       }
     },
@@ -187,22 +176,40 @@ export function invalidationPlugin(config: InvalidationPluginConfig = {}) {
       const et = context.eventTracer?.(PLUGIN_NAME);
 
       const invalidate = (input: string | string[]): void => {
-        const tags = Array.isArray(input) ? input : [input];
+        const rawPatterns = Array.isArray(input) ? input : [input];
 
-        if (tags.includes("*")) {
+        // Both "*" and "/*" trigger global refetch
+        if (rawPatterns.includes("*") || rawPatterns.includes("/*")) {
           et?.emit("Refetch all (manual)", { color: "warning" });
           eventEmitter.emit("refetchAll", undefined);
           return;
         }
 
-        if (tags.length > 0) {
-          et?.emit(`Invalidated: ${tags.join(", ")}`, { color: "info" });
-          stateManager.markStale(tags);
-          eventEmitter.emit("invalidate", tags);
+        const patterns = rawPatterns.map(normalizeTag);
+
+        // Check if any normalized pattern is "*" (from "/*")
+        if (patterns.includes("*")) {
+          et?.emit("Refetch all (manual)", { color: "warning" });
+          eventEmitter.emit("refetchAll", undefined);
+          return;
+        }
+
+        if (patterns.length > 0) {
+          et?.emit(`Invalidated: ${patterns.join(", ")}`, { color: "info" });
+          stateManager.markStale(patterns);
+          eventEmitter.emit("invalidate", patterns);
         }
       };
 
       return { invalidate };
+    },
+
+    internal(context): InvalidationPluginInternal {
+      return {
+        disableAutoInvalidate() {
+          context.temp.set(AUTO_INVALIDATE_DISABLED_KEY, true);
+        },
+      };
     },
   });
 }

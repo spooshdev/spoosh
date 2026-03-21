@@ -35,31 +35,29 @@ Using [Hono](/docs/react/type-adapters/hono) or [Elysia](/docs/react/type-adapte
 
 ## What Makes Spoosh Different
 
-### Hierarchical Cache Invalidation
+### Automatic Cache Invalidation
 
-Spoosh uses a tag-based caching system. Each query is automatically tagged based on its URL path hierarchy:
+Spoosh uses a tag-based caching system. Each query is automatically tagged based on its resolved API path:
 
 ```typescript
-// Query tags are automatically generated from the path:
+// Tags are generated from the resolved path:
 useRead((api) => api("users").GET());
-// → tags: ["users"]
+// → tag: "users"
 
 useRead((api) => api("users/:id").GET({ params: { id: 123 } }));
-// → tags: ["users", "users/123"]
+// → tag: "users/123"
 
 useRead((api) => api("users/:id/posts").GET({ params: { id: 123 } }));
-// → tags: ["users", "users/123", "users/123/posts"]
+// → tag: "users/123/posts"
 ```
 
-When you mutate data, Spoosh automatically invalidates related queries based on these tags. Create a post for user 123? Every query that depends on that user's data refreshes automatically.
+When you mutate data, Spoosh automatically invalidates related queries using wildcard pattern matching.
 
 ```typescript
 const { trigger } = useWrite((api) => api("users/:id/posts").POST());
 
-// This mutation automatically invalidates:
-// - users
-// - users/123
-// - users/123/posts
+// Default invalidation pattern: ["users", "users/*"]
+// Matches: "users", "users/123", "users/123/posts", etc.
 await trigger({ params: { id: 123 }, body: newPost });
 ```
 

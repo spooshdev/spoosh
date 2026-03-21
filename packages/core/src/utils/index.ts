@@ -24,9 +24,9 @@ export {
   resolvePath,
   resolvePathString,
   resolveTags,
-  type TagMode,
   type TagOptions,
 } from "./path-utils";
+export { matchTag, matchTags, normalizeTag } from "./matchTag";
 export { isNetworkError, isAbortError } from "./errors";
 export { clone } from "./clone";
 export { createTracer } from "./tracer";

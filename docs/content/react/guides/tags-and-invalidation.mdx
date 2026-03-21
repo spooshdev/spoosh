@@ -9,79 +9,78 @@ Spoosh uses **tags** to determine which queries should refresh after a mutation.
 
 ## The Mental Model
 
-Every query is automatically tagged based on its API path. When a mutation succeeds, Spoosh finds all active queries with matching tags and refetches them.
+Every query is automatically tagged based on its resolved API path. When a mutation succeeds, Spoosh uses wildcard pattern matching to find and refetch matching queries.
 
 ```typescript
-// This query gets tagged with: ["users", "users/123", "users/123/posts"]
+// This query gets tagged with: "users/123/posts"
 useRead((api) => api("users/:id/posts").GET({ params: { id: 123 } }));
 
 // When this mutation succeeds...
 const { trigger } = useWrite((api) => api("users/:id").PATCH());
 await trigger({ params: { id: 123 }, body: updated });
-// → Tags ["users", "users/123"] are invalidated
-// → The query above refetches because its tags overlap
+// → Default invalidation: ["users", "users/*"]
+// → The query above refetches because "users/123/posts" matches "users/*"
 ```
 
-This hierarchical tagging means mutations automatically refresh related queries without manual wiring.
+## Pattern Matching
 
-## Tag Modes
+Invalidation uses wildcard patterns to match query tags:
 
-Control how granular your query's tags are:
+| Pattern | Matches | Does NOT Match |
+|---------|---------|----------------|
+| `"posts"` | `"posts"` (exact) | `"posts/1"` |
+| `"posts/*"` | `"posts/1"`, `"posts/1/comments"` | `"posts"` |
+| `["posts", "posts/*"]` | `"posts"` AND all children | - |
 
-| Mode              | Tags Generated      | Use When                                         |
-| ----------------- | ------------------- | ------------------------------------------------ |
-| `"all"` (default) | Full path hierarchy | You want refreshes from parent/sibling mutations |
-| `"self"`          | Exact endpoint only | You only want refreshes from this exact endpoint |
+## Custom Tags
 
-```typescript
-// "all" mode (default) — refreshes when users, users/5, or users/5/posts mutate
-useRead((api) => api("users/:id/posts").GET({ params: { id: "5" } }));
-
-// "self" mode — only refreshes when users/5/posts specifically mutates
-useRead((api) => api("users/:id/posts").GET({ params: { id: "5" } }), {
-  tags: "self",
-});
-```
-
-### Custom Tags
-
-Add your own tags for cross-domain invalidation:
+Override the auto-generated tag with custom tags:
 
 ```typescript
-// Replace auto-generated tags entirely
+// Single custom tag
 useRead((api) => api("dashboard/stats").GET(), {
-  tags: ["dashboard", "analytics"],
+  tags: "dashboard",
 });
 
-// Combine mode with custom tags
+// Multiple custom tags
 useRead((api) => api("users/:id/posts").GET({ params: { id: "5" } }), {
-  tags: ["all", "dashboard"], // hierarchy + custom
+  tags: ["user-posts", "dashboard"],
 });
 ```
 
-## Invalidation Strategies
+## Invalidation Patterns
 
-After a mutation, you control what gets invalidated:
+After a mutation, control what gets invalidated:
 
-| Strategy           | Effect                                         |
-| ------------------ | ---------------------------------------------- |
-| `"all"` (default)  | Invalidate full path hierarchy of the mutation |
-| `"self"`           | Invalidate only the exact mutation endpoint    |
-| `"none"`           | Skip invalidation entirely                     |
-| `"*"`              | Global refetch — every active query refetches  |
-| `["tag1", "tag2"]` | Invalidate specific tags                       |
+| Pattern | Effect |
+|---------|--------|
+| Default (`autoInvalidate: true`) | `[firstSegment, firstSegment/*]` |
+| `"posts"` | Exact match only |
+| `"posts/*"` | All children of posts |
+| `["posts", "posts/*"]` | posts AND all children |
+| `false` | Skip invalidation |
+| `"*"` | Global refetch — every active query refetches |
 
 ```typescript
 const { trigger } = useWrite((api) => api("posts").POST());
 
-// Standard CRUD — let related queries refresh
-await trigger({ body: newPost, invalidate: "all" });
+// Default behavior — invalidates ["posts", "posts/*"]
+await trigger({ body: newPost });
 
-// Surgical update — only this endpoint's queries refresh
-await trigger({ body: newPost, invalidate: "self" });
+// Exact match only
+await trigger({ body: newPost, invalidate: "posts" });
+
+// Children only
+await trigger({ body: newPost, invalidate: "posts/*" });
+
+// Parent and children
+await trigger({ body: newPost, invalidate: ["posts", "posts/*"] });
 
 // Cross-domain — refresh unrelated queries too
-await trigger({ body: newPost, invalidate: ["all", "dashboard"] });
+await trigger({ body: newPost, invalidate: ["posts", "posts/*", "dashboard"] });
+
+// Disable invalidation
+await trigger({ body: newPost, invalidate: false });
 ```
 
 ## Manual Invalidation
@@ -91,23 +90,27 @@ For events outside mutations (WebSocket, timers, external state), trigger invali
 ```typescript
 import { invalidate } from "./spoosh";
 
-// From a WebSocket handler
-socket.on("data-changed", (tags) => invalidate(tags));
+// Invalidate specific patterns
+socket.on("posts-updated", () => {
+  invalidate(["posts", "posts/*"]);
+});
 
 // Force everything to refresh
 socket.on("full-sync", () => invalidate("*"));
 ```
 
-## Choosing the Right Strategy
+## Choosing the Right Pattern
 
-| Scenario                      | Strategy                               |
-| ----------------------------- | -------------------------------------- |
-| Standard CRUD                 | `invalidate: "all"` (default)          |
-| Updating a single resource    | `invalidate: "self"`                   |
-| No related queries to refresh | `invalidate: "none"`                   |
-| User logout / account switch  | `invalidate: "*"` + `clearCache: true` |
-| Cross-domain updates          | `invalidate: ["posts", "dashboard"]`   |
-| External events (WebSocket)   | `invalidate(tags)` manually            |
+| Scenario | Pattern |
+|----------|---------|
+| Standard CRUD | Default (auto-invalidate) |
+| Specific resource update | `"posts/123"` |
+| All children of a resource | `"posts/*"` |
+| Resource and all children | `["posts", "posts/*"]` |
+| No related queries to refresh | `invalidate: false` |
+| User logout / account switch | `invalidate: "*"` + `clearCache: true` |
+| Cross-domain updates | `["posts", "dashboard"]` |
+| External events (WebSocket) | `invalidate(patterns)` manually |
 
 ---
 

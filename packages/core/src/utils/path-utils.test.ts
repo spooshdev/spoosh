@@ -126,28 +126,27 @@ describe("resolvePath", () => {
   });
 });
 
-describe("resolveTags - unified API", () => {
+describe("resolveTags - simplified API", () => {
   const resolvedPath = ["users", "1"];
 
-  describe("mode strings", () => {
-    it('should generate full hierarchy for "all" mode', () => {
-      expect(resolveTags({ tags: "all" }, resolvedPath)).toEqual([
-        "users",
-        "users/1",
-      ]);
+  describe("default behavior", () => {
+    it("should generate single tag from path by default", () => {
+      expect(resolveTags(undefined, resolvedPath)).toEqual(["users/1"]);
     });
 
-    it('should generate only exact path for "self" mode', () => {
-      expect(resolveTags({ tags: "self" }, resolvedPath)).toEqual(["users/1"]);
-    });
-
-    it('should return empty array for "none" mode', () => {
-      expect(resolveTags({ tags: "none" }, resolvedPath)).toEqual([]);
+    it("should generate single tag when tags option is undefined", () => {
+      expect(resolveTags({}, resolvedPath)).toEqual(["users/1"]);
     });
   });
 
-  describe("arrays without mode keyword", () => {
-    it("should use custom tags only", () => {
+  describe("custom string tag", () => {
+    it("should use custom string tag", () => {
+      expect(resolveTags({ tags: "custom" }, resolvedPath)).toEqual(["custom"]);
+    });
+  });
+
+  describe("custom array tags", () => {
+    it("should use custom tags array", () => {
       expect(resolveTags({ tags: ["custom", "posts"] }, resolvedPath)).toEqual([
         "custom",
         "posts",
@@ -157,83 +156,28 @@ describe("resolveTags - unified API", () => {
     it("should handle empty array", () => {
       expect(resolveTags({ tags: [] }, resolvedPath)).toEqual([]);
     });
-  });
 
-  describe("arrays with mode keyword", () => {
-    it('should combine "all" mode with custom tags', () => {
-      const result = resolveTags({ tags: ["all", "custom"] }, resolvedPath);
-      expect(result).toContain("users");
-      expect(result).toContain("users/1");
-      expect(result).toContain("custom");
-    });
-
-    it('should combine "self" mode with custom tags', () => {
-      const result = resolveTags({ tags: ["self", "posts"] }, resolvedPath);
-      expect(result).toContain("users/1");
-      expect(result).toContain("posts");
-    });
-
-    it("should handle mode keyword at any position", () => {
+    it("should deduplicate custom tags", () => {
       const result = resolveTags(
-        { tags: ["custom", "all", "posts"] },
+        { tags: ["users", "users", "posts"] },
         resolvedPath
       );
-      expect(result).toContain("users");
-      expect(result).toContain("users/1");
-      expect(result).toContain("custom");
-      expect(result).toContain("posts");
-    });
-  });
-
-  describe("deduplication", () => {
-    it("should deduplicate tags when mode generates duplicates", () => {
-      const result = resolveTags({ tags: ["all", "users"] }, resolvedPath);
-      const userCount = result.filter((t) => t === "users").length;
-      expect(userCount).toBe(1);
-    });
-  });
-
-  describe("default behavior", () => {
-    it('should default to "all" mode when undefined', () => {
-      expect(resolveTags(undefined, resolvedPath)).toEqual([
-        "users",
-        "users/1",
-      ]);
-    });
-
-    it('should default to "all" mode when tags option is undefined', () => {
-      expect(resolveTags({}, resolvedPath)).toEqual(["users", "users/1"]);
+      expect(result).toEqual(["users", "posts"]);
     });
   });
 
   describe("edge cases", () => {
-    it("should handle single segment path with all mode", () => {
-      expect(resolveTags({ tags: "all" }, ["posts"])).toEqual(["posts"]);
-    });
-
-    it("should handle single segment path with self mode", () => {
-      expect(resolveTags({ tags: "self" }, ["posts"])).toEqual(["posts"]);
+    it("should handle single segment path", () => {
+      expect(resolveTags(undefined, ["posts"])).toEqual(["posts"]);
     });
 
     it("should handle empty path", () => {
-      expect(resolveTags({ tags: "all" }, [])).toEqual([]);
+      expect(resolveTags(undefined, [])).toEqual([]);
     });
 
-    it("should handle long path with all mode", () => {
+    it("should handle long path", () => {
       const longPath = ["api", "v1", "users", "123"];
-      expect(resolveTags({ tags: "all" }, longPath)).toEqual([
-        "api",
-        "api/v1",
-        "api/v1/users",
-        "api/v1/users/123",
-      ]);
-    });
-
-    it("should handle long path with self mode", () => {
-      const longPath = ["api", "v1", "users", "123"];
-      expect(resolveTags({ tags: "self" }, longPath)).toEqual([
-        "api/v1/users/123",
-      ]);
+      expect(resolveTags(undefined, longPath)).toEqual(["api/v1/users/123"]);
     });
   });
 });

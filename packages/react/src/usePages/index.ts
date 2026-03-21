@@ -24,6 +24,7 @@ import {
   createSelectorProxy,
   resolvePath,
   resolveTags,
+  matchTags,
 } from "@spoosh/core";
 import type {
   BasePagesOptions,
@@ -345,9 +346,9 @@ export function createUsePages<
 
       const unsubInvalidate = eventEmitter.on(
         "invalidate",
-        (invalidatedTags) => {
-          const hasMatch = invalidatedTags.some((tag) =>
-            resolvedTags.includes(tag)
+        (invalidatePatterns) => {
+          const hasMatch = resolvedTags.some((tag) =>
+            matchTags(tag, invalidatePatterns)
           );
 
           if (hasMatch) {

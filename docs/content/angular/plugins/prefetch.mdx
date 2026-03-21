@@ -95,36 +95,26 @@ prefetch((api) => api("posts").GET());
 prefetch((api) => api("posts").GET());
 ```
 
-## Tag Modes
+## Custom Tags
+
+By default, a tag is auto-generated from the resolved path. You can override with custom tags:
 
 ```typescript
-// Mode only - 'all' generates full hierarchy
-await prefetch((api) => api("users/:id/posts").GET({ params: { id: "123" } }), {
-  tags: "all", // ['users', 'users/123', 'users/123/posts']
-});
+// Auto-generated tag (default)
+await prefetch((api) => api("users/:id/posts").GET({ params: { id: "123" } }));
+// → tag: "users/123/posts"
 
-// Mode only - 'self' generates only exact path
-await prefetch((api) => api("users/:id/posts").GET({ params: { id: "123" } }), {
-  tags: "self", // ['users/123/posts']
-});
-
-// Mode only - 'none' generates no tags
-await prefetch((api) => api("posts").GET(), { tags: "none" }); // []
-
-// Custom tags only - replaces auto-generated tags
+// Single custom tag
 await prefetch((api) => api("posts").GET(), {
-  tags: ["custom", "dashboard"], // ['custom', 'dashboard']
+  tags: "my-posts",
 });
+// → tag: "my-posts"
 
-// Mode + custom tags - 'all' mode combined with custom tags
-await prefetch((api) => api("users/:id/posts").GET({ params: { id: "123" } }), {
-  tags: ["all", "dashboard"], // ['users', 'users/123', 'users/123/posts', 'dashboard']
+// Multiple custom tags
+await prefetch((api) => api("posts").GET(), {
+  tags: ["posts", "dashboard"],
 });
-
-// Mode + custom tags - 'self' mode combined with custom tags
-await prefetch((api) => api("users/:id/posts").GET({ params: { id: "123" } }), {
-  tags: ["self", "dashboard"], // ['users/123/posts', 'dashboard']
-});
+// → tags: ["posts", "dashboard"]
 ```
 
 ## Options
@@ -140,6 +130,6 @@ await prefetch((api) => api("users/:id/posts").GET({ params: { id: "123" } }), {
 
 The second argument accepts any plugin options plus:
 
-| Option | Type                                    | Description             |
-| ------ | --------------------------------------- | ----------------------- |
-| `tags` | `'all' \| 'self' \| 'none' \| string[]` | Tag mode or custom tags |
+| Option | Type                 | Description                                |
+| ------ | -------------------- | ------------------------------------------ |
+| `tags` | `string \| string[]` | Custom tags (overrides auto-generated tag) |

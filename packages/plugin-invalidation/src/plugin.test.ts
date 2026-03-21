@@ -6,10 +6,7 @@ import {
 } from "@spoosh/test-utils";
 
 import { invalidationPlugin } from "./plugin";
-import type {
-  InvalidationPluginExports,
-  InvalidationInstanceApi,
-} from "./types";
+import type { InvalidationInstanceApi } from "./types";
 
 function createMockApiContext(stateManager?: StateManager): ApiContext {
   return {
@@ -36,34 +33,8 @@ describe("invalidationPlugin", () => {
     });
   });
 
-  describe("internal", () => {
-    it("should export setDefaultMode function", () => {
-      const plugin = invalidationPlugin();
-      const context = createMockContext();
-      const pluginExports = plugin.internal!(
-        context
-      ) as InvalidationPluginExports;
-
-      expect(pluginExports.setDefaultMode).toBeDefined();
-      expect(typeof pluginExports.setDefaultMode).toBe("function");
-    });
-
-    it("should store defaultMode in temp", () => {
-      const plugin = invalidationPlugin();
-      const temp = new Map();
-      const context = createMockContext({ temp });
-      const pluginExports = plugin.internal!(
-        context
-      ) as InvalidationPluginExports;
-
-      pluginExports.setDefaultMode("none");
-
-      expect(temp.get("invalidation:defaultMode")).toBe("none");
-    });
-  });
-
-  describe("default mode: all", () => {
-    it("should invalidate all context tags on successful mutation", () => {
+  describe("autoInvalidate: true (default)", () => {
+    it("should invalidate first segment and children on successful mutation", () => {
       const plugin = invalidationPlugin();
       const stateManager = createStateManager();
       const eventEmitter = createEventEmitter();
@@ -84,14 +55,15 @@ describe("invalidationPlugin", () => {
           error: undefined,
           timestamp: Date.now(),
         },
-        tags: ["users", "users/1"],
+        tags: ["users/1"],
         stale: false,
       });
 
       const context = createMockContext({
         stateManager,
         eventEmitter,
-        tags: ["users", "users/1"],
+        path: "users/1",
+        tags: ["users/1"],
       });
 
       const response: SpooshResponse<unknown, unknown> = {
@@ -109,7 +81,7 @@ describe("invalidationPlugin", () => {
       expect(entry2?.stale).toBe(true);
     });
 
-    it("should emit invalidate event with tags", () => {
+    it("should emit invalidate event with patterns", () => {
       const plugin = invalidationPlugin();
       const stateManager = createStateManager();
       const eventEmitter = createEventEmitter();
@@ -120,7 +92,8 @@ describe("invalidationPlugin", () => {
       const context = createMockContext({
         stateManager,
         eventEmitter,
-        tags: ["users", "users/1"],
+        path: "posts/1/comments",
+        tags: ["posts/1/comments"],
       });
 
       const response: SpooshResponse<unknown, unknown> = {
@@ -130,62 +103,13 @@ describe("invalidationPlugin", () => {
 
       plugin.afterResponse!(context, response);
 
-      expect(invalidateHandler).toHaveBeenCalledWith(["users", "users/1"]);
+      expect(invalidateHandler).toHaveBeenCalledWith(["posts", "posts/*"]);
     });
   });
 
-  describe("default mode: self", () => {
-    it("should only invalidate self tag", () => {
-      const plugin = invalidationPlugin({ defaultMode: "self" });
-      const stateManager = createStateManager();
-      const eventEmitter = createEventEmitter();
-
-      stateManager.setCache('{"method":"GET","path":["users"]}', {
-        state: {
-          data: [{ id: 1 }],
-          error: undefined,
-          timestamp: Date.now(),
-        },
-        tags: ["users"],
-        stale: false,
-      });
-
-      stateManager.setCache('{"method":"GET","path":["users","1"]}', {
-        state: {
-          data: { id: 1 },
-          error: undefined,
-          timestamp: Date.now(),
-        },
-        tags: ["users", "users/1"],
-        stale: false,
-      });
-
-      const context = createMockContext({
-        stateManager,
-        eventEmitter,
-        path: "users/1",
-        tags: ["users", "users/1"],
-      });
-
-      const response: SpooshResponse<unknown, unknown> = {
-        data: { success: true },
-        status: 200,
-      };
-
-      plugin.afterResponse!(context, response);
-
-      const entry1 = stateManager.getCache('{"method":"GET","path":["users"]}');
-      const entry2 = stateManager.getCache(
-        '{"method":"GET","path":["users","1"]}'
-      );
-      expect(entry1?.stale).toBe(false);
-      expect(entry2?.stale).toBe(true);
-    });
-  });
-
-  describe("default mode: none", () => {
-    it("should not invalidate any tags automatically", () => {
-      const plugin = invalidationPlugin({ defaultMode: "none" });
+  describe("autoInvalidate: false", () => {
+    it("should not invalidate any patterns automatically", () => {
+      const plugin = invalidationPlugin({ autoInvalidate: false });
       const stateManager = createStateManager();
       const eventEmitter = createEventEmitter();
 
@@ -205,6 +129,7 @@ describe("invalidationPlugin", () => {
       const context = createMockContext({
         stateManager,
         eventEmitter,
+        path: "users/1",
         tags: ["users"],
       });
 
@@ -221,36 +146,9 @@ describe("invalidationPlugin", () => {
     });
   });
 
-  describe("invalidate option with mode string", () => {
-    it("should override default mode with 'all'", () => {
-      const plugin = invalidationPlugin({ defaultMode: "none" });
-      const stateManager = createStateManager();
-      const eventEmitter = createEventEmitter();
-
-      const invalidateHandler = vi.fn();
-      eventEmitter.on("invalidate", invalidateHandler);
-
-      const context = createMockContext({
-        stateManager,
-        eventEmitter,
-        tags: ["users", "users/1"],
-        pluginOptions: {
-          invalidate: "all",
-        },
-      });
-
-      const response: SpooshResponse<unknown, unknown> = {
-        data: { success: true },
-        status: 200,
-      };
-
-      plugin.afterResponse!(context, response);
-
-      expect(invalidateHandler).toHaveBeenCalledWith(["users", "users/1"]);
-    });
-
-    it("should override default mode with 'self'", () => {
-      const plugin = invalidationPlugin({ defaultMode: "all" });
+  describe("invalidate: false option", () => {
+    it("should disable invalidation when false is provided", () => {
+      const plugin = invalidationPlugin();
       const stateManager = createStateManager();
       const eventEmitter = createEventEmitter();
 
@@ -261,36 +159,9 @@ describe("invalidationPlugin", () => {
         stateManager,
         eventEmitter,
         path: "users/1",
-        tags: ["users", "users/1"],
+        tags: ["users"],
         pluginOptions: {
-          invalidate: "self",
-        },
-      });
-
-      const response: SpooshResponse<unknown, unknown> = {
-        data: { success: true },
-        status: 200,
-      };
-
-      plugin.afterResponse!(context, response);
-
-      expect(invalidateHandler).toHaveBeenCalledWith(["users/1"]);
-    });
-
-    it("should override default mode with 'none'", () => {
-      const plugin = invalidationPlugin({ defaultMode: "all" });
-      const stateManager = createStateManager();
-      const eventEmitter = createEventEmitter();
-
-      const invalidateHandler = vi.fn();
-      eventEmitter.on("invalidate", invalidateHandler);
-
-      const context = createMockContext({
-        stateManager,
-        eventEmitter,
-        tags: ["users", "users/1"],
-        pluginOptions: {
-          invalidate: "none",
+          invalidate: false,
         },
       });
 
@@ -305,9 +176,9 @@ describe("invalidationPlugin", () => {
     });
   });
 
-  describe("invalidate option with single tag string", () => {
-    it("should invalidate single tag when non-mode string is provided", () => {
-      const plugin = invalidationPlugin({ defaultMode: "none" });
+  describe("invalidate option with single pattern string", () => {
+    it("should invalidate exact pattern", () => {
+      const plugin = invalidationPlugin({ autoInvalidate: false });
       const stateManager = createStateManager();
       const eventEmitter = createEventEmitter();
 
@@ -327,6 +198,7 @@ describe("invalidationPlugin", () => {
       const context = createMockContext({
         stateManager,
         eventEmitter,
+        path: "users/1",
         tags: ["users"],
         pluginOptions: {
           invalidate: "posts",
@@ -347,10 +219,30 @@ describe("invalidationPlugin", () => {
       expect(postsEntry?.stale).toBe(true);
     });
 
-    it("should treat custom tag string differently from mode strings", () => {
-      const plugin = invalidationPlugin({ defaultMode: "all" });
+    it("should invalidate wildcard pattern", () => {
+      const plugin = invalidationPlugin({ autoInvalidate: false });
       const stateManager = createStateManager();
       const eventEmitter = createEventEmitter();
+
+      stateManager.setCache('{"method":"GET","path":["posts","1"]}', {
+        state: {
+          data: { id: 1 },
+          error: undefined,
+          timestamp: Date.now(),
+        },
+        tags: ["posts/1"],
+        stale: false,
+      });
+
+      stateManager.setCache('{"method":"GET","path":["posts"]}', {
+        state: {
+          data: [{ id: 1 }],
+          error: undefined,
+          timestamp: Date.now(),
+        },
+        tags: ["posts"],
+        stale: false,
+      });
 
       const invalidateHandler = vi.fn();
       eventEmitter.on("invalidate", invalidateHandler);
@@ -358,9 +250,10 @@ describe("invalidationPlugin", () => {
       const context = createMockContext({
         stateManager,
         eventEmitter,
-        tags: ["users", "users/1"],
+        path: "users/1",
+        tags: ["users"],
         pluginOptions: {
-          invalidate: "dashboard",
+          invalidate: "posts/*",
         },
       });
 
@@ -371,13 +264,21 @@ describe("invalidationPlugin", () => {
 
       plugin.afterResponse!(context, response);
 
-      expect(invalidateHandler).toHaveBeenCalledWith(["dashboard"]);
+      expect(invalidateHandler).toHaveBeenCalledWith(["posts/*"]);
+      const postsEntry = stateManager.getCache(
+        '{"method":"GET","path":["posts"]}'
+      );
+      const posts1Entry = stateManager.getCache(
+        '{"method":"GET","path":["posts","1"]}'
+      );
+      expect(postsEntry?.stale).toBe(false);
+      expect(posts1Entry?.stale).toBe(true);
     });
   });
 
   describe("invalidate option with wildcard '*'", () => {
     it("should emit refetchAll event when '*' string is provided", () => {
-      const plugin = invalidationPlugin({ defaultMode: "none" });
+      const plugin = invalidationPlugin({ autoInvalidate: false });
       const stateManager = createStateManager();
       const eventEmitter = createEventEmitter();
 
@@ -389,6 +290,7 @@ describe("invalidationPlugin", () => {
       const context = createMockContext({
         stateManager,
         eventEmitter,
+        path: "users/1",
         tags: ["users"],
         pluginOptions: {
           invalidate: "*",
@@ -407,7 +309,7 @@ describe("invalidationPlugin", () => {
     });
 
     it("should emit refetchAll when '*' is in array", () => {
-      const plugin = invalidationPlugin({ defaultMode: "none" });
+      const plugin = invalidationPlugin({ autoInvalidate: false });
       const stateManager = createStateManager();
       const eventEmitter = createEventEmitter();
 
@@ -419,6 +321,7 @@ describe("invalidationPlugin", () => {
       const context = createMockContext({
         stateManager,
         eventEmitter,
+        path: "users/1",
         tags: ["users"],
         pluginOptions: {
           invalidate: ["*", "posts"],
@@ -435,48 +338,11 @@ describe("invalidationPlugin", () => {
       expect(refetchAllHandler).toHaveBeenCalledWith(undefined);
       expect(invalidateHandler).not.toHaveBeenCalled();
     });
-
-    it("should not mark any tags as stale when '*' is used", () => {
-      const plugin = invalidationPlugin({ defaultMode: "none" });
-      const stateManager = createStateManager();
-      const eventEmitter = createEventEmitter();
-
-      stateManager.setCache('{"method":"GET","path":["users"]}', {
-        state: {
-          data: [{ id: 1 }],
-          error: undefined,
-          timestamp: Date.now(),
-        },
-        tags: ["users"],
-        stale: false,
-      });
-
-      const context = createMockContext({
-        stateManager,
-        eventEmitter,
-        tags: ["users"],
-        pluginOptions: {
-          invalidate: "*",
-        },
-      });
-
-      const response: SpooshResponse<unknown, unknown> = {
-        data: { success: true },
-        status: 200,
-      };
-
-      plugin.afterResponse!(context, response);
-
-      const usersEntry = stateManager.getCache(
-        '{"method":"GET","path":["users"]}'
-      );
-      expect(usersEntry?.stale).toBe(false);
-    });
   });
 
-  describe("invalidate option with tags array", () => {
-    it("should invalidate specific tags from array", () => {
-      const plugin = invalidationPlugin({ defaultMode: "none" });
+  describe("invalidate option with patterns array", () => {
+    it("should invalidate specific patterns from array", () => {
+      const plugin = invalidationPlugin({ autoInvalidate: false });
       const stateManager = createStateManager();
       const eventEmitter = createEventEmitter();
 
@@ -503,6 +369,7 @@ describe("invalidationPlugin", () => {
       const context = createMockContext({
         stateManager,
         eventEmitter,
+        path: "users/1",
         tags: ["users"],
         pluginOptions: {
           invalidate: ["posts", "comments"],
@@ -526,70 +393,30 @@ describe("invalidationPlugin", () => {
       expect(commentsEntry?.stale).toBe(true);
     });
 
-    it("should not add mode tags when array has tags only", () => {
-      const plugin = invalidationPlugin({ defaultMode: "all" });
+    it("should invalidate combined exact and wildcard patterns", () => {
+      const plugin = invalidationPlugin({ autoInvalidate: false });
       const stateManager = createStateManager();
       const eventEmitter = createEventEmitter();
 
-      const invalidateHandler = vi.fn();
-      eventEmitter.on("invalidate", invalidateHandler);
-
-      const context = createMockContext({
-        stateManager,
-        eventEmitter,
-        tags: ["users"],
-        pluginOptions: {
-          invalidate: ["posts"],
+      stateManager.setCache('{"method":"GET","path":["posts"]}', {
+        state: {
+          data: [{ id: 1 }],
+          error: undefined,
+          timestamp: Date.now(),
         },
+        tags: ["posts"],
+        stale: false,
       });
 
-      const response: SpooshResponse<unknown, unknown> = {
-        data: { success: true },
-        status: 200,
-      };
-
-      plugin.afterResponse!(context, response);
-
-      expect(invalidateHandler).toHaveBeenCalledWith(["posts"]);
-    });
-  });
-
-  describe("invalidate option with mode + tags array", () => {
-    it("should combine 'all' mode with explicit tags (mode at start)", () => {
-      const plugin = invalidationPlugin({ defaultMode: "none" });
-      const stateManager = createStateManager();
-      const eventEmitter = createEventEmitter();
-
-      const invalidateHandler = vi.fn();
-      eventEmitter.on("invalidate", invalidateHandler);
-
-      const context = createMockContext({
-        stateManager,
-        eventEmitter,
-        tags: ["users", "users/1"],
-        pluginOptions: {
-          invalidate: ["all", "posts", "custom-tag"],
+      stateManager.setCache('{"method":"GET","path":["posts","1"]}', {
+        state: {
+          data: { id: 1 },
+          error: undefined,
+          timestamp: Date.now(),
         },
+        tags: ["posts/1"],
+        stale: false,
       });
-
-      const response: SpooshResponse<unknown, unknown> = {
-        data: { success: true },
-        status: 200,
-      };
-
-      plugin.afterResponse!(context, response);
-
-      const calledTags = invalidateHandler.mock.calls[0]?.[0] as string[];
-      expect(calledTags).toContain("posts");
-      expect(calledTags).toContain("custom-tag");
-      expect(calledTags).toContain("users");
-      expect(calledTags).toContain("users/1");
-    });
-
-    it("should combine 'self' mode with explicit tags (mode at end)", () => {
-      const plugin = invalidationPlugin({ defaultMode: "none" });
-      const stateManager = createStateManager();
-      const eventEmitter = createEventEmitter();
 
       const invalidateHandler = vi.fn();
       eventEmitter.on("invalidate", invalidateHandler);
@@ -598,74 +425,10 @@ describe("invalidationPlugin", () => {
         stateManager,
         eventEmitter,
         path: "users/1",
-        tags: ["users", "users/1"],
-        pluginOptions: {
-          invalidate: ["posts", "dashboard", "self"],
-        },
-      });
-
-      const response: SpooshResponse<unknown, unknown> = {
-        data: { success: true },
-        status: 200,
-      };
-
-      plugin.afterResponse!(context, response);
-
-      const calledTags = invalidateHandler.mock.calls[0]?.[0] as string[];
-      expect(calledTags).toContain("posts");
-      expect(calledTags).toContain("dashboard");
-      expect(calledTags).toContain("users/1");
-    });
-
-    it("should combine 'all' mode with explicit tags (mode in middle)", () => {
-      const plugin = invalidationPlugin({ defaultMode: "none" });
-      const stateManager = createStateManager();
-      const eventEmitter = createEventEmitter();
-
-      const invalidateHandler = vi.fn();
-      eventEmitter.on("invalidate", invalidateHandler);
-
-      const context = createMockContext({
-        stateManager,
-        eventEmitter,
-        tags: ["users", "users/1"],
-        pluginOptions: {
-          invalidate: ["posts", "all", "dashboard"],
-        },
-      });
-
-      const response: SpooshResponse<unknown, unknown> = {
-        data: { success: true },
-        status: 200,
-      };
-
-      plugin.afterResponse!(context, response);
-
-      const calledTags = invalidateHandler.mock.calls[0]?.[0] as string[];
-      expect(calledTags).toContain("posts");
-      expect(calledTags).toContain("dashboard");
-      expect(calledTags).toContain("users");
-      expect(calledTags).toContain("users/1");
-    });
-  });
-
-  describe("temp override via exports", () => {
-    it("should use temp override when set via exports", () => {
-      const plugin = invalidationPlugin({ defaultMode: "all" });
-      const stateManager = createStateManager();
-      const eventEmitter = createEventEmitter();
-      const temp = new Map();
-
-      temp.set("invalidation:defaultMode", "none");
-
-      const invalidateHandler = vi.fn();
-      eventEmitter.on("invalidate", invalidateHandler);
-
-      const context = createMockContext({
-        stateManager,
-        eventEmitter,
-        temp,
         tags: ["users"],
+        pluginOptions: {
+          invalidate: ["posts", "posts/*"],
+        },
       });
 
       const response: SpooshResponse<unknown, unknown> = {
@@ -675,7 +438,15 @@ describe("invalidationPlugin", () => {
 
       plugin.afterResponse!(context, response);
 
-      expect(invalidateHandler).not.toHaveBeenCalled();
+      const postsEntry = stateManager.getCache(
+        '{"method":"GET","path":["posts"]}'
+      );
+      const posts1Entry = stateManager.getCache(
+        '{"method":"GET","path":["posts","1"]}'
+      );
+      expect(postsEntry?.stale).toBe(true);
+      expect(posts1Entry?.stale).toBe(true);
+      expect(invalidateHandler).toHaveBeenCalledWith(["posts", "posts/*"]);
     });
   });
 
@@ -701,6 +472,7 @@ describe("invalidationPlugin", () => {
       const context = createMockContext({
         stateManager,
         eventEmitter,
+        path: "users/1",
         tags: ["users"],
       });
 
@@ -717,9 +489,9 @@ describe("invalidationPlugin", () => {
     });
   });
 
-  describe("tag deduplication", () => {
-    it("should deduplicate tags before invalidation", () => {
-      const plugin = invalidationPlugin({ defaultMode: "none" });
+  describe("pattern deduplication", () => {
+    it("should deduplicate patterns before invalidation", () => {
+      const plugin = invalidationPlugin({ autoInvalidate: false });
       const stateManager = createStateManager();
       const eventEmitter = createEventEmitter();
 
@@ -729,9 +501,10 @@ describe("invalidationPlugin", () => {
       const context = createMockContext({
         stateManager,
         eventEmitter,
-        tags: ["users", "users/1"],
+        path: "users/1",
+        tags: ["users"],
         pluginOptions: {
-          invalidate: ["all", "users", "posts"],
+          invalidate: ["posts", "posts", "users"],
         },
       });
 
@@ -742,27 +515,24 @@ describe("invalidationPlugin", () => {
 
       plugin.afterResponse!(context, response);
 
-      const calledTags = invalidateHandler.mock.calls[0]?.[0] as string[];
-      expect(calledTags).toContain("users");
-      expect(calledTags).toContain("users/1");
-      expect(calledTags).toContain("posts");
-      expect(calledTags.filter((t) => t === "users").length).toBe(1);
+      const calledPatterns = invalidateHandler.mock.calls[0]?.[0] as string[];
+      expect(calledPatterns).toEqual(["posts", "users"]);
     });
   });
 
   describe("edge cases", () => {
-    it("should not emit event when no tags to invalidate", () => {
-      const plugin = invalidationPlugin({ defaultMode: "none" });
-      const stateManager = createStateManager();
+    it("should handle empty invalidate array", () => {
+      const plugin = invalidationPlugin({ autoInvalidate: false });
       const eventEmitter = createEventEmitter();
 
       const invalidateHandler = vi.fn();
       eventEmitter.on("invalidate", invalidateHandler);
 
       const context = createMockContext({
-        stateManager,
         eventEmitter,
-        tags: [],
+        pluginOptions: {
+          invalidate: [],
+        },
       });
 
       const response: SpooshResponse<unknown, unknown> = {
@@ -775,8 +545,8 @@ describe("invalidationPlugin", () => {
       expect(invalidateHandler).not.toHaveBeenCalled();
     });
 
-    it("should handle empty invalidate array", () => {
-      const plugin = invalidationPlugin({ defaultMode: "none" });
+    it("should handle empty path", () => {
+      const plugin = invalidationPlugin();
       const eventEmitter = createEventEmitter();
 
       const invalidateHandler = vi.fn();
@@ -784,9 +554,8 @@ describe("invalidationPlugin", () => {
 
       const context = createMockContext({
         eventEmitter,
-        pluginOptions: {
-          invalidate: [],
-        },
+        path: "",
+        tags: [],
       });
 
       const response: SpooshResponse<unknown, unknown> = {
@@ -904,6 +673,58 @@ describe("invalidationPlugin", () => {
       expect(invalidateHandler).toHaveBeenCalledWith(["users", "posts"]);
     });
 
+    it("should support wildcard patterns via api", () => {
+      const plugin = invalidationPlugin();
+      const stateManager = createStateManager();
+      const eventEmitter = createEventEmitter();
+
+      stateManager.setCache('{"method":"GET","path":["posts","1"]}', {
+        state: {
+          data: { id: 1 },
+          error: undefined,
+          timestamp: Date.now(),
+        },
+        tags: ["posts/1"],
+        stale: false,
+      });
+
+      stateManager.setCache('{"method":"GET","path":["posts"]}', {
+        state: {
+          data: [{ id: 1 }],
+          error: undefined,
+          timestamp: Date.now(),
+        },
+        tags: ["posts"],
+        stale: false,
+      });
+
+      const invalidateHandler = vi.fn();
+      eventEmitter.on("invalidate", invalidateHandler);
+
+      const apiContext = {
+        spoosh: {},
+        stateManager,
+        eventEmitter,
+        pluginExecutor: {
+          executeMiddleware: vi.fn(),
+          createContext: vi.fn(),
+        },
+      } as unknown as ApiContext;
+
+      const api = plugin.api!(apiContext) as InvalidationInstanceApi;
+
+      api.invalidate("posts/*");
+
+      const postsEntry = stateManager.getCache(
+        '{"method":"GET","path":["posts"]}'
+      );
+      const posts1Entry = stateManager.getCache(
+        '{"method":"GET","path":["posts","1"]}'
+      );
+      expect(postsEntry?.stale).toBe(false);
+      expect(posts1Entry?.stale).toBe(true);
+    });
+
     it("should not emit event when empty array is passed", () => {
       const plugin = invalidationPlugin();
       const stateManager = createStateManager();
@@ -983,41 +804,6 @@ describe("invalidationPlugin", () => {
 
       expect(refetchAllHandler).toHaveBeenCalledWith(undefined);
       expect(invalidateHandler).not.toHaveBeenCalled();
-    });
-
-    it("should not mark tags as stale when '*' is used", () => {
-      const plugin = invalidationPlugin();
-      const stateManager = createStateManager();
-      const eventEmitter = createEventEmitter();
-
-      stateManager.setCache('{"method":"GET","path":["users"]}', {
-        state: {
-          data: [{ id: 1 }],
-          error: undefined,
-          timestamp: Date.now(),
-        },
-        tags: ["users"],
-        stale: false,
-      });
-
-      const apiContext = {
-        spoosh: {},
-        stateManager,
-        eventEmitter,
-        pluginExecutor: {
-          executeMiddleware: vi.fn(),
-          createContext: vi.fn(),
-        },
-      } as unknown as ApiContext;
-
-      const api = plugin.api!(apiContext) as InvalidationInstanceApi;
-
-      api.invalidate("*");
-
-      const usersEntry = stateManager.getCache(
-        '{"method":"GET","path":["users"]}'
-      );
-      expect(usersEntry?.stale).toBe(false);
     });
   });
 });

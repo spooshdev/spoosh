@@ -3,7 +3,6 @@ import type {
   PluginTypeConfig,
   MergePluginResults,
   ReadClient,
-  TagMode,
   ExtractTriggerQuery,
   ExtractTriggerBody,
   ExtractTriggerParams,
@@ -12,8 +11,6 @@ import type {
   InfiniteNextContext,
   InfinitePrevContext,
 } from "@spoosh/core";
-
-type TagModeInArray = "all" | "self";
 
 type TriggerAwaitedReturn<T> = T extends (...args: never[]) => infer R
   ? Awaited<R>
@@ -56,13 +53,11 @@ export type BasePagesOptions<
   enabled?: boolean;
 
   /**
-   * Unified tag option
-   * - String: mode only ('all' | 'self' | 'none')
-   * - Array: custom tags only OR [mode keyword mixed with custom tags]
-   *   - 'all' or 'self' can be used in arrays
-   *   - 'none' should only be used as string (use `tags: 'none'` not in array)
+   * Custom tags for cache entry.
+   * Can be a single tag string or an array of tags.
+   * Default: auto-generated from path (e.g., "posts/1")
    */
-  tags?: TagMode | (TagModeInArray | (string & {}))[];
+  tags?: string | string[];
 
   /**
    * Callback to determine if there's a next page to fetch.

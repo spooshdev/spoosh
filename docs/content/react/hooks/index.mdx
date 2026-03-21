@@ -22,7 +22,7 @@ import { deduplicationPlugin } from "@spoosh/plugin-deduplication";
 
 const spoosh = new Spoosh<ApiSchema, Error>("/api").use([
   cachePlugin({ staleTime: 5000 }),
-  invalidationPlugin({ defaultMode: "all" }),
+  invalidationPlugin(),
   deduplicationPlugin({ read: "in-flight" }),
 ]);
 
@@ -31,77 +31,71 @@ export const { useRead, useWrite, usePages, useQueue } = create(spoosh);
 
 ## Automatic Tag Generation
 
-Spoosh automatically generates cache tags from API paths. These tags enable precise cache invalidation.
+Spoosh automatically generates a cache tag from the resolved API path.
 
 ```typescript
-// api("users").GET()        → tags: ["users"]
-// api("users/:id").GET({ params: { id: 1 } })     → tags: ["users", "users/1"]
-// api("posts/:postId/comments").GET({ params: { postId: 5 } }) → tags: ["posts", "posts/5", "posts/5/comments"]
+// api("users").GET()                              → tag: "users"
+// api("users/:id").GET({ params: { id: 1 } })     → tag: "users/1"
+// api("posts/:postId/comments").GET({ params: { postId: 5 } }) → tag: "posts/5/comments"
 ```
-
-Tags are hierarchical. Invalidating `"users"` will refetch all queries under `/users/*`, while invalidating `"users/1"` only affects that specific user.
 
 ### Custom Tags
 
-The unified `tags` option supports modes and custom tags:
+Override the auto-generated tag with custom tags:
 
 ```typescript
-// Mode only - generates auto tags based on mode
+// Single custom tag
 const { data } = useRead((api) => api("users").GET(), {
-  tags: "all", // Full hierarchy: ['users']
+  tags: "my-users",
 });
 
-// Custom tags only - replaces auto-generated tags
+// Multiple custom tags
 const { data } = useRead((api) => api("users").GET(), {
-  tags: ["custom-users", "dashboard"],
-});
-
-// Mode + custom tags - combines both
-const { data } = useRead((api) => api("users").GET(), {
-  tags: ["all", "dashboard-data"], // ['users', 'dashboard-data']
+  tags: ["users", "dashboard"],
 });
 ```
 
 ## Cache Invalidation
 
-The `invalidationPlugin` automatically refetches stale queries after mutations.
+The `invalidationPlugin` automatically refetches queries after mutations using wildcard pattern matching.
 
-### Auto Invalidation Modes
+### Pattern Matching
 
-| Mode     | Description                                         |
-| -------- | --------------------------------------------------- |
-| `"all"`  | Invalidates all tags of the mutation path (default) |
-| `"self"` | Only invalidates the exact path                     |
-| `"none"` | No automatic invalidation                           |
+| Pattern | Matches |
+|---------|---------|
+| `"posts"` | Exact match only |
+| `"posts/*"` | All children (posts/1, posts/1/comments) |
+| `["posts", "posts/*"]` | posts AND all children (default) |
 
 ```typescript
 const { trigger } = useWrite((api) => api("posts").POST());
 
+// Default behavior — invalidates ["posts", "posts/*"]
+await trigger({ body: { title: "New Post" } });
+
+// Specific patterns
 await trigger({
   body: { title: "New Post" },
-  invalidate: "all",
+  invalidate: ["posts", "posts/*"],
+});
+
+// Disable invalidation
+await trigger({
+  body: { title: "New Post" },
+  invalidate: false,
 });
 ```
 
 ### Manual Invalidation
 
-Target specific tags to invalidate:
+Target specific patterns to invalidate:
 
 ```typescript
 const { trigger } = useWrite((api) => api("posts").POST());
 
 await trigger({
   body: { title: "New Post" },
-  invalidate: ["posts", "users/123/stats"],
-});
-```
-
-You can also use mode + tags:
-
-```typescript
-await trigger({
-  body: { title: "New Post" },
-  invalidate: ["posts", "dashboard"], // invalidates all queries with these tags
+  invalidate: ["posts", "users/*", "dashboard"],
 });
 ```
 

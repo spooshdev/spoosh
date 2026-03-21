@@ -7,19 +7,16 @@ import type { TestSchema, DefaultError } from "../schema.js";
 // Plugin config - valid options
 // =============================================================================
 
-invalidationPlugin({ defaultMode: "all" });
-invalidationPlugin({ defaultMode: "self" });
-invalidationPlugin({ defaultMode: "none" });
+invalidationPlugin({ autoInvalidate: true });
+invalidationPlugin({ autoInvalidate: false });
 invalidationPlugin({});
 
 // =============================================================================
 // Plugin config - invalid options
 // =============================================================================
 
-// @ts-expect-error - defaultMode must be "all" | "self" | "none"
-invalidationPlugin({ defaultMode: "invalid" });
-// @ts-expect-error - defaultMode must be string
-invalidationPlugin({ defaultMode: true });
+// @ts-expect-error - autoInvalidate must be boolean
+invalidationPlugin({ autoInvalidate: "invalid" });
 // @ts-expect-error - invalid option key
 invalidationPlugin({ invalidKey: true });
 
@@ -35,11 +32,11 @@ const { useWrite, useQueue, invalidate } = create(spoosh);
 const write = useWrite((api) => api("posts").POST());
 
 write.trigger({ body: { title: "test" }, invalidate: "posts" });
-write.trigger({ body: { title: "test" }, invalidate: "all" });
-write.trigger({ body: { title: "test" }, invalidate: "self" });
-write.trigger({ body: { title: "test" }, invalidate: "none" });
+write.trigger({ body: { title: "test" }, invalidate: "posts/*" });
+write.trigger({ body: { title: "test" }, invalidate: ["posts", "posts/*"] });
 write.trigger({ body: { title: "test" }, invalidate: ["posts", "users"] });
 write.trigger({ body: { title: "test" }, invalidate: "*" });
+write.trigger({ body: { title: "test" }, invalidate: false });
 
 // =============================================================================
 // useQueue - invalidate trigger option (valid)
@@ -48,16 +45,17 @@ write.trigger({ body: { title: "test" }, invalidate: "*" });
 const queue = useQueue((api) => api("uploads").POST());
 
 queue.trigger({ body: new FormData(), invalidate: "posts" });
+queue.trigger({ body: new FormData(), invalidate: "posts/*" });
 queue.trigger({ body: new FormData(), invalidate: ["posts", "users"] });
 queue.trigger({ body: new FormData(), invalidate: "*" });
-queue.trigger({ body: new FormData(), invalidate: "all" });
-queue.trigger({ body: new FormData(), invalidate: "self" });
-queue.trigger({ body: new FormData(), invalidate: "none" });
+queue.trigger({ body: new FormData(), invalidate: false });
 
 // =============================================================================
 // Instance API - invalidate (valid)
 // =============================================================================
 
 invalidate("posts");
+invalidate("posts/*");
 invalidate(["posts", "users"]);
+invalidate(["posts", "posts/*"]);
 invalidate("*");

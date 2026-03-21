@@ -1,5 +1,9 @@
 # @spoosh/angular
 
+## 0.12.0
+
+- Use `matchTags` for wildcard pattern matching in `injectRead` and `injectPages`
+
 ## 0.11.1
 
 - Fix queue concurrent request decrement not working properly

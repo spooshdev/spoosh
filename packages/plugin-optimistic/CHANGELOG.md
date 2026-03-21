@@ -1,5 +1,9 @@
 # @spoosh/plugin-optimistic
 
+## 0.9.0
+
+- Update for invalidation plugin pattern-based API (`disableAutoInvalidate` instead of `setDefaultMode`)
+
 ## 0.8.2
 
 - Fix filtering not working correctly

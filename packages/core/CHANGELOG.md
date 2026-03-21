@@ -1,5 +1,9 @@
 # @spoosh/core
 
+## 0.18.0
+
+- Add `matchTag` and `matchTags` utilities for wildcard pattern matching
+
 ## 0.17.1
 
 - Fix queue concurrent request decrement not working properly

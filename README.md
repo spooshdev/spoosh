@@ -28,18 +28,18 @@ const { data } = await spoosh.api("posts/:postId/comments").GET({
 });
 ```
 
-**Automatic Cache Invalidation** — Tags are auto-generated from paths. Mutations automatically invalidate related queries.
+**Automatic Cache Invalidation** — Tags are auto-generated from paths. Mutations automatically invalidate related queries using wildcard patterns.
 
 ```typescript
-// Tags are generated from the path hierarchy:
-// api("users").GET()                → tags: ["users"]
-// api("users/:id").GET({...})       → tags: ["users", "users/:id"]
-// api("users/:id/posts").GET({...}) → tags: ["users", "users/:id", "users/:id/posts"]
+// Tags are generated from the resolved path:
+// api("posts").GET()                    → tag: "posts"
+// api("posts/:id").GET({ params: {id: 1} })  → tag: "posts/1"
+// api("posts/:id/comments").GET({...})  → tag: "posts/1/comments"
 
-// When you create a post, related queries are auto-invalidated:
-const { trigger } = useWrite((api) => api("users/:userId/posts").POST());
-await trigger({ params: { userId: 123 }, body: { title: "New Post" } });
-// ✓ Automatically invalidates: users, users/:userId, users/:userId/posts
+// When you create a comment, related queries are auto-invalidated:
+const { trigger } = useWrite((api) => api("posts/:id/comments").POST());
+await trigger({ params: { id: 1 }, body: { text: "Hello" } });
+// ✓ Invalidates: ["posts", "posts/*"] - matches posts, posts/1, posts/1/comments
 ```
 
 **Composable Plugin System** — Add only what you need. Each plugin is a separate package with its own types.

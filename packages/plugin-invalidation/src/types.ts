@@ -1,38 +1,51 @@
-export type InvalidationMode = "all" | "self" | "none";
-
 /**
  * Extract paths that have GET methods (eligible for invalidation)
+ * Excludes "/" root path to avoid "//*" pattern in autocomplete
  */
 type ReadPaths<TSchema> = {
-  [K in keyof TSchema & string]: "GET" extends keyof TSchema[K] ? K : never;
+  [K in keyof TSchema & string]: "GET" extends keyof TSchema[K]
+    ? K extends "/" | ""
+      ? never
+      : K
+    : never;
 }[keyof TSchema & string];
 
 /**
- * Unified invalidate option
- * - String: mode only ('all' | 'self' | 'none')
- * - Array: tags only OR [mode keyword mixed with tags]
- *   - If array contains 'all' or 'self' at ANY position, it's treated as mode + tags
- *   - Otherwise, it's tags only with mode defaulting to 'none'
- *   - 'none' keyword should NOT be used in arrays (use string 'none' instead)
+ * Support both exact paths and wildcard patterns in autocomplete
+ */
+type InvalidatePattern<TSchema> =
+  | ReadPaths<TSchema>
+  | `${ReadPaths<TSchema>}/*`;
+
+/**
+ * Unified invalidate option with wildcard pattern support
+ * - `"posts"` - Exact match only
+ * - `"posts/*"` - Children only (posts/1, posts/1/comments) - NOT posts itself
+ * - `["posts", "posts/*"]` - posts AND all children
+ * - `"*"` - Global refetch
+ * - `false` - Disable invalidation
+ * - Any custom string is also allowed for custom tags
  */
 export type InvalidateOption<TSchema = unknown> =
-  | InvalidationMode
   | "*"
-  | ReadPaths<TSchema>
-  | (ReadPaths<TSchema> | "all" | "self" | (string & {}))[];
+  | false
+  | InvalidatePattern<TSchema>
+  | (string & {})
+  | (InvalidatePattern<TSchema> | (string & {}))[];
 
 export interface InvalidationPluginConfig {
   /**
-   * Default invalidation mode when invalidate option is not specified
-   * @default "all"
+   * Enable automatic invalidation for mutations.
+   * When true, mutations automatically invalidate `[firstSegment, firstSegment/*]`.
+   * @default true
    */
-  defaultMode?: InvalidationMode;
+  autoInvalidate?: boolean;
 }
 
 export type InvalidationWriteOptions = object;
 
 export interface InvalidationWriteTriggerOptions<TSchema = unknown> {
-  /** Unified invalidation configuration */
+  /** Unified invalidation configuration with wildcard pattern support */
   invalidate?: InvalidateOption<TSchema>;
 }
 
@@ -45,41 +58,41 @@ export type InvalidationReadResult = object;
 export type InvalidationWriteResult = object;
 
 export interface InvalidationQueueTriggerOptions<TSchema = unknown> {
-  /** Unified invalidation configuration */
+  /** Unified invalidation configuration with wildcard pattern support */
   invalidate?: InvalidateOption<TSchema>;
 }
 
 export type InvalidationQueueResult = object;
 
 /**
- * Manual invalidation - tags only, or "*" for global refetch
+ * Manual invalidation with pattern support
  */
 export type InvalidateFn<TSchema> = {
   (tag: "*"): void;
-  (tag: ReadPaths<TSchema> | (string & {})): void;
-  (tags: (ReadPaths<TSchema> | (string & {}))[]): void;
+  (pattern: InvalidatePattern<TSchema> | (string & {})): void;
+  (patterns: (InvalidatePattern<TSchema> | (string & {}))[]): void;
 };
 
 export interface InvalidationInstanceApi {
-  /** Manually invalidate cache entries by tags. Useful for external events like WebSocket messages. */
+  /** Manually invalidate cache entries by patterns. Useful for external events like WebSocket messages. */
   invalidate: InvalidateFn<unknown>;
 }
 
-export interface InvalidationPluginExports {
-  /** Set the default invalidation mode for this mutation */
-  setDefaultMode: (value: InvalidationMode) => void;
+export interface InvalidationPluginInternal {
+  /** Disable auto-invalidation for this request. Used by optimistic plugin. */
+  disableAutoInvalidate: () => void;
 }
 
 declare module "@spoosh/core" {
-  interface PluginInternalRegistry {
-    "spoosh:invalidation": InvalidationPluginExports;
-  }
-
   interface PluginResolvers<TContext> {
     invalidate: InvalidateOption<TContext["schema"]> | undefined;
   }
 
   interface ApiResolvers<TSchema> {
     invalidate: InvalidateFn<TSchema>;
+  }
+
+  interface PluginInternalRegistry {
+    "spoosh:invalidation": InvalidationPluginInternal;
   }
 }

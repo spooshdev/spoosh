@@ -1,6 +1,5 @@
 export { invalidationPlugin } from "./plugin";
 export type {
-  InvalidationMode,
   InvalidateOption,
   InvalidationPluginConfig,
   InvalidationWriteOptions,
@@ -11,5 +10,7 @@ export type {
   InvalidationReadResult,
   InvalidationWriteResult,
   InvalidationQueueResult,
-  InvalidationPluginExports,
+  InvalidateFn,
+  InvalidationInstanceApi,
+  InvalidationPluginInternal,
 } from "./types";

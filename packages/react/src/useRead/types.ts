@@ -4,13 +4,10 @@ import type {
   PluginTypeConfig,
   MergePluginResults,
   ReadClient,
-  TagMode,
   ExtractTriggerQuery,
   ExtractTriggerBody,
   ExtractTriggerParams,
 } from "@spoosh/core";
-
-type TagModeInArray = "all" | "self";
 
 /**
  * Base options for `useRead` hook.
@@ -20,13 +17,11 @@ export type BaseReadOptions = {
   enabled?: boolean;
 
   /**
-   * Unified tag option
-   * - String: mode only ('all' | 'self' | 'none')
-   * - Array: custom tags only OR [mode keyword mixed with custom tags]
-   *   - 'all' or 'self' can be used in arrays
-   *   - 'none' should only be used as string (use `tags: 'none'` not in array)
+   * Custom tags for cache entry.
+   * Can be a single tag string or an array of tags.
+   * Default: auto-generated from path (e.g., "users/1")
    */
-  tags?: TagMode | (TagModeInArray | (string & {}))[];
+  tags?: string | string[];
 };
 
 type QueryField<TQuery> = [TQuery] extends [never]

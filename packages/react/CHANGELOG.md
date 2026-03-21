@@ -1,5 +1,9 @@
 # @spoosh/react
 
+## 0.15.0
+
+- Use `matchTags` for wildcard pattern matching in `useRead` and `usePages`
+
 ## 0.14.1
 
 - Fix queue concurrent request decrement not working properly

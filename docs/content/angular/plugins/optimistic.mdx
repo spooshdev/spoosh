@@ -225,7 +225,7 @@ this.createPost.trigger({
 
 ## Combining with Invalidation
 
-By default, optimistic updates set invalidation to `"none"` to prevent the server response from overwriting your optimistic data prematurely. To enable invalidation alongside optimistic updates:
+By default, optimistic updates disable invalidation (`invalidate: false`) to prevent the server response from overwriting your optimistic data prematurely. To enable invalidation alongside optimistic updates:
 
 ```typescript
 private deletePost = injectWrite((api) => api("posts/:id").DELETE());
@@ -235,9 +235,8 @@ this.deletePost.trigger({
   params: { id },
   optimistic: (cache) =>
     cache("posts").set((posts) => posts.filter((p) => p.id !== id)),
-  // "all" invalidates tags from the mutation path (posts/:id),
-  // not the optimistic target path (posts)
-  invalidate: "all",
+  // Explicitly enable invalidation with patterns
+  invalidate: ["posts", "posts/*"],
 });
 ```
 

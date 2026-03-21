@@ -514,6 +514,30 @@ describe("createStateManager", () => {
       const result = manager.getCacheByTags(["users", "comments"]);
       expect(result?.state.data).toBe("data2");
     });
+
+    it("should find entry matching wildcard pattern", () => {
+      const manager = createStateManager();
+
+      manager.setCache("key1", {
+        state: createState({ data: "data1" }),
+        tags: ["posts/1"],
+      });
+
+      const result = manager.getCacheByTags(["posts/*"]);
+      expect(result?.state.data).toBe("data1");
+    });
+
+    it("should not match parent with wildcard pattern", () => {
+      const manager = createStateManager();
+
+      manager.setCache("key1", {
+        state: createState({ data: "data1" }),
+        tags: ["posts"],
+      });
+
+      const result = manager.getCacheByTags(["posts/*"]);
+      expect(result).toBeUndefined();
+    });
   });
 
   describe("getCacheEntriesByTags", () => {
@@ -577,6 +601,28 @@ describe("createStateManager", () => {
 
       const results = manager.getCacheEntriesByTags(["users", "posts"]);
       expect(results).toHaveLength(2);
+    });
+
+    it("should return entries matching wildcard pattern", () => {
+      const manager = createStateManager();
+
+      manager.setCache("key1", {
+        state: createState({ data: "data1" }),
+        tags: ["posts"],
+      });
+      manager.setCache("key2", {
+        state: createState({ data: "data2" }),
+        tags: ["posts/1"],
+      });
+      manager.setCache("key3", {
+        state: createState({ data: "data3" }),
+        tags: ["posts/1/comments"],
+      });
+
+      const results = manager.getCacheEntriesByTags(["posts/*"]);
+      expect(results).toHaveLength(2);
+      expect(results.map((r) => r.key)).toContain("key2");
+      expect(results.map((r) => r.key)).toContain("key3");
     });
   });
 
@@ -812,6 +858,57 @@ describe("createStateManager", () => {
 
       const cached = manager.getCache(key);
       expect(cached?.stale).toBeUndefined();
+    });
+
+    it("should mark children entries as stale with wildcard pattern", () => {
+      const manager = createStateManager();
+
+      manager.setCache("key1", {
+        state: createState({ data: "data1" }),
+        tags: ["posts"],
+      });
+      manager.setCache("key2", {
+        state: createState({ data: "data2" }),
+        tags: ["posts/1"],
+      });
+      manager.setCache("key3", {
+        state: createState({ data: "data3" }),
+        tags: ["posts/1/comments"],
+      });
+      manager.setCache("key4", {
+        state: createState({ data: "data4" }),
+        tags: ["users"],
+      });
+
+      manager.markStale(["posts/*"]);
+
+      expect(manager.getCache("key1")?.stale).toBeUndefined();
+      expect(manager.getCache("key2")?.stale).toBe(true);
+      expect(manager.getCache("key3")?.stale).toBe(true);
+      expect(manager.getCache("key4")?.stale).toBeUndefined();
+    });
+
+    it("should mark parent and children with combined patterns", () => {
+      const manager = createStateManager();
+
+      manager.setCache("key1", {
+        state: createState({ data: "data1" }),
+        tags: ["posts"],
+      });
+      manager.setCache("key2", {
+        state: createState({ data: "data2" }),
+        tags: ["posts/1"],
+      });
+      manager.setCache("key3", {
+        state: createState({ data: "data3" }),
+        tags: ["users"],
+      });
+
+      manager.markStale(["posts", "posts/*"]);
+
+      expect(manager.getCache("key1")?.stale).toBe(true);
+      expect(manager.getCache("key2")?.stale).toBe(true);
+      expect(manager.getCache("key3")?.stale).toBeUndefined();
     });
   });
 

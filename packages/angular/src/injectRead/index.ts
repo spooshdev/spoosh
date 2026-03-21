@@ -21,6 +21,7 @@ import {
   createSelectorProxy,
   resolvePath,
   resolveTags,
+  matchTags,
 } from "@spoosh/core";
 import type {
   BaseReadOptions,
@@ -401,9 +402,9 @@ export function createInjectRead<
 
         const unsubInvalidate = eventEmitter.on(
           "invalidate",
-          (invalidatedTags: string[]) => {
-            const hasMatch = invalidatedTags.some((tag: string) =>
-              currentResolvedTags.includes(tag)
+          (invalidatePatterns: string[]) => {
+            const hasMatch = currentResolvedTags.some((tag: string) =>
+              matchTags(tag, invalidatePatterns)
             );
 
             if (hasMatch && currentController) {

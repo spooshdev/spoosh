@@ -1,5 +1,12 @@
 # @spoosh/plugin-invalidation
 
+## 0.11.0
+
+- **Breaking**: Replace mode-based invalidation (`"all"`, `"self"`, `"none"`) with wildcard patterns (`"posts"`, `"posts/*"`, `["posts", "posts/*"]`)
+- **Breaking**: Replace `defaultMode` config with `autoInvalidate: boolean`
+- Default auto-invalidation now uses `[firstSegment, firstSegment/*]` pattern
+- Single tag per query (resolved path) instead of hierarchy
+
 ## 0.10.0
 
 - Update for core plugin API rename (`exports` → `internal`, `instanceApi` → `api`)
