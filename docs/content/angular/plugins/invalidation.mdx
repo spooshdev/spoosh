@@ -34,6 +34,41 @@ invalidationPlugin(); // same as { autoInvalidate: true }
 
 // Disable auto-invalidation (manual only)
 invalidationPlugin({ autoInvalidate: false });
+
+// Groups: use deeper segment matching for grouped endpoints
+invalidationPlugin({
+  groups: ["admin", "api/v1"],
+});
+```
+
+### Groups Configuration
+
+Use `groups` when you have path prefixes that should be treated as a namespace. This is useful for admin panels, API versioning, or any grouped endpoints:
+
+```typescript
+invalidationPlugin({
+  groups: ["admin"],
+});
+
+// Without groups:
+// POST admin/posts → invalidates ["admin", "admin/*"]
+// This would invalidate ALL admin queries (admin/users, admin/settings, etc.)
+
+// With groups: ["admin"]:
+// POST admin/posts → invalidates ["admin/posts", "admin/posts/*"]
+// POST admin/users → invalidates ["admin/users", "admin/users/*"]
+// Only the relevant admin sub-resource is invalidated
+```
+
+Multi-segment groups are also supported:
+
+```typescript
+invalidationPlugin({
+  groups: ["api/v1", "api/v2"],
+});
+
+// POST api/v1/users → invalidates ["api/v1/users", "api/v1/users/*"]
+// POST api/v2/users → invalidates ["api/v2/users", "api/v2/users/*"]
 ```
 
 ## How It Works
@@ -82,11 +117,11 @@ await createComment.trigger({ params: { id: 123 }, body: { text: "Hello" } });
 
 ## Pattern Matching
 
-| Pattern | Matches | Does NOT Match |
-|---------|---------|----------------|
-| `"posts"` | `"posts"` (exact only) | `"posts/1"`, `"users"` |
-| `"posts/*"` | `"posts/1"`, `"posts/1/comments"` | `"posts"` (parent) |
-| `["posts", "posts/*"]` | `"posts"` AND all children | - |
+| Pattern                | Matches                           | Does NOT Match         |
+| ---------------------- | --------------------------------- | ---------------------- |
+| `"posts"`              | `"posts"` (exact only)            | `"posts/1"`, `"users"` |
+| `"posts/*"`            | `"posts/1"`, `"posts/1/comments"` | `"posts"` (parent)     |
+| `["posts", "posts/*"]` | `"posts"` AND all children        | -                      |
 
 ## Per-Request Invalidation
 
@@ -142,14 +177,15 @@ await createPost.trigger({
 
 ### Plugin Config
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `autoInvalidate` | `boolean` | `true` | Auto-generate invalidation patterns from path |
+| Option           | Type       | Default | Description                                    |
+| ---------------- | ---------- | ------- | ---------------------------------------------- |
+| `autoInvalidate` | `boolean`  | `true`  | Auto-generate invalidation patterns from path  |
+| `groups`         | `string[]` | `[]`    | Path prefixes that use deeper segment matching |
 
 ### Per-Request Options
 
-| Option | Type | Description |
-|--------|------|-------------|
+| Option       | Type                                 | Description                                                               |
+| ------------ | ------------------------------------ | ------------------------------------------------------------------------- |
 | `invalidate` | `string \| string[] \| false \| "*"` | Pattern(s) to invalidate, `false` to disable, or `"*"` for global refetch |
 
 ## Default Behavior
@@ -190,9 +226,7 @@ await updatePost.trigger({
 // Invalidates: posts/1, posts/1/comments, etc. (NOT "posts" itself)
 
 // Delete all comments for a post
-deleteComments = injectWrite((api) =>
-  api("posts/:postId/comments").DELETE()
-);
+deleteComments = injectWrite((api) => api("posts/:postId/comments").DELETE());
 
 await deleteComments.trigger({
   params: { postId: 5 },

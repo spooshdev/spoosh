@@ -569,6 +569,170 @@ describe("invalidationPlugin", () => {
     });
   });
 
+  describe("groups config", () => {
+    it("should use deeper segment for grouped paths", () => {
+      const plugin = invalidationPlugin({ groups: ["admin"] });
+      const stateManager = createStateManager();
+      const eventEmitter = createEventEmitter();
+
+      const invalidateHandler = vi.fn();
+      eventEmitter.on("invalidate", invalidateHandler);
+
+      const context = createMockContext({
+        stateManager,
+        eventEmitter,
+        path: "admin/posts/1",
+        tags: ["admin/posts/1"],
+      });
+
+      const response: SpooshResponse<unknown, unknown> = {
+        data: { success: true },
+        status: 200,
+      };
+
+      plugin.afterResponse!(context, response);
+
+      expect(invalidateHandler).toHaveBeenCalledWith([
+        "admin/posts",
+        "admin/posts/*",
+      ]);
+    });
+
+    it("should use first segment for non-grouped paths", () => {
+      const plugin = invalidationPlugin({ groups: ["admin"] });
+      const stateManager = createStateManager();
+      const eventEmitter = createEventEmitter();
+
+      const invalidateHandler = vi.fn();
+      eventEmitter.on("invalidate", invalidateHandler);
+
+      const context = createMockContext({
+        stateManager,
+        eventEmitter,
+        path: "posts/1",
+        tags: ["posts/1"],
+      });
+
+      const response: SpooshResponse<unknown, unknown> = {
+        data: { success: true },
+        status: 200,
+      };
+
+      plugin.afterResponse!(context, response);
+
+      expect(invalidateHandler).toHaveBeenCalledWith(["posts", "posts/*"]);
+    });
+
+    it("should handle multi-segment groups like api/v1", () => {
+      const plugin = invalidationPlugin({ groups: ["api/v1"] });
+      const stateManager = createStateManager();
+      const eventEmitter = createEventEmitter();
+
+      const invalidateHandler = vi.fn();
+      eventEmitter.on("invalidate", invalidateHandler);
+
+      const context = createMockContext({
+        stateManager,
+        eventEmitter,
+        path: "api/v1/users/1",
+        tags: ["api/v1/users/1"],
+      });
+
+      const response: SpooshResponse<unknown, unknown> = {
+        data: { success: true },
+        status: 200,
+      };
+
+      plugin.afterResponse!(context, response);
+
+      expect(invalidateHandler).toHaveBeenCalledWith([
+        "api/v1/users",
+        "api/v1/users/*",
+      ]);
+    });
+
+    it("should match longest group prefix first", () => {
+      const plugin = invalidationPlugin({ groups: ["admin", "admin/reports"] });
+      const stateManager = createStateManager();
+      const eventEmitter = createEventEmitter();
+
+      const invalidateHandler = vi.fn();
+      eventEmitter.on("invalidate", invalidateHandler);
+
+      const context = createMockContext({
+        stateManager,
+        eventEmitter,
+        path: "admin/reports/sales/2024",
+        tags: ["admin/reports/sales/2024"],
+      });
+
+      const response: SpooshResponse<unknown, unknown> = {
+        data: { success: true },
+        status: 200,
+      };
+
+      plugin.afterResponse!(context, response);
+
+      expect(invalidateHandler).toHaveBeenCalledWith([
+        "admin/reports/sales",
+        "admin/reports/sales/*",
+      ]);
+    });
+
+    it("should handle exact group match", () => {
+      const plugin = invalidationPlugin({ groups: ["admin"] });
+      const stateManager = createStateManager();
+      const eventEmitter = createEventEmitter();
+
+      const invalidateHandler = vi.fn();
+      eventEmitter.on("invalidate", invalidateHandler);
+
+      const context = createMockContext({
+        stateManager,
+        eventEmitter,
+        path: "admin",
+        tags: ["admin"],
+      });
+
+      const response: SpooshResponse<unknown, unknown> = {
+        data: { success: true },
+        status: 200,
+      };
+
+      plugin.afterResponse!(context, response);
+
+      expect(invalidateHandler).toHaveBeenCalledWith(["admin", "admin/*"]);
+    });
+
+    it("should handle groups with leading/trailing slashes", () => {
+      const plugin = invalidationPlugin({ groups: ["/admin/", "api/v1/"] });
+      const stateManager = createStateManager();
+      const eventEmitter = createEventEmitter();
+
+      const invalidateHandler = vi.fn();
+      eventEmitter.on("invalidate", invalidateHandler);
+
+      const context = createMockContext({
+        stateManager,
+        eventEmitter,
+        path: "admin/users/1",
+        tags: ["admin/users/1"],
+      });
+
+      const response: SpooshResponse<unknown, unknown> = {
+        data: { success: true },
+        status: 200,
+      };
+
+      plugin.afterResponse!(context, response);
+
+      expect(invalidateHandler).toHaveBeenCalledWith([
+        "admin/users",
+        "admin/users/*",
+      ]);
+    });
+  });
+
   describe("api", () => {
     it("should have api defined", () => {
       const plugin = invalidationPlugin();

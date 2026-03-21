@@ -26,11 +26,11 @@ await writer.trigger({ params: { id: 123 }, body: updated });
 
 Invalidation uses wildcard patterns to match query tags:
 
-| Pattern | Matches | Does NOT Match |
-|---------|---------|----------------|
-| `"posts"` | `"posts"` (exact) | `"posts/1"` |
-| `"posts/*"` | `"posts/1"`, `"posts/1/comments"` | `"posts"` |
-| `["posts", "posts/*"]` | `"posts"` AND all children | - |
+| Pattern                | Matches                           | Does NOT Match |
+| ---------------------- | --------------------------------- | -------------- |
+| `"posts"`              | `"posts"` (exact)                 | `"posts/1"`    |
+| `"posts/*"`            | `"posts/1"`, `"posts/1/comments"` | `"posts"`      |
+| `["posts", "posts/*"]` | `"posts"` AND all children        | -              |
 
 ## Custom Tags
 
@@ -52,14 +52,14 @@ injectRead((api) => api("users/:id/posts").GET({ params: { id: "5" } }), {
 
 After a mutation, control what gets invalidated:
 
-| Pattern | Effect |
-|---------|--------|
-| Default (`autoInvalidate: true`) | `[firstSegment, firstSegment/*]` |
-| `"posts"` | Exact match only |
-| `"posts/*"` | All children of posts |
-| `["posts", "posts/*"]` | posts AND all children |
-| `false` | Skip invalidation |
-| `"*"` | Global refetch — every active query refetches |
+| Pattern                          | Effect                                        |
+| -------------------------------- | --------------------------------------------- |
+| Default (`autoInvalidate: true`) | `[firstSegment, firstSegment/*]`              |
+| `"posts"`                        | Exact match only                              |
+| `"posts/*"`                      | All children of posts                         |
+| `["posts", "posts/*"]`           | posts AND all children                        |
+| `false`                          | Skip invalidation                             |
+| `"*"`                            | Global refetch — every active query refetches |
 
 ```typescript
 postWriter = injectWrite((api) => api("posts").POST());
@@ -77,7 +77,10 @@ await postWriter.trigger({ body: newPost, invalidate: "posts/*" });
 await postWriter.trigger({ body: newPost, invalidate: ["posts", "posts/*"] });
 
 // Cross-domain — refresh unrelated queries too
-await postWriter.trigger({ body: newPost, invalidate: ["posts", "posts/*", "dashboard"] });
+await postWriter.trigger({
+  body: newPost,
+  invalidate: ["posts", "posts/*", "dashboard"],
+});
 
 // Disable invalidation
 await postWriter.trigger({ body: newPost, invalidate: false });
@@ -106,16 +109,16 @@ this.ws.onmessage = (event) => {
 
 ## Choosing the Right Pattern
 
-| Scenario | Pattern |
-|----------|---------|
-| Standard CRUD | Default (auto-invalidate) |
-| Specific resource update | `"posts/123"` |
-| All children of a resource | `"posts/*"` |
-| Resource and all children | `["posts", "posts/*"]` |
-| No related queries to refresh | `invalidate: false` |
-| User logout / account switch | `invalidate: "*"` + `clearCache: true` |
-| Cross-domain updates | `["posts", "dashboard"]` |
-| External events (WebSocket) | `invalidate(patterns)` manually |
+| Scenario                      | Pattern                                |
+| ----------------------------- | -------------------------------------- |
+| Standard CRUD                 | Default (auto-invalidate)              |
+| Specific resource update      | `"posts/123"`                          |
+| All children of a resource    | `"posts/*"`                            |
+| Resource and all children     | `["posts", "posts/*"]`                 |
+| No related queries to refresh | `invalidate: false`                    |
+| User logout / account switch  | `invalidate: "*"` + `clearCache: true` |
+| Cross-domain updates          | `["posts", "dashboard"]`               |
+| External events (WebSocket)   | `invalidate(patterns)` manually        |
 
 ---
 

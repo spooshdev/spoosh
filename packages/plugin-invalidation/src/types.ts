@@ -40,6 +40,27 @@ export interface InvalidationPluginConfig {
    * @default true
    */
   autoInvalidate?: boolean;
+
+  /**
+   * Path groups that should use deeper segment matching for invalidation.
+   * Useful for grouped endpoints like `admin/posts`, `api/v1/users`.
+   *
+   * @example
+   * ```ts
+   * invalidationPlugin({
+   *   groups: ["admin", "api/v1"]
+   * })
+   *
+   * // Without groups:
+   * // POST admin/posts → invalidates ["admin", "admin/*"]
+   *
+   * // With groups: ["admin"]:
+   * // POST admin/posts → invalidates ["admin/posts", "admin/posts/*"]
+   * // POST admin/users → invalidates ["admin/users", "admin/users/*"]
+   * // POST admin → invalidates ["admin", "admin/*"]
+   * ```
+   */
+  groups?: string[];
 }
 
 export type InvalidationWriteOptions = object;

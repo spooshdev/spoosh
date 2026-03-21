@@ -6,6 +6,7 @@
 - **Breaking**: Replace `defaultMode` config with `autoInvalidate: boolean`
 - Default auto-invalidation now uses `[firstSegment, firstSegment/*]` pattern
 - Single tag per query (resolved path) instead of hierarchy
+- Add `groups` config for deeper segment matching on grouped endpoints (e.g., `admin/posts`, `api/v1/users`)
 
 ## 0.10.0
 

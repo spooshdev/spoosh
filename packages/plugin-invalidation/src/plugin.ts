@@ -22,11 +22,30 @@ import type {
 const PLUGIN_NAME = "spoosh:invalidation";
 const AUTO_INVALIDATE_DISABLED_KEY = "invalidation:autoDisabled";
 
+function calculateSegmentDepth(path: string, groups: string[]): number {
+  if (groups.length === 0) return 1;
+
+  // Sort by length descending to match longest prefix first
+  const sortedGroups = [...groups].sort((a, b) => b.length - a.length);
+
+  for (const group of sortedGroups) {
+    const normalizedGroup = group.replace(/^\/+|\/+$/g, "");
+
+    if (path === normalizedGroup || path.startsWith(normalizedGroup + "/")) {
+      // Count segments in the group prefix + 1
+      return normalizedGroup.split("/").length + 1;
+    }
+  }
+
+  return 1;
+}
+
 function resolveInvalidateTags(
   path: string,
   params: Record<string, string | number> | undefined,
   invalidateOption: InvalidateOption | undefined,
-  autoInvalidate: boolean
+  autoInvalidate: boolean,
+  groups: string[]
 ): string[] | false {
   if (invalidateOption === false) {
     return false;
@@ -54,13 +73,18 @@ function resolveInvalidateTags(
   }
 
   const resolvedPath = normalizeTag(resolvePathString(path, params));
-  const firstSegment = resolvedPath.split("/")[0];
+  const segments = resolvedPath.split("/");
+  const depth = calculateSegmentDepth(resolvedPath, groups);
 
-  if (!firstSegment) {
+  // Get the base segments up to the calculated depth
+  const baseSegments = segments.slice(0, depth);
+
+  if (baseSegments.length === 0 || !baseSegments[0]) {
     return false;
   }
 
-  return [firstSegment, `${firstSegment}/*`];
+  const base = baseSegments.join("/");
+  return [base, `${base}/*`];
 }
 
 /**
@@ -105,7 +129,7 @@ function resolveInvalidateTags(
  * ```
  */
 export function invalidationPlugin(config: InvalidationPluginConfig = {}) {
-  const { autoInvalidate = true } = config;
+  const { autoInvalidate = true, groups = [] } = config;
 
   return createSpooshPlugin<{
     readOptions: InvalidationReadOptions;
@@ -144,7 +168,8 @@ export function invalidationPlugin(config: InvalidationPluginConfig = {}) {
           context.path,
           params,
           invalidateOption,
-          effectiveAutoInvalidate
+          effectiveAutoInvalidate,
+          groups
         );
 
         if (tags === false) {

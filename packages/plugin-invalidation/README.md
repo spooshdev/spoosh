@@ -50,11 +50,11 @@ await trigger({ body: { title: "New Post" } });
 
 ## Pattern Matching
 
-| Pattern | Matches | Does NOT Match |
-|---------|---------|----------------|
-| `"posts"` | `"posts"` (exact) | `"posts/1"`, `"users"` |
-| `"posts/*"` | `"posts/1"`, `"posts/1/comments"` | `"posts"` (parent) |
-| `["posts", "posts/*"]` | `"posts"` AND all children | - |
+| Pattern                | Matches                           | Does NOT Match         |
+| ---------------------- | --------------------------------- | ---------------------- |
+| `"posts"`              | `"posts"` (exact)                 | `"posts/1"`, `"users"` |
+| `"posts/*"`            | `"posts/1"`, `"posts/1/comments"` | `"posts"` (parent)     |
+| `["posts", "posts/*"]` | `"posts"` AND all children        | -                      |
 
 ## Per-Request Invalidation
 
@@ -100,9 +100,10 @@ await trigger({
 
 ### Plugin Config
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `autoInvalidate` | `boolean` | `true` | Auto-generate invalidation patterns from path |
+| Option           | Type       | Default | Description                                    |
+| ---------------- | ---------- | ------- | ---------------------------------------------- |
+| `autoInvalidate` | `boolean`  | `true`  | Auto-generate invalidation patterns from path  |
+| `groups`         | `string[]` | `[]`    | Path prefixes that use deeper segment matching |
 
 ```typescript
 // Default: auto-invalidate using [firstSegment, firstSegment/*]
@@ -110,12 +111,38 @@ invalidationPlugin(); // same as { autoInvalidate: true }
 
 // Disable auto-invalidation (manual only)
 invalidationPlugin({ autoInvalidate: false });
+
+// Groups: use deeper segment matching for grouped endpoints
+invalidationPlugin({
+  groups: ["admin", "api/v1"],
+});
+```
+
+### Groups Configuration
+
+Use `groups` when you have path prefixes that should be treated as a namespace:
+
+```typescript
+invalidationPlugin({
+  groups: ["admin", "api/v1"],
+});
+
+// Without groups:
+// POST admin/posts → invalidates ["admin", "admin/*"]
+
+// With groups: ["admin"]:
+// POST admin/posts → invalidates ["admin/posts", "admin/posts/*"]
+// POST admin/users → invalidates ["admin/users", "admin/users/*"]
+// POST admin → invalidates ["admin", "admin/*"]
+
+// With groups: ["api/v1"]:
+// POST api/v1/users → invalidates ["api/v1/users", "api/v1/users/*"]
 ```
 
 ### Per-Request Options
 
-| Option | Type | Description |
-|--------|------|-------------|
+| Option       | Type                                 | Description                                                               |
+| ------------ | ------------------------------------ | ------------------------------------------------------------------------- |
 | `invalidate` | `string \| string[] \| false \| "*"` | Pattern(s) to invalidate, `false` to disable, or `"*"` for global refetch |
 
 ## Default Behavior
@@ -167,7 +194,7 @@ For scenarios like logout, combine with `clearCache` from `@spoosh/plugin-cache`
 const { trigger } = useWrite((api) => api("auth/logout").POST());
 
 await trigger({
-  clearCache: true,  // Clear all cached data
-  invalidate: "*",   // Trigger all queries to refetch
+  clearCache: true, // Clear all cached data
+  invalidate: "*", // Trigger all queries to refetch
 });
 ```
