@@ -1,5 +1,9 @@
 # @spoosh/core
 
+## 0.18.1
+
+- Add `generateUUID` utility with fallback for non-secure contexts (HTTP)
+
 ## 0.18.0
 
 - Add `matchTag` and `matchTags` utilities for wildcard pattern matching

@@ -1,5 +1,9 @@
 # @spoosh/devtool
 
+## 0.7.4
+
+- Fix `crypto.randomUUID` error in non-secure contexts (HTTP)
+
 ## 0.7.3
 
 - Fix white spaces and newlines not rendering correctly in import view

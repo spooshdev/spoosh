@@ -30,3 +30,4 @@ export { matchTag, matchTags, normalizeTag } from "./matchTag";
 export { isNetworkError, isAbortError } from "./errors";
 export { clone } from "./clone";
 export { createTracer } from "./tracer";
+export { generateUUID } from "./uuid";

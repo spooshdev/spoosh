@@ -1,6 +1,6 @@
 {
   "name": "@spoosh/transport-sse",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -17,8 +17,10 @@
     "format": "prettier --write 'src/**/*.ts' '*.md'"
   },
   "dependencies": {
-    "@microsoft/fetch-event-source": "^2.0.1",
-    "@spoosh/core": "workspace:*"
+    "@microsoft/fetch-event-source": "^2.0.1"
+  },
+  "peerDependencies": {
+    "@spoosh/core": ">=0.18.1"
   },
   "devDependencies": {
     "tsup": "^8.0.0",

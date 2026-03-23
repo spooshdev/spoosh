@@ -6,6 +6,7 @@ import type {
   StateManager,
   EventEmitter,
 } from "@spoosh/core";
+import { generateUUID } from "@spoosh/core";
 
 import type {
   CacheEntryDisplay,
@@ -251,7 +252,7 @@ export class DevToolStore implements DevToolStoreInterface {
     const trace: OperationTrace = {
       ...context,
       type: "request",
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       path: resolvedPath,
       startTime: now,
       timestamp: Date.now(),

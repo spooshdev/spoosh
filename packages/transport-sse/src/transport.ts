@@ -5,7 +5,7 @@ import type {
   DevtoolEvents,
   EventEmitter,
 } from "@spoosh/core";
-import { sortObjectKeys } from "@spoosh/core";
+import { sortObjectKeys, generateUUID } from "@spoosh/core";
 import type {
   SSETransportOptions,
   SSETransportConfig,
@@ -254,7 +254,7 @@ export function sse(config: SSETransportConfig = {}): SSETransport {
                     DevtoolEvents["spoosh:subscription:message"]
                   >("spoosh:subscription:message", {
                     subscriptionId,
-                    messageId: crypto.randomUUID(),
+                    messageId: generateUUID(),
                     eventType,
                     rawData: event.data,
                     accumulatedData: {},
@@ -577,7 +577,7 @@ export function sse(config: SSETransportConfig = {}): SSETransport {
         let currentData: unknown = undefined;
         let currentError: unknown = null;
         let disconnectedByServer = false;
-        const subscriptionId = crypto.randomUUID();
+        const subscriptionId = generateUUID();
 
         const requestOptions = adapterOptions.getRequestOptions();
 

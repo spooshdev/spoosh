@@ -40,6 +40,46 @@ describe("buildUrl", () => {
     });
   });
 
+  describe("IP address URLs", () => {
+    it("should handle IP address with path", () => {
+      const result = buildUrl("http://159.223.72.31/api", ["users"]);
+      expect(result).toBe("http://159.223.72.31/api/users");
+    });
+
+    it("should handle IP address with path and multiple segments", () => {
+      const result = buildUrl("http://159.223.72.31/api", ["users", "123"]);
+      expect(result).toBe("http://159.223.72.31/api/users/123");
+    });
+
+    it("should handle IP address with port and path", () => {
+      const result = buildUrl("http://192.168.1.1:8080/api", ["posts"]);
+      expect(result).toBe("http://192.168.1.1:8080/api/posts");
+    });
+
+    it("should handle IP address with empty path array", () => {
+      const result = buildUrl("http://159.223.72.31/api", []);
+      expect(result).toBe("http://159.223.72.31/api/");
+    });
+
+    it("should handle IP address with query parameters", () => {
+      const result = buildUrl("http://159.223.72.31/api", ["users"], {
+        page: 1,
+        limit: 10,
+      });
+      expect(result).toBe("http://159.223.72.31/api/users?page=1&limit=10");
+    });
+
+    it("should handle localhost IP with path", () => {
+      const result = buildUrl("http://127.0.0.1:3000/api", ["health"]);
+      expect(result).toBe("http://127.0.0.1:3000/api/health");
+    });
+
+    it("should handle IP address with nested api path", () => {
+      const result = buildUrl("http://10.0.0.1/v1/api", ["resources", "items"]);
+      expect(result).toBe("http://10.0.0.1/v1/api/resources/items");
+    });
+  });
+
   describe("relative paths", () => {
     it("should handle relative base without leading slash", () => {
       const result = buildUrl("api", ["users"]);
