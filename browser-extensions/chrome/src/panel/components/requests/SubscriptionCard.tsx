@@ -72,13 +72,43 @@ export const SubscriptionCard: Component<SubscriptionCardProps> = (props) => {
   const messageCount = () => props.subscription.messageCount;
   const statusIndicator = () => getStatusIndicator(props.subscription.status);
 
-  const cardClasses = () => {
-    const base = "px-3 py-2 cursor-pointer transition-colors border-l-2";
-    const selected = props.selected
-      ? "bg-spoosh-primary/10 border-l-spoosh-primary"
-      : "border-l-transparent hover:bg-spoosh-surface";
+  const hasError = () => props.subscription.status === "error";
+  const isConnecting = () => props.subscription.status === "connecting";
+  const isConnected = () => props.subscription.status === "connected";
 
-    return `${base} ${selected}`;
+  const cardClasses = () => {
+    const base = "px-3 py-2 cursor-pointer transition-all border-l-2";
+
+    // Error state styling
+    if (hasError()) {
+      if (props.selected) {
+        return `${base} bg-spoosh-error/15 border-l-spoosh-error shadow-[inset_0_0_0_1px_rgba(248,81,73,0.3)]`;
+      }
+      return `${base} bg-spoosh-error/5 border-l-spoosh-error hover:bg-spoosh-error/10`;
+    }
+
+    // Connecting state styling
+    if (isConnecting()) {
+      if (props.selected) {
+        return `${base} bg-spoosh-primary/15 border-l-spoosh-primary shadow-[inset_0_0_0_1px_rgba(88,166,255,0.3)]`;
+      }
+      return `${base} border-l-spoosh-primary hover:bg-spoosh-surface`;
+    }
+
+    // Connected state styling
+    if (isConnected()) {
+      if (props.selected) {
+        return `${base} bg-spoosh-success/15 border-l-spoosh-success shadow-[inset_0_0_0_1px_rgba(63,185,80,0.3)]`;
+      }
+      return `${base} border-l-spoosh-success hover:bg-spoosh-surface`;
+    }
+
+    // Disconnected/normal state styling
+    if (props.selected) {
+      return `${base} bg-spoosh-primary/15 border-l-spoosh-primary shadow-[inset_0_0_0_1px_rgba(88,166,255,0.3)]`;
+    }
+
+    return `${base} border-l-transparent hover:bg-spoosh-surface`;
   };
 
   return (

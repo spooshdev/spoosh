@@ -22,20 +22,6 @@ const UploadIcon = () => (
   </svg>
 );
 
-function getSSEStatusClass(status: ExportedSSE["status"]): string {
-  switch (status) {
-    case "connected":
-      return "success";
-    case "error":
-      return "error";
-    case "connecting":
-      return "pending";
-    case "disconnected":
-    default:
-      return "neutral";
-  }
-}
-
 function getSSEDuration(sub: ExportedSSE): string {
   if (sub.status === "connecting") return "connecting...";
 
@@ -56,27 +42,38 @@ const ImportTraceRow: Component<{
   const isAborted = () => !!response()?.aborted;
   const hasError = () => !!response()?.error && !isAborted();
 
-  const statusClass = () => {
-    if (isAborted()) return "aborted";
-    if (hasError()) return "error";
-    return "success";
-  };
-
   const parsed = () => parseQueryKey(props.trace.queryKey);
   const timestamp = () => formatTime(props.trace.timestamp);
 
-  const statusBorderClass = () => {
-    const cls = statusClass();
-    if (cls === "error") return "border-l-spoosh-error";
-    if (cls === "aborted") return "border-l-spoosh-warning";
-    return "border-l-spoosh-success";
+  const cardClasses = () => {
+    const base = "px-3 py-2 cursor-pointer border-l-2 transition-all";
+
+    // Error state styling
+    if (hasError()) {
+      if (props.isSelected) {
+        return `${base} bg-spoosh-error/15 border-l-spoosh-error shadow-[inset_0_0_0_1px_rgba(248,81,73,0.3)]`;
+      }
+      return `${base} bg-spoosh-error/5 border-l-spoosh-error hover:bg-spoosh-error/10`;
+    }
+
+    // Aborted state styling
+    if (isAborted()) {
+      if (props.isSelected) {
+        return `${base} bg-spoosh-warning/15 border-l-spoosh-warning shadow-[inset_0_0_0_1px_rgba(210,153,34,0.3)]`;
+      }
+      return `${base} bg-spoosh-warning/5 border-l-spoosh-warning hover:bg-spoosh-warning/10`;
+    }
+
+    // Success/normal state styling
+    if (props.isSelected) {
+      return `${base} bg-spoosh-primary/15 border-l-spoosh-primary shadow-[inset_0_0_0_1px_rgba(88,166,255,0.3)]`;
+    }
+
+    return `${base} border-l-transparent hover:bg-spoosh-surface`;
   };
 
   return (
-    <div
-      class={`px-3 py-2 cursor-pointer border-b border-spoosh-border border-l-2 hover:bg-spoosh-hover transition-colors ${statusBorderClass()} ${props.isSelected ? "bg-spoosh-hover" : ""}`}
-      onClick={() => props.onSelect(props.trace.id)}
-    >
+    <div class={cardClasses()} onClick={() => props.onSelect(props.trace.id)}>
       <div class="flex items-center gap-2 mb-1">
         <span
           class={`px-1.5 py-0.5 text-2xs font-semibold rounded uppercase method-${props.trace.method}`}
@@ -107,23 +104,50 @@ const ImportSSERow: Component<{
   isSelected: boolean;
   onSelect: (id: string) => void;
 }> = (props) => {
-  const statusClass = () => getSSEStatusClass(props.sub.status);
   const duration = () => getSSEDuration(props.sub);
   const timestamp = () => formatTime(props.sub.timestamp);
 
-  const statusBorderClass = () => {
-    const cls = statusClass();
-    if (cls === "error") return "border-l-spoosh-error";
-    if (cls === "pending") return "border-l-spoosh-primary";
-    if (cls === "success") return "border-l-spoosh-success";
-    return "border-l-spoosh-text-muted";
+  const hasError = () => props.sub.status === "error";
+  const isConnecting = () => props.sub.status === "connecting";
+  const isConnected = () => props.sub.status === "connected";
+
+  const cardClasses = () => {
+    const base = "px-3 py-2 cursor-pointer border-l-2 transition-all";
+
+    // Error state styling
+    if (hasError()) {
+      if (props.isSelected) {
+        return `${base} bg-spoosh-error/15 border-l-spoosh-error shadow-[inset_0_0_0_1px_rgba(248,81,73,0.3)]`;
+      }
+      return `${base} bg-spoosh-error/5 border-l-spoosh-error hover:bg-spoosh-error/10`;
+    }
+
+    // Connecting state styling
+    if (isConnecting()) {
+      if (props.isSelected) {
+        return `${base} bg-spoosh-primary/15 border-l-spoosh-primary shadow-[inset_0_0_0_1px_rgba(88,166,255,0.3)]`;
+      }
+      return `${base} border-l-spoosh-primary hover:bg-spoosh-surface`;
+    }
+
+    // Connected state styling (active connections)
+    if (isConnected()) {
+      if (props.isSelected) {
+        return `${base} bg-spoosh-success/15 border-l-spoosh-success shadow-[inset_0_0_0_1px_rgba(63,185,80,0.3)]`;
+      }
+      return `${base} border-l-spoosh-success hover:bg-spoosh-surface`;
+    }
+
+    // Disconnected/normal state styling
+    if (props.isSelected) {
+      return `${base} bg-spoosh-primary/15 border-l-spoosh-primary shadow-[inset_0_0_0_1px_rgba(88,166,255,0.3)]`;
+    }
+
+    return `${base} border-l-transparent hover:bg-spoosh-surface`;
   };
 
   return (
-    <div
-      class={`px-3 py-2 cursor-pointer border-b border-spoosh-border border-l-2 hover:bg-spoosh-hover transition-colors ${statusBorderClass()} ${props.isSelected ? "bg-spoosh-hover" : ""}`}
-      onClick={() => props.onSelect(props.sub.id)}
-    >
+    <div class={cardClasses()} onClick={() => props.onSelect(props.sub.id)}>
       <div class="flex items-center gap-2 mb-1">
         <span class="px-1.5 py-0.5 text-2xs font-semibold rounded uppercase method-sse">
           SSE
@@ -171,26 +195,28 @@ export const ImportList: Component<ImportListProps> = (props) => {
           </div>
         }
       >
-        <For each={reversedItems()}>
-          {(item) => (
-            <Show
-              when={item.type === "sse"}
-              fallback={
-                <ImportTraceRow
-                  trace={item as ExportedTrace}
+        <div class="divide-y divide-spoosh-border">
+          <For each={reversedItems()}>
+            {(item) => (
+              <Show
+                when={item.type === "sse"}
+                fallback={
+                  <ImportTraceRow
+                    trace={item as ExportedTrace}
+                    isSelected={item.id === props.selectedId}
+                    onSelect={props.onSelect}
+                  />
+                }
+              >
+                <ImportSSERow
+                  sub={item as ExportedSSE}
                   isSelected={item.id === props.selectedId}
                   onSelect={props.onSelect}
                 />
-              }
-            >
-              <ImportSSERow
-                sub={item as ExportedSSE}
-                isSelected={item.id === props.selectedId}
-                onSelect={props.onSelect}
-              />
-            </Show>
-          )}
-        </For>
+              </Show>
+            )}
+          </For>
+        </div>
       </Show>
     </div>
   );
