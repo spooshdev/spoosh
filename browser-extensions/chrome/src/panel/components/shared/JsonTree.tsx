@@ -338,7 +338,7 @@ export const JsonTree: Component<JsonTreeProps> = (props) => {
   return (
     <div
       ref={containerRef}
-      class="font-mono text-xs overflow-auto flex-1 h-full"
+      class="font-mono text-xs overflow-auto flex-1 h-full w-full"
       onScroll={handleScroll}
     >
       <Show

@@ -11,7 +11,7 @@ interface StateListProps {
 
 export const StateList: Component<StateListProps> = (props) => {
   return (
-    <div class="flex-1 overflow-y-auto">
+    <div class="flex-1 overflow-y-auto py-0.5">
       <Show
         when={props.entries.length > 0}
         fallback={<EmptyState message="No state entries" />}

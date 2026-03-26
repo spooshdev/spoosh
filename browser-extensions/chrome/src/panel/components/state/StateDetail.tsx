@@ -46,7 +46,7 @@ export const StateDetail: Component<StateDetailProps> = (props) => {
   };
 
   return (
-    <div class="flex flex-col h-full">
+    <div class="flex flex-col h-full w-full">
       <Show
         when={props.entry}
         fallback={
@@ -111,7 +111,7 @@ export const StateDetail: Component<StateDetailProps> = (props) => {
           </For>
         </div>
 
-        <div class="flex-1 flex flex-col min-h-0 p-3">
+        <div class="flex-1 flex flex-col min-h-0 min-w-0 w-full p-3 overflow-hidden">
           <Switch>
             <Match when={props.activeTab === "data"}>
               <DataTab
@@ -140,15 +140,15 @@ export const StateDetail: Component<StateDetailProps> = (props) => {
           </Switch>
         </div>
 
-        <div class="flex gap-2 p-3 border-t border-spoosh-border">
+        <div class="flex gap-2 px-3 py-2.5 border-t border-spoosh-border bg-spoosh-surface">
           <button
-            class="px-3 py-1.5 text-xs font-medium rounded bg-spoosh-primary/20 text-spoosh-primary hover:bg-spoosh-primary/30 transition-colors"
+            class="px-2.5 py-1 text-[10px] font-medium rounded border border-[#14b8a6] text-[#14b8a6] bg-spoosh-surface hover:bg-[rgba(20,184,166,0.1)] transition-all"
             onClick={() => props.onRefetch(props.entry!.queryKey)}
           >
             Refetch
           </button>
           <button
-            class="px-3 py-1.5 text-xs font-medium rounded bg-spoosh-error/20 text-spoosh-error hover:bg-spoosh-error/30 transition-colors"
+            class="px-2.5 py-1 text-[10px] font-medium rounded border border-spoosh-error text-spoosh-error bg-spoosh-surface hover:bg-spoosh-error/10 transition-all"
             onClick={() => props.onDelete(props.entry!.queryKey)}
           >
             Delete
@@ -177,15 +177,15 @@ const DataSection: Component<{
   const jsonStr = () => JSON.stringify(props.data, null, 2);
 
   return (
-    <div class="flex-1 flex flex-col min-h-0">
-      <div class="flex items-center justify-between mb-2">
+    <div class="flex-1 flex flex-col min-h-0 min-w-0 w-full">
+      <div class="flex items-center justify-between mb-2 flex-shrink-0">
         <span class="text-xs font-medium text-spoosh-text-muted">
           {props.label}
         </span>
         <CopyButton text={jsonStr()} />
       </div>
       <div
-        class={`flex-1 flex flex-col min-h-0 bg-spoosh-surface rounded p-2 ${props.isError ? "border border-spoosh-error/50" : ""}`}
+        class={`flex-1 flex flex-col min-h-0 min-w-0 w-full bg-spoosh-surface rounded p-2 overflow-auto ${props.isError ? "border border-spoosh-error/50" : ""}`}
       >
         <JsonTree
           data={props.data}

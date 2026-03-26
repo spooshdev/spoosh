@@ -51,9 +51,15 @@ export const StateView: Component<StateViewProps> = (props) => {
   };
 
   return (
-    <div class="flex h-full">
-      <div class="w-[280px] border-r border-spoosh-border flex flex-col">
-        <div class="px-3 py-2 text-xs font-medium text-spoosh-text-muted border-b border-spoosh-border bg-spoosh-surface/50">
+    <div class="flex h-full w-full">
+      <div class="w-70 border-r border-spoosh-border flex flex-col">
+        <div
+          class="px-3 py-2 text-xs font-medium text-spoosh-text-muted border-b border-spoosh-border border-l-2 border-l-[#14b8a6]"
+          style={{
+            background:
+              "linear-gradient(90deg, rgba(20, 184, 166, 0.1) 0%, transparent 100%)",
+          }}
+        >
           Cache State
         </div>
         <StateList
@@ -63,7 +69,7 @@ export const StateView: Component<StateViewProps> = (props) => {
         />
       </div>
 
-      <div class="flex-1 min-w-0">
+      <div class="flex-1 min-w-0 h-full">
         <StateDetail
           entry={selectedEntry()}
           activeTab={props.viewState.internalTab}

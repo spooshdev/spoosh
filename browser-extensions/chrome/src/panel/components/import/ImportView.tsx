@@ -64,8 +64,8 @@ export const ImportView: Component<ImportViewProps> = (props) => {
   };
 
   return (
-    <div class="flex h-full">
-      <div class="w-[280px] border-r border-spoosh-border flex flex-col">
+    <div class="flex h-full w-full">
+      <div class="w-70 border-r border-spoosh-border flex flex-col">
         <div class="px-3 py-2 text-xs font-medium text-spoosh-text-muted border-b border-spoosh-border bg-spoosh-surface/50 flex items-center justify-between">
           <span>Imported Traces</span>
           {session() && (

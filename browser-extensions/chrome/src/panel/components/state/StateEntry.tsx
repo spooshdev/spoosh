@@ -26,11 +26,11 @@ export const StateEntry: Component<StateEntryProps> = (props) => {
   const hasError = () => props.entry.entry.state.error !== undefined;
   const isStale = () => props.entry.entry.stale === true;
 
-  const statusClass = () => {
-    if (hasError()) return "bg-spoosh-error";
-    if (isStale()) return "bg-spoosh-warning";
-    if (hasData()) return "bg-spoosh-success";
-    return "bg-spoosh-text-muted";
+  const statusColor = () => {
+    if (hasError()) return "var(--spoosh-error)";
+    if (isStale()) return "var(--spoosh-warning)";
+    if (hasData()) return "var(--spoosh-success)";
+    return "var(--spoosh-border)";
   };
 
   const dataPreview = () => {
@@ -40,38 +40,49 @@ export const StateEntry: Component<StateEntryProps> = (props) => {
 
   return (
     <div
-      class={`flex items-center gap-2 px-3 py-2 cursor-pointer border-b border-spoosh-border hover:bg-spoosh-hover transition-colors ${props.isSelected ? "bg-spoosh-hover" : ""}`}
+      class={`flex items-center gap-2.5 px-3 py-2.5 mx-1.5 my-1 cursor-pointer rounded-md border bg-spoosh-surface transition-all ${
+        props.isSelected
+          ? "border-[#14b8a6] bg-[rgba(20,184,166,0.08)] shadow-[0_0_0_1px_rgba(20,184,166,0.3)]"
+          : "border-spoosh-border hover:border-[#14b8a6] hover:bg-[rgba(20,184,166,0.05)]"
+      }`}
       onClick={() => props.onSelect(props.entry.queryKey)}
     >
-      <div class={`w-2 h-2 rounded-full shrink-0 ${statusClass()}`} />
+      <div
+        class="w-2.5 h-2.5 rounded-full shrink-0 border-2 border-spoosh-surface"
+        style={{
+          background: statusColor(),
+          color: statusColor(),
+          "box-shadow": `0 0 0 2px currentColor`,
+        }}
+      />
 
-      <div class="flex-1 min-w-0">
-        <div class="flex items-center gap-1">
-          <span class="text-xs font-medium text-spoosh-text truncate">
+      <div class="flex-1 min-w-0 flex flex-col gap-0.5">
+        <div class="flex items-center gap-1.5">
+          <span class="text-[11px] font-medium text-spoosh-text truncate">
             {parsed().path}
           </span>
           {parsed().queryParams && (
-            <span class="text-2xs text-spoosh-text-muted truncate">
+            <span class="text-[10px] text-[#14b8a6] truncate">
               ?{parsed().queryParams}
             </span>
           )}
         </div>
-        <div class="text-2xs text-spoosh-text-muted truncate">
+        <div class="text-[10px] text-spoosh-text-muted font-mono truncate pl-px">
           {dataPreview()}
         </div>
       </div>
 
-      <div class="flex items-center gap-1.5 shrink-0">
+      <div class="flex flex-col items-end gap-1 shrink-0">
         {props.entry.subscriberCount > 0 && (
           <span
-            class="text-2xs text-spoosh-text-muted"
+            class="text-[9px] px-1.5 py-0.5 rounded-full bg-[#14b8a6] text-white font-semibold"
             title="Active subscribers"
           >
             {props.entry.subscriberCount}
           </span>
         )}
         {isStale() && (
-          <span class="text-2xs px-1 py-0.5 rounded bg-spoosh-warning/20 text-spoosh-warning">
+          <span class="text-[9px] px-1.5 py-0.5 rounded bg-spoosh-warning/15 text-spoosh-warning font-medium">
             stale
           </span>
         )}
