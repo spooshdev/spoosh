@@ -4,10 +4,7 @@ import type { OperationType } from "@spoosh/core";
 import type { DevToolFilters } from "@devtool/types";
 
 interface FilterButtonsProps {
-  /** Current filter state */
   filters: DevToolFilters;
-
-  /** Callback when a filter is toggled */
   onToggle: (type: OperationType) => void;
 }
 
@@ -47,16 +44,17 @@ export const FilterButtons: Component<FilterButtonsProps> = (props) => {
       <For each={FILTER_CONFIG}>
         {(filter) => (
           <button
-            class={`flex items-center justify-center w-6 h-6 rounded border-none cursor-pointer transition-colors ${
+            class={`inline-flex items-center justify-center px-1.5 py-1 rounded border-none cursor-pointer transition-all relative group ${
               isActive(filter.type)
-                ? "bg-spoosh-primary/20 text-spoosh-primary"
-                : "bg-transparent text-spoosh-text-muted hover:text-spoosh-text hover:bg-spoosh-border/50"
+                ? "bg-spoosh-primary/15 text-spoosh-primary"
+                : "bg-transparent text-spoosh-text-muted hover:text-spoosh-text hover:bg-spoosh-border"
             }`}
             onClick={() => props.onToggle(filter.type)}
             title={filter.label}
           >
             <svg
-              class="w-2.5 h-2.5"
+              width="10"
+              height="10"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"

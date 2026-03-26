@@ -3,10 +3,7 @@ import { For } from "solid-js";
 import type { TraceTypeFilter } from "@devtool/types";
 
 interface TypeFilterProps {
-  /** Currently active filter */
   activeFilter: TraceTypeFilter;
-
-  /** Callback when filter changes */
   onFilterChange: (filter: TraceTypeFilter) => void;
 }
 
@@ -34,20 +31,21 @@ const TYPE_FILTER_CONFIG: Array<{
 
 export const TypeFilter: Component<TypeFilterProps> = (props) => {
   return (
-    <div class="flex items-center bg-spoosh-bg border border-spoosh-border rounded overflow-hidden">
+    <div class="flex items-center gap-1">
       <For each={TYPE_FILTER_CONFIG}>
         {(filter) => (
           <button
-            class={`flex items-center gap-1 px-2 py-1 text-2xs border-none cursor-pointer transition-colors ${
+            class={`inline-flex items-center gap-1 px-2 py-0.5 rounded border-none cursor-pointer text-[10px] font-medium uppercase tracking-wide transition-all ${
               props.activeFilter === filter.type
-                ? "bg-spoosh-primary/20 text-spoosh-primary"
-                : "bg-transparent text-spoosh-text-muted hover:text-spoosh-text hover:bg-spoosh-border/50"
+                ? "bg-spoosh-primary/15 text-spoosh-primary"
+                : "bg-transparent text-spoosh-text-muted hover:text-spoosh-text hover:bg-spoosh-border"
             }`}
             onClick={() => props.onFilterChange(filter.type)}
             title={filter.label}
           >
             <svg
-              class="w-3 h-3"
+              width="12"
+              height="12"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"

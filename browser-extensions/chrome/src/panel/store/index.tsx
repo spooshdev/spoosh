@@ -59,7 +59,7 @@ export interface StoreContextValue {
   getFilteredSubscriptions: (searchQuery?: string) => SubscriptionTrace[];
   getCacheEntries: (searchQuery?: string) => CacheEntryDisplay[];
   getFilteredImportedTraces: (searchQuery?: string) => ExportedItem[];
-  getKnownPlugins: (operationType?: string) => string[];
+  getKnownPlugins: () => string[];
 
   clear: () => void;
   setFilter: <K extends keyof DevToolFilters>(
@@ -219,7 +219,7 @@ export const StoreProvider: ParentComponent = (props) => {
     });
   };
 
-  const getKnownPlugins = (operationType?: string): string[] => {
+  const getKnownPlugins = (): string[] => {
     return state.knownPlugins;
   };
 

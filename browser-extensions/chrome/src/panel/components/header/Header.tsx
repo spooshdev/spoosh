@@ -7,40 +7,23 @@ import { FilterButtons } from "./FilterButtons";
 import { TypeFilter } from "./TypeFilter";
 
 interface HeaderProps {
-  /** Current filter state */
   filters: DevToolFilters;
-
-  /** Whether settings panel is shown */
   showSettings: boolean;
-
-  /** Current search query */
   searchQuery: string;
-
-  /** Callback when search query changes */
   onSearchChange: (value: string) => void;
-
-  /** Callback when an operation type filter is toggled */
   onFilterToggle: (type: OperationType) => void;
-
-  /** Callback when type filter changes */
   onTypeFilterChange: (filter: TraceTypeFilter) => void;
-
-  /** Callback to clear all traces */
   onClear: () => void;
-
-  /** Callback to export traces */
   onExport: () => void;
-
-  /** Callback to toggle settings panel */
   onSettingsToggle: () => void;
 }
 
 export const Header: Component<HeaderProps> = (props) => {
   return (
-    <div class="bg-spoosh-surface border-b border-spoosh-border p-2 flex flex-col gap-2">
-      <div class="flex items-center justify-between gap-2">
+    <div class="flex flex-col bg-spoosh-surface">
+      <div class="flex items-center justify-between px-2.5 py-2 border-b border-spoosh-border">
         <a
-          class="flex items-center gap-1.5 text-spoosh-text no-underline hover:text-spoosh-primary transition-colors"
+          class="flex items-center gap-1.5 text-spoosh-text no-underline hover:underline text-xs font-semibold"
           href="https://spoosh.dev"
           target="_blank"
           rel="noopener noreferrer"
@@ -48,21 +31,22 @@ export const Header: Component<HeaderProps> = (props) => {
           <svg class="w-4 h-3.5" viewBox="0 0 24 21" fill="currentColor">
             <path d="M12 0L24 21H0L12 0Z" />
           </svg>
-          <span class="text-xs font-semibold">Spoosh</span>
+          <span>Spoosh</span>
         </a>
 
-        <div class="flex items-center gap-1">
+        <div class="flex items-center gap-0.5">
           <button
-            class={`flex items-center justify-center w-7 h-7 rounded border-none cursor-pointer transition-colors ${
+            class={`p-1 rounded border-none cursor-pointer flex items-center justify-center ${
               props.showSettings
-                ? "bg-spoosh-primary/20 text-spoosh-primary"
-                : "bg-transparent text-spoosh-text-muted hover:text-spoosh-text hover:bg-spoosh-border/50"
+                ? "bg-spoosh-primary text-white"
+                : "bg-transparent text-spoosh-text-muted hover:text-spoosh-text"
             }`}
             onClick={props.onSettingsToggle}
             title="Settings"
           >
             <svg
-              class="w-3.5 h-3.5"
+              width="14"
+              height="14"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -74,12 +58,13 @@ export const Header: Component<HeaderProps> = (props) => {
           </button>
 
           <button
-            class="flex items-center justify-center w-7 h-7 rounded border-none cursor-pointer transition-colors bg-transparent text-spoosh-text-muted hover:text-spoosh-text hover:bg-spoosh-border/50"
+            class="p-1 rounded border-none cursor-pointer bg-transparent text-spoosh-text-muted hover:text-spoosh-text flex items-center justify-center"
             onClick={props.onExport}
             title="Export traces"
           >
             <svg
-              class="w-3.5 h-3.5"
+              width="14"
+              height="14"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -90,12 +75,13 @@ export const Header: Component<HeaderProps> = (props) => {
           </button>
 
           <button
-            class="flex items-center justify-center w-7 h-7 rounded border-none cursor-pointer transition-colors bg-transparent text-spoosh-text-muted hover:text-spoosh-text hover:bg-spoosh-border/50"
+            class="p-1 rounded border-none cursor-pointer bg-transparent text-spoosh-text-muted hover:text-spoosh-text flex items-center justify-center"
             onClick={props.onClear}
             title="Clear"
           >
             <svg
-              class="w-3.5 h-3.5"
+              width="14"
+              height="14"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -107,19 +93,33 @@ export const Header: Component<HeaderProps> = (props) => {
         </div>
       </div>
 
-      <SearchInput
-        value={props.searchQuery}
-        onChange={props.onSearchChange}
-        placeholder="Search..."
-      />
+      <div class="flex items-center gap-1.5 px-2.5 py-1.5 border-b border-spoosh-border">
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          class="text-spoosh-text-muted flex-shrink-0"
+        >
+          <circle cx="11" cy="11" r="8" />
+          <path d="M21 21l-4.35-4.35" />
+        </svg>
+        <SearchInput
+          value={props.searchQuery}
+          onChange={props.onSearchChange}
+          placeholder="Search..."
+        />
+      </div>
 
-      <div class="flex items-center gap-2">
+      <div class="flex flex-wrap items-center gap-1 px-2.5 py-1.5 border-b border-spoosh-border">
         <TypeFilter
           activeFilter={props.filters.traceTypeFilter}
           onFilterChange={props.onTypeFilterChange}
         />
 
-        <div class="w-px h-4 bg-spoosh-border" />
+        <div class="w-px h-4 bg-spoosh-border mx-1" />
 
         <FilterButtons
           filters={props.filters}
