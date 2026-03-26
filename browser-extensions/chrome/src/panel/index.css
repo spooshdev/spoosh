@@ -1,0 +1,91 @@
+@import "tailwindcss";
+
+@theme {
+  --color-spoosh-bg: var(--spoosh-bg);
+  --color-spoosh-surface: var(--spoosh-surface);
+  --color-spoosh-text: var(--spoosh-text);
+  --color-spoosh-text-muted: var(--spoosh-text-muted);
+  --color-spoosh-border: var(--spoosh-border);
+  --color-spoosh-primary: var(--spoosh-primary);
+  --color-spoosh-success: var(--spoosh-success);
+  --color-spoosh-warning: var(--spoosh-warning);
+  --color-spoosh-error: var(--spoosh-error);
+
+  --font-family-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+:root {
+  --spoosh-bg: #0d1117;
+  --spoosh-surface: #161b22;
+  --spoosh-text: #e6edf3;
+  --spoosh-text-muted: #8b949e;
+  --spoosh-border: #30363d;
+  --spoosh-primary: #58a6ff;
+  --spoosh-success: #3fb950;
+  --spoosh-warning: #d29922;
+  --spoosh-error: #f85149;
+}
+
+:root.light {
+  --spoosh-bg: #ffffff;
+  --spoosh-surface: #f6f8fa;
+  --spoosh-text: #1f2328;
+  --spoosh-text-muted: #656d76;
+  --spoosh-border: #d0d7de;
+  --spoosh-primary: #0969da;
+  --spoosh-success: #1a7f37;
+  --spoosh-warning: #9a6700;
+  --spoosh-error: #cf222e;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background: var(--spoosh-bg);
+  color: var(--spoosh-text);
+  font-family: var(--font-family-mono), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  /* font-size: var(--font-size-base); */
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background: var(--spoosh-bg);
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--spoosh-border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--spoosh-text-muted);
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

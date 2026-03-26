@@ -6,14 +6,18 @@
     "outDir": "./dist",
     "declaration": false,
     "declarationMap": false,
+    "jsx": "preserve",
+    "jsxImportSource": "solid-js",
     "types": ["chrome"],
     "paths": {
       "@devtool/*": ["../../packages/devtool/src/*"],
-      "@spoosh/core": ["../../packages/core/src/index.ts"]
+      "@spoosh/core": ["../../packages/core/src/index.ts"],
+      "@panel/*": ["./src/panel/*"]
     }
   },
   "include": [
     "src/**/*.ts",
+    "src/**/*.tsx",
     "../../packages/devtool/src/**/*.ts",
     "../../packages/core/src/**/*.ts"
   ],

@@ -3,7 +3,6 @@ import type {
   OperationType,
   SpooshResponse,
   StateManager,
-  EventEmitter,
   TraceEvent,
   TraceStage,
   TraceColor,
@@ -24,14 +23,8 @@ export interface DevToolConfig {
   /** Enable or disable the devtool. Defaults to true. */
   enabled?: boolean;
 
-  /** Show floating icon. If false, use devtools.toggle() manually. Defaults to true. */
-  showFloatingIcon?: boolean;
-
   /** Header names to redact in devtool UI and exports. Case-insensitive. Defaults to common auth headers. */
   sensitiveHeaders?: string[];
-
-  /** ID of a container element to render the devtool inside. Falls back to floating mode if not found. */
-  containerId?: string;
 }
 
 export interface DevToolTheme {
@@ -153,24 +146,10 @@ export interface DevToolFilters {
 export interface DevToolApi {
   exportTraces(): ExportedItem[];
   clearTraces(): void;
-  toggle(): void;
-  toggleFloatingIcon(): void;
 }
 
 export interface DevToolInstanceApi {
   devtools: DevToolApi;
-}
-
-export interface DevToolPanelOptions {
-  store: DevToolStoreInterface;
-  theme: "light" | "dark" | DevToolTheme;
-  position: "bottom-right" | "bottom-left" | "top-right" | "top-left";
-  stateManager: StateManager;
-  eventEmitter: EventEmitter;
-  showFloatingIcon: boolean;
-
-  /** ID of a container element to render the devtool inside. Falls back to floating mode if not found. */
-  containerId?: string;
 }
 
 export interface DevToolStoreInterface {

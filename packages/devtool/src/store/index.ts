@@ -25,7 +25,7 @@ import type {
   ImportedSession,
 } from "../types";
 import { createRingBuffer } from "./history";
-import { sanitizeForExport } from "../ui/utils/format";
+import { sanitizeForExport } from "../utils/sanitize";
 
 export interface DevToolStoreConfig {
   stateManager?: StateManager;

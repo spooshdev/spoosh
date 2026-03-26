@@ -16,7 +16,6 @@ import type {
 import { resolvePathString } from "@spoosh/core";
 
 import { DevToolStore } from "./store";
-import { DevToolPanel } from "./ui/panel";
 import { ExtensionBridge } from "./extension-bridge";
 import type { DevToolConfig, DevToolInstanceApi } from "./types";
 import type { DedupeMode } from "@spoosh/plugin-deduplication";
@@ -30,13 +29,12 @@ const DEFAULT_SENSITIVE_HEADERS = [
 ];
 
 let globalStore: DevToolStore | null = null;
-let globalPanel: DevToolPanel | null = null;
 let globalExtensionBridge: ExtensionBridge | null = null;
 
 export function devtool(
   config: DevToolConfig = {}
 ): SpooshPlugin<{ api: DevToolInstanceApi }> {
-  const { enabled = true, showFloatingIcon = true, containerId } = config;
+  const { enabled = true } = config;
 
   if (!enabled || typeof window === "undefined") {
     return {
@@ -169,16 +167,6 @@ export function devtool(
       store.setEventEmitter(ctx.eventEmitter);
       store.setSensitiveHeaders(sensitiveSet);
 
-      if (!globalPanel) {
-        globalPanel = new DevToolPanel({
-          store,
-          showFloatingIcon,
-          sensitiveHeaders: sensitiveSet,
-          containerId,
-        });
-        globalPanel.mount();
-      }
-
       if (!globalExtensionBridge) {
         globalExtensionBridge = new ExtensionBridge(store);
         globalExtensionBridge.init();
@@ -301,8 +289,6 @@ export function devtool(
         devtools: {
           exportTraces: () => store.exportTraces(),
           clearTraces: () => store.clear(),
-          toggle: () => globalPanel?.toggle(),
-          toggleFloatingIcon: () => globalPanel?.toggleFloatingIcon(),
         },
       };
     },

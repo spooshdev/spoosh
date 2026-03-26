@@ -1,13 +1,16 @@
 import { defineConfig } from "vite";
 import { crx } from "@crxjs/vite-plugin";
 import { resolve } from "path";
+import solid from "vite-plugin-solid";
+import tailwindcss from "@tailwindcss/vite";
 import manifest from "./manifest.json";
 
 export default defineConfig({
-  plugins: [crx({ manifest })],
+  plugins: [solid(), tailwindcss(), crx({ manifest })],
   resolve: {
     alias: {
       "@devtool": resolve(__dirname, "../../packages/devtool/src"),
+      "@panel": resolve(__dirname, "src/panel"),
     },
   },
   build: {
