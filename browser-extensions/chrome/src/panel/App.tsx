@@ -1,4 +1,4 @@
-import { createSignal, createEffect, Show, type Component } from "solid-js";
+import { createSignal, createEffect, Show, on, type Component } from "solid-js";
 import { useStore } from "./store";
 import { useChromeStorage } from "./hooks/useChromeStorage";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
@@ -126,6 +126,111 @@ export const App: Component = () => {
       store.setMaxHistory(max);
     }
   });
+
+  // Track previous trace count for auto-select incoming
+  let prevTraceCount = 0;
+  let initialSelectionDone = false;
+
+  createEffect(
+    on(
+      () => store.state.traces.length + store.state.subscriptions.length,
+      (totalCount) => {
+        const state = viewState();
+        const allTraces = store.getAllTraces(state.searchQuery);
+
+        if (allTraces.length === 0) {
+          prevTraceCount = 0;
+          return;
+        }
+
+        // Initial selection: when connected and traces exist but nothing selected
+        if (
+          !initialSelectionDone &&
+          store.state.connectionState === "connected" &&
+          !state.selectedTraceId
+        ) {
+          const firstTrace = allTraces[0];
+
+          if (firstTrace) {
+            if (firstTrace.type === "subscription") {
+              selectSubscription(firstTrace.id);
+            } else {
+              selectTrace(firstTrace.id);
+            }
+
+            initialSelectionDone = true;
+          }
+        }
+
+        // Auto-select incoming: when new traces arrive and setting is enabled
+        if (
+          state.autoSelectIncoming &&
+          totalCount > prevTraceCount &&
+          prevTraceCount > 0
+        ) {
+          const newestTrace = allTraces[0];
+
+          if (newestTrace) {
+            if (newestTrace.type === "subscription") {
+              selectSubscription(newestTrace.id);
+            } else {
+              selectTrace(newestTrace.id);
+            }
+          }
+        }
+
+        prevTraceCount = totalCount;
+      }
+    )
+  );
+
+  // Auto-select first state entry when switching to state view
+  createEffect(
+    on(
+      () => [viewState().activeView, store.state.cacheEntries.length] as const,
+      ([activeView, entriesLength]) => {
+        if (activeView !== "state" || entriesLength === 0) return;
+
+        const state = viewState();
+
+        if (!state.selectedStateKey) {
+          const entries = store.getCacheEntries(state.searchQuery);
+          const firstEntry = entries[0];
+
+          if (firstEntry) {
+            selectStateEntry(firstEntry.queryKey);
+          }
+        }
+      }
+    )
+  );
+
+  // Auto-select first imported trace when switching to import view
+  createEffect(
+    on(
+      () =>
+        [
+          viewState().activeView,
+          store.state.importedSession?.items.length ?? 0,
+        ] as const,
+      ([activeView, itemsLength]) => {
+        if (activeView !== "import" || itemsLength === 0) return;
+
+        const state = viewState();
+
+        if (!state.selectedImportedTraceId) {
+          const items = store.getFilteredImportedTraces(
+            state.importedSearchQuery
+          );
+          const firstItem = items[0];
+
+          if (firstItem) {
+            selectImportedTrace(firstItem.id);
+          }
+        }
+      }
+    )
+  );
 
   const updateViewState = <K extends keyof ViewState>(
     key: K,

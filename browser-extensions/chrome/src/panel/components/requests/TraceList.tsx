@@ -11,8 +11,6 @@ interface TraceListProps {
 }
 
 export const TraceList: Component<TraceListProps> = (props) => {
-  const reversedTraces = () => [...props.traces].reverse();
-
   return (
     <div class="flex-1 overflow-y-auto">
       <Show when={props.traces.length === 0}>
@@ -21,7 +19,7 @@ export const TraceList: Component<TraceListProps> = (props) => {
 
       <Show when={props.traces.length > 0}>
         <div class="divide-y divide-spoosh-border">
-          <For each={reversedTraces()}>
+          <For each={props.traces}>
             {(trace) => (
               <Show
                 when={trace.type === "subscription"}
