@@ -100,20 +100,28 @@ const DataSection: Component<DataSectionProps> = (props) => {
   const copyContent = () => JSON.stringify(props.data, null, 2);
 
   return (
-    <div class="flex-1 flex flex-col min-h-0">
-      <div class="text-xs font-medium text-spoosh-text-muted mb-2">
+    <div class="mb-4">
+      <div class="text-[10px] font-semibold uppercase text-spoosh-text-muted mb-1 tracking-[0.5px]">
         {props.label}
         <Show when={props.badge}>
-          <span class="ml-2 px-1.5 py-0.5 bg-spoosh-border rounded text-2xs">
+          <span
+            class={`ml-1.5 px-1 py-px rounded text-[9px] font-medium normal-case ${
+              props.badge === "form"
+                ? "text-spoosh-success bg-spoosh-success/15"
+                : props.badge === "urlencoded"
+                  ? "text-spoosh-warning bg-spoosh-warning/15"
+                  : "text-spoosh-text-muted bg-spoosh-surface"
+            }`}
+          >
             {props.badge}
           </span>
         </Show>
       </div>
 
-      <div class="relative flex-1 flex flex-col min-h-0 bg-spoosh-surface rounded border border-spoosh-border">
+      <div class="relative bg-spoosh-surface rounded border border-spoosh-border max-h-64 overflow-auto">
         <CopyButton text={copyContent()} class="absolute top-2 right-2 z-10" />
 
-        <div class="flex-1 flex flex-col min-h-0 p-3">
+        <div class="p-2">
           <JsonTree
             data={props.data}
             contextId={props.contextId}
@@ -137,24 +145,28 @@ const HeaderRow: Component<HeaderRowProps> = (props) => {
   const [revealed, setRevealed] = createSignal(false);
 
   return (
-    <div class="flex items-center py-1 text-xs border-b border-spoosh-border last:border-b-0">
-      <span class="text-spoosh-primary font-medium w-40 flex-shrink-0 truncate">
+    <div class="flex items-start gap-2 px-2 py-1 text-[11px] leading-[1.4] border-b border-spoosh-border last:border-b-0">
+      <span class="text-spoosh-primary font-medium flex-shrink-0">
         {props.name}
       </span>
 
       <Show
         when={props.isSensitive}
         fallback={
-          <span class="text-spoosh-text truncate flex-1">{props.value}</span>
+          <span class="text-spoosh-text break-all flex-1 min-w-0">
+            {props.value}
+          </span>
         }
       >
-        <div class="flex items-center gap-2 flex-1 min-w-0">
-          <span class="text-spoosh-text truncate">
+        <div class="flex items-center gap-1.5 flex-1 min-w-0">
+          <span
+            class={`break-all ${revealed() ? "text-spoosh-text" : "text-spoosh-text-muted tracking-wider"}`}
+          >
             {revealed() ? props.value : "\u2022\u2022\u2022\u2022\u2022\u2022"}
           </span>
 
           <button
-            class="p-1 text-spoosh-text-muted hover:text-spoosh-text transition-colors flex-shrink-0"
+            class="p-0.5 rounded text-spoosh-text-muted hover:text-spoosh-text transition-colors flex-shrink-0 bg-transparent border-none cursor-pointer flex items-center justify-center"
             onClick={() => setRevealed((v) => !v)}
             title={revealed() ? "Hide" : "Show"}
           >
@@ -162,8 +174,8 @@ const HeaderRow: Component<HeaderRowProps> = (props) => {
               when={revealed()}
               fallback={
                 <svg
-                  width="14"
-                  height="14"
+                  width="12"
+                  height="12"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
@@ -175,8 +187,8 @@ const HeaderRow: Component<HeaderRowProps> = (props) => {
               }
             >
               <svg
-                width="14"
-                height="14"
+                width="12"
+                height="12"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -203,9 +215,11 @@ const HeadersSection: Component<HeadersSectionProps> = (props) => {
 
   return (
     <div class="mb-4">
-      <div class="text-xs font-medium text-spoosh-text-muted mb-2">Headers</div>
+      <div class="text-[10px] font-semibold uppercase text-spoosh-text-muted mb-1 tracking-[0.5px]">
+        Headers
+      </div>
 
-      <div class="bg-spoosh-surface rounded border border-spoosh-border p-3">
+      <div class="bg-spoosh-surface rounded border border-spoosh-border overflow-hidden">
         <For each={headerEntries()}>
           {([name, value]) => (
             <HeaderRow

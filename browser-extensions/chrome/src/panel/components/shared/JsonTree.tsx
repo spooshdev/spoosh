@@ -3,10 +3,11 @@ import {
   Show,
   createMemo,
   createSignal,
+  createEffect,
   onMount,
   onCleanup,
+  useTransition,
   type Component,
-  type JSX,
 } from "solid-js";
 
 const LINE_HEIGHT = 20;
@@ -20,13 +21,17 @@ interface JsonTreeProps {
   withLineNumbers?: boolean;
 }
 
-interface LineData {
-  lineNumber: number;
+interface RawLineData {
   indent: number;
-  content: JSX.Element;
+  keyName: string | null;
+  value: unknown;
   isExpandable: boolean;
   isExpanded: boolean;
   path: string;
+  isCloseBracket: boolean;
+  bracketType: "[" | "{" | "]" | "}" | null;
+  previewText: string | null;
+  isLast: boolean;
 }
 
 function isPrimitive(value: unknown): boolean {
@@ -39,62 +44,28 @@ function isPrimitive(value: unknown): boolean {
   );
 }
 
-function renderPrimitiveValue(value: unknown): JSX.Element {
-  if (value === null) {
-    return <span class="text-spoosh-text-muted">null</span>;
-  }
-
-  if (value === undefined) {
-    return <span class="text-spoosh-text-muted">undefined</span>;
-  }
-
-  if (typeof value === "string") {
-    return <span class="text-spoosh-success">"{value}"</span>;
-  }
-
-  if (typeof value === "number") {
-    return <span class="text-spoosh-warning">{value}</span>;
-  }
-
-  if (typeof value === "boolean") {
-    return <span class="text-spoosh-primary">{String(value)}</span>;
-  }
-
-  return <span>{String(value)}</span>;
-}
-
-function buildLineData(
+function buildRawLineData(
   value: unknown,
   collapsedPaths: Set<string>,
   path: string = "",
   depth: number = 0,
   isLast: boolean = true,
-  keyName?: string
-): LineData[] {
-  const lines: LineData[] = [];
-  const comma = isLast ? "" : ",";
-
-  const keyPart = keyName ? (
-    <>
-      <span class="text-spoosh-primary">"{keyName}"</span>
-      <span class="text-spoosh-text">: </span>
-    </>
-  ) : null;
+  keyName: string | null = null
+): RawLineData[] {
+  const lines: RawLineData[] = [];
 
   if (isPrimitive(value)) {
     lines.push({
-      lineNumber: 0,
       indent: depth,
-      content: (
-        <span class="whitespace-nowrap">
-          {keyPart}
-          {renderPrimitiveValue(value)}
-          {comma}
-        </span>
-      ),
+      keyName,
+      value,
       isExpandable: false,
       isExpanded: false,
       path,
+      isCloseBracket: false,
+      bracketType: null,
+      previewText: null,
+      isLast,
     });
 
     return lines;
@@ -108,25 +79,20 @@ function buildLineData(
         value: v,
       }));
 
-  const openBracket = isArray ? "[" : "{";
-  const closeBracket = isArray ? "]" : "}";
   const isExpanded = !collapsedPaths.has(path);
 
   if (entries.length === 0) {
     lines.push({
-      lineNumber: 0,
       indent: depth,
-      content: (
-        <span class="whitespace-nowrap">
-          {keyPart}
-          {openBracket}
-          {closeBracket}
-          {comma}
-        </span>
-      ),
+      keyName,
+      value: isArray ? [] : {},
       isExpandable: false,
       isExpanded: false,
       path,
+      isCloseBracket: false,
+      bracketType: isArray ? "[" : "{",
+      previewText: null,
+      isLast,
     });
 
     return lines;
@@ -137,53 +103,45 @@ function buildLineData(
     : `${entries.length} keys`;
 
   lines.push({
-    lineNumber: 0,
     indent: depth,
-    content: (
-      <span class="whitespace-nowrap">
-        {keyPart}
-        {openBracket}
-        {!isExpanded && (
-          <>
-            <span class="text-spoosh-text-muted ml-1">{previewText}</span>
-            {closeBracket}
-            {comma}
-          </>
-        )}
-      </span>
-    ),
+    keyName,
+    value: null,
     isExpandable: true,
     isExpanded,
     path,
+    isCloseBracket: false,
+    bracketType: isArray ? "[" : "{",
+    previewText: isExpanded ? null : previewText,
+    isLast,
   });
 
   if (isExpanded) {
-    entries.forEach((entry, index) => {
+    for (let i = 0; i < entries.length; i++) {
+      const entry = entries[i]!;
       const childPath = path ? `${path}.${entry.key}` : entry.key;
-      const childIsLast = index === entries.length - 1;
-      const childLines = buildLineData(
+      const childIsLast = i === entries.length - 1;
+      const childLines = buildRawLineData(
         entry.value,
         collapsedPaths,
         childPath,
         depth + 1,
         childIsLast,
-        isArray ? undefined : entry.key
+        isArray ? null : entry.key
       );
       lines.push(...childLines);
-    });
+    }
 
     lines.push({
-      lineNumber: 0,
       indent: depth,
-      content: (
-        <span class="whitespace-nowrap">
-          {closeBracket}
-          {comma}
-        </span>
-      ),
+      keyName: null,
+      value: null,
       isExpandable: false,
       isExpanded: false,
       path: `${path}__close`,
+      isCloseBracket: true,
+      bracketType: isArray ? "]" : "}",
+      previewText: null,
+      isLast,
     });
   }
 
@@ -194,14 +152,21 @@ export const JsonTree: Component<JsonTreeProps> = (props) => {
   let containerRef: HTMLDivElement | undefined;
   const [scrollTop, setScrollTop] = createSignal(0);
   const [containerHeight, setContainerHeight] = createSignal(0);
+  const [pending, startTransition] = useTransition();
 
-  const lines = createMemo(() => {
-    const lineData = buildLineData(props.data, props.collapsedPaths);
-    return lineData.map((line, index) => ({
-      ...line,
-      lineNumber: index + 1,
-    }));
+  const [rawLines, setRawLines] = createSignal<RawLineData[]>([]);
+
+  createEffect(() => {
+    const data = props.data;
+    const collapsedPaths = props.collapsedPaths;
+
+    startTransition(() => {
+      const lineData = buildRawLineData(data, collapsedPaths);
+      setRawLines(lineData);
+    });
   });
+
+  const lines = () => rawLines();
 
   const lineNumWidth = createMemo(() => {
     const count = lines().length;
@@ -231,7 +196,12 @@ export const JsonTree: Component<JsonTreeProps> = (props) => {
 
   const visibleLines = createMemo(() => {
     const { start, end } = visibleRange();
-    return lines().slice(start, end);
+    return lines()
+      .slice(start, end)
+      .map((line, idx) => ({
+        ...line,
+        lineNumber: start + idx + 1,
+      }));
   });
 
   const handleScroll = (e: Event) => {
@@ -262,7 +232,94 @@ export const JsonTree: Component<JsonTreeProps> = (props) => {
     onCleanup(() => resizeObserver.disconnect());
   });
 
-  const renderLine = (line: LineData) => {
+  const renderPrimitiveValue = (value: unknown) => {
+    if (value === null) {
+      return <span class="text-spoosh-text-muted">null</span>;
+    }
+
+    if (value === undefined) {
+      return <span class="text-spoosh-text-muted">undefined</span>;
+    }
+
+    if (typeof value === "string") {
+      return <span class="text-spoosh-success">"{value}"</span>;
+    }
+
+    if (typeof value === "number") {
+      return <span class="text-spoosh-warning">{value}</span>;
+    }
+
+    if (typeof value === "boolean") {
+      return <span class="text-spoosh-primary">{String(value)}</span>;
+    }
+
+    return <span>{String(value)}</span>;
+  };
+
+  const renderLineContent = (line: RawLineData & { lineNumber: number }) => {
+    const comma = line.isLast ? "" : ",";
+
+    const keyPart = line.keyName ? (
+      <>
+        <span class="text-spoosh-primary">"{line.keyName}"</span>
+        <span class="text-spoosh-text">: </span>
+      </>
+    ) : null;
+
+    if (line.isCloseBracket) {
+      return (
+        <span class="whitespace-nowrap">
+          {line.bracketType}
+          {comma}
+        </span>
+      );
+    }
+
+    if (isPrimitive(line.value) && !line.isExpandable) {
+      return (
+        <span class="whitespace-nowrap">
+          {keyPart}
+          {renderPrimitiveValue(line.value)}
+          {comma}
+        </span>
+      );
+    }
+
+    if (line.bracketType && !line.isExpandable) {
+      const closeBracket = line.bracketType === "[" ? "]" : "}";
+      return (
+        <span class="whitespace-nowrap">
+          {keyPart}
+          {line.bracketType}
+          {closeBracket}
+          {comma}
+        </span>
+      );
+    }
+
+    if (line.isExpandable) {
+      const closeBracket = line.bracketType === "[" ? "]" : "}";
+      return (
+        <span class="whitespace-nowrap">
+          {keyPart}
+          {line.bracketType}
+          {line.previewText && (
+            <>
+              <span class="text-spoosh-text-muted ml-1">
+                {line.previewText}
+              </span>
+              {closeBracket}
+              {comma}
+            </>
+          )}
+        </span>
+      );
+    }
+
+    return null;
+  };
+
+  const renderLine = (line: RawLineData & { lineNumber: number }) => {
     if (needsVirtualization()) {
       const top = (line.lineNumber - 1) * LINE_HEIGHT;
 
@@ -296,7 +353,7 @@ export const JsonTree: Component<JsonTreeProps> = (props) => {
           </Show>
 
           <span style={{ "padding-left": `${line.indent * 16}px` }}>
-            {line.content}
+            {renderLineContent(line)}
           </span>
         </div>
       );
@@ -329,7 +386,7 @@ export const JsonTree: Component<JsonTreeProps> = (props) => {
         </Show>
 
         <span style={{ "padding-left": `${line.indent * 16}px` }}>
-          {line.content}
+          {renderLineContent(line)}
         </span>
       </div>
     );
@@ -338,7 +395,7 @@ export const JsonTree: Component<JsonTreeProps> = (props) => {
   return (
     <div
       ref={containerRef}
-      class="font-mono text-xs overflow-auto flex-1 h-full w-full"
+      class={`font-mono text-xs overflow-auto flex-1 h-full w-full ${pending() ? "opacity-60" : ""}`}
       onScroll={handleScroll}
     >
       <Show
