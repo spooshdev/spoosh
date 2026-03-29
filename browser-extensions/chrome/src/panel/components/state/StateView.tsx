@@ -4,6 +4,7 @@ import type { ViewState } from "../../App";
 import { useStore } from "../../store";
 import { StateList } from "./StateList";
 import { StateDetail } from "./StateDetail";
+import { ResizeHandle } from "../layout/ResizeHandle";
 
 type Actions = {
   selectStateEntry: (key: string | null) => void;
@@ -50,9 +51,21 @@ export const StateView: Component<StateViewProps> = (props) => {
     props.actions.selectStateEntry(null);
   };
 
+  const handleResize = (delta: number) => {
+    const currentWidth = props.viewState.listPanelWidth;
+    const newWidth = Math.max(
+      200,
+      Math.min(currentWidth + delta, window.innerWidth / 2)
+    );
+    props.actions.updateViewState("listPanelWidth", newWidth);
+  };
+
   return (
     <div class="flex h-full w-full">
-      <div class="w-70 border-r border-spoosh-border flex flex-col">
+      <div
+        class="shrink-0 border-r border-spoosh-border flex flex-col"
+        style={{ width: `${props.viewState.listPanelWidth}px` }}
+      >
         <div
           class="px-3 py-2 text-xs font-medium text-spoosh-text-muted border-b border-spoosh-border border-l-2 border-l-[#14b8a6]"
           style={{
@@ -68,6 +81,8 @@ export const StateView: Component<StateViewProps> = (props) => {
           onSelect={handleSelect}
         />
       </div>
+
+      <ResizeHandle onResize={handleResize} />
 
       <div class="flex-1 min-w-0 h-full">
         <StateDetail

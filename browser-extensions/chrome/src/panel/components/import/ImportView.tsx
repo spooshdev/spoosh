@@ -12,6 +12,7 @@ import { useStore } from "../../store";
 import { ImportList } from "./ImportList";
 import { TraceDetail } from "../detail/TraceDetail";
 import { SubscriptionDetail } from "../subscription/SubscriptionDetail";
+import { ResizeHandle } from "../layout/ResizeHandle";
 
 interface ImportViewProps {
   viewState: ViewState;
@@ -98,9 +99,21 @@ export const ImportView: Component<ImportViewProps> = (props) => {
     input.click();
   };
 
+  const handleResize = (delta: number) => {
+    const currentWidth = props.viewState.listPanelWidth;
+    const newWidth = Math.max(
+      200,
+      Math.min(currentWidth + delta, window.innerWidth / 2)
+    );
+    props.actions.updateViewState("listPanelWidth", newWidth);
+  };
+
   return (
     <div class="flex h-full w-full">
-      <div class="w-70 border-r border-spoosh-border flex flex-col">
+      <div
+        class="shrink-0 border-r border-spoosh-border flex flex-col"
+        style={{ width: `${props.viewState.listPanelWidth}px` }}
+      >
         <div class="px-3 py-2 text-xs font-medium text-spoosh-text-muted border-b border-spoosh-border bg-spoosh-surface/50 flex items-center justify-between">
           <span>Imported Traces</span>
           {session() && (
@@ -119,6 +132,8 @@ export const ImportView: Component<ImportViewProps> = (props) => {
           onImportFile={handleImportFile}
         />
       </div>
+
+      <ResizeHandle onResize={handleResize} />
 
       <div class="flex-1 min-w-0">
         <Show
