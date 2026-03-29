@@ -5,3 +5,4 @@ export { Badge } from "./Badge";
 export { EmptyState } from "./EmptyState";
 export { CopyButton } from "./CopyButton";
 export { JsonTree } from "./JsonTree";
+export { SpooshLogo } from "./SpooshLogo";

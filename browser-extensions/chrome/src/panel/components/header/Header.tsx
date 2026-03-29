@@ -2,6 +2,7 @@ import type { Component } from "solid-js";
 import type { OperationType } from "@spoosh/core";
 import type { DevToolFilters, TraceTypeFilter } from "@devtool/types";
 
+import { SpooshLogo } from "../shared";
 import { SearchInput } from "./SearchInput";
 import { FilterButtons } from "./FilterButtons";
 import { TypeFilter } from "./TypeFilter";
@@ -28,9 +29,7 @@ export const Header: Component<HeaderProps> = (props) => {
           target="_blank"
           rel="noopener noreferrer"
         >
-          <svg class="w-4 h-3.5" viewBox="0 0 24 21" fill="currentColor">
-            <path d="M12 0L24 21H0L12 0Z" />
-          </svg>
+          <SpooshLogo class="w-4 h-3.5" />
           <span>Spoosh</span>
         </a>
 

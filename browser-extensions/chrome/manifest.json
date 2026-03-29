@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Spoosh DevTools",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "description": "DevTools panel for debugging Spoosh applications",
   "icons": {
     "16": "icons/icon-16.png",
@@ -43,7 +43,7 @@
   "devtools_page": "src/devtools/devtools.html",
   "web_accessible_resources": [
     {
-      "resources": ["src/content/detector.js", "icons/*"],
+      "resources": ["src/content/detector.js"],
       "matches": ["<all_urls>"]
     }
   ]
