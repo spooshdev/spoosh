@@ -141,6 +141,15 @@ export class ExtensionBridge {
 
     const traces = this.store.getTraces();
     const subscriptions = this.store.getSubscriptions();
+    const currentTraceIds = new Set(traces.map((t) => t.id));
+
+    for (const pendingId of this.pendingTraceIds) {
+      if (!currentTraceIds.has(pendingId)) {
+        this.sendMessage("TRACE_DISCARDED", { traceId: pendingId });
+        this.pendingTraceIds.delete(pendingId);
+        this.lastTraceStepCounts.delete(pendingId);
+      }
+    }
 
     for (const trace of traces) {
       const isNew = !this.pendingTraceIds.has(trace.id);

@@ -89,6 +89,7 @@ export type PageMessageType =
   | "FULL_SYNC"
   | "TRACE_STARTED"
   | "TRACE_ENDED"
+  | "TRACE_DISCARDED"
   | "TRACE_STEP"
   | "SUBSCRIPTION_STARTED"
   | "SUBSCRIPTION_UPDATED"
@@ -130,6 +131,10 @@ export interface TraceEndedPayload {
 export interface TraceStepPayload {
   traceId: string;
   step: PluginStepEvent;
+}
+
+export interface TraceDiscardedPayload {
+  traceId: string;
 }
 
 export interface SubscriptionStartedPayload {

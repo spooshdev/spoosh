@@ -19,6 +19,7 @@ import {
   type SerializedSubscriptionTrace,
   type TraceStartedPayload,
   type TraceEndedPayload,
+  type TraceDiscardedPayload,
   type TraceStepPayload,
   type SubscriptionStartedPayload,
   type SubscriptionUpdatedPayload,
@@ -148,6 +149,10 @@ export class RemoteStore implements DevToolStoreInterface {
         this.handleTraceEnded(message.payload as TraceEndedPayload);
         break;
 
+      case "TRACE_DISCARDED":
+        this.handleTraceDiscarded(message.payload as TraceDiscardedPayload);
+        break;
+
       case "TRACE_STEP":
         this.handleTraceStep(message.payload as TraceStepPayload);
         break;
@@ -251,6 +256,17 @@ export class RemoteStore implements DevToolStoreInterface {
       trace.endTime = payload.endTime;
       trace.meta = payload.meta;
       trace.finalHeaders = payload.finalHeaders;
+      this.activeCount = Math.max(0, this.activeCount - 1);
+      this.notify();
+    }
+  }
+
+  private handleTraceDiscarded(payload: TraceDiscardedPayload): void {
+    const index = this.traces.findIndex((t) => t.id === payload.traceId);
+
+    if (index !== -1) {
+      this.traces.splice(index, 1);
+      this.totalTraceCount = Math.max(0, this.totalTraceCount - 1);
       this.activeCount = Math.max(0, this.activeCount - 1);
       this.notify();
     }
