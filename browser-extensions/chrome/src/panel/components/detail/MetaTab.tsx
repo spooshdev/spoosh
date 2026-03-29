@@ -39,7 +39,7 @@ export const MetaTab: Component<MetaTabProps> = (props) => {
             Plugin Meta
           </div>
 
-          <div class="relative flex-1 flex flex-col min-h-0 bg-spoosh-surface rounded border border-spoosh-border">
+          <div class="max-h-fit relative flex-1 flex flex-col min-h-0 bg-spoosh-surface rounded border border-spoosh-border">
             <CopyButton
               text={copyContent()}
               class="absolute top-2 right-2 z-10"

@@ -31,12 +31,12 @@ const DataSection: Component<DataSectionProps> = (props) => {
         {props.label}
       </div>
 
-      <div class="relative flex-1 flex flex-col min-h-0 bg-spoosh-surface rounded border border-spoosh-border">
+      <div
+        class={`max-h-fit relative flex-1 flex flex-col min-h-0 bg-spoosh-surface rounded border ${props.isError ? "border-spoosh-error" : "border-spoosh-border"}`}
+      >
         <CopyButton text={copyContent()} class="absolute top-2 right-2 z-10" />
 
-        <div
-          class={`flex-1 flex flex-col min-h-0 p-3 ${props.isError ? "text-spoosh-error" : ""}`}
-        >
+        <div class="flex-1 flex flex-col min-h-0 p-3">
           <Show
             when={isString()}
             fallback={
