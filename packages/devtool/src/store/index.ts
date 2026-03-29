@@ -683,6 +683,15 @@ export class DevToolStore implements DevToolStoreInterface {
 
     if (pending) {
       trace = pending.trace;
+
+      // Move from pending to active immediately when connected
+      // This proves it's not a ghost entry from React StrictMode double-mounting
+      if (status === "connected") {
+        clearTimeout(pending.timeout);
+        this.pendingSubscriptions.delete(subscriptionId);
+        this.activeSubscriptions.set(subscriptionId, trace);
+        this.totalTraceCount++;
+      }
     }
 
     if (!trace) return;
@@ -697,7 +706,7 @@ export class DevToolStore implements DevToolStoreInterface {
       trace.error = error;
     }
 
-    // Only notify if subscription is already in activeSubscriptions
+    // Notify if subscription is in activeSubscriptions (including just-moved ones)
     if (this.activeSubscriptions.has(subscriptionId)) {
       this.notify();
     }
@@ -709,7 +718,13 @@ export class DevToolStore implements DevToolStoreInterface {
     const pending = this.pendingSubscriptions.get(event.subscriptionId);
 
     if (pending) {
+      // Move from pending to active immediately since we received a message
+      // This proves it's not a ghost entry from React StrictMode double-mounting
       trace = pending.trace;
+      clearTimeout(pending.timeout);
+      this.pendingSubscriptions.delete(event.subscriptionId);
+      this.activeSubscriptions.set(event.subscriptionId, trace);
+      this.totalTraceCount++;
     }
 
     if (!trace) return;
@@ -728,10 +743,7 @@ export class DevToolStore implements DevToolStoreInterface {
     trace.messageCount++;
     trace.lastMessageAt = event.timestamp;
 
-    // Only notify if subscription is already in activeSubscriptions
-    if (this.activeSubscriptions.has(event.subscriptionId)) {
-      this.notify();
-    }
+    this.notify();
   }
 
   updateSubscriptionAccumulatedData(
