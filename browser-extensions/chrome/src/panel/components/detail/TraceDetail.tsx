@@ -77,7 +77,7 @@ export const TraceDetail: Component<TraceDetailProps> = (props) => {
 
   return (
     <div class="flex flex-col h-full">
-      <div class="flex-shrink-0 px-3 py-2 border-b border-spoosh-border">
+      <div class="shrink-0 px-3 py-2 border-b border-spoosh-border">
         <div class="flex items-center gap-2 mb-1">
           <Badge variant={getMethodBadgeVariant(props.trace.method)}>
             {props.trace.method}

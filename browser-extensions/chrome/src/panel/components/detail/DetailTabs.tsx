@@ -64,7 +64,7 @@ export const DetailTabs: Component<DetailTabsProps> = (props) => {
   };
 
   return (
-    <div class="flex-shrink-0 flex border-b border-spoosh-border">
+    <div class="shrink-0 flex border-b border-spoosh-border">
       {tabs.map((tab) => (
         <button
           class={tabClasses(tab.id)}

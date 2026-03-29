@@ -8,7 +8,7 @@ export const Connecting: Component = () => {
       <h2 class="m-0 mb-2 text-lg font-semibold text-spoosh-text mt-4">
         Connecting...
       </h2>
-      <p class="m-0 text-sm max-w-[400px] leading-relaxed">
+      <p class="m-0 text-sm max-w-100 leading-relaxed">
         Waiting for Spoosh to initialize on this page.
       </p>
     </div>

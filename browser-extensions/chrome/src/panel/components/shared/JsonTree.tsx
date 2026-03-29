@@ -333,7 +333,7 @@ export const JsonTree: Component<JsonTreeProps> = (props) => {
         >
           <Show when={props.withLineNumbers}>
             <span
-              class="text-spoosh-text-muted select-none pr-3 text-right flex-shrink-0"
+              class="text-spoosh-text-muted select-none pr-1 text-right shrink-0"
               style={{ width: `${lineNumWidth() + 2}ch` }}
             >
               {line.lineNumber}
@@ -342,10 +342,10 @@ export const JsonTree: Component<JsonTreeProps> = (props) => {
 
           <Show
             when={line.isExpandable}
-            fallback={<span class="w-4 flex-shrink-0" />}
+            fallback={<span class="w-4 shrink-0" />}
           >
             <span
-              class="w-4 flex-shrink-0 cursor-pointer text-spoosh-text-muted hover:text-spoosh-text select-none text-center text-2xs"
+              class="w-4 shrink-0 cursor-pointer text-spoosh-text-muted hover:text-spoosh-text select-none text-center text-2xs opacity-0 group-hover:opacity-100"
               onClick={() => handleToggle(line.path)}
             >
               {line.isExpanded ? "▼" : "▶"}
@@ -366,7 +366,7 @@ export const JsonTree: Component<JsonTreeProps> = (props) => {
       >
         <Show when={props.withLineNumbers}>
           <span
-            class="text-spoosh-text-muted select-none pr-3 text-right flex-shrink-0"
+            class="text-spoosh-text-muted select-none pr-1 text-right shrink-0"
             style={{ width: `${lineNumWidth() + 2}ch` }}
           >
             {line.lineNumber}
@@ -375,10 +375,10 @@ export const JsonTree: Component<JsonTreeProps> = (props) => {
 
         <Show
           when={line.isExpandable}
-          fallback={<span class="w-4 flex-shrink-0" />}
+          fallback={<span class="w-4 shrink-0" />}
         >
           <span
-            class="w-4 flex-shrink-0 cursor-pointer text-spoosh-text-muted hover:text-spoosh-text select-none text-center text-2xs"
+            class="w-4 shrink-0 cursor-pointer text-spoosh-text-muted hover:text-spoosh-text select-none text-center text-2xs opacity-0 group-hover:opacity-100"
             onClick={() => handleToggle(line.path)}
           >
             {line.isExpanded ? "▼" : "▶"}
@@ -395,7 +395,7 @@ export const JsonTree: Component<JsonTreeProps> = (props) => {
   return (
     <div
       ref={containerRef}
-      class={`font-mono text-xs overflow-auto flex-1 h-full w-full ${pending() ? "opacity-60" : ""}`}
+      class={`group font-mono text-xs overflow-auto flex-1 h-full w-full ${pending() ? "opacity-60" : ""}`}
       onScroll={handleScroll}
     >
       <Show
