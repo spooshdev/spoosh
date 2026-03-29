@@ -53,22 +53,7 @@
 }
 
 body {
-  height: 100vh;
-  display: flex;
-  overflow: hidden;
-}
-
-#root {
-  flex: 1;
-  min-width: 0;
-  overflow-x: hidden;
-  overflow-y: auto;
-}
-
-#spoosh-devtool-container {
-  flex-shrink: 0;
-  height: 100vh;
-  overflow: hidden;
+  min-height: 100vh;
 }
 
 a {

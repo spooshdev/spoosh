@@ -1,5 +1,10 @@
 # @spoosh/devtool
 
+## 0.8.0
+
+- Move devtool UI to Chrome extension
+- Remove floating icon and container mode options
+
 ## 0.7.4
 
 - Fix `crypto.randomUUID` error in non-secure contexts (HTTP)

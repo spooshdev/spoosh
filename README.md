@@ -201,7 +201,7 @@ export class UserListComponent {
 | [@spoosh/plugin-qs](./packages/plugin-qs)                       | Query string serialization with nested object support |
 | [@spoosh/plugin-nextjs](./packages/plugin-nextjs)               | Next.js server-side cache revalidation                |
 | [@spoosh/plugin-progress](./packages/plugin-progress)           | Upload/download progress tracking via XHR             |
-| [@spoosh/devtool](./packages/devtool)                           | Visual debugging panel with request inspection        |
+| [@spoosh/devtool](./packages/devtool)                           | Chrome DevTools panel for request inspection          |
 
 ## Plugin Usage
 

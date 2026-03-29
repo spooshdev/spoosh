@@ -3,9 +3,15 @@ title: Devtool
 description: Visual debugging panel for Spoosh
 ---
 
-The devtool plugin provides a visual debugging panel that shows every request, plugin step, and cached state in your browser.
+The devtool plugin provides a visual debugging panel that shows every request, plugin step, and cached state in your browser's DevTools.
 
 ## Installation
+
+### 1. Install the Chrome Extension
+
+Install the [Spoosh DevTools extension](https://chromewebstore.google.com/detail/spoosh-devtools/mcjbgbkoieeebhflnehdbfkidlpkjdhi) from the Chrome Web Store.
+
+### 2. Install the npm package
 
 ```package-install
 @spoosh/devtool
@@ -23,140 +29,36 @@ const spoosh = new Spoosh<ApiSchema, Error>("/api").use([
 ]);
 ```
 
-A floating icon appears in the corner. Click it to open the panel.
+Open Chrome DevTools (`Cmd+Option+I` on Mac, `F12` on Windows) and navigate to the **Spoosh** panel to see your requests.
 
 ## Features
 
-| Feature                | Description                                                        |
-| ---------------------- | ------------------------------------------------------------------ |
-| **Request Timeline**   | See every request with timing, status, and duration                |
-| **Plugin Steps**       | Watch middleware execution order with before/after diffs           |
-| **State Inspector**    | Browse cache entries, subscriber counts, refetch or delete         |
-| **Event Log**          | View invalidations, refetch triggers, custom plugin events         |
-| **Status Badges**      | Pending, success, error, stale, fresh indicators                   |
-| **Filter & Search**    | Filter by operation type, search by path or query key              |
-| **Keyboard Shortcuts** | Navigate with keyboard (Esc, arrows, Ctrl+K, etc.)                 |
-| **Resizable Panel**    | Drag to resize sidebar and split panels                            |
-| **Theme Switching**    | Dark and light mode                                                |
-| **Position Config**    | Button position (corners) and sidebar position (right/left/bottom) |
-| **Sensitive Headers**  | Toggle to reveal/hide auth headers with eye icon                   |
-| **Export/Import**      | Save traces as JSON, import for analysis                           |
-| **Settings**           | Max history size, auto-follow, show/hide passed plugins            |
+| Feature               | Description                                                |
+| --------------------- | ---------------------------------------------------------- |
+| **Request Timeline**  | See every request with timing, status, and duration        |
+| **Plugin Steps**      | Watch middleware execution order with before/after diffs   |
+| **State Inspector**   | Browse cache entries, subscriber counts, refetch or delete |
+| **Event Log**         | View invalidations, refetch triggers, custom plugin events |
+| **Status Badges**     | Pending, success, error, stale, fresh indicators           |
+| **Filter & Search**   | Filter by operation type, search by path or query key      |
+| **Theme Switching**   | Follows Chrome DevTools theme                              |
+| **Sensitive Headers** | Toggle to reveal/hide auth headers with eye icon           |
+| **Export**            | Save traces as JSON for analysis                           |
+| **Settings**          | Max history size, auto-follow, show/hide passed plugins    |
 
 ## Options
 
 ```typescript
 devtool({
   enabled: true,
-  showFloatingIcon: true,
-  containerId: "devtool-container",
   sensitiveHeaders: ["authorization", "cookie", "x-api-key"],
 });
 ```
 
-| Option             | Type       | Default                                         | Description                           |
-| ------------------ | ---------- | ----------------------------------------------- | ------------------------------------- |
-| `enabled`          | `boolean`  | `true`                                          | Enable or disable the devtool         |
-| `showFloatingIcon` | `boolean`  | `true`                                          | Show floating icon in corner          |
-| `containerId`      | `string`   | `undefined`                                     | DOM element ID to render panel inside |
-| `sensitiveHeaders` | `string[]` | `["authorization", "cookie", "x-api-key", ...]` | Headers to redact in UI and exports   |
-
-## Container Mode
-
-By default, the devtool renders as a floating overlay. Use `containerId` to render the panel inside a specific DOM element instead, enabling side-by-side layouts where the app and devtool panel don't overlap.
-
-### Setup
-
-1. Add a container element to your HTML:
-
-```html
-<!-- index.html -->
-<body>
-  <div id="root"></div>
-  <div id="devtool-container"></div>
-</body>
-```
-
-2. Configure the devtool with the container ID:
-
-```typescript
-devtool({
-  enabled: import.meta.env.DEV,
-  containerId: "devtool-container",
-});
-```
-
-3. Add CSS for side-by-side layout:
-
-```css
-body {
-  height: 100vh;
-  display: flex;
-  overflow: hidden;
-}
-
-#root {
-  flex: 1;
-  min-width: 0;
-  overflow-y: auto;
-}
-
-#devtool-container {
-  flex-shrink: 0;
-  height: 100vh;
-  overflow: hidden;
-}
-```
-
-### Behavior
-
-In container mode:
-
-- The floating icon still appears and toggles the panel visibility
-- The panel renders inside the specified container element
-- App and devtool have separate scroll areas
-- Sidebar position setting is hidden (panel always renders in the container)
-- Panel width is resizable by dragging the left edge
-
-## Programmatic API
-
-Access devtool functions through `create()`:
-
-```typescript
-import { create } from "@spoosh/react";
-
-const { useRead, devtools } = create(spoosh);
-
-// Toggle panel visibility
-devtools.toggle();
-
-// Clear all traces
-devtools.clearTraces();
-
-// Export traces as JSON
-const traces = devtools.exportTraces();
-
-// Show/hide floating icon
-devtools.toggleFloatingIcon();
-```
-
-| Method                 | Description                    |
-| ---------------------- | ------------------------------ |
-| `toggle()`             | Open or close the panel        |
-| `clearTraces()`        | Clear all recorded traces      |
-| `exportTraces()`       | Get traces as JSON array       |
-| `toggleFloatingIcon()` | Show or hide the floating icon |
-
-## Keyboard Shortcuts
-
-| Shortcut        | Action         |
-| --------------- | -------------- |
-| `Esc`           | Close panel    |
-| `Ctrl/Cmd + K`  | Focus search   |
-| `↑` / `↓`       | Navigate items |
-| `1` / `2` / `3` | Switch views   |
-| `Ctrl/Cmd + E`  | Export traces  |
-| `Ctrl/Cmd + L`  | Clear traces   |
+| Option             | Type       | Default                                         | Description                         |
+| ------------------ | ---------- | ----------------------------------------------- | ----------------------------------- |
+| `enabled`          | `boolean`  | `true`                                          | Enable or disable the devtool       |
+| `sensitiveHeaders` | `string[]` | `["authorization", "cookie", "x-api-key", ...]` | Headers to redact in UI and exports |
 
 ## Production
 
