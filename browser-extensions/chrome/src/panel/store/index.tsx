@@ -205,7 +205,7 @@ export const StoreProvider: ParentComponent = (props) => {
     const lowerQuery = searchQuery.toLowerCase();
 
     return session.items.filter((item) => {
-      if (item.type === "sse") {
+      if (item.type === "subscription") {
         return (
           item.channel.toLowerCase().includes(lowerQuery) ||
           item.queryKey.toLowerCase().includes(lowerQuery)

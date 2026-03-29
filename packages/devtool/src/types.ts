@@ -228,66 +228,23 @@ export interface CacheEntryDisplay {
   resolvedPath?: string;
 }
 
-export interface ExportedTrace {
-  type: "request";
-  id: string;
-  queryKey: string;
-  operationType: string;
-  method: string;
-  path: string;
-  tags: string[];
-  timestamp: number;
-  duration?: number;
-  request: unknown;
-  response?: unknown;
-  meta?: Record<string, unknown>;
-  steps: Array<{
-    plugin: string;
-    stage: string;
-    timestamp: number;
-    duration?: number;
-    reason?: string;
-    color?: string;
-    diff?: { before: unknown; after: unknown; label?: string };
-    info?: Array<{ label?: string; value: unknown }>;
-  }>;
-}
+/**
+ * Exported trace format - matches OperationTrace structure for component reuse.
+ * Omits `addStep` method (can't serialize functions) and relaxes `request` type (serialized to JSON).
+ */
+export type ExportedTrace = Omit<OperationTrace, "addStep" | "request"> & {
+  request: Record<string, unknown>;
+};
 
-export interface ExportedSSE {
-  type: "sse";
-  id: string;
-  channel: string;
-  queryKey: string;
-  connectionUrl: string;
-  status: "connecting" | "connected" | "disconnected" | "error";
-  connectedAt?: number;
-  disconnectedAt?: number;
+/**
+ * Exported subscription format - matches SubscriptionTrace structure for component reuse.
+ * Error is serialized as { message: string } since Error objects don't serialize to JSON.
+ */
+export type ExportedSubscription = Omit<SubscriptionTrace, "error"> & {
   error?: { message: string };
-  retryCount: number;
-  messageCount: number;
-  lastMessageAt?: number;
-  accumulatedData: Record<string, unknown>;
-  messages: Array<{
-    id: string;
-    eventType: string;
-    timestamp: number;
-    rawData: unknown;
-  }>;
-  steps: Array<{
-    plugin: string;
-    stage: string;
-    timestamp: number;
-    duration?: number;
-    reason?: string;
-    color?: string;
-    diff?: { before: unknown; after: unknown; label?: string };
-    info?: Array<{ label?: string; value: unknown }>;
-  }>;
-  timestamp: number;
-  listenedEvents?: string[];
-}
+};
 
-export type ExportedItem = ExportedTrace | ExportedSSE;
+export type ExportedItem = ExportedTrace | ExportedSubscription;
 
 export interface ImportedSession {
   filename: string;

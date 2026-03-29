@@ -1,6 +1,13 @@
 import { For, Show, type Component } from "solid-js";
-import type { ExportedItem, ExportedTrace, ExportedSSE } from "@devtool/types";
-import { formatTime, formatDuration, parseQueryKey } from "../../utils/format";
+import type {
+  ExportedItem,
+  ExportedTrace,
+  ExportedSubscription,
+  OperationTrace,
+  SubscriptionTrace,
+} from "@devtool/types";
+import { TraceCard } from "../requests/TraceCard";
+import { SubscriptionCard } from "../requests/SubscriptionCard";
 
 interface ImportListProps {
   items: ExportedItem[];
@@ -22,153 +29,21 @@ const UploadIcon = () => (
   </svg>
 );
 
-function getSSEDuration(sub: ExportedSSE): string {
-  if (sub.status === "connecting") return "connecting...";
-
-  const startTime = sub.connectedAt ?? sub.timestamp;
-  const endTime = sub.disconnectedAt ?? sub.timestamp;
-
-  return formatDuration(endTime - startTime);
+function toOperationTrace(exported: ExportedTrace): OperationTrace {
+  return { ...exported, addStep: () => {} } as unknown as OperationTrace;
 }
 
-const ImportTraceRow: Component<{
-  trace: ExportedTrace;
-  isSelected: boolean;
-  onSelect: (id: string) => void;
-}> = (props) => {
-  const duration = () => props.trace.duration?.toFixed(0) ?? "...";
-  const response = () =>
-    props.trace.response as Record<string, unknown> | undefined;
-  const isAborted = () => !!response()?.aborted;
-  const hasError = () => !!response()?.error && !isAborted();
-
-  const parsed = () => parseQueryKey(props.trace.queryKey);
-  const timestamp = () => formatTime(props.trace.timestamp);
-
-  const cardClasses = () => {
-    const base = "px-3 py-2 cursor-pointer border-l-2 transition-all";
-
-    // Error state styling
-    if (hasError()) {
-      if (props.isSelected) {
-        return `${base} bg-spoosh-error/15 border-l-spoosh-error shadow-[inset_0_0_0_1px_rgba(248,81,73,0.3)]`;
-      }
-      return `${base} bg-spoosh-error/5 border-l-spoosh-error hover:bg-spoosh-error/10`;
-    }
-
-    // Aborted state styling
-    if (isAborted()) {
-      if (props.isSelected) {
-        return `${base} bg-spoosh-warning/15 border-l-spoosh-warning shadow-[inset_0_0_0_1px_rgba(210,153,34,0.3)]`;
-      }
-      return `${base} bg-spoosh-warning/5 border-l-spoosh-warning hover:bg-spoosh-warning/10`;
-    }
-
-    // Success/normal state styling
-    if (props.isSelected) {
-      return `${base} bg-spoosh-primary/15 border-l-spoosh-primary shadow-[inset_0_0_0_1px_rgba(88,166,255,0.3)]`;
-    }
-
-    return `${base} border-l-transparent hover:bg-spoosh-surface`;
+function toSubscriptionTrace(
+  exported: ExportedSubscription
+): SubscriptionTrace {
+  return {
+    ...exported,
+    error: exported.error ? new Error(exported.error.message) : undefined,
   };
-
-  return (
-    <div class={cardClasses()} onClick={() => props.onSelect(props.trace.id)}>
-      <div class="flex items-center gap-2 mb-1">
-        <span
-          class={`px-1.5 py-0.5 text-2xs font-semibold rounded uppercase method-${props.trace.method}`}
-        >
-          {props.trace.method}
-        </span>
-        <span class="text-xs text-spoosh-text truncate flex-1">
-          {props.trace.path}
-          {parsed().queryParams && (
-            <span class="text-spoosh-text-muted">?{parsed().queryParams}</span>
-          )}
-        </span>
-      </div>
-      <div class="flex items-center justify-between text-2xs text-spoosh-text-muted">
-        <span>{timestamp()}</span>
-        <span
-          class={`${hasError() ? "text-spoosh-error" : isAborted() ? "text-spoosh-warning" : ""}`}
-        >
-          {duration()}ms
-        </span>
-      </div>
-    </div>
-  );
-};
-
-const ImportSSERow: Component<{
-  sub: ExportedSSE;
-  isSelected: boolean;
-  onSelect: (id: string) => void;
-}> = (props) => {
-  const duration = () => getSSEDuration(props.sub);
-  const timestamp = () => formatTime(props.sub.timestamp);
-
-  const hasError = () => props.sub.status === "error";
-  const isConnecting = () => props.sub.status === "connecting";
-  const isConnected = () => props.sub.status === "connected";
-
-  const cardClasses = () => {
-    const base = "px-3 py-2 cursor-pointer border-l-2 transition-all";
-
-    // Error state styling
-    if (hasError()) {
-      if (props.isSelected) {
-        return `${base} bg-spoosh-error/15 border-l-spoosh-error shadow-[inset_0_0_0_1px_rgba(248,81,73,0.3)]`;
-      }
-      return `${base} bg-spoosh-error/5 border-l-spoosh-error hover:bg-spoosh-error/10`;
-    }
-
-    // Connecting state styling
-    if (isConnecting()) {
-      if (props.isSelected) {
-        return `${base} bg-spoosh-primary/15 border-l-spoosh-primary shadow-[inset_0_0_0_1px_rgba(88,166,255,0.3)]`;
-      }
-      return `${base} border-l-spoosh-primary hover:bg-spoosh-surface`;
-    }
-
-    // Connected state styling (active connections)
-    if (isConnected()) {
-      if (props.isSelected) {
-        return `${base} bg-spoosh-success/15 border-l-spoosh-success shadow-[inset_0_0_0_1px_rgba(63,185,80,0.3)]`;
-      }
-      return `${base} border-l-spoosh-success hover:bg-spoosh-surface`;
-    }
-
-    // Disconnected/normal state styling
-    if (props.isSelected) {
-      return `${base} bg-spoosh-primary/15 border-l-spoosh-primary shadow-[inset_0_0_0_1px_rgba(88,166,255,0.3)]`;
-    }
-
-    return `${base} border-l-transparent hover:bg-spoosh-surface`;
-  };
-
-  return (
-    <div class={cardClasses()} onClick={() => props.onSelect(props.sub.id)}>
-      <div class="flex items-center gap-2 mb-1">
-        <span class="px-1.5 py-0.5 text-2xs font-semibold rounded uppercase method-sse">
-          SSE
-        </span>
-        <span class="text-xs text-spoosh-text truncate flex-1">
-          {props.sub.channel}
-        </span>
-      </div>
-      <div class="flex items-center justify-between text-2xs text-spoosh-text-muted">
-        <span>{timestamp()}</span>
-        <span>
-          {props.sub.messageCount} msgs &middot; {duration()}
-        </span>
-      </div>
-    </div>
-  );
-};
+}
 
 export const ImportList: Component<ImportListProps> = (props) => {
   const hasItems = () => props.items.length > 0;
-
   const reversedItems = () => [...props.items].reverse();
 
   return (
@@ -199,19 +74,21 @@ export const ImportList: Component<ImportListProps> = (props) => {
           <For each={reversedItems()}>
             {(item) => (
               <Show
-                when={item.type === "sse"}
+                when={item.type === "subscription"}
                 fallback={
-                  <ImportTraceRow
-                    trace={item as ExportedTrace}
-                    isSelected={item.id === props.selectedId}
-                    onSelect={props.onSelect}
+                  <TraceCard
+                    trace={toOperationTrace(item as ExportedTrace)}
+                    selected={item.id === props.selectedId}
+                    onClick={() => props.onSelect(item.id)}
                   />
                 }
               >
-                <ImportSSERow
-                  sub={item as ExportedSSE}
-                  isSelected={item.id === props.selectedId}
-                  onSelect={props.onSelect}
+                <SubscriptionCard
+                  subscription={toSubscriptionTrace(
+                    item as ExportedSubscription
+                  )}
+                  selected={item.id === props.selectedId}
+                  onClick={() => props.onSelect(item.id)}
                 />
               </Show>
             )}

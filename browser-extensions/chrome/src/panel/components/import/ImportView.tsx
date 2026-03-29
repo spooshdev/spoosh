@@ -1,24 +1,42 @@
-import { type Component } from "solid-js";
-import type { ExportedItem } from "@devtool/types";
+import { Show, type Component } from "solid-js";
+import type {
+  ExportedItem,
+  ExportedTrace,
+  ExportedSubscription,
+  OperationTrace,
+  SubscriptionTrace,
+} from "@devtool/types";
 import type { ViewState } from "../../App";
+import type { PanelActions } from "../layout/Panel";
 import { useStore } from "../../store";
 import { ImportList } from "./ImportList";
-import { ImportDetail } from "./ImportDetail";
-
-type Actions = {
-  selectImportedTrace: (id: string | null) => void;
-  updateViewState: <K extends keyof ViewState>(
-    key: K,
-    value: ViewState[K]
-  ) => void;
-  selectMessage: (messageId: string | null) => void;
-  toggleEventType: (eventType: string) => void;
-  toggleJsonPath: (contextId: string, path: string) => void;
-};
+import { TraceDetail } from "../detail/TraceDetail";
+import { SubscriptionDetail } from "../subscription/SubscriptionDetail";
 
 interface ImportViewProps {
   viewState: ViewState;
-  actions: Actions;
+  actions: PanelActions;
+}
+
+const DEFAULT_SENSITIVE_HEADERS = new Set([
+  "authorization",
+  "proxy-authorization",
+  "cookie",
+  "set-cookie",
+  "x-api-key",
+]);
+
+function toOperationTrace(exported: ExportedTrace): OperationTrace {
+  return { ...exported, addStep: () => {} } as unknown as OperationTrace;
+}
+
+function toSubscriptionTrace(
+  exported: ExportedSubscription
+): SubscriptionTrace {
+  return {
+    ...exported,
+    error: exported.error ? new Error(exported.error.message) : undefined,
+  };
 }
 
 export const ImportView: Component<ImportViewProps> = (props) => {
@@ -30,11 +48,28 @@ export const ImportView: Component<ImportViewProps> = (props) => {
 
   const selectedItem = () => {
     if (!props.viewState.selectedImportedTraceId) return null;
+
     return (
       items().find(
         (item) => item.id === props.viewState.selectedImportedTraceId
       ) ?? null
     );
+  };
+
+  const selectedTrace = (): OperationTrace | null => {
+    const item = selectedItem();
+
+    if (!item || item.type !== "request") return null;
+
+    return toOperationTrace(item);
+  };
+
+  const selectedSubscription = (): SubscriptionTrace | null => {
+    const item = selectedItem();
+
+    if (!item || item.type !== "subscription") return null;
+
+    return toSubscriptionTrace(item);
   };
 
   const handleSelect = (id: string) => {
@@ -86,27 +121,34 @@ export const ImportView: Component<ImportViewProps> = (props) => {
       </div>
 
       <div class="flex-1 min-w-0">
-        <ImportDetail
-          item={selectedItem()}
-          viewState={{
-            activeTab: props.viewState.activeTab,
-            subscriptionTab: props.viewState.subscriptionTab,
-            selectedMessageId: props.viewState.selectedMessageId,
-            expandedEventTypes: props.viewState.expandedEventTypes,
-            collapsedJsonPaths: props.viewState.collapsedJsonPaths,
-          }}
-          actions={{
-            updateViewState: props.actions.updateViewState as <
-              K extends string,
-            >(
-              key: K,
-              value: unknown
-            ) => void,
-            selectMessage: props.actions.selectMessage,
-            toggleEventType: props.actions.toggleEventType,
-            toggleJsonPath: props.actions.toggleJsonPath,
-          }}
-        />
+        <Show
+          when={selectedItem()}
+          fallback={
+            <div class="flex flex-col items-center justify-center h-full text-spoosh-text-muted">
+              <span class="text-2xl mb-2">&#x1F4CB;</span>
+              <span class="text-sm">Select an imported trace to inspect</span>
+            </div>
+          }
+        >
+          <Show when={selectedSubscription()}>
+            <SubscriptionDetail
+              subscription={selectedSubscription()!}
+              viewState={props.viewState}
+              actions={props.actions}
+              knownPlugins={store.state.knownPlugins}
+            />
+          </Show>
+
+          <Show when={!selectedSubscription() && selectedTrace()}>
+            <TraceDetail
+              trace={selectedTrace()!}
+              viewState={props.viewState}
+              actions={props.actions}
+              knownPlugins={store.state.knownPlugins}
+              sensitiveHeaders={DEFAULT_SENSITIVE_HEADERS}
+            />
+          </Show>
+        </Show>
       </div>
     </div>
   );

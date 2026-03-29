@@ -20,7 +20,7 @@ import type {
   SubscriptionConnectEvent,
   SubscriptionMessageEvent,
   ExportedTrace,
-  ExportedSSE,
+  ExportedSubscription,
   ExportedItem,
   ImportedSession,
 } from "../types";
@@ -402,87 +402,61 @@ export class DevToolStore implements DevToolStoreInterface {
       }
 
       return {
-        type: "request" as const,
-        id: trace.id,
-        queryKey: trace.queryKey,
-        operationType: trace.operationType,
-        method: trace.method,
-        path: trace.path,
-        tags: trace.tags,
-        timestamp: trace.timestamp,
-        duration: trace.duration,
+        ...trace,
         request,
-        response: sanitizeForExport(trace.response),
-        meta: trace.meta,
+        addStep: undefined,
+        response: sanitizeForExport(trace.response) as typeof trace.response,
         steps: trace.steps.map((step) => ({
-          plugin: step.plugin,
-          stage: step.stage,
-          timestamp: step.timestamp,
-          duration: step.duration,
-          reason: step.reason,
-          color: step.color,
+          ...step,
           diff: step.diff
             ? {
+                ...step.diff,
                 before: sanitizeForExport(step.diff.before),
                 after: sanitizeForExport(step.diff.after),
-                label: step.diff.label,
               }
             : undefined,
           info: step.info?.map((i) => ({
-            label: i.label,
+            ...i,
             value: sanitizeForExport(i.value),
           })),
         })),
       };
     });
 
-    const exportedSSE: ExportedSSE[] = subscriptions.map((sub) => ({
-      type: "sse" as const,
-      id: sub.id,
-      channel: sub.channel,
-      queryKey: sub.queryKey,
-      connectionUrl: sub.connectionUrl,
-      status: sub.status,
-      connectedAt: sub.connectedAt,
-      disconnectedAt: sub.disconnectedAt,
-      error: sub.error ? { message: sub.error.message } : undefined,
-      retryCount: sub.retryCount,
-      messageCount: sub.messageCount,
-      lastMessageAt: sub.lastMessageAt,
-      accumulatedData: sanitizeForExport(sub.accumulatedData) as Record<
-        string,
-        unknown
-      >,
-      messages: sub.messages.map((msg) => ({
-        id: msg.id,
-        eventType: msg.eventType,
-        timestamp: msg.timestamp,
-        rawData: sanitizeForExport(msg.rawData),
-      })),
-      steps: sub.steps.map((step) => ({
-        plugin: step.plugin,
-        stage: step.stage,
-        timestamp: step.timestamp,
-        duration: step.duration,
-        reason: step.reason,
-        color: step.color,
-        diff: step.diff
-          ? {
-              before: sanitizeForExport(step.diff.before),
-              after: sanitizeForExport(step.diff.after),
-              label: step.diff.label,
-            }
-          : undefined,
-        info: step.info?.map((i) => ({
-          label: i.label,
-          value: sanitizeForExport(i.value),
+    const exportedSubscriptions: ExportedSubscription[] = subscriptions.map(
+      (sub) => ({
+        ...sub,
+        error: sub.error ? { message: sub.error.message } : undefined,
+        accumulatedData: sanitizeForExport(sub.accumulatedData) as Record<
+          string,
+          unknown
+        >,
+        messages: sub.messages.map((msg) => ({
+          ...msg,
+          rawData: sanitizeForExport(msg.rawData),
+          accumulatedSnapshot: sanitizeForExport(msg.accumulatedSnapshot),
+          previousSnapshot: msg.previousSnapshot
+            ? sanitizeForExport(msg.previousSnapshot)
+            : undefined,
         })),
-      })),
-      timestamp: sub.timestamp,
-      listenedEvents: sub.listenedEvents,
-    }));
+        steps: sub.steps.map((step) => ({
+          ...step,
+          diff: step.diff
+            ? {
+                ...step.diff,
+                before: sanitizeForExport(step.diff.before),
+                after: sanitizeForExport(step.diff.after),
+              }
+            : undefined,
+          info: step.info?.map((i) => ({
+            ...i,
+            value: sanitizeForExport(i.value),
+          })),
+        })),
+      })
+    );
 
-    return [...exportedTraces, ...exportedSSE].sort(
+    return [...exportedTraces, ...exportedSubscriptions].sort(
       (a, b) => a.timestamp - b.timestamp
     );
   }
@@ -651,6 +625,7 @@ export class DevToolStore implements DevToolStoreInterface {
           );
         }
 
+        // type === "subscription"
         return (
           item.channel.toLowerCase().includes(query) ||
           item.queryKey.toLowerCase().includes(query)
