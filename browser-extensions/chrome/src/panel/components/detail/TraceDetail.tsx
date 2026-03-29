@@ -3,7 +3,7 @@ import type { OperationTrace, DetailTab } from "@devtool/types";
 import type { ViewState } from "../../App";
 import type { PanelActions } from "../layout/Panel";
 import { Badge } from "../shared";
-import { formatTime } from "../../utils/format";
+import { formatTime, formatQueryParams } from "../../utils/format";
 import { DetailTabs } from "./DetailTabs";
 import { DataTab } from "./DataTab";
 import { RequestTab } from "./RequestTab";
@@ -62,6 +62,10 @@ function getStatusInfo(trace: OperationTrace): {
 export const TraceDetail: Component<TraceDetailProps> = (props) => {
   const statusInfo = () => getStatusInfo(props.trace);
   const duration = () => props.trace.duration?.toFixed(0) ?? "...";
+  const queryParams = () =>
+    formatQueryParams(
+      props.trace.request.query as Record<string, unknown> | undefined
+    );
 
   const handleTabChange = (tab: DetailTab) => {
     props.actions.updateViewState("activeTab", tab);
@@ -84,6 +88,9 @@ export const TraceDetail: Component<TraceDetailProps> = (props) => {
           </Badge>
           <span class="text-sm text-spoosh-text truncate flex-1">
             {props.trace.path}
+            {queryParams() && (
+              <span class="text-spoosh-text-muted">?{queryParams()}</span>
+            )}
           </span>
         </div>
 

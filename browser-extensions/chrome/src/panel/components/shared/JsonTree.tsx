@@ -373,10 +373,7 @@ export const JsonTree: Component<JsonTreeProps> = (props) => {
           </span>
         </Show>
 
-        <Show
-          when={line.isExpandable}
-          fallback={<span class="w-4 shrink-0" />}
-        >
+        <Show when={line.isExpandable} fallback={<span class="w-4 shrink-0" />}>
           <span
             class="w-4 shrink-0 cursor-pointer text-spoosh-text-muted hover:text-spoosh-text select-none text-center text-2xs opacity-0 group-hover:opacity-100"
             onClick={() => handleToggle(line.path)}
