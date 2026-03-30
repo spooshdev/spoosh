@@ -94,7 +94,7 @@ export function useKeyboardShortcuts({
           )
         : -1;
 
-      let newIndex = currentIndex - direction;
+      let newIndex = currentIndex + direction;
 
       if (newIndex < 0) newIndex = 0;
       if (newIndex >= allTraces.length) newIndex = allTraces.length - 1;
@@ -143,7 +143,7 @@ export function useKeyboardShortcuts({
           )
         : -1;
 
-      let newIndex = currentIndex - direction;
+      let newIndex = currentIndex + direction;
 
       if (newIndex < 0) newIndex = 0;
       if (newIndex >= traces.length) newIndex = traces.length - 1;
