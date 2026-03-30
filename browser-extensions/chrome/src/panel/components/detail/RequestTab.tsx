@@ -1,6 +1,7 @@
 import { For, Show, createSignal, type Component } from "solid-js";
 import type { OperationTrace } from "@devtool/types";
 import { JsonTree, CopyButton } from "../shared";
+import { formatQueryParams } from "../../utils/format";
 
 interface RequestTabProps {
   trace: OperationTrace;
@@ -234,6 +235,39 @@ const HeadersSection: Component<HeadersSectionProps> = (props) => {
   );
 };
 
+interface UrlSectionProps {
+  path: string;
+  query?: Record<string, unknown>;
+}
+
+const UrlSection: Component<UrlSectionProps> = (props) => {
+  const fullUrl = () => {
+    const queryParams = formatQueryParams(props.query);
+    return queryParams ? `${props.path}?${queryParams}` : props.path;
+  };
+
+  return (
+    <div class="mb-4">
+      <div class="text-[10px] font-semibold uppercase text-spoosh-text-muted mb-1 tracking-[0.5px]">
+        URL
+      </div>
+
+      <div class="relative bg-spoosh-surface rounded border border-spoosh-border">
+        <CopyButton text={fullUrl()} class="absolute top-2 right-2 z-10" />
+
+        <div class="p-2 pr-10 text-[11px] text-spoosh-text break-all">
+          {props.path}
+          <Show when={formatQueryParams(props.query)}>
+            <span class="text-spoosh-text-muted">
+              ?{formatQueryParams(props.query)}
+            </span>
+          </Show>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export const RequestTab: Component<RequestTabProps> = (props) => {
   const baseContextId = () => `request-${props.trace.id}`;
   const getCollapsedPaths = (suffix: string) =>
@@ -255,9 +289,6 @@ export const RequestTab: Component<RequestTabProps> = (props) => {
   const hasQuery = () => query() && Object.keys(query()!).length > 0;
   const hasBody = () => body() !== undefined;
   const hasHeaders = () => headers() && Object.keys(headers()!).length > 0;
-
-  const hasAnyData = () =>
-    hasTags() || hasParams() || hasQuery() || hasBody() || hasHeaders();
 
   const getBodyData = (): { data: unknown; badge?: string } => {
     const bodyValue = body();
@@ -282,14 +313,9 @@ export const RequestTab: Component<RequestTabProps> = (props) => {
   };
 
   return (
-    <Show
-      when={hasAnyData()}
-      fallback={
-        <div class="flex items-center justify-center h-32 text-spoosh-text-muted text-sm">
-          No request data
-        </div>
-      }
-    >
+    <>
+      <UrlSection path={props.trace.path} query={query()} />
+
       <Show when={hasHeaders()}>
         <HeadersSection
           headers={headers()!}
@@ -342,6 +368,6 @@ export const RequestTab: Component<RequestTabProps> = (props) => {
           );
         })()}
       </Show>
-    </Show>
+    </>
   );
 };
