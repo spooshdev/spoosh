@@ -89,3 +89,8 @@ body {
     transform: rotate(360deg);
   }
 }
+
+::selection {
+  background: var(--spoosh-warning);
+  color: var(--spoosh-bg);
+}

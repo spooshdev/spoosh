@@ -9,6 +9,7 @@ import {
   useTransition,
   type Component,
 } from "solid-js";
+import { useFindContext } from "../../context/FindContext";
 
 const LINE_HEIGHT = 20;
 const BUFFER_LINES = 5;
@@ -148,6 +149,116 @@ function buildRawLineData(
   return lines;
 }
 
+import type { JSX } from "solid-js/jsx-runtime";
+
+function countMatchesInText(text: string, query: string): number {
+  if (!query || !text) return 0;
+
+  const lowerText = text.toLowerCase();
+  const lowerQuery = query.toLowerCase();
+  let count = 0;
+  let index = lowerText.indexOf(lowerQuery);
+
+  while (index !== -1) {
+    count++;
+    index = lowerText.indexOf(lowerQuery, index + 1);
+  }
+
+  return count;
+}
+
+interface LineMatch {
+  lineIndex: number;
+  matchIndexInLine: number;
+}
+
+function countMatchesInLines(
+  lines: RawLineData[],
+  query: string
+): { total: number; matches: LineMatch[] } {
+  if (!query) return { total: 0, matches: [] };
+
+  const matches: LineMatch[] = [];
+  let total = 0;
+
+  for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+    const line = lines[lineIndex]!;
+
+    if (line.keyName) {
+      const keyMatches = countMatchesInText(line.keyName, query);
+
+      for (let i = 0; i < keyMatches; i++) {
+        matches.push({ lineIndex, matchIndexInLine: i });
+      }
+
+      total += keyMatches;
+    }
+
+    if (
+      isPrimitive(line.value) &&
+      line.value !== null &&
+      line.value !== undefined
+    ) {
+      const valueStr = String(line.value);
+      const valueMatches = countMatchesInText(valueStr, query);
+      const keyMatches = line.keyName
+        ? countMatchesInText(line.keyName, query)
+        : 0;
+
+      for (let i = 0; i < valueMatches; i++) {
+        matches.push({ lineIndex, matchIndexInLine: keyMatches + i });
+      }
+
+      total += valueMatches;
+    }
+  }
+
+  return { total, matches };
+}
+
+const highlightText = (
+  text: string,
+  query: string,
+  currentMatchOffset?: number
+): (string | JSX.Element)[] => {
+  if (!query) return [text];
+
+  const lowerText = text.toLowerCase();
+  const lowerQuery = query.toLowerCase();
+  const parts: (string | JSX.Element)[] = [];
+  let lastIndex = 0;
+  let matchIndex = 0;
+
+  let index = lowerText.indexOf(lowerQuery);
+
+  while (index !== -1) {
+    if (index > lastIndex) {
+      parts.push(text.slice(lastIndex, index));
+    }
+
+    const isCurrent =
+      currentMatchOffset !== undefined && matchIndex === currentMatchOffset;
+
+    parts.push(
+      <mark
+        class={`rounded-sm px-0.5 ${isCurrent ? "bg-spoosh-primary text-white" : "bg-spoosh-warning text-spoosh-bg"}`}
+      >
+        {text.slice(index, index + query.length)}
+      </mark>
+    );
+
+    matchIndex++;
+    lastIndex = index + query.length;
+    index = lowerText.indexOf(lowerQuery, lastIndex);
+  }
+
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+
+  return parts.length > 0 ? parts : [text];
+};
+
 export const JsonTree: Component<JsonTreeProps> = (props) => {
   let containerRef: HTMLDivElement | undefined;
   const [scrollTop, setScrollTop] = createSignal(0);
@@ -155,6 +266,13 @@ export const JsonTree: Component<JsonTreeProps> = (props) => {
   const [pending, startTransition] = useTransition();
 
   const [rawLines, setRawLines] = createSignal<RawLineData[]>([]);
+  const [matchData, setMatchData] = createSignal<{
+    total: number;
+    matches: LineMatch[];
+  }>({ total: 0, matches: [] });
+
+  const findContext = useFindContext();
+  const searchQuery = () => findContext.query()?.toLowerCase().trim() ?? "";
 
   createEffect(() => {
     const data = props.data;
@@ -165,6 +283,47 @@ export const JsonTree: Component<JsonTreeProps> = (props) => {
       setRawLines(lineData);
     });
   });
+
+  createEffect(() => {
+    const query = searchQuery();
+    const lines = rawLines();
+    const result = countMatchesInLines(lines, query);
+    setMatchData(result);
+  });
+
+  const scrollToLocalMatch = (localIndex: number) => {
+    const matches = matchData().matches;
+
+    if (localIndex <= 0 || localIndex > matches.length || !containerRef) return;
+
+    const match = matches[localIndex - 1];
+
+    if (!match) return;
+
+    const targetScrollTop =
+      match.lineIndex * LINE_HEIGHT - containerHeight() / 2 + LINE_HEIGHT / 2;
+    containerRef.scrollTop = Math.max(0, targetScrollTop);
+  };
+
+  createEffect(() => {
+    const total = matchData().total;
+    findContext.registerMatches(props.contextId, total, scrollToLocalMatch);
+  });
+
+  onCleanup(() => {
+    findContext.unregisterMatches(props.contextId);
+  });
+
+  const currentMatchInThisComponent = () => {
+    const match = findContext.currentMatch();
+
+    if (!match || match.componentId !== props.contextId) return null;
+
+    const matches = matchData().matches;
+    const localMatch = matches[match.localIndex - 1];
+
+    return localMatch ?? null;
+  };
 
   const lines = () => rawLines();
 
@@ -232,7 +391,12 @@ export const JsonTree: Component<JsonTreeProps> = (props) => {
     onCleanup(() => resizeObserver.disconnect());
   });
 
-  const renderPrimitiveValue = (value: unknown) => {
+  const renderPrimitiveValue = (
+    value: unknown,
+    currentValueMatchOffset?: number
+  ) => {
+    const query = searchQuery();
+
     if (value === null) {
       return <span class="text-spoosh-text-muted">null</span>;
     }
@@ -242,26 +406,63 @@ export const JsonTree: Component<JsonTreeProps> = (props) => {
     }
 
     if (typeof value === "string") {
-      return <span class="text-spoosh-success">"{value}"</span>;
+      return (
+        <span class="text-spoosh-success">
+          "{highlightText(value, query, currentValueMatchOffset)}"
+        </span>
+      );
     }
 
     if (typeof value === "number") {
-      return <span class="text-spoosh-warning">{value}</span>;
+      return (
+        <span class="text-spoosh-warning">
+          {highlightText(String(value), query, currentValueMatchOffset)}
+        </span>
+      );
     }
 
     if (typeof value === "boolean") {
-      return <span class="text-spoosh-primary">{String(value)}</span>;
+      return (
+        <span class="text-spoosh-primary">
+          {highlightText(String(value), query, currentValueMatchOffset)}
+        </span>
+      );
     }
 
-    return <span>{String(value)}</span>;
+    return (
+      <span>
+        {highlightText(String(value), query, currentValueMatchOffset)}
+      </span>
+    );
   };
 
   const renderLineContent = (line: RawLineData & { lineNumber: number }) => {
     const comma = line.isLast ? "" : ",";
+    const query = searchQuery();
+    const currentMatch = currentMatchInThisComponent();
+    const lineIndex = line.lineNumber - 1;
+
+    const isCurrentLine = currentMatch?.lineIndex === lineIndex;
+    const currentKeyMatchOffset =
+      isCurrentLine && line.keyName
+        ? currentMatch?.matchIndexInLine
+        : undefined;
+
+    const keyMatchCount = line.keyName
+      ? countMatchesInText(line.keyName, query)
+      : 0;
+    const currentValueMatchOffset =
+      isCurrentLine &&
+      currentMatch &&
+      currentMatch.matchIndexInLine >= keyMatchCount
+        ? currentMatch.matchIndexInLine - keyMatchCount
+        : undefined;
 
     const keyPart = line.keyName ? (
       <>
-        <span class="text-spoosh-primary">"{line.keyName}"</span>
+        <span class="text-spoosh-primary">
+          "{highlightText(line.keyName, query, currentKeyMatchOffset)}"
+        </span>
         <span class="text-spoosh-text">: </span>
       </>
     ) : null;
@@ -279,7 +480,7 @@ export const JsonTree: Component<JsonTreeProps> = (props) => {
       return (
         <span class="whitespace-nowrap">
           {keyPart}
-          {renderPrimitiveValue(line.value)}
+          {renderPrimitiveValue(line.value, currentValueMatchOffset)}
           {comma}
         </span>
       );

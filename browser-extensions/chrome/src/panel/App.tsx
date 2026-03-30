@@ -38,6 +38,9 @@ export interface ViewState {
   requestsPanelHeight: number;
   traceTypeFilter: TraceTypeFilter;
   autoSelectIncoming: boolean;
+  showFindBar: boolean;
+  findQuery: string;
+  currentFindMatch: number;
 }
 
 const DEFAULT_VIEW_STATE: ViewState = {
@@ -64,6 +67,9 @@ const DEFAULT_VIEW_STATE: ViewState = {
   requestsPanelHeight: 0.8,
   traceTypeFilter: "all",
   autoSelectIncoming: false,
+  showFindBar: false,
+  findQuery: "",
+  currentFindMatch: 0,
 };
 
 export const App: Component = () => {
@@ -367,6 +373,51 @@ export const App: Component = () => {
     store.exportTraces();
   };
 
+  const toggleFindBar = () => {
+    setViewState((s) => ({
+      ...s,
+      showFindBar: !s.showFindBar,
+      currentFindMatch: 0,
+    }));
+  };
+
+  const closeFindBar = () => {
+    setViewState((s) => ({
+      ...s,
+      showFindBar: false,
+      findQuery: "",
+      currentFindMatch: 0,
+    }));
+  };
+
+  const setFindQuery = (query: string) => {
+    setViewState((s) => ({
+      ...s,
+      findQuery: query,
+      currentFindMatch: query ? 1 : 0,
+    }));
+  };
+
+  const nextFindMatch = (matchCount: number) => {
+    if (matchCount === 0) return;
+
+    setViewState((s) => ({
+      ...s,
+      currentFindMatch:
+        s.currentFindMatch >= matchCount ? 1 : s.currentFindMatch + 1,
+    }));
+  };
+
+  const prevFindMatch = (matchCount: number) => {
+    if (matchCount === 0) return;
+
+    setViewState((s) => ({
+      ...s,
+      currentFindMatch:
+        s.currentFindMatch <= 1 ? matchCount : s.currentFindMatch - 1,
+    }));
+  };
+
   const actions = {
     updateViewState,
     selectTrace,
@@ -382,6 +433,11 @@ export const App: Component = () => {
     clearAll,
     handleExport,
     setTheme,
+    toggleFindBar,
+    closeFindBar,
+    setFindQuery,
+    nextFindMatch,
+    prevFindMatch,
   };
 
   useKeyboardShortcuts({

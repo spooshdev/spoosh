@@ -1,9 +1,10 @@
-import { Show, Switch, Match, type Component } from "solid-js";
+import { Show, Switch, Match, createSignal, type Component } from "solid-js";
 import type { OperationType } from "@spoosh/core";
 import type { OperationTrace, SubscriptionTrace } from "@devtool/types";
 import type { ViewState } from "../../App";
 import type { ThemeMode } from "../../types";
 import { useStore } from "../../store";
+import { FindProvider } from "../../context/FindContext";
 import { ListPanel } from "./ListPanel";
 import { DetailPanel } from "./DetailPanel";
 import { ResizeHandle } from "./ResizeHandle";
@@ -14,6 +15,7 @@ import { ImportView } from "../import/ImportView";
 import { TraceDetail } from "../detail/TraceDetail";
 import { SubscriptionDetail } from "../subscription/SubscriptionDetail";
 import { Settings } from "../settings/Settings";
+import { FindBar } from "../shared";
 
 export interface PanelActions {
   updateViewState: <K extends keyof ViewState>(
@@ -33,6 +35,11 @@ export interface PanelActions {
   clearAll: () => void;
   handleExport: () => void;
   setTheme: (theme: ThemeMode) => void;
+  toggleFindBar: () => void;
+  closeFindBar: () => void;
+  setFindQuery: (query: string) => void;
+  nextFindMatch: (matchCount: number) => void;
+  prevFindMatch: (matchCount: number) => void;
 }
 
 interface PanelProps {
@@ -51,6 +58,34 @@ const DEFAULT_SENSITIVE_HEADERS = new Set([
 
 export const Panel: Component<PanelProps> = (props) => {
   const store = useStore();
+  const [matchCount, setMatchCount] = createSignal(0);
+  const [currentMatch, setCurrentMatch] = createSignal(0);
+
+  const handleMatchCountChange = (count: number) => {
+    setMatchCount(count);
+
+    if (count > 0 && currentMatch() === 0) {
+      setCurrentMatch(1);
+    } else if (count === 0) {
+      setCurrentMatch(0);
+    } else if (currentMatch() > count) {
+      setCurrentMatch(count);
+    }
+  };
+
+  const handleNextMatch = () => {
+    const count = matchCount();
+    if (count === 0) return;
+
+    setCurrentMatch((prev) => (prev >= count ? 1 : prev + 1));
+  };
+
+  const handlePrevMatch = () => {
+    const count = matchCount();
+    if (count === 0) return;
+
+    setCurrentMatch((prev) => (prev <= 1 ? count : prev - 1));
+  };
 
   const handleResize = (delta: number) => {
     const currentWidth = props.viewState.listPanelWidth;
@@ -138,47 +173,67 @@ export const Panel: Component<PanelProps> = (props) => {
             hasSelection={hasSelection()}
             activeView={props.viewState.activeView}
           >
-            <Show when={props.viewState.showSettings}>
-              <Settings
-                theme={props.theme ?? "dark"}
-                showPassedPlugins={props.viewState.showPassedPlugins}
-                autoSelectIncoming={props.viewState.autoSelectIncoming}
-                onThemeChange={props.actions.setTheme}
-                onShowPassedPluginsChange={(v) =>
-                  props.actions.updateViewState("showPassedPlugins", v)
-                }
-                onAutoSelectIncomingChange={(v) =>
-                  props.actions.updateViewState("autoSelectIncoming", v)
-                }
+            <Show when={props.viewState.showFindBar}>
+              <FindBar
+                query={props.viewState.findQuery}
+                matchCount={matchCount()}
+                currentMatch={currentMatch()}
+                onQueryChange={props.actions.setFindQuery}
+                onNext={handleNextMatch}
+                onPrev={handlePrevMatch}
+                onClose={props.actions.closeFindBar}
               />
             </Show>
 
-            <Show
-              when={!props.viewState.showSettings && selectedSubscription()}
+            <FindProvider
+              query={() => props.viewState.findQuery}
+              onMatchCountChange={handleMatchCountChange}
+              currentMatch={currentMatch}
             >
-              <SubscriptionDetail
-                subscription={selectedSubscription()!}
-                viewState={props.viewState}
-                actions={props.actions}
-                knownPlugins={store.state.knownPlugins}
-              />
-            </Show>
+              <div class="flex-1 flex flex-col min-h-0">
+                <Show when={props.viewState.showSettings}>
+                  <Settings
+                    theme={props.theme ?? "dark"}
+                    showPassedPlugins={props.viewState.showPassedPlugins}
+                    autoSelectIncoming={props.viewState.autoSelectIncoming}
+                    onThemeChange={props.actions.setTheme}
+                    onShowPassedPluginsChange={(v) =>
+                      props.actions.updateViewState("showPassedPlugins", v)
+                    }
+                    onAutoSelectIncomingChange={(v) =>
+                      props.actions.updateViewState("autoSelectIncoming", v)
+                    }
+                  />
+                </Show>
 
-            <Show
-              when={
-                !props.viewState.showSettings &&
-                !selectedSubscription() &&
-                selectedTrace()
-              }
-            >
-              <TraceDetail
-                trace={selectedTrace()!}
-                viewState={props.viewState}
-                actions={props.actions}
-                knownPlugins={store.state.knownPlugins}
-                sensitiveHeaders={DEFAULT_SENSITIVE_HEADERS}
-              />
-            </Show>
+                <Show
+                  when={!props.viewState.showSettings && selectedSubscription()}
+                >
+                  <SubscriptionDetail
+                    subscription={selectedSubscription()!}
+                    viewState={props.viewState}
+                    actions={props.actions}
+                    knownPlugins={store.state.knownPlugins}
+                  />
+                </Show>
+
+                <Show
+                  when={
+                    !props.viewState.showSettings &&
+                    !selectedSubscription() &&
+                    selectedTrace()
+                  }
+                >
+                  <TraceDetail
+                    trace={selectedTrace()!}
+                    viewState={props.viewState}
+                    actions={props.actions}
+                    knownPlugins={store.state.knownPlugins}
+                    sensitiveHeaders={DEFAULT_SENSITIVE_HEADERS}
+                  />
+                </Show>
+              </div>
+            </FindProvider>
           </DetailPanel>
         </Match>
 

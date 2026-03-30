@@ -17,6 +17,8 @@ interface UseKeyboardShortcutsProps {
     clearAll: () => void;
     handleExport: () => void;
     setTheme: (theme: ThemeMode) => void;
+    toggleFindBar: () => void;
+    closeFindBar: () => void;
   };
   store: StoreContextValue;
 }
@@ -38,6 +40,22 @@ export function useKeyboardShortcuts({
       e.preventDefault();
       searchInputRef = document.querySelector(".search-input");
       searchInputRef?.focus();
+      return;
+    }
+
+    if (isMod && e.key === "f") {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      actions.toggleFindBar();
+      return;
+    }
+
+    if (e.key === "Escape" && viewState().showFindBar) {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      actions.closeFindBar();
       return;
     }
 
@@ -165,10 +183,12 @@ export function useKeyboardShortcuts({
   };
 
   onMount(() => {
-    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("keydown", handleKeyDown, true);
+    window.addEventListener("keydown", handleKeyDown, true);
   });
 
   onCleanup(() => {
-    document.removeEventListener("keydown", handleKeyDown);
+    document.removeEventListener("keydown", handleKeyDown, true);
+    window.removeEventListener("keydown", handleKeyDown, true);
   });
 }
