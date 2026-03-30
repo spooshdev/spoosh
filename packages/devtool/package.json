@@ -1,6 +1,6 @@
 {
   "name": "@spoosh/devtool",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "Visual debugging plugin for Spoosh - Chrome DevTools panel integration",
   "license": "MIT",
   "repository": {

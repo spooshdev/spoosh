@@ -49,13 +49,17 @@ Open Chrome DevTools and navigate to the "Spoosh" panel to see your requests.
 devtool({
   enabled: true,
   sensitiveHeaders: ["authorization", "cookie", "x-api-key"],
+  maxHistory: 50,
+  maxMessages: 100,
 });
 ```
 
-| Option             | Type       | Default                                         | Description                         |
-| ------------------ | ---------- | ----------------------------------------------- | ----------------------------------- |
-| `enabled`          | `boolean`  | `true`                                          | Enable or disable the devtool       |
-| `sensitiveHeaders` | `string[]` | `["authorization", "cookie", "x-api-key", ...]` | Headers to redact in UI and exports |
+| Option             | Type       | Default                                         | Description                                |
+| ------------------ | ---------- | ----------------------------------------------- | ------------------------------------------ |
+| `enabled`          | `boolean`  | `true`                                          | Enable or disable the devtool              |
+| `sensitiveHeaders` | `string[]` | `["authorization", "cookie", "x-api-key", ...]` | Headers to redact in UI and exports        |
+| `maxHistory`       | `number`   | `50`                                            | Maximum number of traces to keep in memory |
+| `maxMessages`      | `number`   | `100`                                           | Maximum messages per SSE subscription      |
 
 ## Production
 
