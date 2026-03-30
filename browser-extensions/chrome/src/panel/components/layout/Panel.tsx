@@ -33,14 +33,12 @@ export interface PanelActions {
   clearAll: () => void;
   handleExport: () => void;
   setTheme: (theme: ThemeMode) => void;
-  setMaxHistory: (value: number) => void;
 }
 
 interface PanelProps {
   viewState: ViewState;
   actions: PanelActions;
   theme: ThemeMode | undefined;
-  maxHistory: number | undefined;
 }
 
 const DEFAULT_SENSITIVE_HEADERS = new Set([
@@ -145,7 +143,6 @@ export const Panel: Component<PanelProps> = (props) => {
                 theme={props.theme ?? "dark"}
                 showPassedPlugins={props.viewState.showPassedPlugins}
                 autoSelectIncoming={props.viewState.autoSelectIncoming}
-                maxHistory={props.maxHistory ?? 50}
                 onThemeChange={props.actions.setTheme}
                 onShowPassedPluginsChange={(v) =>
                   props.actions.updateViewState("showPassedPlugins", v)
@@ -153,7 +150,6 @@ export const Panel: Component<PanelProps> = (props) => {
                 onAutoSelectIncomingChange={(v) =>
                   props.actions.updateViewState("autoSelectIncoming", v)
                 }
-                onMaxHistoryChange={props.actions.setMaxHistory}
               />
             </Show>
 

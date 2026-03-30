@@ -192,7 +192,6 @@ export type ExtensionCommandType =
   | "DELETE_CACHE_ENTRY"
   | "CLEAR_ALL_CACHE"
   | "IMPORT_TRACES"
-  | "SET_MAX_HISTORY"
   | "SET_FILTER";
 
 export interface ExtensionCommand {
@@ -212,10 +211,6 @@ export interface DeleteCacheEntryPayload {
 export interface ImportTracesPayload {
   data: ExportedItem[];
   filename: string;
-}
-
-export interface SetMaxHistoryPayload {
-  value: number;
 }
 
 export interface SetFilterPayload {

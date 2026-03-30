@@ -1,18 +1,14 @@
-import { For, type Component } from "solid-js";
+import type { Component } from "solid-js";
 import type { ThemeMode } from "../../types";
 
 interface SettingsProps {
   theme: ThemeMode;
   showPassedPlugins: boolean;
   autoSelectIncoming: boolean;
-  maxHistory: number;
   onThemeChange: (theme: ThemeMode) => void;
   onShowPassedPluginsChange: (value: boolean) => void;
   onAutoSelectIncomingChange: (value: boolean) => void;
-  onMaxHistoryChange: (value: number) => void;
 }
-
-const maxHistoryOptions = [25, 50, 100, 200];
 
 export const Settings: Component<SettingsProps> = (props) => {
   return (
@@ -82,27 +78,6 @@ export const Settings: Component<SettingsProps> = (props) => {
               <div class="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-4" />
             </div>
           </label>
-        </section>
-
-        <section>
-          <h3 class="text-xs font-medium text-spoosh-text-muted mb-3">
-            History
-          </h3>
-
-          <div class="flex items-center justify-between py-2">
-            <span class="text-sm text-spoosh-text">Max requests to keep</span>
-            <select
-              class="bg-spoosh-surface text-spoosh-text text-sm rounded px-2 py-1 border border-spoosh-border focus:outline-none focus:ring-1 focus:ring-spoosh-primary"
-              value={props.maxHistory}
-              onChange={(e) =>
-                props.onMaxHistoryChange(Number(e.currentTarget.value))
-              }
-            >
-              <For each={maxHistoryOptions}>
-                {(option) => <option value={option}>{option}</option>}
-              </For>
-            </select>
-          </div>
         </section>
       </div>
     </div>

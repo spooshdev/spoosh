@@ -25,6 +25,9 @@ export interface DevToolConfig {
 
   /** Header names to redact in devtool UI and exports. Case-insensitive. Defaults to common auth headers. */
   sensitiveHeaders?: string[];
+
+  /** Maximum number of traces to keep in memory. Defaults to 50. */
+  maxHistory?: number;
 }
 
 export interface DevToolTheme {
@@ -187,7 +190,6 @@ export interface DevToolStoreInterface {
   refetchStateEntry(key: string): void;
   deleteCacheEntry(key: string): void;
   clearAllCache(): void;
-  setMaxHistory(value: number): void;
   importTraces(data: ExportedItem[], filename: string): void;
   getImportedSession(): ImportedSession | null;
   getFilteredImportedTraces(searchQuery?: string): ExportedItem[];

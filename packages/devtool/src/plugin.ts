@@ -50,7 +50,7 @@ export function devtool(
   );
 
   if (!globalStore) {
-    globalStore = new DevToolStore();
+    globalStore = new DevToolStore({ maxHistory: config.maxHistory });
   }
 
   const store = globalStore;

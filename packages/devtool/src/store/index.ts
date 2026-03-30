@@ -29,6 +29,7 @@ import { sanitizeForExport } from "../utils/sanitize";
 
 export interface DevToolStoreConfig {
   stateManager?: StateManager;
+  maxHistory?: number;
 }
 
 interface RegisteredPlugin {
@@ -73,6 +74,15 @@ export class DevToolStore implements DevToolStoreInterface {
 
   constructor(config: DevToolStoreConfig = {}) {
     this.stateManager = config.stateManager;
+
+    if (config.maxHistory !== undefined) {
+      this.maxHistory = config.maxHistory;
+      this.traces = createRingBuffer<OperationTrace>(config.maxHistory);
+      this.events = createRingBuffer<StandaloneEvent>(config.maxHistory * 2);
+      this.subscriptions = createRingBuffer<SubscriptionTrace>(
+        config.maxHistory
+      );
+    }
   }
 
   setStateManager(stateManager: StateManager): void {

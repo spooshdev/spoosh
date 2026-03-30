@@ -322,12 +322,6 @@ export class ExtensionBridge {
         break;
       }
 
-      case "SET_MAX_HISTORY": {
-        const historyPayload = command.payload as { value: number };
-        this.store.setMaxHistory(historyPayload.value);
-        break;
-      }
-
       case "SET_FILTER": {
         const filterPayload = command.payload as {
           key: keyof DevToolFilters;

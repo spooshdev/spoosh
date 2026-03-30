@@ -611,10 +611,6 @@ export class RemoteStore implements DevToolStoreInterface {
     this.notify();
   }
 
-  setMaxHistory(value: number): void {
-    this.sendCommand({ type: "SET_MAX_HISTORY", payload: { value } });
-  }
-
   importTraces(data: ExportedItem[], filename: string): void {
     this.importedSession = {
       filename,

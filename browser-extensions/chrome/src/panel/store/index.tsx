@@ -66,7 +66,6 @@ export interface StoreContextValue {
     key: K,
     value: DevToolFilters[K]
   ) => void;
-  setMaxHistory: (value: number) => void;
   refetchStateEntry: (key: string) => void;
   deleteCacheEntry: (key: string) => void;
   clearAllCache: () => void;
@@ -234,10 +233,6 @@ export const StoreProvider: ParentComponent = (props) => {
     remoteStore.setFilter(key, value);
   };
 
-  const setMaxHistory = (value: number) => {
-    remoteStore.setMaxHistory(value);
-  };
-
   const refetchStateEntry = (key: string) => {
     remoteStore.refetchStateEntry(key);
   };
@@ -273,7 +268,6 @@ export const StoreProvider: ParentComponent = (props) => {
     getKnownPlugins,
     clear,
     setFilter,
-    setMaxHistory,
     refetchStateEntry,
     deleteCacheEntry,
     clearAllCache,

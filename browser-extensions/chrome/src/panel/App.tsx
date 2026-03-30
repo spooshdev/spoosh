@@ -69,10 +69,6 @@ const DEFAULT_VIEW_STATE: ViewState = {
 export const App: Component = () => {
   const store = useStore();
   const [theme, setTheme] = useChromeStorage<ThemeMode>("theme", "dark");
-  const [maxHistory, setMaxHistory] = useChromeStorage<number>(
-    "maxHistory",
-    50
-  );
   const [savedShowPassedPlugins, setSavedShowPassedPlugins] =
     useChromeStorage<boolean>("showPassedPlugins", false);
   const [savedAutoSelectIncoming, setSavedAutoSelectIncoming] =
@@ -116,14 +112,6 @@ export const App: Component = () => {
       document.documentElement.classList.add("light");
     } else {
       document.documentElement.classList.remove("light");
-    }
-  });
-
-  createEffect(() => {
-    const max = maxHistory();
-
-    if (max !== undefined) {
-      store.setMaxHistory(max);
     }
   });
 
@@ -394,7 +382,6 @@ export const App: Component = () => {
     clearAll,
     handleExport,
     setTheme,
-    setMaxHistory,
   };
 
   useKeyboardShortcuts({
@@ -444,12 +431,7 @@ export const App: Component = () => {
           connectionState() === "connected" || state().activeView === "import"
         }
       >
-        <Panel
-          viewState={state()}
-          actions={actions}
-          theme={theme()}
-          maxHistory={maxHistory()}
-        />
+        <Panel viewState={state()} actions={actions} theme={theme()} />
         <BottomBar
           activeView={state().activeView}
           theme={theme()}
