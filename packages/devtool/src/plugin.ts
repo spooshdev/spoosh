@@ -50,7 +50,10 @@ export function devtool(
   );
 
   if (!globalStore) {
-    globalStore = new DevToolStore({ maxHistory: config.maxHistory });
+    globalStore = new DevToolStore({
+      maxHistory: config.maxHistory,
+      maxMessages: config.maxMessages,
+    });
   }
 
   const store = globalStore;

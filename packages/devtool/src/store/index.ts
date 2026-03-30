@@ -30,6 +30,7 @@ import { sanitizeForExport } from "../utils/sanitize";
 export interface DevToolStoreConfig {
   stateManager?: StateManager;
   maxHistory?: number;
+  maxMessages?: number;
 }
 
 interface RegisteredPlugin {
@@ -38,6 +39,7 @@ interface RegisteredPlugin {
 }
 
 const DEFAULT_MAX_HISTORY = 50;
+const DEFAULT_MAX_MESSAGES = 100;
 const STEP_NOTIFY_DEBOUNCE = 500;
 
 export class DevToolStore implements DevToolStoreInterface {
@@ -63,6 +65,7 @@ export class DevToolStore implements DevToolStoreInterface {
   private sensitiveHeaders = new Set<string>();
   private totalTraceCount = 0;
   private maxHistory = DEFAULT_MAX_HISTORY;
+  private maxMessages = DEFAULT_MAX_MESSAGES;
   private resolvedPaths = new Map<string, string>();
   private stepNotifyTimeout: ReturnType<typeof setTimeout> | null = null;
   private stepNotifyPending = false;
@@ -82,6 +85,10 @@ export class DevToolStore implements DevToolStoreInterface {
       this.subscriptions = createRingBuffer<SubscriptionTrace>(
         config.maxHistory
       );
+    }
+
+    if (config.maxMessages !== undefined) {
+      this.maxMessages = config.maxMessages;
     }
   }
 
@@ -752,6 +759,10 @@ export class DevToolStore implements DevToolStoreInterface {
     trace.messages.push(message);
     trace.messageCount++;
     trace.lastMessageAt = event.timestamp;
+
+    if (trace.messages.length > this.maxMessages) {
+      trace.messages = trace.messages.slice(-this.maxMessages);
+    }
 
     this.notify();
   }

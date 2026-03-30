@@ -28,6 +28,9 @@ export interface DevToolConfig {
 
   /** Maximum number of traces to keep in memory. Defaults to 50. */
   maxHistory?: number;
+
+  /** Maximum number of messages to keep per SSE subscription. Defaults to 100. */
+  maxMessages?: number;
 }
 
 export interface DevToolTheme {
