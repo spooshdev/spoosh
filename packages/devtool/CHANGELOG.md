@@ -1,13 +1,10 @@
 # @spoosh/devtool
 
-## 0.9.0
-
-- Add `maxHistory` and `maxMessages` config options to control memory usage
-
 ## 0.8.0
 
 - Move devtool UI to Chrome extension
 - Remove floating icon and container mode options
+- Add `maxHistory` and `maxMessages` config options to control memory usage
 
 ## 0.7.4
 
