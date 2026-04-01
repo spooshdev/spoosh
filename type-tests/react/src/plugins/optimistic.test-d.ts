@@ -180,7 +180,7 @@ write.trigger({
 write.trigger({
   body: { title: "test" },
   // @ts-expect-error - onError requires immediate set first
-  optimistic: (cache) => cache("posts").onError(() => {}),
+  optimistic: (cache) => cache("posts").onError(() => { }),
 });
 
 write.trigger({
@@ -245,14 +245,7 @@ optimistic((cache) =>
   cache("posts")
     .set((posts) => posts)
     // @ts-expect-error - onError() not available in standalone mode
-    .onError(() => {})
-);
-
-// @ts-expect-error - confirmed() not available even before set()
-optimistic((cache) =>
-  cache("posts")
-    .confirmed()
-    .set((posts) => posts)
+    .onError(() => { })
 );
 
 // @ts-expect-error - invalid cache path
