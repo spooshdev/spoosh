@@ -1,5 +1,9 @@
 # @spoosh/plugin-optimistic
 
+## 0.10.0
+
+- Add standalone `optimistic` function for external events (e.g., WebSocket updates)
+
 ## 0.9.0
 
 - Update for invalidation plugin pattern-based API (`disableAutoInvalidate` instead of `setDefaultMode`)

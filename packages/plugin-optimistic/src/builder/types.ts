@@ -345,3 +345,98 @@ export type OptimisticCallbackFn<
 > = (
   cache: CacheHelper<TSchema, TResponse, TError>
 ) => CompletedCacheBuilder | CompletedCacheBuilder[];
+
+/**
+ * Standalone cache builder for direct cache updates (no mutation lifecycle).
+ * Only provides `filter()` and `set()` - no `confirmed()`, `disableRollback()`, or `onError()`.
+ */
+export type StandaloneCacheBuilder<
+  TData = unknown,
+  TMethodConfig = unknown,
+  TUserPath extends string = string,
+  THasFilter extends boolean = false,
+  THasSet extends boolean = false,
+> =
+  // Brand for completion tracking
+  (THasSet extends true ? { readonly [COMPLETED_BRAND]: true } : unknown) &
+    // filter() - only available before set() and when endpoint has params/query
+    (THasFilter extends true
+      ? unknown
+      : THasSet extends true
+        ? unknown
+        : FilterOptions<TMethodConfig, TUserPath> extends never
+          ? unknown
+          : {
+              /**
+               * Filter which cache entries to update based on query/params.
+               * Must be called before `set()`.
+               */
+              filter: (
+                predicate: (
+                  entry: Simplify<FilterOptions<TMethodConfig, TUserPath>>
+                ) => boolean
+              ) => StandaloneCacheBuilder<
+                TData,
+                TMethodConfig,
+                TUserPath,
+                true,
+                THasSet
+              >;
+            }) &
+    // set() - only available when not already set
+    (THasSet extends true
+      ? unknown
+      : {
+          /**
+           * Set the cache data immediately.
+           */
+          set: (
+            updater: (data: TData) => TData
+          ) => StandaloneCacheBuilder<
+            TData,
+            TMethodConfig,
+            TUserPath,
+            THasFilter,
+            true
+          >;
+        });
+
+/**
+ * Standalone cache selector that resolves paths to their schema definitions.
+ */
+type StandaloneCacheSelector<TSchema, TPath extends string> =
+  FindMatchingKey<TSchema, TPath> extends infer TKey
+    ? TKey extends keyof TSchema
+      ? TSchema[TKey] extends infer TRoute
+        ? "GET" extends keyof TRoute
+          ? TRoute["GET"] extends infer TGetConfig
+            ? StandaloneCacheBuilder<
+                ExtractData<TGetConfig>,
+                TGetConfig,
+                TPath,
+                false,
+                false
+              >
+            : never
+          : never
+        : never
+      : never
+    : never;
+
+/**
+ * Helper type for standalone cache operations.
+ * Only immediate updates are supported (no confirmed mode).
+ */
+export type StandaloneCacheHelper<TSchema> = <
+  TPath extends ReadPaths<TSchema> | (string & {}),
+>(
+  path: TPath
+) => StandaloneCacheSelector<TSchema, TPath>;
+
+/**
+ * Callback function type for standalone optimistic updates.
+ * Only immediate updates are supported - no `confirmed()`, `disableRollback()`, or `onError()`.
+ */
+export type StandaloneOptimisticCallbackFn<TSchema = unknown> = (
+  cache: StandaloneCacheHelper<TSchema>
+) => CompletedCacheBuilder | CompletedCacheBuilder[];

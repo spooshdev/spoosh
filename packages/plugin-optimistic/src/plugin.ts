@@ -13,7 +13,9 @@ import type {
   OptimisticReadResult,
   OptimisticWriteResult,
   OptimisticTarget,
+  OptimisticInstanceApi,
 } from "./types";
+import type { StandaloneOptimisticCallbackFn } from "./builder/types";
 import {
   pathMatchesPattern,
   formatCacheKeyForTrace,
@@ -256,6 +258,7 @@ export function optimisticPlugin() {
     pagesOptions: OptimisticPagesOptions;
     readResult: OptimisticReadResult;
     writeResult: OptimisticWriteResult;
+    api: OptimisticInstanceApi;
   }>({
     name: PLUGIN_NAME,
     operations: ["write"],
@@ -371,6 +374,45 @@ export function optimisticPlugin() {
       }
 
       return response;
+    },
+
+    api(context) {
+      const { stateManager } = context;
+      const et = context.eventTracer?.(PLUGIN_NAME);
+
+      const optimistic = (
+        callback: StandaloneOptimisticCallbackFn<unknown>
+      ): void => {
+        const cacheProxy = createCacheProxy();
+        const result = callback(cacheProxy as never);
+        const targets = (Array.isArray(result)
+          ? result
+          : [result]) as unknown as OptimisticTarget[];
+
+        for (const target of targets) {
+          const targetWithState = target as TargetWithState;
+          const immediateUpdater =
+            targetWithState.__state?.immediateUpdater ??
+            target.immediateUpdater;
+
+          if (!immediateUpdater) continue;
+
+          const snapshots = applyUpdate(
+            stateManager,
+            target,
+            immediateUpdater,
+            undefined
+          );
+
+          for (const { key } of snapshots) {
+            et?.emit(`Applied update to ${formatCacheKeyForTrace(key)}`, {
+              color: "info",
+            });
+          }
+        }
+      };
+
+      return { optimistic };
     },
   });
 }

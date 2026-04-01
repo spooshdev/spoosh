@@ -70,6 +70,22 @@ trigger({
 });
 ```
 
+### Standalone Usage
+
+Use the `optimistic` function for external events like WebSocket messages:
+
+```typescript
+const { optimistic } = create(spoosh);
+
+ws.on("message", (data) => {
+  if (data.type === "NEW_POST") {
+    optimistic((cache) => cache("posts").set((posts) => [...posts, data.post]));
+  }
+});
+```
+
+> Note: Standalone mode only supports immediate updates. `confirmed()`, `disableRollback()`, and `onError()` are not available since there's no mutation lifecycle.
+
 ## Options
 
 ### Per-Request Options

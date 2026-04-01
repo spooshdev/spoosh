@@ -198,3 +198,62 @@ write.trigger({
   // @ts-expect-error - invalid cache path
   optimistic: (cache) => cache("invalidPath").set((data) => data),
 });
+
+// =============================================================================
+// Instance API - standalone optimistic (valid)
+// =============================================================================
+
+const { optimistic } = create(spoosh);
+
+optimistic((cache) =>
+  cache("posts").set((posts) => [...posts, { id: 999, title: "from ws" }])
+);
+
+optimistic((cache) =>
+  cache("posts/:id")
+    .filter((entry) => {
+      expectType<Record<"id", string>>(entry.params);
+      return entry.params.id === "1";
+    })
+    .set((post) => ({ ...post, title: "updated from ws" }))
+);
+
+optimistic((cache) => [
+  cache("posts").set((posts) => [...posts, { id: 999, title: "new" }]),
+  cache("users").set((users) => [...users]),
+]);
+
+// =============================================================================
+// Instance API - standalone optimistic (invalid - no mutation lifecycle methods)
+// =============================================================================
+
+optimistic((cache) =>
+  cache("posts")
+    .set((posts) => posts)
+    // @ts-expect-error - confirmed() not available in standalone mode
+    .confirmed()
+);
+
+optimistic((cache) =>
+  cache("posts")
+    .set((posts) => posts)
+    // @ts-expect-error - disableRollback() not available in standalone mode
+    .disableRollback()
+);
+
+optimistic((cache) =>
+  cache("posts")
+    .set((posts) => posts)
+    // @ts-expect-error - onError() not available in standalone mode
+    .onError(() => {})
+);
+
+// @ts-expect-error - confirmed() not available even before set()
+optimistic((cache) =>
+  cache("posts")
+    .confirmed()
+    .set((posts) => posts)
+);
+
+// @ts-expect-error - invalid cache path
+optimistic((cache) => cache("invalidPath").set((data) => data));

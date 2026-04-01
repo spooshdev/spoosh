@@ -1,10 +1,16 @@
-import type { OptimisticCallbackFn } from "./builder/types.js";
+import type {
+  OptimisticCallbackFn,
+  StandaloneOptimisticCallbackFn,
+} from "./builder/types";
 
 export type {
   CacheBuilder,
   CacheHelper,
   OptimisticCallbackFn,
-} from "./builder/types.js";
+  StandaloneCacheBuilder,
+  StandaloneCacheHelper,
+  StandaloneOptimisticCallbackFn,
+} from "./builder/types";
 
 /**
  * Internal optimistic target data.
@@ -65,6 +71,20 @@ export interface OptimisticReadResult {
 
 export type OptimisticWriteResult = object;
 
+/**
+ * Standalone optimistic update function.
+ * Use `set()` to apply immediate cache updates.
+ * `confirmed()` is not available since there's no mutation lifecycle.
+ */
+export type OptimisticFn<TSchema> = (
+  callback: StandaloneOptimisticCallbackFn<TSchema>
+) => void;
+
+export interface OptimisticInstanceApi {
+  /** Apply optimistic updates to the cache. Useful for external events like WebSocket messages. */
+  optimistic: OptimisticFn<unknown>;
+}
+
 declare module "@spoosh/core" {
   interface PluginResolvers<TContext> {
     optimistic:
@@ -74,5 +94,9 @@ declare module "@spoosh/core" {
           TContext["error"]
         >
       | undefined;
+  }
+
+  interface ApiResolvers<TSchema> {
+    optimistic: OptimisticFn<TSchema>;
   }
 }
