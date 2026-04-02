@@ -1,5 +1,9 @@
 # @spoosh/core
 
+## 0.18.3
+
+- Add message queue to subscription controller to prevent data loss during rapid events
+
 ## 0.18.2
 
 - Add `refetch` method to infinite controller for soft invalidation

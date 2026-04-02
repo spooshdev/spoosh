@@ -175,91 +175,108 @@ export function createUseSSE<
 
     const prevVersionRef = useRef(subscription._subscriptionVersion);
     const lastMessageIndexRef = useRef<Record<string, number>>({});
+    const lastProcessedQueueIndexRef = useRef(0);
 
     useEffect(() => {
       if (subscription._subscriptionVersion !== prevVersionRef.current) {
         setAccumulatedData({});
         lastMessageIndexRef.current = {};
+        lastProcessedQueueIndexRef.current = 0;
       }
 
       prevVersionRef.current = subscription._subscriptionVersion;
     }, [subscription._subscriptionVersion]);
 
+    const subscriptionState = subscription as unknown as {
+      data: SSEMessage | undefined;
+      _messageQueue?: SSEMessage[];
+      _queueIndex?: number;
+    };
+
+    const messageQueue = subscriptionState._messageQueue ?? [];
+    const queueIndex = subscriptionState._queueIndex ?? 0;
+
     useEffect(() => {
-      const data = subscription.data as SSEMessage | undefined;
-
-      if (!data) {
+      if (queueIndex <= lastProcessedQueueIndexRef.current) {
         return;
       }
 
-      if (eventSet && !eventSet.has(data.event)) {
-        return;
-      }
+      const startIndex = lastProcessedQueueIndexRef.current;
+      const messagesToProcess = messageQueue.slice(startIndex);
+      lastProcessedQueueIndexRef.current = queueIndex;
 
-      const parser = transport.utils.resolveParser(
-        parseRef.current,
-        data.event
-      );
-      let parsed: unknown;
+      for (const data of messagesToProcess) {
+        if (!data) continue;
 
-      try {
-        parsed = parser(data.data);
-      } catch {
-        parsed = data.data;
-      }
-
-      if (parsed === undefined) {
-        return;
-      }
-
-      const accumulator = transport.utils.resolveAccumulator(
-        accumulateRef.current,
-        data.event
-      );
-
-      const parsedObj = parsed as Record<string, unknown> | undefined;
-      const messageIndex =
-        typeof parsedObj?.index === "number" ? parsedObj.index : undefined;
-
-      if (messageIndex !== undefined) {
-        const lastIndex = lastMessageIndexRef.current[data.event];
-
-        if (lastIndex !== undefined && messageIndex < lastIndex) {
-          setAccumulatedData({});
-          lastMessageIndexRef.current = {};
+        if (eventSet && !eventSet.has(data.event)) {
+          continue;
         }
 
-        lastMessageIndexRef.current[data.event] = messageIndex;
-      }
-
-      setAccumulatedData((prev) => {
-        const previousEventData = prev[data.event];
-        let newEventData: unknown;
+        const parser = transport.utils.resolveParser(
+          parseRef.current,
+          data.event
+        );
+        let parsed: unknown;
 
         try {
-          newEventData = accumulator(previousEventData, parsed);
+          parsed = parser(data.data);
         } catch {
-          newEventData = parsed;
+          parsed = data.data;
         }
 
-        const newAccumulated = {
-          ...prev,
-          [data.event]: newEventData,
-        };
+        if (parsed === undefined) {
+          continue;
+        }
 
-        eventEmitter?.emit<DevtoolEvents["spoosh:subscription:accumulate"]>(
-          "spoosh:subscription:accumulate",
-          {
-            queryKey: subscription._queryKey,
-            eventType: data.event,
-            accumulatedData: newAccumulated,
-            timestamp: Date.now(),
-          }
+        const accumulator = transport.utils.resolveAccumulator(
+          accumulateRef.current,
+          data.event
         );
 
-        return newAccumulated;
-      });
-    }, [subscription.data, subscription._queryKey, eventSet]);
+        const parsedObj = parsed as Record<string, unknown> | undefined;
+        const messageIndex =
+          typeof parsedObj?.index === "number" ? parsedObj.index : undefined;
+
+        if (messageIndex !== undefined) {
+          const lastIndex = lastMessageIndexRef.current[data.event];
+
+          if (lastIndex !== undefined && messageIndex < lastIndex) {
+            setAccumulatedData({});
+            lastMessageIndexRef.current = {};
+          }
+
+          lastMessageIndexRef.current[data.event] = messageIndex;
+        }
+
+        setAccumulatedData((prev) => {
+          const previousEventData = prev[data.event];
+          let newEventData: unknown;
+
+          try {
+            newEventData = accumulator(previousEventData, parsed);
+          } catch {
+            newEventData = parsed;
+          }
+
+          const newAccumulated = {
+            ...prev,
+            [data.event]: newEventData,
+          };
+
+          eventEmitter?.emit<DevtoolEvents["spoosh:subscription:accumulate"]>(
+            "spoosh:subscription:accumulate",
+            {
+              queryKey: subscription._queryKey,
+              eventType: data.event,
+              accumulatedData: newAccumulated,
+              timestamp: Date.now(),
+            }
+          );
+
+          return newAccumulated;
+        });
+      }
+    }, [queueIndex, subscription._queryKey, eventSet]);
 
     const reset = useCallback(() => {
       setAccumulatedData({});

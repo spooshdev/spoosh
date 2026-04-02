@@ -167,6 +167,11 @@ export function createUseSubscription<
 
     const loading = isPending;
 
+    const stateWithQueue = state as typeof state & {
+      _messageQueue?: unknown[];
+      _queueIndex?: number;
+    };
+
     return {
       meta: {} as Record<string, never>,
       data: state.data as ExtractSubscriptionEvents<TSubFn> | undefined,
@@ -177,9 +182,20 @@ export function createUseSubscription<
       isConnected: state.isConnected,
       _queryKey: queryKey,
       _subscriptionVersion: subscriptionVersionRef.current,
+      _messageQueue: stateWithQueue._messageQueue,
+      _queueIndex: stateWithQueue._queueIndex ?? 0,
       trigger,
       disconnect,
-    };
+    } as BaseSubscriptionResult<
+      ExtractSubscriptionEvents<TSubFn>,
+      InferSubError<ExtractSubscriptionError<TSubFn>>,
+      Record<string, never>,
+      SubscriptionTriggerInput<
+        ExtractSubscriptionQuery<TSubFn>,
+        ExtractSubscriptionBody<TSubFn>,
+        never
+      >
+    > & { _messageQueue?: unknown[]; _queueIndex: number };
   }
 
   return useSubscription;

@@ -1,5 +1,9 @@
 # @spoosh/react
 
+## 0.15.3
+
+- Fix `useSSE` losing messages when events arrive faster than React render cycle
+
 ## 0.15.2
 
 - Fix `useSSE` not updating when params change

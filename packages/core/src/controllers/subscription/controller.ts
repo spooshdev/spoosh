@@ -49,10 +49,15 @@ export function createSubscriptionController<TData, TError>(
   const subscribers = new Set<() => void>();
   let subscriptionVersion = 0;
 
+  const messageQueue: TData[] = [];
+  let queueIndex = 0;
+
   let cachedState = {
     data: undefined as TData | undefined,
     error: undefined as TError | undefined,
     isConnected: false,
+    _messageQueue: messageQueue,
+    _queueIndex: queueIndex,
   };
 
   const updateStateFromHandle = () => {
@@ -63,6 +68,7 @@ export function createSubscriptionController<TData, TError>(
 
     if (newData !== cachedState.data || newError !== cachedState.error) {
       cachedState = {
+        ...cachedState,
         data: newData,
         error: newError,
         isConnected: true,
@@ -106,7 +112,15 @@ export function createSubscriptionController<TData, TError>(
           handle = null;
         }
 
-        cachedState = { data: undefined, error: undefined, isConnected: false };
+        messageQueue.length = 0;
+        queueIndex = 0;
+        cachedState = {
+          data: undefined,
+          error: undefined,
+          isConnected: false,
+          _messageQueue: messageQueue,
+          _queueIndex: queueIndex,
+        };
         notify();
 
         const ctx = createContext();
@@ -116,10 +130,15 @@ export function createSubscriptionController<TData, TError>(
             return;
           }
 
+          messageQueue.push(data);
+          queueIndex++;
+
           cachedState = {
             data,
             error: cachedState.error,
             isConnected: true,
+            _messageQueue: messageQueue,
+            _queueIndex: queueIndex,
           };
 
           notify();
@@ -131,9 +150,8 @@ export function createSubscriptionController<TData, TError>(
           }
 
           cachedState = {
-            data: cachedState.data,
+            ...cachedState,
             error,
-            isConnected: cachedState.isConnected,
           };
 
           notify();
