@@ -381,6 +381,7 @@ type IsStrictSubscriptionOptionsRequired<
  */
 type SubscriptionResponse<
   TMethodConfig,
+  TUserPath extends string,
   TRequestedEvents extends readonly (keyof ExtractEvents<TMethodConfig>)[] =
     readonly (keyof ExtractEvents<TMethodConfig>)[],
 > = {
@@ -389,6 +390,9 @@ type SubscriptionResponse<
   requestedEvents: TRequestedEvents;
   query: ExtractQuery<TMethodConfig>;
   body: ExtractBody<TMethodConfig>;
+  params: HasParams<TUserPath> extends true
+    ? Record<ExtractParamNames<TUserPath>, string | number>
+    : never;
   error: ExtractError<TMethodConfig>;
 };
 
@@ -401,6 +405,7 @@ export type BaseSubscriptionResponse<
   requestedEvents: readonly string[];
   query: unknown;
   body: unknown;
+  params: unknown;
   error: TError;
 };
 
@@ -425,7 +430,7 @@ type SubscriptionMethodFn<
           TUserPath,
           TRequestedEvents
         >
-      ) => SubscriptionResponse<TMethodConfig, TRequestedEvents>
+      ) => SubscriptionResponse<TMethodConfig, TUserPath, TRequestedEvents>
     : <
         TRequestedEvents extends
           readonly (keyof ExtractEvents<TMethodConfig>)[],
@@ -435,7 +440,7 @@ type SubscriptionMethodFn<
           TUserPath,
           TRequestedEvents
         >
-      ) => SubscriptionResponse<TMethodConfig, TRequestedEvents>
+      ) => SubscriptionResponse<TMethodConfig, TUserPath, TRequestedEvents>
   : // POST/PUT/etc methods: Loose - always optional
     <TRequestedEvents extends readonly (keyof ExtractEvents<TMethodConfig>)[]>(
       options?: LooseSubscriptionRequestOptions<
@@ -443,7 +448,7 @@ type SubscriptionMethodFn<
         TUserPath,
         TRequestedEvents
       >
-    ) => SubscriptionResponse<TMethodConfig, TRequestedEvents>;
+    ) => SubscriptionResponse<TMethodConfig, TUserPath, TRequestedEvents>;
 
 /**
  * Subscription path methods - only methods with events field.

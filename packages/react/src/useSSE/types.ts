@@ -69,7 +69,34 @@ export interface UseSSEOptions extends UseSSEOptionsBase {
     | Record<string, AccumulateStrategy | AccumulatorFn>;
 }
 
-export interface UseSSEResult<TEvents, TError> {
+type SSEReturnType<T> = T extends (...args: never[]) => infer R ? R : never;
+
+type ExtractSSETriggerQuery<R> = R extends { query: infer Q }
+  ? { query?: Q }
+  : unknown;
+
+type ExtractSSETriggerBody<R> = R extends { body: infer B }
+  ? { body?: B }
+  : unknown;
+
+type ExtractSSETriggerParams<R> = R extends { params: infer P }
+  ? { params?: P }
+  : unknown;
+
+export type SSETriggerOptionsFromFn<TSubFn> =
+  SSEReturnType<TSubFn> extends infer R
+    ? ExtractSSETriggerQuery<R> &
+        ExtractSSETriggerBody<R> &
+        ExtractSSETriggerParams<R>
+    : object;
+
+export type SSETriggerOptions<TQuery, TBody, TParams> = (TQuery extends never
+  ? unknown
+  : { query?: TQuery }) &
+  (TBody extends never ? unknown : { body?: TBody }) &
+  (TParams extends never ? unknown : { params?: TParams });
+
+export interface UseSSEResultBase<TEvents, TError> {
   /** Accumulated data keyed by event type */
   data: Partial<TEvents> | undefined;
 
@@ -85,15 +112,20 @@ export interface UseSSEResult<TEvents, TError> {
   /** Plugin metadata */
   meta: Record<string, never>;
 
-  /**
-   * Manually trigger connection with optional body/query overrides
-   * @param options - Optional body and query parameters
-   */
-  trigger: (options?: { body?: unknown; query?: unknown }) => Promise<void>;
-
   /** Disconnect from the SSE endpoint */
   disconnect: () => void;
 
   /** Reset accumulated data */
   reset: () => void;
 }
+
+export type UseSSEResult<TEvents, TError, TSubFn> = UseSSEResultBase<
+  TEvents,
+  TError
+> & {
+  /**
+   * Manually trigger connection with optional body/query/params overrides
+   * @param options - Optional body, query, and params parameters
+   */
+  trigger: (options?: SSETriggerOptionsFromFn<TSubFn>) => Promise<void>;
+};

@@ -1,5 +1,9 @@
 # @spoosh/react
 
+## 0.15.2
+
+- Fix `useSSE` not updating when params change
+
 ## 0.15.1
 
 - Fix `usePages` invalidation clearing data and showing loading state

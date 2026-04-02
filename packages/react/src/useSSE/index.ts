@@ -6,7 +6,7 @@ import type {
   SpooshTransport,
   SelectorResult,
 } from "@spoosh/core";
-import { createSelectorProxy } from "@spoosh/core";
+import { createSelectorProxy, resolvePathString } from "@spoosh/core";
 import type {
   SSEAdapterFactory,
   SSEMessage,
@@ -57,17 +57,20 @@ export function createUseSSE<
   type InferSSEError<T> = unknown extends T ? TDefaultError : T;
 
   function useSSE<
-    TSubFn extends (api: SubscriptionApiClient<TSchema, TDefaultError>) => {
-      _subscription: true;
-      events: Record<string, { data: unknown }>;
-    },
+    TSubFn extends (
+      api: SubscriptionApiClient<TSchema, TDefaultError>
+    ) => unknown,
   >(
     subFn: TSubFn,
     sseOptions?: UseSSEOptions
   ): UseSSEResult<
     ExtractAllSubscriptionEvents<TSubFn>,
-    InferSSEError<ExtractSubscriptionError<TSubFn>>
-  > {
+    InferSSEError<ExtractSubscriptionError<TSubFn>>,
+    TSubFn
+  >;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  function useSSE(subFn: any, sseOptions?: any): any {
     const {
       enabled = true,
       events,
@@ -108,14 +111,31 @@ export function createUseSSE<
       throw new Error("useSSE requires calling a method");
     }
 
+    const requestOptions = capturedCall.options as
+      | { params?: Record<string, string | number> }
+      | undefined;
+
+    const resolvedPath = resolvePathString(
+      capturedCall.path,
+      requestOptions?.params
+    );
+
+    const paramsKey = requestOptions?.params
+      ? JSON.stringify(requestOptions.params)
+      : "";
+
     const currentOptionsRef = useRef<Record<string, unknown> | undefined>(
       capturedCall.options as Record<string, unknown> | undefined
     );
 
+    currentOptionsRef.current = capturedCall.options as
+      | Record<string, unknown>
+      | undefined;
+
     const adapter = useMemo(
       () =>
         transport.createSubscriptionAdapter({
-          channel: capturedCall.path,
+          channel: resolvedPath,
           method: capturedCall.method,
           baseUrl: config.baseUrl,
           globalHeaders: config.defaultOptions.headers,
@@ -123,7 +143,7 @@ export function createUseSSE<
           eventEmitter,
           devtoolMeta: events ? { listenedEvents: events } : undefined,
         }),
-      [capturedCall.path, capturedCall.method]
+      [resolvedPath, capturedCall.method, paramsKey]
     );
 
     const [accumulatedData, setAccumulatedData] = useState<
@@ -246,7 +266,8 @@ export function createUseSSE<
     }, []);
 
     const trigger = useCallback(
-      async (opts?: { body?: unknown; query?: unknown }) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      async (opts?: any) => {
         reset();
 
         const triggerOpts = {
@@ -267,12 +288,8 @@ export function createUseSSE<
     );
 
     return {
-      data: Object.keys(accumulatedData).length
-        ? (accumulatedData as Partial<ExtractAllSubscriptionEvents<TSubFn>>)
-        : undefined,
-      error: subscription.error as
-        | InferSSEError<ExtractSubscriptionError<TSubFn>>
-        | undefined,
+      data: Object.keys(accumulatedData).length ? accumulatedData : undefined,
+      error: subscription.error,
       isConnected: subscription.isConnected,
       loading: subscription.loading,
       meta: {} as Record<string, never>,

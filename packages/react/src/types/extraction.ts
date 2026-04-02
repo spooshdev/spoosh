@@ -140,3 +140,12 @@ export type ExtractSubscriptionError<T> =
   }
     ? E
     : unknown;
+
+export type ExtractSubscriptionParamNames<T> =
+  SubscriptionReturnType<T> extends { params: infer P }
+    ? P extends Record<infer K, string | number>
+      ? K extends string
+        ? K
+        : never
+      : never
+    : never;

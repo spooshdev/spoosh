@@ -355,7 +355,8 @@ type UseSSEFn<TDefaultError, TSchema, TPlugins extends PluginArray> = {
     > & { events: TSelectedEvents }
   ): UseSSEResult<
     FilteredEvents<InferSSEEvents<TSubFn>, TSelectedEvents>,
-    InferError<ExtractMethodError<TSubFn>, TDefaultError>
+    InferError<ExtractMethodError<TSubFn>, TDefaultError>,
+    TSubFn
   >;
 
   // Overload 2: Without events option - all events
@@ -375,7 +376,8 @@ type UseSSEFn<TDefaultError, TSchema, TPlugins extends PluginArray> = {
     >
   ): UseSSEResult<
     InferSSEEvents<TSubFn>,
-    InferError<ExtractMethodError<TSubFn>, TDefaultError>
+    InferError<ExtractMethodError<TSubFn>, TDefaultError>,
+    TSubFn
   >;
 };
 

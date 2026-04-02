@@ -159,14 +159,49 @@ expectType<boolean>(notifications.loading);
 expectType<Record<string, never>>(notifications.meta);
 
 // =============================================================================
-// Trigger function
+// Trigger function - basic (no schema-defined inputs)
 // =============================================================================
 
 notifications.trigger();
-notifications.trigger({ body: { data: "test" } });
-notifications.trigger({ query: { filter: "all" } });
+notifications.trigger({});
 const triggerResult = notifications.trigger();
 expectType<Promise<void>>(triggerResult);
+
+// =============================================================================
+// Trigger function - with params/query/body from schema
+// =============================================================================
+
+// =============================================================================
+// Trigger function - with params/query/body from schema
+// =============================================================================
+
+const chatRoom = useSSE((api) =>
+  api("chat/:roomId").GET({ params: { roomId: "123" } })
+);
+
+// Valid trigger calls - should compile without errors
+chatRoom.trigger();
+chatRoom.trigger({});
+chatRoom.trigger({ params: { roomId: "456" } });
+chatRoom.trigger({ query: { since: 100 } });
+chatRoom.trigger({ body: { token: "abc" } });
+chatRoom.trigger({
+  params: { roomId: "room1" },
+  query: { since: 0 },
+  body: { token: "test" },
+});
+
+// @ts-expect-error - params key must be "roomId", not something else
+chatRoom.trigger({ params: { invalidKey: "456" } });
+
+// @ts-expect-error - query.since must be number, not string
+chatRoom.trigger({ query: { since: "invalid" } });
+
+// @ts-expect-error - body.token must be string, not number
+chatRoom.trigger({ body: { token: 123 } });
+
+// @ts-expect-error - unknown option not allowed
+chatRoom.trigger({ unknownOption: true });
 
 // =============================================================================
 // Disconnect function

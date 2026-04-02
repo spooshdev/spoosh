@@ -65,6 +65,17 @@ export type TestSchema = {
       };
     };
   };
+  "chat/:roomId": {
+    GET: {
+      events: {
+        message: { data: { text: string; sender: string } };
+        typing: { data: { userId: string } };
+      };
+      query?: { since?: number };
+      body?: { token: string };
+      error: { roomNotFound: boolean };
+    };
+  };
 };
 
 export type DefaultError = { message: string };

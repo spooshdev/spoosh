@@ -80,17 +80,19 @@ export function createUseSubscription<
     type TData = unknown;
     type TError = unknown;
 
-    const controllerRef = useRef<ReturnType<
-      typeof createSubscriptionController<TData, TError>
-    > | null>(null);
+    const controllerRef = useRef<{
+      controller: ReturnType<
+        typeof createSubscriptionController<TData, TError>
+      >;
+      queryKey: string;
+    } | null>(null);
 
     const subscriptionVersionRef = useRef(0);
 
-    const getOrCreateController = useCallback(() => {
-      if (controllerRef.current) {
-        return controllerRef.current;
-      }
+    const queryKeyChanged =
+      controllerRef.current && controllerRef.current.queryKey !== queryKey;
 
+    if (!controllerRef.current || queryKeyChanged) {
       const controller = createSubscriptionController<TData, TError>({
         channel: capturedCall.path,
         baseAdapter: adapter as unknown as Parameters<
@@ -105,37 +107,21 @@ export function createUseSubscription<
         method: capturedCall.method,
       });
 
-      controllerRef.current = controller;
-      return controller;
-    }, [
-      queryKey,
-      adapter,
-      operationType,
-      capturedCall.path,
-      capturedCall.method,
-    ]);
+      controllerRef.current = { controller, queryKey };
+    }
+
+    const controller = controllerRef.current.controller;
 
     const subscribe = useCallback(
       (callback: () => void) => {
-        const controller = getOrCreateController();
         return controller.subscribe(callback);
       },
-      [getOrCreateController]
+      [controller]
     );
 
-    const emptyStateRef = useRef({
-      data: undefined,
-      error: undefined,
-      isConnected: false,
-    });
-
     const getSnapshot = useCallback(() => {
-      if (!controllerRef.current) {
-        return emptyStateRef.current;
-      }
-
-      return controllerRef.current.getState();
-    }, []);
+      return controller.getState();
+    }, [controller]);
 
     const state = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 
@@ -147,7 +133,6 @@ export function createUseSubscription<
       }
 
       setIsPending(true);
-      const controller = getOrCreateController();
       controller.mount();
       controller.subscribe();
 
@@ -155,7 +140,7 @@ export function createUseSubscription<
         subscriptionVersionRef.current++;
         controller.unsubscribe();
       };
-    }, [queryKey, enabled, getOrCreateController]);
+    }, [queryKey, enabled, controller]);
 
     useEffect(() => {
       if (
@@ -169,20 +154,16 @@ export function createUseSubscription<
 
     const disconnect = useCallback(() => {
       subscriptionVersionRef.current++;
-
-      if (controllerRef.current) {
-        controllerRef.current.unsubscribe();
-      }
-    }, []);
+      controller.unsubscribe();
+    }, [controller]);
 
     const trigger = useCallback(async () => {
       setIsPending(true);
       subscriptionVersionRef.current++;
-      const controller = getOrCreateController();
       controller.unsubscribe();
       controller.mount();
       await controller.subscribe();
-    }, [getOrCreateController]);
+    }, [controller]);
 
     const loading = isPending;
 
