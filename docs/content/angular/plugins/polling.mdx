@@ -56,6 +56,12 @@ injectRead((api) => api("jobs/:id").GET({ params: { id: jobId } }), {
 | ----------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------- |
 | `pollingInterval` | `number \| false \| ({ data, error }) => number \| false` | Polling interval in ms, `false` to disable, or a function for dynamic intervals |
 
+### Result Properties
+
+| Property           | Type      | Description                                            |
+| ------------------ | --------- | ------------------------------------------------------ |
+| `isPollingRequest` | `boolean` | `true` when a polling-triggered request is in progress |
+
 ## Example: Real-Time Dashboard
 
 ```typescript

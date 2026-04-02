@@ -42,6 +42,12 @@ useRead((api) => api("booking/:id").GET({ params: { id: 123 } }), {
 | ----------------- | --------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
 | `pollingInterval` | `number \| false \| ({ data, error }) => number \| false` | Polling interval in milliseconds, `false` to disable, or a function for dynamic intervals |
 
+### Result Properties
+
+| Property           | Type      | Description                                            |
+| ------------------ | --------- | ------------------------------------------------------ |
+| `isPollingRequest` | `boolean` | `true` when a polling-triggered request is in progress |
+
 ## Dynamic Polling
 
 The polling interval can be a function that receives the current data and error, allowing you to adjust the polling rate based on the response:

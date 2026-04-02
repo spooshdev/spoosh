@@ -623,6 +623,106 @@ describe("pollingPlugin", () => {
     });
   });
 
+  describe("isPollingRequest meta value", () => {
+    it("should set isPollingRequest to true when poll triggers (network request starts)", () => {
+      const plugin = pollingPlugin();
+      const eventEmitter = createEventEmitter();
+      const stateManager = createStateManager();
+      const setMetaSpy = vi.spyOn(stateManager, "setMeta");
+      const queryKey = '{"method":"GET","path":["users","1"]}';
+
+      stateManager.setCache(queryKey, {
+        state: {
+          data: { id: 1 },
+          error: undefined,
+          timestamp: Date.now(),
+        },
+        tags: ["users"],
+        stale: false,
+      });
+
+      const context = createMockContext({
+        eventEmitter,
+        stateManager,
+        queryKey,
+        pluginOptions: { pollingInterval: 5000 },
+      });
+
+      plugin.afterResponse!(context, createMockResponse());
+
+      setMetaSpy.mockClear();
+
+      vi.advanceTimersByTime(5000);
+
+      expect(setMetaSpy).toHaveBeenCalledWith(queryKey, {
+        isPollingRequest: true,
+      });
+    });
+
+    it("should set isPollingRequest to false when request ends (afterResponse)", () => {
+      const plugin = pollingPlugin();
+      const eventEmitter = createEventEmitter();
+      const stateManager = createStateManager();
+      const setMetaSpy = vi.spyOn(stateManager, "setMeta");
+      const queryKey = '{"method":"GET","path":["users","1"]}';
+
+      stateManager.setCache(queryKey, {
+        state: {
+          data: { id: 1 },
+          error: undefined,
+          timestamp: Date.now(),
+        },
+        tags: ["users"],
+        stale: false,
+      });
+
+      const context = createMockContext({
+        eventEmitter,
+        stateManager,
+        queryKey,
+        pluginOptions: { pollingInterval: 5000 },
+      });
+
+      plugin.afterResponse!(context, createMockResponse());
+
+      expect(setMetaSpy).toHaveBeenCalledWith(queryKey, {
+        isPollingRequest: false,
+      });
+    });
+
+    it("should not set isPollingRequest to true when scheduling poll (only when poll triggers)", () => {
+      const plugin = pollingPlugin();
+      const eventEmitter = createEventEmitter();
+      const stateManager = createStateManager();
+      const setMetaSpy = vi.spyOn(stateManager, "setMeta");
+      const queryKey = '{"method":"GET","path":["users","1"]}';
+
+      stateManager.setCache(queryKey, {
+        state: {
+          data: { id: 1 },
+          error: undefined,
+          timestamp: Date.now(),
+        },
+        tags: ["users"],
+        stale: false,
+      });
+
+      const context = createMockContext({
+        eventEmitter,
+        stateManager,
+        queryKey,
+        pluginOptions: { pollingInterval: 5000 },
+      });
+
+      plugin.afterResponse!(context, createMockResponse());
+
+      expect(setMetaSpy).toHaveBeenCalledTimes(1);
+      expect(setMetaSpy).toHaveBeenCalledWith(queryKey, {
+        isPollingRequest: false,
+      });
+    });
+  });
+
   describe("edge cases", () => {
     it("should clear existing timeout before scheduling new one", () => {
       const plugin = pollingPlugin();

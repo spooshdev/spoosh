@@ -102,12 +102,16 @@ export function pollingPlugin() {
       meta: { interval: resolvedInterval },
     });
 
+    const { stateManager } = context;
+
     const timeout = setTimeout(() => {
       timeouts.delete(queryKey);
 
       const storedTracer = eventTracers.get(queryKey);
 
       storedTracer?.emit("Poll triggered", { queryKey, color: "success" });
+
+      stateManager.setMeta(queryKey, { isPollingRequest: true });
 
       eventEmitter.emit("refetch", {
         queryKey,
@@ -129,6 +133,9 @@ export function pollingPlugin() {
     operations: ["read", "pages"],
 
     afterResponse(context, response) {
+      context.stateManager.setMeta(context.queryKey, {
+        isPollingRequest: false,
+      });
       scheduleNextPoll(context, response);
     },
 

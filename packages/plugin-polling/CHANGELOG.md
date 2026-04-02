@@ -1,5 +1,9 @@
 # @spoosh/plugin-polling
 
+## 0.6.0
+
+- Add `isPollingRequest` meta value to indicate when a polling-triggered request is in progress
+
 ## 0.5.1
 
 - Use `createSpooshPlugin` for automatic type inference

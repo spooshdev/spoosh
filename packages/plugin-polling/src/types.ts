@@ -24,7 +24,10 @@ export type PollingWriteOptions = object;
 
 export type PollingPagesOptions = object;
 
-export type PollingReadResult = object;
+export interface PollingReadResult {
+  /** True if polling is currently active for this query */
+  isPollingRequest: boolean;
+}
 
 export type PollingWriteResult = object;
 
