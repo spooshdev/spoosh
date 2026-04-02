@@ -1,5 +1,9 @@
 # @spoosh/angular
 
+## 0.12.1
+
+- Fix `injectPages` invalidation clearing data and showing loading state
+
 ## 0.12.0
 
 - Use `matchTags` for wildcard pattern matching in `injectRead` and `injectPages`

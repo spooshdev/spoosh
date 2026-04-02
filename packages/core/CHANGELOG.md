@@ -1,5 +1,9 @@
 # @spoosh/core
 
+## 0.18.2
+
+- Add `refetch` method to infinite controller for soft invalidation
+
 ## 0.18.1
 
 - Add `generateUUID` utility with fallback for non-secure contexts (HTTP)

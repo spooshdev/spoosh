@@ -637,6 +637,77 @@ describe("usePages", () => {
       expect(result.current.data).toBeDefined();
     });
 
+    it("should preserve data during invalidation and not show loading", async () => {
+      const { usePages, eventEmitter } = createTestHooks();
+
+      const { result } = renderHook(() =>
+        usePages((api: any) => api("/posts").GET(), {
+          tags: ["posts"],
+          canFetchNext: (ctx: any) =>
+            ctx.lastPage?.data?.nextCursor !== undefined,
+          nextPageRequest: (ctx: any) => ({
+            query: { cursor: ctx.lastPage?.data?.nextCursor },
+          }),
+          merger: (pages: any) =>
+            pages.flatMap((p: any) => p.data?.items ?? []),
+        })
+      );
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+        expect(result.current.data).toBeDefined();
+      });
+
+      const dataBeforeInvalidation = result.current.data;
+
+      await act(async () => {
+        eventEmitter.emit("invalidate", ["posts"]);
+      });
+
+      expect(result.current.data).toBeDefined();
+      expect(result.current.data).toEqual(dataBeforeInvalidation);
+      expect(result.current.loading).toBe(false);
+    });
+
+    it("should keep only first page after invalidation with multiple pages", async () => {
+      const { usePages, eventEmitter } = createTestHooks();
+
+      const { result } = renderHook(() =>
+        usePages((api: any) => api("/posts").GET(), {
+          tags: ["posts"],
+          canFetchNext: (ctx: any) =>
+            ctx.lastPage?.data?.nextCursor !== undefined,
+          nextPageRequest: (ctx: any) => ({
+            query: { cursor: ctx.lastPage?.data?.nextCursor },
+          }),
+          merger: (pages: any) =>
+            pages.flatMap((p: any) => p.data?.items ?? []),
+        })
+      );
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      await act(async () => {
+        await result.current.fetchNext();
+      });
+
+      await waitFor(() => {
+        expect(result.current.pages.length).toBe(2);
+      });
+
+      await act(async () => {
+        eventEmitter.emit("invalidate", ["posts"]);
+      });
+
+      await waitFor(() => {
+        expect(result.current.pages.length).toBe(1);
+      });
+
+      expect(result.current.data).toBeDefined();
+    });
+
     it("should respond to refetchAll events", async () => {
       const { usePages, eventEmitter, calls } = createTestHooks();
 

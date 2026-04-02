@@ -463,6 +463,26 @@ export function createInfiniteReadController<
       notify();
     },
 
+    async refetch() {
+      const firstPageKey = pageKeys[0];
+
+      if (!firstPageKey) {
+        await doFetch("next", {});
+        return;
+      }
+
+      const firstPageRequest = pageRequests.get(firstPageKey) ?? initialRequest;
+
+      pageSubscriptions.slice(1).forEach((unsub) => unsub());
+      pageSubscriptions = pageSubscriptions.slice(0, 1);
+      pageKeys = [firstPageKey];
+      pageRequests = new Map([[firstPageKey, firstPageRequest]]);
+
+      stateManager.setCache(firstPageKey, { stale: true });
+
+      await doFetch("next", firstPageRequest);
+    },
+
     abort() {
       abortController?.abort();
       abortController = null;

@@ -1,5 +1,9 @@
 # @spoosh/react
 
+## 0.15.1
+
+- Fix `usePages` invalidation clearing data and showing loading state
+
 ## 0.15.0
 
 - Use `matchTags` for wildcard pattern matching in `useRead` and `usePages`

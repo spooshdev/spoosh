@@ -352,8 +352,7 @@ export function createUsePages<
           );
 
           if (hasMatch) {
-            setIsPending(true);
-            controller.trigger().finally(() => setIsPending(false));
+            controller.refetch();
           }
         }
       );

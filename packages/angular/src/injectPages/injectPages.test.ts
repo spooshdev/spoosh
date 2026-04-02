@@ -607,6 +607,61 @@ describe("injectPages", () => {
       expect(result.data()).toBeDefined();
     });
 
+    it("should preserve data during invalidation and not show loading", async () => {
+      const { injectPages, eventEmitter } = createTestHooks();
+
+      const result = injectPages((api: any) => api("/posts").GET(), {
+        tags: ["posts"],
+        canFetchNext: (ctx: any) =>
+          ctx.lastPage?.data?.nextCursor !== undefined,
+        nextPageRequest: (ctx: any) => ({
+          query: { cursor: ctx.lastPage?.data?.nextCursor },
+        }),
+        merger: (pages: any[]) => pages.flatMap((p) => p.data?.items ?? []),
+      });
+
+      await flushPromises();
+
+      expect(result.loading()).toBe(false);
+      expect(result.data()).toBeDefined();
+
+      const dataBeforeInvalidation = result.data();
+
+      eventEmitter.emit("invalidate", ["posts"]);
+
+      expect(result.data()).toBeDefined();
+      expect(result.data()).toEqual(dataBeforeInvalidation);
+      expect(result.loading()).toBe(false);
+    });
+
+    it("should keep only first page after invalidation with multiple pages", async () => {
+      const { injectPages, eventEmitter } = createTestHooks();
+
+      const result = injectPages((api: any) => api("/posts").GET(), {
+        tags: ["posts"],
+        canFetchNext: (ctx: any) =>
+          ctx.lastPage?.data?.nextCursor !== undefined,
+        nextPageRequest: (ctx: any) => ({
+          query: { cursor: ctx.lastPage?.data?.nextCursor },
+        }),
+        merger: (pages: any[]) => pages.flatMap((p) => p.data?.items ?? []),
+      });
+
+      await flushPromises();
+
+      await result.fetchNext();
+      await flushPromises();
+
+      expect(result.pages().length).toBe(2);
+
+      eventEmitter.emit("invalidate", ["posts"]);
+
+      await flushPromises();
+
+      expect(result.pages().length).toBe(1);
+      expect(result.data()).toBeDefined();
+    });
+
     it("should respond to refetchAll events", async () => {
       const { injectPages, eventEmitter, calls } = createTestHooks();
 

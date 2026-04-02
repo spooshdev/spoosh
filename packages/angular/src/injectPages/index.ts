@@ -360,11 +360,7 @@ export function createInjectPages<
           );
 
           if (hasMatch) {
-            loadingSignal.set(true);
-            currentController.trigger().finally(() => {
-              updateSignalsFromState();
-              loadingSignal.set(false);
-            });
+            currentController.refetch();
           }
         }
       );

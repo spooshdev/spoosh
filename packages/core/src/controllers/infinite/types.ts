@@ -71,6 +71,7 @@ export type InfiniteReadController<
   fetchNext: () => Promise<void>;
   fetchPrev: () => Promise<void>;
   trigger: (options?: InfiniteTriggerOptions) => Promise<void>;
+  refetch: () => Promise<void>;
   abort: () => void;
 
   mount: () => void;
