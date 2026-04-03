@@ -88,6 +88,7 @@ export function createUseSubscription<
     } | null>(null);
 
     const subscriptionVersionRef = useRef(0);
+    const prevQueryKeyRef = useRef(queryKey);
 
     const queryKeyChanged =
       controllerRef.current && controllerRef.current.queryKey !== queryKey;
@@ -128,8 +129,15 @@ export function createUseSubscription<
     const [isPending, setIsPending] = useState(enabled);
 
     useEffect(() => {
+      const queryKeyChanged = prevQueryKeyRef.current !== queryKey;
+      prevQueryKeyRef.current = queryKey;
+
       if (!enabled) {
         return;
+      }
+
+      if (queryKeyChanged) {
+        subscriptionVersionRef.current++;
       }
 
       setIsPending(true);
@@ -137,7 +145,6 @@ export function createUseSubscription<
       controller.subscribe();
 
       return () => {
-        subscriptionVersionRef.current++;
         controller.unsubscribe();
       };
     }, [queryKey, enabled, controller]);
@@ -153,7 +160,6 @@ export function createUseSubscription<
     }, [state.isConnected, state.data, state.error]);
 
     const disconnect = useCallback(() => {
-      subscriptionVersionRef.current++;
       controller.unsubscribe();
     }, [controller]);
 

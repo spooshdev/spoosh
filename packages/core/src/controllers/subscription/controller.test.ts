@@ -147,6 +147,8 @@ describe("createSubscriptionController", () => {
         data: undefined,
         error: undefined,
         isConnected: false,
+        _messageQueue: [],
+        _queueIndex: 0,
       });
     });
 

@@ -365,6 +365,77 @@ describe("useSubscription", () => {
         message: { text: "First message" },
       });
     });
+
+    it("should preserve data when disconnect is called", async () => {
+      const { useSubscription, transport } = createTestHooks();
+
+      const { result } = renderHook(() =>
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        useSubscription((api: any) => api("messages").GET())
+      );
+
+      await waitFor(() => {
+        expect(transport.subscribe).toHaveBeenCalled();
+      });
+
+      act(() => {
+        transport.triggerMessage("message", { text: "Test data" });
+      });
+
+      await waitFor(() => {
+        expect(result.current.data).toEqual({ message: { text: "Test data" } });
+        expect(result.current.isConnected).toBe(true);
+      });
+
+      act(() => {
+        result.current.disconnect();
+      });
+
+      await waitFor(() => {
+        expect(result.current.isConnected).toBe(false);
+      });
+
+      expect(result.current.data).toEqual({ message: { text: "Test data" } });
+    });
+
+    it("should preserve data when enabled changes from true to false", async () => {
+      const { useSubscription, transport } = createTestHooks();
+
+      const { result, rerender } = renderHook(
+        ({ enabled }) =>
+          useSubscription(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (api: any) => api("messages").GET(),
+            { enabled }
+          ),
+        { initialProps: { enabled: true } }
+      );
+
+      await waitFor(() => {
+        expect(transport.subscribe).toHaveBeenCalled();
+      });
+
+      act(() => {
+        transport.triggerMessage("message", { text: "Preserved data" });
+      });
+
+      await waitFor(() => {
+        expect(result.current.data).toEqual({
+          message: { text: "Preserved data" },
+        });
+        expect(result.current.isConnected).toBe(true);
+      });
+
+      rerender({ enabled: false });
+
+      await waitFor(() => {
+        expect(result.current.isConnected).toBe(false);
+      });
+
+      expect(result.current.data).toEqual({
+        message: { text: "Preserved data" },
+      });
+    });
   });
 
   describe("trigger functionality", () => {

@@ -1,5 +1,9 @@
 # @spoosh/react
 
+## 0.15.4
+
+- Fix `useSSE` data being reset to undefined on disconnect or when `enabled` changes to `false`
+
 ## 0.15.3
 
 - Fix `useSSE` losing messages when events arrive faster than React render cycle
