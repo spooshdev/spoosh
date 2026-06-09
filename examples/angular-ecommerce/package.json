@@ -1,0 +1,49 @@
+{
+  "name": "@spoosh/example-angular-ecommerce",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "ng": "ng",
+    "dev": "ng serve --port 4204",
+    "build": "ng build",
+    "preview": "ng serve --port 4214 --configuration production",
+    "typecheck": "ng build --configuration development",
+    "lint": "eslint 'src/**/*.ts' --fix",
+    "format": "prettier --write 'src/**/*.ts'",
+    "msw:init": "msw init public --save"
+  },
+  "dependencies": {
+    "@angular/common": "21.2.16",
+    "@angular/compiler": "21.2.16",
+    "@angular/core": "21.2.16",
+    "@angular/forms": "21.2.16",
+    "@angular/platform-browser": "21.2.16",
+    "@angular/router": "21.2.16",
+    "@spoosh/core": "workspace:*",
+    "@spoosh/devtool": "workspace:*",
+    "@spoosh/plugin-cache": "workspace:*",
+    "@spoosh/plugin-debounce": "workspace:*",
+    "@spoosh/plugin-deduplication": "workspace:*",
+    "@spoosh/plugin-gc": "workspace:*",
+    "@spoosh/plugin-invalidation": "workspace:*",
+    "@spoosh/plugin-optimistic": "workspace:*",
+    "@spoosh/plugin-polling": "workspace:*",
+    "@spoosh/plugin-prefetch": "workspace:*",
+    "@spoosh/plugin-progress": "workspace:*",
+    "@spoosh/plugin-refetch": "workspace:*",
+    "@spoosh/plugin-retry": "workspace:*",
+    "@spoosh/plugin-transform": "workspace:*",
+    "@spoosh/angular": "workspace:*",
+    "msw": "^2.11.3",
+    "rxjs": "~7.8.0",
+    "tslib": "^2.3.0",
+    "zone.js": "~0.15.0"
+  },
+  "devDependencies": {
+    "@angular-devkit/build-angular": "21.2.14",
+    "@angular/cli": "21.2.14",
+    "@angular/compiler-cli": "21.2.16",
+    "@types/node": "^20.0.0",
+    "typescript": "~5.9.2"
+  }
+}
