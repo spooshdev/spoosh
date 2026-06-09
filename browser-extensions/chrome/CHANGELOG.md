@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.1
+
+- Fix DevTools panel freeze when requests are clear.
+
 ## 0.0.2
 
 - Fix spoosh detection not working after service worker disconnects

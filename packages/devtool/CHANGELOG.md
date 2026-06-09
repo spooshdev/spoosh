@@ -1,5 +1,9 @@
 # @spoosh/devtool
 
+## 0.8.1
+
+- Fix DevTools panel freeze when requests are clear.
+
 ## 0.8.0
 
 - Move devtool UI to Chrome extension

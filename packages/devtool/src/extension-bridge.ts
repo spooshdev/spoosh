@@ -491,6 +491,8 @@ export class ExtensionBridge {
   }
 
   private safeClone<T>(obj: T): T {
+    if (obj === undefined || obj === null) return obj;
+
     try {
       return JSON.parse(JSON.stringify(obj));
     } catch {

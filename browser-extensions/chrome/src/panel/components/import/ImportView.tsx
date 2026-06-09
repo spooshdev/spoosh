@@ -145,23 +145,27 @@ export const ImportView: Component<ImportViewProps> = (props) => {
             </div>
           }
         >
-          <Show when={selectedSubscription()}>
-            <SubscriptionDetail
-              subscription={selectedSubscription()!}
-              viewState={props.viewState}
-              actions={props.actions}
-              knownPlugins={store.state.knownPlugins}
-            />
+          <Show when={selectedSubscription()} keyed>
+            {(subscription) => (
+              <SubscriptionDetail
+                subscription={subscription}
+                viewState={props.viewState}
+                actions={props.actions}
+                knownPlugins={store.state.knownPlugins}
+              />
+            )}
           </Show>
 
-          <Show when={!selectedSubscription() && selectedTrace()}>
-            <TraceDetail
-              trace={selectedTrace()!}
-              viewState={props.viewState}
-              actions={props.actions}
-              knownPlugins={store.state.knownPlugins}
-              sensitiveHeaders={DEFAULT_SENSITIVE_HEADERS}
-            />
+          <Show when={!selectedSubscription() && selectedTrace()} keyed>
+            {(trace) => (
+              <TraceDetail
+                trace={trace}
+                viewState={props.viewState}
+                actions={props.actions}
+                knownPlugins={store.state.knownPlugins}
+                sensitiveHeaders={DEFAULT_SENSITIVE_HEADERS}
+              />
+            )}
           </Show>
         </Show>
       </div>

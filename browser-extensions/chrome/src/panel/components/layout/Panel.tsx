@@ -208,13 +208,16 @@ export const Panel: Component<PanelProps> = (props) => {
 
                 <Show
                   when={!props.viewState.showSettings && selectedSubscription()}
+                  keyed
                 >
-                  <SubscriptionDetail
-                    subscription={selectedSubscription()!}
-                    viewState={props.viewState}
-                    actions={props.actions}
-                    knownPlugins={store.state.knownPlugins}
-                  />
+                  {(subscription) => (
+                    <SubscriptionDetail
+                      subscription={subscription}
+                      viewState={props.viewState}
+                      actions={props.actions}
+                      knownPlugins={store.state.knownPlugins}
+                    />
+                  )}
                 </Show>
 
                 <Show
@@ -223,14 +226,17 @@ export const Panel: Component<PanelProps> = (props) => {
                     !selectedSubscription() &&
                     selectedTrace()
                   }
+                  keyed
                 >
-                  <TraceDetail
-                    trace={selectedTrace()!}
-                    viewState={props.viewState}
-                    actions={props.actions}
-                    knownPlugins={store.state.knownPlugins}
-                    sensitiveHeaders={DEFAULT_SENSITIVE_HEADERS}
-                  />
+                  {(trace) => (
+                    <TraceDetail
+                      trace={trace}
+                      viewState={props.viewState}
+                      actions={props.actions}
+                      knownPlugins={store.state.knownPlugins}
+                      sensitiveHeaders={DEFAULT_SENSITIVE_HEADERS}
+                    />
+                  )}
                 </Show>
               </div>
             </FindProvider>
