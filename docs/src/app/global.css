@@ -3,64 +3,100 @@
 @import "fumadocs-ui/css/preset.css";
 @import "fumadocs-twoslash/twoslash.css";
 
+/* Light theme — warm off-white canvas + coral accent (matches promo videos) */
 @theme {
-  --color-fd-background: hsl(0, 0%, 100%);
-  --color-fd-foreground: hsl(0, 0%, 10%);
-  --color-fd-muted: hsl(0, 0%, 96%);
-  --color-fd-muted-foreground: hsl(0, 0%, 45%);
-  --color-fd-popover: hsl(0, 0%, 100%);
-  --color-fd-popover-foreground: hsl(0, 0%, 10%);
-  --color-fd-card: hsl(0, 0%, 98%);
-  --color-fd-card-foreground: hsl(0, 0%, 10%);
-  --color-fd-border: hsla(0, 0%, 80%, 50%);
-  --color-fd-primary: hsl(262, 24%, 54%);
-  --color-fd-primary-foreground: hsl(0, 0%, 100%);
-  /* --color-fd-secondary: hsl(262, 24%, 54%); */
-  --color-fd-secondary-foreground: hsl(0, 0%, 100%);
-  --color-fd-accent: hsla(262, 24%, 95%, 70%);
-  --color-fd-accent-foreground: hsl(0, 0%, 10%);
-  --color-fd-ring: hsl(262, 24%, 54%);
+  --color-fd-background: #f6f5f1;
+  --color-fd-foreground: #15161a;
+  --color-fd-muted: #f0eee8;
+  --color-fd-muted-foreground: #5e5e68;
+  --color-fd-popover: #ffffff;
+  --color-fd-popover-foreground: #15161a;
+  --color-fd-card: #fbfaf7;
+  --color-fd-card-foreground: #15161a;
+  --color-fd-border: #e4e2db;
+  --color-fd-primary: #d8431e;
+  --color-fd-primary-foreground: #ffffff;
+  /* --color-fd-secondary: #d8431e; */
+  --color-fd-secondary-foreground: #ffffff;
+  --color-fd-accent: #f6e5df;
+  --color-fd-accent-foreground: #15161a;
+  --color-fd-ring: #d8431e;
+  --grid-line: rgba(21, 22, 26, 0.04);
+  --grid-glow: rgba(255, 92, 56, 0.06);
 }
 
+/* Dark theme — warm charcoal + brighter coral for legibility */
 .dark {
-  --color-fd-background: hsl(0, 0%, 7%);
-  --color-fd-foreground: hsl(0, 0%, 95%);
-  --color-fd-muted: hsl(0, 0%, 12%);
-  --color-fd-muted-foreground: hsl(0, 0%, 70%);
-  --color-fd-popover: hsl(0, 0%, 10%);
-  --color-fd-popover-foreground: hsl(0, 0%, 95%);
-  --color-fd-card: hsl(0, 0%, 8%);
-  --color-fd-card-foreground: hsl(0, 0%, 95%);
-  --color-fd-border: hsla(0, 0%, 40%, 30%);
-  --color-fd-primary: hsl(262, 35%, 60%);
-  --color-fd-primary-foreground: hsl(0, 0%, 100%);
-  /* --color-fd-secondary: hsl(262, 35%, 60%); */
-  --color-fd-secondary-foreground: hsl(0, 0%, 100%);
-  --color-fd-accent: hsla(262, 35%, 25%, 40%);
-  --color-fd-accent-foreground: hsl(0, 0%, 95%);
-  --color-fd-ring: hsl(262, 35%, 60%);
+  --color-fd-background: #131210;
+  --color-fd-foreground: #f2efea;
+  --color-fd-muted: #1b1a16;
+  --color-fd-muted-foreground: #a8a39b;
+  --color-fd-popover: #1b1a17;
+  --color-fd-popover-foreground: #f2efea;
+  --color-fd-card: #1b1a17;
+  --color-fd-card-foreground: #f2efea;
+  --color-fd-border: #2c2a25;
+  --color-fd-primary: #ff6a47;
+  --color-fd-primary-foreground: #1a130d;
+  /* --color-fd-secondary: #ff6a47; */
+  --color-fd-secondary-foreground: #f2efea;
+  --color-fd-accent: #2a1c16;
+  --color-fd-accent-foreground: #f8efea;
+  --color-fd-ring: #ff6a47;
+  --grid-line: rgba(255, 255, 255, 0.035);
+  --grid-glow: rgba(255, 106, 71, 0.09);
+}
+
+/* Grid backdrop — fixed attachment keeps it seamless across every surface */
+body,
+.bg-fd-background {
+  background-color: var(--color-fd-background);
+  background-image:
+    radial-gradient(55% 32% at 50% 0%, var(--grid-glow), transparent 70%),
+    linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+  background-size:
+    100% 820px,
+    48px 48px,
+    48px 48px;
+  background-position: center top;
+  background-repeat: no-repeat, repeat, repeat;
+  background-attachment: fixed;
+}
+
+/* Zoned homepage sections: keep the grid continuous + add a crisp divider
+   so the tonal shift reads as intentional, not a flat slab with a hard edge. */
+section.bg-fd-muted {
+  background-image:
+    linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+  background-size: 48px 48px;
+  background-position: center top;
+  background-attachment: fixed;
+  border-block: 1px solid var(--color-fd-border);
 }
 
 a {
   transition: color 0.2s ease;
 }
 
-a:hover {
-  color: hsl(var(--color-fd-primary));
+/* Recolor inline content links on hover only — never buttons/CTAs */
+.prose a:hover {
+  color: var(--color-fd-primary);
 }
 
 [data-nav] a:hover {
-  background-color: hsl(var(--color-fd-accent));
+  background-color: var(--color-fd-accent);
 }
 
 [data-sidebar] a[data-active="true"] {
-  background-color: hsl(var(--color-fd-accent));
-  color: hsl(var(--color-fd-accent-foreground));
+  background-color: var(--color-fd-accent);
+  color: var(--color-fd-accent-foreground);
   font-weight: 500;
 }
 
 [data-sidebar] a:hover {
-  background-color: hsl(var(--color-fd-accent));
+  background-color: var(--color-fd-accent);
 }
 
 button[data-theme-toggle] {
@@ -68,7 +104,7 @@ button[data-theme-toggle] {
 }
 
 button[data-theme-toggle]:hover {
-  background-color: hsl(var(--color-fd-accent));
+  background-color: var(--color-fd-accent);
 }
 
 [data-search],
