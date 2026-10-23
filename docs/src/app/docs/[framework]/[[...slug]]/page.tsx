@@ -76,7 +76,11 @@ export async function generateMetadata({
   return {
     title: page.data.title,
     description: page.data.description,
+    alternates: {
+      canonical: page.url,
+    },
     openGraph: {
+      url: page.url,
       title: `${page.data.title} | Spoosh ${frameworkLabel}`,
       description: page.data.description,
       type: "article",

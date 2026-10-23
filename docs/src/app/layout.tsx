@@ -1,16 +1,15 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { Provider } from "@/components/provider";
+import { SITE_URL } from "@/lib/constants";
 import "./global.css";
 
 const inter = Inter({
   subsets: ["latin"],
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://spoosh.dev";
-
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
+  metadataBase: new URL(SITE_URL),
   title: {
     default: "Spoosh - Type-Safe API Toolkit",
     template: "%s | Spoosh",
@@ -42,7 +41,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: siteUrl,
+    url: SITE_URL,
     siteName: "Spoosh",
     title: "Spoosh - Type-Safe API Toolkit",
     description:
@@ -61,6 +60,9 @@ export const metadata: Metadata = {
     title: "Spoosh - Type-Safe API Toolkit",
     description: "A type-safe API toolkit with a powerful plugin system.",
     images: ["/og/home"],
+  },
+  verification: {
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
   },
   robots: {
     index: true,

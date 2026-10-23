@@ -10,10 +10,14 @@ export const metadata: Metadata = {
   title: "Spoosh - Type-Safe API Toolkit",
   description:
     "A type-safe API toolkit with a powerful plugin system. Features caching, invalidation, retry, polling, optimistic updates, and more.",
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
     title: "Spoosh - Type-Safe API Toolkit",
     description:
       "A type-safe API toolkit with a powerful plugin system. Features caching, invalidation, retry, polling, optimistic updates, and more.",
+    url: "/",
     images: ["/og/home"],
   },
 };
