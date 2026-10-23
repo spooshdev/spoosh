@@ -74,7 +74,7 @@ export async function generateMetadata({
   const frameworkLabel = framework.charAt(0).toUpperCase() + framework.slice(1);
 
   return {
-    title: page.data.title,
+    title: { absolute: `${page.data.title} | Spoosh ${frameworkLabel}` },
     description: page.data.description,
     alternates: {
       canonical: page.url,
