@@ -54,6 +54,19 @@ type BaseRequestOptions = {
   headers?: HeadersInitOrGetter;
   cache?: RequestCache;
   signal?: AbortSignal;
+
+  /**
+   * Keep the request alive after the page unloads (e.g. analytics or logout on `pagehide`).
+   * Fetch transport only, ignored by XHR. Browsers limit keepalive bodies to 64KB in total.
+   * Overrides the instance default.
+   */
+  keepalive?: boolean;
+
+  /**
+   * Fetch priority hint relative to other requests (e.g. `"low"` for prefetch, `"high"` for critical data).
+   * Fetch transport only, ignored by XHR. Overrides the instance default.
+   */
+  priority?: RequestPriority;
 };
 
 type BodyOption<TBody> = [TBody] extends [never]

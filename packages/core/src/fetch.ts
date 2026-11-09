@@ -114,6 +114,18 @@ async function executeCoreFetch<TData, TError>(
 
   fetchInit.cache = requestOptions?.cache ?? fetchDefaults?.cache;
 
+  const keepalive = requestOptions?.keepalive ?? fetchDefaults?.keepalive;
+
+  if (keepalive !== undefined) {
+    fetchInit.keepalive = keepalive;
+  }
+
+  const priority = requestOptions?.priority ?? fetchDefaults?.priority;
+
+  if (priority !== undefined) {
+    fetchInit.priority = priority;
+  }
+
   if (nextTags) {
     const autoTags = generateTags(path);
     const userNext = (
